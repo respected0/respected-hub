@@ -1,0 +1,1381 @@
+# Respected Hub — Kaynak Atlası
+
+> Bu belge `tools/repository_map.py` tarafından `docs/repository_inventory.json` içindeki gözden geçirilmiş açıklamalardan üretilir. Doğrudan bu Markdown dosyasını düzenlemeyin.
+
+**Kapsam:** 143 proje dosyası. Git çalıştırmadan dosya sistemi ve kök ignore kurallarıyla keşfedilen Tauri ürün kaynağıdır. Bağımlılık/üretim önbellekleri ayrı kategoriler olarak açıklanır.
+
+## Eksiksiz kaynak ağacı
+
+```text
+respected-hub/
+├── .gitignore
+├── AGENTS.md
+├── README.md
+├── docs/
+│   ├── REPOSITORY_MAP.md
+│   ├── decisions/
+│   │   ├── BUNDLE_TRUST.md
+│   │   ├── DEV_OVERRIDES_AND_UNINSTALL.md
+│   │   ├── HUB_CAMPAIGNS_MOUNT.md
+│   │   ├── HUB_CAMPAIGN_TRACKING.md
+│   │   ├── HUB_NATIVE_RPP.md
+│   │   ├── HUB_PRODUCT_LIFECYCLE.md
+│   │   ├── HUB_V1_READINESS.md
+│   │   ├── HUB_V1_RELEASE_GATES.md
+│   │   ├── HUB_WORKSPACE_AGENTS.md
+│   │   ├── HUB_WORKSPACE_EVIDENCE.md
+│   │   ├── HUB_WORKSPACE_MOUNT.md
+│   │   └── HUB_WORKSPACE_OVERVIEW.md
+│   ├── records/
+│   │   └── 2026-10-ux-track-b.md
+│   └── repository_inventory.json
+├── index.html
+├── package-lock.json
+├── package.json
+├── packaging/
+│   └── windows/
+│       └── hub_setup.iss
+├── src/
+│   ├── App.tsx
+│   ├── api.ts
+│   ├── apps.ts
+│   ├── brainClients.ts
+│   ├── campaigns.ts
+│   ├── design.css
+│   ├── homeModel.ts
+│   ├── lifecycle.ts
+│   ├── main.tsx
+│   ├── mcpAccess.ts
+│   ├── memoryAccess.ts
+│   ├── memoryIndex.ts
+│   ├── memorySemantic.ts
+│   ├── memoryWorkspace.ts
+│   ├── productClient.ts
+│   ├── rpp.ts
+│   ├── shellModel.ts
+│   ├── tasks.ts
+│   ├── ui.tsx
+│   ├── useEcosystem.ts
+│   └── views/
+│       ├── Activity.tsx
+│       ├── AppWorkspace.tsx
+│       ├── BrainInstall.tsx
+│       ├── BrainIntegrations.tsx
+│       ├── BrainSetup.tsx
+│       ├── Campaigns.tsx
+│       ├── ClientPicker.tsx
+│       ├── Connections.tsx
+│       ├── Discover.tsx
+│       ├── Home.tsx
+│       ├── IntegrationPreview.tsx
+│       ├── LifecycleControls.tsx
+│       ├── MemoryAccess.tsx
+│       ├── MemoryIndex.tsx
+│       ├── MemoryWorkspace.tsx
+│       ├── MyApps.tsx
+│       ├── OrchestratorMcp.tsx
+│       ├── Products.tsx
+│       ├── Settings.tsx
+│       ├── Tasks.tsx
+│       ├── orchestrator/
+│       │   ├── AgentsPanel.tsx
+│       │   ├── EvidencePanel.tsx
+│       │   ├── OverviewPanel.tsx
+│       │   ├── agents.css
+│       │   ├── agentsModel.ts
+│       │   ├── evidence.css
+│       │   ├── evidenceModel.ts
+│       │   ├── overview.css
+│       │   ├── overviewModel.ts
+│       │   ├── settings.css
+│       │   └── workspaceModel.ts
+│       └── productsModel.ts
+├── src-tauri/
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   ├── build.rs
+│   ├── capabilities/
+│   │   └── default.json
+│   ├── icons/
+│   │   ├── 128x128.png
+│   │   ├── 128x128@2x.png
+│   │   ├── 32x32.png
+│   │   ├── 64x64.png
+│   │   ├── Square107x107Logo.png
+│   │   ├── Square142x142Logo.png
+│   │   ├── Square150x150Logo.png
+│   │   ├── Square284x284Logo.png
+│   │   ├── Square30x30Logo.png
+│   │   ├── Square310x310Logo.png
+│   │   ├── Square44x44Logo.png
+│   │   ├── Square71x71Logo.png
+│   │   ├── Square89x89Logo.png
+│   │   ├── StoreLogo.png
+│   │   ├── icon.icns
+│   │   ├── icon.ico
+│   │   └── icon.png
+│   ├── release-keys.txt
+│   ├── src/
+│   │   ├── brain.rs
+│   │   ├── cleanup.rs
+│   │   ├── lib.rs
+│   │   ├── lifecycle.rs
+│   │   ├── main.rs
+│   │   ├── mcp_access.rs
+│   │   ├── memory_access.rs
+│   │   ├── memory_index.rs
+│   │   ├── memory_semantic.rs
+│   │   ├── rpp.rs
+│   │   └── trust.rs
+│   ├── tauri.conf.json
+│   └── tests/
+│       ├── brain_concurrency_e2e.rs
+│       ├── brain_e2e.rs
+│       ├── campaign_e2e.rs
+│       ├── cleanup_e2e.rs
+│       ├── lifecycle_e2e.rs
+│       ├── mcp_access_e2e.rs
+│       ├── memory_access_e2e.rs
+│       ├── memory_index_e2e.rs
+│       ├── rpp_e2e.rs
+│       └── trust_catalog_e2e.rs
+├── tests/
+│   ├── appNav.test.ts
+│   ├── brainClients.test.ts
+│   ├── campaigns.test.ts
+│   ├── coverageApi.test.ts
+│   ├── coverageViews.test.ts
+│   ├── homeModel.test.ts
+│   ├── lifecycleModel.test.ts
+│   ├── mcpAccess.test.ts
+│   ├── memoryAccess.test.ts
+│   ├── memoryIndex.test.ts
+│   ├── memorySemantic.test.ts
+│   ├── memoryWorkspace.test.ts
+│   ├── orchestratorAgents.test.ts
+│   ├── orchestratorEvidence.test.ts
+│   ├── orchestratorOverview.test.ts
+│   ├── orchestratorWorkspace.test.ts
+│   ├── productClient.test.ts
+│   ├── productsModel.test.ts
+│   ├── rpp.test.ts
+│   ├── shellModel.test.ts
+│   └── tasks.test.ts
+├── tools/
+│   ├── hub_native_e2e.mjs
+│   └── repository_map.py
+├── tsconfig.json
+└── vite.config.ts
+```
+
+## Dosya dosya sorumluluk ve ilişkiler
+
+Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyaları da dahildir. Aşağıdaki yollar depo köküne göredir. Tarihsel belgeler canlı davranışın yetkili kaynağı değildir.
+
+### Depo kökü
+
+#### [`.gitignore`](../.gitignore)
+
+**Rol:** Kaynak kapsamı.
+
+**Amaç / sorumluluk:** Bağımlılık, cache, build ve yerel test artifacts kaynak envanteri dışında tutar.
+
+**İlişkiler ve sınır:** Yeni kaynak dosyaları atlas kapısından kaçırılmaz.
+
+#### [`AGENTS.md`](../AGENTS.md)
+
+**Rol:** Çalışma sözleşmesi.
+
+**Amaç / sorumluluk:** Hub kaynağı için ürün sınırlarını tanımlar: GUI'den yönetilen yaşam döngüsü, Safe Integration Layer ve SecondBrain sihirbazı yalnızca disposable root'larda geliştirilir; mevcut AI config'i veya canlı Brain verisi değiştirilmez, genel shell çalıştırılmaz. Atlas/envanter bakım adımlarını ve karar/kanıt dizinlerini de belirtir.
+
+**İlişkiler ve sınır:** Kaynakta çalışan tüm ajan ve geliştiricilere uygulanır; docs/repository_inventory.json ve tools/repository_map.py akışını zorunlu kılar. Kullanıcı istemedikçe source Git/commit veya paralel ajan çalıştırılmaz; native kabul ve release signing ayrı kapılardır.
+
+#### [`README.md`](../README.md)
+
+**Rol:** Ürün geliştirici rehberi.
+
+**Amaç / sorumluluk:** Bağımsız ürün girişini, geliştirme komutlarını ve native/production kabul sınırlarını açıklar.
+
+**İlişkiler ve sınır:** Runtime kaynaklarına ve tarihli extraction kaydına bağlanır.
+
+### docs
+
+#### [`docs/REPOSITORY_MAP.md`](../docs/REPOSITORY_MAP.md)
+
+**Rol:** Üretilmiş atlas.
+
+**Amaç / sorumluluk:** Ürünün bütün kaynak dosyalarının incelenmiş sorumluluk ve ilişkilerini gösterir.
+
+**İlişkiler ve sınır:** tools/repository_map.py JSON kaynağından üretir; elle düzenlenmez.
+
+### docs/decisions
+
+#### [`docs/decisions/BUNDLE_TRUST.md`](../docs/decisions/BUNDLE_TRUST.md)
+
+**Rol:** Paket güveni kararı.
+
+**Amaç / sorumluluk:** İmza kapsamı, üretim ve geliştirme güveninin anahtar ve derleme ile ayrılması, kanıt ve yayın aşamasında kalan işleri (üretim anahtarı, Authenticode) kaydeder.
+
+**İlişkiler ve sınır:** trust.rs, tools/bundle_signing.py ve tools/build_hub_installer.py ile birlikte okunur.
+
+#### [`docs/decisions/DEV_OVERRIDES_AND_UNINSTALL.md`](../docs/decisions/DEV_OVERRIDES_AND_UNINSTALL.md)
+
+**Rol:** Geliştirme geçersiz kılmaları ve Hub kaldırma kararı.
+
+**Amaç / sorumluluk:** Test ortam değişkenleri, kaynak dizin varsayılanları ve güvensiz paket izninin yalnızca debug/dev-trust derlemelerinde bulunduğunu, webview'in memory_* ayarlarını ve çalıştırılabilir yolları değiştiremediğini, Hub kaldırılırken ürünlerin isteğe bağlı temizliğini (--uninstall-products), ikinci başlatmanın mevcut pencereye yönlendirilmesini ve motor kapısı zaman aşımını kaydeder.
+
+**İlişkiler ve sınır:** trust.rs, cleanup.rs, hub_setup.iss, rpp.rs ve lib.rs ile birlikte okunur; kanıtı tests/cleanup_e2e.rs ve trust.rs birim testleridir.
+
+#### [`docs/decisions/HUB_CAMPAIGNS_MOUNT.md`](../docs/decisions/HUB_CAMPAIGNS_MOUNT.md)
+
+**Rol:** Mimari karar kaydı.
+
+**Amaç / sorumluluk:** Mevcut Campaigns görünümünün Orchestrator çalışma alanına 'Kampanyalar' sayfası olarak bağlanmasını kaydeder. Yeni engine eylemi, bağımlılık veya yönlendirme katmanı eklenmez; kampanya klasörü kullanıcının Hub veri kökünden okunur, salt okunur gösterilir ve oluşturma yalnızca açık buton basışıyla başlar.
+
+**İlişkiler ve sınır:** src/apps.ts, src/views/AppWorkspace.tsx ve src/views/Campaigns.tsx değişikliğini anlatır; listCampaigns/campaignStatus/startCampaign sarmalayıcılarını yeniden kullanır. HUB_CAMPAIGN_TRACKING.md ve HUB_WORKSPACE_MOUNT.md ile birlikte okunur.
+
+#### [`docs/decisions/HUB_CAMPAIGN_TRACKING.md`](../docs/decisions/HUB_CAMPAIGN_TRACKING.md)
+
+**Rol:** Mimari karar kaydı.
+
+**Amaç / sorumluluk:** Orchestrator kampanyalarının Hub'dan izlenmesi ve açıkça başlatılması kararını kaydeder: engine_request izin listesine yalnızca campaign-start (64 KiB JSON gövde sınırı) ve campaign-status (camp- kimliği süreç başlamadan doğrulanır) eklenir. Salt okunur campaign_list komutu en yeni 30 kampanya adını döndürür, symlink/junction'ı yok sayar ve veri kökü dışına çıkmaz; genel shell açılmaz.
+
+**İlişkiler ve sınır:** src-tauri/src/lib.rs (engine_request, campaign_list, valid_campaign_id) ve src/campaigns.ts sarmalayıcılarının tasarım gerekçesidir. tests/campaigns.test.ts ve src-tauri/tests/campaign_e2e.rs bu kararı doğrular.
+
+#### [`docs/decisions/HUB_NATIVE_RPP.md`](../docs/decisions/HUB_NATIVE_RPP.md)
+
+**Rol:** Mimari karar kaydı.
+
+**Amaç / sorumluluk:** Hub'ın Rust arka ucundan Orchestrator ve SecondBrain ürünlerine RPP v1.0 ile erişmesini tanımlar: ürünler ve işlemler (manifest, health, settings.*) izin listesindedir, geçersiz olanlar süreç başlamadan reddedilir. Engine shell olmadan, açık argv/cwd/PYTHONPATH ile, 30 sn zaman aşımı ve çıktı sınırıyla çalıştırılır; rpp_call her zaman eksiksiz zarf döndürür ve panik yapmaz.
+
+**İlişkiler ve sınır:** src-tauri/src/rpp.rs içindeki rpp_call/rpp_call_version tasarımını anlatır. src-tauri/tests/rpp_e2e.rs ve rpp.rs birim testleri ile doğrulanır.
+
+#### [`docs/decisions/HUB_PRODUCT_LIFECYCLE.md`](../docs/decisions/HUB_PRODUCT_LIFECYCLE.md)
+
+**Rol:** Mimari karar kaydı.
+
+**Amaç / sorumluluk:** GUI ile ürün yaşam döngüsünü (kur/güncelle/onar/kaldır), Safe Integration Layer'ı ve Windows dağıtımını tanımlar: katalog paketleri hash'li ve imzasızdır, Hub-yönetimli kopyalar doğrulanmış staging, journal, atomik current.json ve rollback ile çalışır, SecondBrain kendi setup/update/repair/uninstall komutlarıyla kurulur. Yalnızca tek kullanımlık köklerde test edildi (2026-10-14); imzalı sürüm veya native kabul iddia edilmez.
+
+**İlişkiler ve sınır:** tools/build_bundle.py, tools/build_runtime.py, packaging/windows/hub_setup.iss ve src/views/LifecycleControls.tsx ile ilişkili uygulamanın karar gerekçesidir. HUB_V1_RELEASE_GATES.md kapı durumlarını bu karara göre değerlendirir.
+
+#### [`docs/decisions/HUB_V1_READINESS.md`](../docs/decisions/HUB_V1_READINESS.md)
+
+**Rol:** Hazırlık denetimi.
+
+**Amaç / sorumluluk:** Hub'ın V1 hazırlığını alan alan (kurulum, ilk kurulum, UX, ürün entegrasyonu, test, sürüm hazırlığı) REAL/PARTIAL/ABSENT olarak değerlendirir; her iddia bu çalışma ağacındaki koda dayanır ve README'de 'sonraki iş' denen alanlar yükseltilmez. Yalnızca geliştirme kanıtı kaydeder, OS düzeyi kabul iddia etmez.
+
+**İlişkiler ve sınır:** src-tauri/src/rpp.rs, lib.rs, src/apps.ts, src/views/BrainSetup.tsx ve tests/ dosyalarına atıf yapar. HUB_V1_RELEASE_GATES.md ile birlikte okunur; doğrulama kapıları ve özellik hazırlığı olarak ayrılırlar.
+
+#### [`docs/decisions/HUB_V1_RELEASE_GATES.md`](../docs/decisions/HUB_V1_RELEASE_GATES.md)
+
+**Rol:** Sürüm kapıları matrisi.
+
+**Amaç / sorumluluk:** Hub V1 sürümünün geçmesi gereken kapıları OPEN, DEV-VERIFIED ve NOT APPLICABLE durumlarıyla listeler; her durum kayıtlı komuta veya çalıştırmaya dayanır, kanıt gösterilemiyorsa OPEN kalır. Hiçbir kapı kapalı sayılmaz; DEV-VERIFIED tek başına sürüm kabulü değildir.
+
+**İlişkiler ve sınır:** package.json komutlarına ve docs/records altındaki tarihli kayıtlara atıf yapar. HUB_V1_READINESS.md özellik hazırlığı denetimini tamamlar.
+
+#### [`docs/decisions/HUB_WORKSPACE_AGENTS.md`](../docs/decisions/HUB_WORKSPACE_AGENTS.md)
+
+**Rol:** Mimari karar kaydı.
+
+**Amaç / sorumluluk:** Orchestrator çalışma alanında ajan rolleri, worker CLI'lar ve model/provider profilleri kavramlarını ayıran salt okunur 'Ajanlar ve modeller' görünümünü tanımlar. Saf agentsModel.ts, engine status.workers ve RPP settings.readback verisini eşler; veri yoksa uydurma yerine dürüst boş durum gösterir.
+
+**İlişkiler ve sınır:** src/views/orchestrator/agentsModel.ts ve AgentsPanel.tsx tasarım gerekçesidir. HUB_WORKSPACE_MOUNT.md sayfanın bağlanmasını, tests/ altındaki agents testi davranışı doğrular.
+
+#### [`docs/decisions/HUB_WORKSPACE_EVIDENCE.md`](../docs/decisions/HUB_WORKSPACE_EVIDENCE.md)
+
+**Rol:** Mimari karar kaydı.
+
+**Amaç / sorumluluk:** Orchestrator için salt okunur inceleme, kanıt ve onay görünümünü tanımlar: inspect ve campaign-status verisi gösterilir, ancak apply ve maf-approve izin listesi dışında kalır; Hub hiçbir şeyi onaylıyor veya uyguluyor gibi davranmaz.
+
+**İlişkiler ve sınır:** src/views/orchestrator/EvidencePanel.tsx ve ilgili saf model modülünün tasarım gerekçesidir. HUB_CAMPAIGN_TRACKING.md engine_request izin listesine dayanır; HUB_WORKSPACE_MOUNT.md sayfayı bağlar.
+
+#### [`docs/decisions/HUB_WORKSPACE_MOUNT.md`](../docs/decisions/HUB_WORKSPACE_MOUNT.md)
+
+**Rol:** Mimari karar kaydı.
+
+**Amaç / sorumluluk:** Orchestrator uygulama sekmelerinin sırasını (genel bakış, ajanlar, kanıtlar, kampanyalar, görevler, ayarlar) ve her sekmenin gerçek engine verisiyle nasıl beslendiğini kaydeder. SecondBrain sekmeleri değişmez; sayfa/bağlama mantığı saf bir modülde tutulur.
+
+**İlişkiler ve sınır:** src/apps.ts, src/views/AppWorkspace.tsx ve src/views/orchestrator/ panellerini bağlayan kararı anlatır. HUB_WORKSPACE_OVERVIEW.md, HUB_WORKSPACE_AGENTS.md ve HUB_WORKSPACE_EVIDENCE.md ile birlikte okunur.
+
+#### [`docs/decisions/HUB_WORKSPACE_OVERVIEW.md`](../docs/decisions/HUB_WORKSPACE_OVERVIEW.md)
+
+**Rol:** Mimari karar kaydı.
+
+**Amaç / sorumluluk:** Orchestrator genel bakış sayfasını tanımlar: saf overviewModel.ts engine status ve list yanıtını çalışma sayıları, son beş çalıştırma ve worker durumuna çevirir; bozuk kayıtları eler, eksik veriyi demo veri yerine uyarıya dönüştürür. Zaman damgası olmadığından 'en yeni' run_id önekiyle yaklaşıklanır.
+
+**İlişkiler ve sınır:** src/views/orchestrator/overviewModel.ts ve OverviewPanel.tsx tasarım gerekçesidir; src/tasks.ts terminal() yardımcısını kullanır. tests/ altındaki overview testi ve HUB_WORKSPACE_MOUNT.md ile ilişkilidir.
+
+### docs/records
+
+#### [`docs/records/2026-10-ux-track-b.md`](../docs/records/2026-10-ux-track-b.md)
+
+**Rol:** Çalışma kaydı.
+
+**Amaç / sorumluluk:** 2026-10-12 tarihli Track B premium arayüz entegrasyonunun durumunu kaydeder: tasarım sistemi, kabuk, Home/My Apps/Discover/Activity yeniden yapımı ve yapılmayan işler (yönetimli kurulum UI'ı, imzalı katalog, rol-model düzenleme). Bilinen Rust test hatasını (RPP 1.0/1.1 uyuşmazlığı) ve envanterdeki eski kayıtları not eder.
+
+**İlişkiler ve sınır:** src/design.css, src/ui.tsx, src/shellModel.ts ve src/views/AppWorkspace.tsx değişikliklerini özetler. docs/repository_inventory.json güncellemesi için bakım notu olarak kullanılır.
+
+### docs
+
+#### [`docs/repository_inventory.json`](../docs/repository_inventory.json)
+
+**Rol:** Anlamsal atlas kaynağı.
+
+**Amaç / sorumluluk:** Dosya rol, amaç, ilişki ve içerik inceleme hash kayıtlarını tutar.
+
+**İlişkiler ve sınır:** repository_map update/accept-reviewed/write/check kapılarının tek anlamsal kaynağıdır.
+
+### Depo kökü
+
+#### [`index.html`](../index.html)
+
+**Rol:** HTML giriş.
+
+**Amaç / sorumluluk:** Türkçe frontend root ve React TypeScript module girişini tanımlar.
+
+**İlişkiler ve sınır:** Vite src/main.tsx yükler; Tauri frontendDist buradan üretilir.
+
+#### [`package-lock.json`](../package-lock.json)
+
+**Rol:** Dependency kilidi.
+
+**Amaç / sorumluluk:** Local Tauri/React/Vite/TypeScript sürüm ve integrity çözümünü korur.
+
+**İlişkiler ve sınır:** npm ci bu kilidi kullanır; global araç kurulumu değildir.
+
+#### [`package.json`](../package.json)
+
+**Rol:** Frontend paket tarifi.
+
+**Amaç / sorumluluk:** Respected Hub kimliği ve local dev/build/test/Tauri bağımlılıklarını tanımlar.
+
+**İlişkiler ve sınır:** npm local node_modules ile çalışır; ürün public CLI eklemez.
+
+### packaging/windows
+
+#### [`packaging/windows/hub_setup.iss`](../packaging/windows/hub_setup.iss)
+
+**Rol:** Windows paket tarifi.
+
+**Amaç / sorumluluk:** Inno Setup betiği: yönetici hakkı gerektirmeyen, kullanıcı başına Windows kurulum paketi (RespectedHub-Windows-Setup) üretir; respected-hub.exe ve catalog klasörünü kurar, Başlat menüsü kısayolu ekler. Kaldırma yalnızca kendi koyduğu dosyaları siler; Hub ile kurulan ürünlere, verilerine ve notlara dokunmaz. Kurulumda önce {app}/catalog silinir (eski/yeni derleme paketleri güncelleme gibi görünmesin); varsa dev-trust.pub (yalnızca geliştirme kurulumları) exe yanına kopyalanır. Kaldırma sırasında 'ürünler de kaldırılsın mı' sorulur (varsayılan hayır; sessiz kaldırmada /REMOVEPRODUCTS=1); evet ise CurUninstallStepChanged ile respected-hub.exe --uninstall-products çalıştırır. Dosya UTF-8 BOM ile kaydedilir. Kurulum öncesi beta/SmartScreen bildirimi gösterir ve WebView2 varlığını denetler (indirme yapmaz, uyarır).
+
+**İlişkiler ve sınır:** tools/build_hub_installer.py staging ve çıktı dizinlerini vererek bu betiği derler. HUB_PRODUCT_LIFECYCLE.md Windows dağıtım kararını açıklar.
+
+### src-tauri
+
+#### [`src-tauri/Cargo.lock`](../src-tauri/Cargo.lock)
+
+**Rol:** Dependency kilidi.
+
+**Amaç / sorumluluk:** Tauri uygulamasının Rust bağımlılık sürümlerini ve özetlerini sabitler; derlemeyi tekrarlanabilir kılar. Elle düzenlenmez, cargo üretir. Yeni bağımlılıkların (single-instance, ed25519-dalek, base64) kilitli sürümleri.
+
+**İlişkiler ve sınır:** src-tauri/Cargo.toml bağımlılıklarından cargo tarafından üretilir. cargo build/test ve Tauri paketlemesi bu kilidi okur.
+
+#### [`src-tauri/Cargo.toml`](../src-tauri/Cargo.toml)
+
+**Rol:** Native paket tarifi.
+
+**Amaç / sorumluluk:** respected-hub crate'ini ve respected_hub_lib kütüphanesini (staticlib/cdylib/rlib) tanımlar; Tauri 2, dialog eklentisi, serde/serde_json ve sha2 bağımlılıklarını bildirir. tauri-plugin-single-instance, ed25519-dalek ve base64 bağımlılıklarını, yalnızca geliştirme derlemelerinde güveni açan dev-trust özelliğini bildirir.
+
+**İlişkiler ve sınır:** build.rs, src/main.rs ve src/lib.rs ile birlikte derlenir; Python ürün kodu crate'e import edilmez. sha2 hem runtime hem dev-dependency olarak lifecycle/doğrulama ve Rust testleri tarafından kullanılır.
+
+#### [`src-tauri/build.rs`](../src-tauri/build.rs)
+
+**Rol:** Native build girişi.
+
+**Amaç / sorumluluk:** Tauri config/capability code generation build adımını başlatır.
+
+**İlişkiler ve sınır:** Cargo tauri-build kullanır; platform acceptance ayrı kapıdır.
+
+### src-tauri/capabilities
+
+#### [`src-tauri/capabilities/default.json`](../src-tauri/capabilities/default.json)
+
+**Rol:** Native yetki sınırı.
+
+**Amaç / sorumluluk:** Yerel main penceresinde core ve explicit directory dialog iznini tanımlar.
+
+**İlişkiler ve sınır:** Remote origin/generic shell yetkisi açmaz; App proje seçimini kullanır.
+
+### src-tauri/icons
+
+#### [`src-tauri/icons/128x128.png`](../src-tauri/icons/128x128.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Tauri paketlemesinde kullanılan 128x128 piksel uygulama simgesi.
+
+**İlişkiler ve sınır:** tauri.conf.json bundle.icon listesinden okunur.
+
+#### [`src-tauri/icons/128x128@2x.png`](../src-tauri/icons/128x128@2x.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** 128x128 simgenin yüksek çözünürlüklü (256x256) varyantı.
+
+**İlişkiler ve sınır:** tauri.conf.json bundle.icon listesinden okunur.
+
+#### [`src-tauri/icons/32x32.png`](../src-tauri/icons/32x32.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Küçük boyutlu (32x32) uygulama simgesi; pencere ve görev çubuğu için.
+
+**İlişkiler ve sınır:** tauri.conf.json bundle.icon listesinden okunur.
+
+#### [`src-tauri/icons/64x64.png`](../src-tauri/icons/64x64.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** 64x64 piksel uygulama simgesi varyantı.
+
+**İlişkiler ve sınır:** Tauri simge üretiminin çıktısı; paketleme sırasında kullanılabilir.
+
+#### [`src-tauri/icons/Square107x107Logo.png`](../src-tauri/icons/Square107x107Logo.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Windows mağaza/Appx paketi için 107x107 kare logo.
+
+**İlişkiler ve sınır:** Tauri Windows paketlemesi tarafından kullanılır.
+
+#### [`src-tauri/icons/Square142x142Logo.png`](../src-tauri/icons/Square142x142Logo.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Windows mağaza/Appx paketi için 142x142 kare logo.
+
+**İlişkiler ve sınır:** Tauri Windows paketlemesi tarafından kullanılır.
+
+#### [`src-tauri/icons/Square150x150Logo.png`](../src-tauri/icons/Square150x150Logo.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Windows mağaza/Appx paketi için 150x150 kare logo.
+
+**İlişkiler ve sınır:** Tauri Windows paketlemesi tarafından kullanılır.
+
+#### [`src-tauri/icons/Square284x284Logo.png`](../src-tauri/icons/Square284x284Logo.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Windows mağaza/Appx paketi için 284x284 kare logo.
+
+**İlişkiler ve sınır:** Tauri Windows paketlemesi tarafından kullanılır.
+
+#### [`src-tauri/icons/Square30x30Logo.png`](../src-tauri/icons/Square30x30Logo.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Windows mağaza/Appx paketi için 30x30 kare logo.
+
+**İlişkiler ve sınır:** Tauri Windows paketlemesi tarafından kullanılır.
+
+#### [`src-tauri/icons/Square310x310Logo.png`](../src-tauri/icons/Square310x310Logo.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Windows mağaza/Appx paketi için 310x310 kare logo.
+
+**İlişkiler ve sınır:** Tauri Windows paketlemesi tarafından kullanılır.
+
+#### [`src-tauri/icons/Square44x44Logo.png`](../src-tauri/icons/Square44x44Logo.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Windows mağaza/Appx paketi için 44x44 kare logo.
+
+**İlişkiler ve sınır:** Tauri Windows paketlemesi tarafından kullanılır.
+
+#### [`src-tauri/icons/Square71x71Logo.png`](../src-tauri/icons/Square71x71Logo.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Windows mağaza/Appx paketi için 71x71 kare logo.
+
+**İlişkiler ve sınır:** Tauri Windows paketlemesi tarafından kullanılır.
+
+#### [`src-tauri/icons/Square89x89Logo.png`](../src-tauri/icons/Square89x89Logo.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Windows mağaza/Appx paketi için 89x89 kare logo.
+
+**İlişkiler ve sınır:** Tauri Windows paketlemesi tarafından kullanılır.
+
+#### [`src-tauri/icons/StoreLogo.png`](../src-tauri/icons/StoreLogo.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Windows mağaza girişi için StoreLogo görseli.
+
+**İlişkiler ve sınır:** Tauri Windows paketlemesi tarafından kullanılır.
+
+#### [`src-tauri/icons/icon.icns`](../src-tauri/icons/icon.icns)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** macOS paketi için çok boyutlu simge dosyası.
+
+**İlişkiler ve sınır:** tauri.conf.json bundle.icon listesinden okunur; macOS yerel doğrulaması ayrı kapıdır.
+
+#### [`src-tauri/icons/icon.ico`](../src-tauri/icons/icon.ico)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Windows çalıştırılabilir dosyası ve yükleyici için çok boyutlu simge.
+
+**İlişkiler ve sınır:** tauri.conf.json bundle.icon listesinden okunur; build betiği exe simgesine gömer.
+
+#### [`src-tauri/icons/icon.png`](../src-tauri/icons/icon.png)
+
+**Rol:** Uygulama simgesi.
+
+**Amaç / sorumluluk:** Diğer simge boyutlarının türetildiği ana kaynak PNG ve Linux simgesi.
+
+**İlişkiler ve sınır:** Tauri simge üretimi (tauri icon) bu dosyadan diğer varyantları çıkarır.
+
+### src-tauri
+
+#### [`src-tauri/release-keys.txt`](../src-tauri/release-keys.txt)
+
+**Rol:** Üretim genel imza anahtarları.
+
+**Amaç / sorumluluk:** Üretim Hub derlemesine gömülen Ed25519 genel anahtarlar (satır başına 'anahtar_kimliği base64'). Özel anahtar asla buraya girmez; tools/release_keys.py yazar. Anahtar satırı yokken üretim derlemesi hiçbir paketi kurmaz.
+
+**İlişkiler ve sınır:** src-tauri/src/trust.rs include_str! ile derler; tools/release_keys.py ve build_hub_installer.py --release-key kontrol eder.
+
+### src-tauri/src
+
+#### [`src-tauri/src/brain.rs`](../src-tauri/src/brain.rs)
+
+**Rol:** SecondBrain yaşam döngüsü.
+
+**Amaç / sorumluluk:** SecondBrain ürününün motor-yönetimli kurulum, güncelleme, onarım, kaldırma ve geri almasını yürütür: katalogdan doğrulanmış dağıtımı hazırlar (stage, seri), ürünün kendi folderlarını (BrainDirs) kullanır, güvenli entegrasyon planını ürünün kendisinden salt-okunur alır ve istemci id'lerini doğrular. Çökme sonrası ürünün yarım işlemini tamamlatır/geri aldırır; ortam sırlardan arındırılmış çalışır, kullanıcı vault'una dokunmaz. SecondBrain kurulum/entegrasyon çağrılarına --allow-unattested yalnızca paket üretim imzalı değilse eklenir. Kurulum/güncelleme motor kapısını en çok 120 sn bekler; uzun bir işlem sürüyorsa açık bir 'meşgul' hatası verir; dizin geçersiz kılmaları yalnızca geliştirme derlemelerinde okunur.
+
+**İlişkiler ve sınır:** lifecycle.rs journal/Roots/Bundle yapılarını kullanır; rpp.rs üzerinden ürün motorunu çağırır; main.rs komutları bunu çağırır. src-tauri/tests/brain_e2e.rs ve brain_concurrency_e2e.rs ile test edilir.
+
+#### [`src-tauri/src/cleanup.rs`](../src-tauri/src/cleanup.rs)
+
+**Rol:** Ürün temizliği (Hub kaldırılırken).
+
+**Amaç / sorumluluk:** Hub kaldırılırken kullanıcı isterse Hub'ın kurduğu ürünleri geri alır: Orchestrator MCP kayıtlarını kapatır, SecondBrain'i kendi kaldırıcısıyla (kasa ve veri kalır) kaldırır, Orchestrator ve çalışma zamanını kaldırır ve yönetilen klasörü siler. Notlar, kasalar ve Orchestrator çalışma kayıtları asla silinmez.
+
+**İlişkiler ve sınır:** lib.rs headless_uninstall_products (respected-hub.exe --uninstall-products) tarafından çağrılır; Inno kaldırıcısı hub_setup.iss (CurUninstallStepChanged) ile çalıştırır. hub_apply, brain::status ve mcp_access::disable_all ile aynı günlüklü yaşam döngüsü yollarını kullanır; tests/cleanup_e2e.rs ile doğrulanır.
+
+#### [`src-tauri/src/lib.rs`](../src-tauri/src/lib.rs)
+
+**Rol:** Native engine köprüsü.
+
+**Amaç / sorumluluk:** Settings kalıcılığını ve doğrulamasını, motor/RPP isteklerini sınırlı JSON işlemleriyle yürütmeyi, ürün durumu, yaşam döngüsü (plan/apply/rollback/purge), orchestrator MCP, bellek erişimi/indeks/anlamsal arama ve etkinlik Tauri komutlarını sunar. Yalnızca açıkça izin verilen komutlar kayıtlıdır; kampanya id'si ve spec boyutu doğrulanır, açılışta yarım kalmış işlemler recover edilir. memory_search, memory_note_read, memory_capture_note ve memory_briefing_run komutları (motorun kendi yanıtını geçirir) eklendi. Tek örnek eklentisi ikinci pencereyi açmaz, mevcut pencereyi öne alır; açılış kurtarması arka plan iş parçacığında çalışır; motor süreç ağacı zaman aşımında sonlandırılır, okuyucu iş parçacıkları süre sınırlıdır, stderr 1 MB ile sınırlıdır; runtime işlemleri sonrası MCP launcher yenilenir; SecondBrain kurulum/güncellemesi sonrası Orchestrator bellek komutu yenilenir. Geliştirme ortam değişkenleri, kaynak dizin ve katalog varsayılanları yalnızca dev_enabled iken geçerlidir; save_settings üretimde reddedilir; product_status development alanı dev_enabled'dır; headless_uninstall_products ürün temizliğini başlatır; tek örnek eklentisi --install niyetini açık pencereye startup-intent olayıyla iletir.
+
+**İlişkiler ve sınır:** React api.ts invoke ile çağırır; brain, lifecycle, rpp, mcp_access, memory_access, memory_index ve memory_semantic modüllerini kullanır. Rust birim/e2e testleri ve src-tauri/src/main.rs (run çağrısı) kapsar; native IPC kabulü ayrı kapıdır.
+
+#### [`src-tauri/src/lifecycle.rs`](../src-tauri/src/lifecycle.rs)
+
+**Rol:** Yaşam döngüsü çekirdeği.
+
+**Amaç / sorumluluk:** Hub yönetimli ürünlerin (Orchestrator, SecondBrain, Python çalışma zamanı) katalog doğrulaması, sürümlü kurulum/güncelleme/onarım/kaldırma, journal'lı işlemler, geri alma, yedek temizleme ve kesintiden sonra kurtarmasını yapar. Yol geçişi, bozuk/imzasız paket ve hash uyuşmazlığını reddeder; doğrulama başarısızsa hiçbir şeyi değiştirmez. Her katalog paketi trust::verify ile doğrulanır (güven düzeyi Bundle.trust ve durum çıktısında); journal kimlikleri okuma/yazmada doğrulanır; Orchestrator kuruluyken runtime kaldırılamaz.
+
+**İlişkiler ve sınır:** brain.rs, mcp_access.rs ve main.rs tarafından çağrılır; Bundle/Roots/LifecycleError tiplerini sağlar. Birim testleri kendi içinde; src-tauri/tests/lifecycle_e2e.rs gerçek motorlarla uçtan uca test eder.
+
+#### [`src-tauri/src/main.rs`](../src-tauri/src/main.rs)
+
+**Rol:** GUI executable girişi.
+
+**Amaç / sorumluluk:** Release Windows console görünürlüğünü kapatıp Hub runtime'ını başlatır. --uninstall-products bağımsız değişkeni pencere açmadan ürün temizliğini çalıştırır.
+
+**İlişkiler ve sınır:** lib.rs run çağrılır; ayrı kullanıcı CLI/setup wizard değildir.
+
+#### [`src-tauri/src/mcp_access.rs`](../src-tauri/src/mcp_access.rs)
+
+**Rol:** Orchestrator MCP erişimi.
+
+**Amaç / sorumluluk:** Orchestrator MCP sunucusunun yapay zekâ istemcilerine kaydını planlar, onay özetine bağlı uygular ve geri alır; Orchestrator güncellense de değişmeyen kararlı bir launcher yazar ve Hub kapalıyken çalıştığını sınar (probe). Yalnızca Respected'e ait girdileri yönetir, yabancı girdilere dokunmaz. Launcher PYTHONSAFEPATH=1 ile ve kendi klasöründe çalışır (çalışma dizininden modül yükleme engellenir).
+
+**İlişkiler ve sınır:** lifecycle.rs journal'ını ve rpp.rs motor çağrılarını kullanır; main.rs komutları ve Orchestrator yaşam döngüsü kancaları çağırır. src-tauri/tests/mcp_access_e2e.rs ile test edilir.
+
+#### [`src-tauri/src/memory_access.rs`](../src-tauri/src/memory_access.rs)
+
+**Rol:** Bellek erişimi yönetimi.
+
+**Amaç / sorumluluk:** Orchestrator'ın SecondBrain belleğine okuma (isteğe bağlı yazma) erişimini motorlar üzerinden açar/kapatır: grant oluşturur, belirteci yalnızca Orchestrator apply'ına verir, hata durumunda yeni grant'ı geri çeker. Yanıtlardaki sır ve belirteç metinden temizlenir; yazma izni ayrı onay gerektirir. refresh_command: SecondBrain yeni sürüm klasörüne taşınınca etkin Orchestrator bellek sağlayıcısının komutunu günceller.
+
+**İlişkiler ve sınır:** rpp.rs trusted çağrılarıyla motorlara konuşur (CallFn enjekte edilir); main.rs komutları çağırır. Birim testleri sahte motorla; src-tauri/tests/memory_access_e2e.rs gerçek motorlarla test eder.
+
+#### [`src-tauri/src/memory_index.rs`](../src-tauri/src/memory_index.rs)
+
+**Rol:** Bellek arama indeksi.
+
+**Amaç / sorumluluk:** SecondBrain bellek arama indeksinin durumunu okur ve yeniler; desteklemeyen eski ürünü 'desteklenmiyor' olarak bildirir, kasa yoksa hata değil durum döndürür. Yenileme yalnızca confirm ve force gönderir, hatalar koda göre Türkçe açıklanır.
+
+**İlişkiler ve sınır:** rpp.rs trusted (uzun zaman aşımlı) çağrıları kullanır; main.rs komutları çağırır. Birim testleri sahte motorla; src-tauri/tests/memory_index_e2e.rs gerçek motorla ve vault'un değişmediğini doğrular.
+
+#### [`src-tauri/src/memory_semantic.rs`](../src-tauri/src/memory_semantic.rs)
+
+**Rol:** Anlamsal arama yönetimi.
+
+**Amaç / sorumluluk:** SecondBrain anlamsal aramasını açar/kapatır ve durumunu verir: yapılandır, modeli indir, vektör indeksini yenile adımlarını sırayla çalıştırır. İndirme başarısızsa vektör kurulumundan önce durur ve nedenini açıklar; eski SecondBrain'i desteklenmiyor diye bildirir.
+
+**İlişkiler ve sınır:** rpp.rs trusted çağrılarıyla SecondBrain motoruna konuşur; main.rs komutları çağırır. Yalnızca dosya içi birim testleriyle (sahte motor) kapsanır.
+
+#### [`src-tauri/src/rpp.rs`](../src-tauri/src/rpp.rs)
+
+**Rol:** RPP motor köprüsü.
+
+**Amaç / sorumluluk:** Hub'ın Orchestrator ve SecondBrain motorlarıyla RPP üzerinden konuşan tek yerel köprüsü: istek/yanıt zarfları, operasyon id doğrulaması, bilinmeyen ürün/op'un süreç başlatmadan reddi, sır görünümlü ortam değişkenlerinin süzülmesi ve nötr çalışma dizini. Webview köprüsü yalnızca salt-okunur yaşam döngüsü ve ilk vault oluşturmaya izin verir; Hub-içi trusted çağrılar ayrıdır. Okuma/yazma geçidi (Gate) yazıcıya öncelik verir. İzin listesine memory.search/note.read/capture.note/briefing.run eklendi; memory.* köprüden yine engelli. isolate_python: yönetilen Python kullanıcının PYTHONHOME/PYTHONSTARTUP/kullanıcı site-packages ortamını almaz. Test HOME'u yalnızca geliştirme derlemelerinde uygulanır; köprü orchestrator için memory_* ayarlarını reddeder; Gate.write_within bekleyen yazıcıyı zaman aşımıyla bırakır.
+
+**İlişkiler ve sınır:** main.rs, brain.rs, mcp_access.rs, memory_*.rs tarafından çağrılır; motor süreçlerini başlatır. Birim testleri kendi içinde; src-tauri/tests/rpp_e2e.rs ve campaign_e2e.rs gerçek motorlarla test eder.
+
+#### [`src-tauri/src/trust.rs`](../src-tauri/src/trust.rs)
+
+**Rol:** Paket özgünlüğü doğrulaması.
+
+**Amaç / sorumluluk:** Katalog paketlerinin Ed25519 imzasını doğrular (fail-closed): imzalanan metin product, kind, version, schema ve bundle_digest'in alan ayrımlı kanonik JSON'udur; PRODUCTION_KEYS derlemeye gömülür (yayın aşamasına kadar boş), geliştirme anahtarı ve RESPECTED_HUB_ALLOW_UNSIGNED yalnızca debug veya dev-trust derlemelerinde vardır ve üretim derlemesinde koddan çıkarılır. Python aracıyla (tools/bundle_signing.py) üretilmiş bir imza birim testiyle doğrulanır. dev_env/dev_abs: geliştirme ortam değişkenleri üretim derlemesinde hiç okunmaz; üretim testi tüm geçersiz kılmaların yok sayıldığını kanıtlar. Üretim anahtarları release-keys.txt dosyasından derlenir.
+
+**İlişkiler ve sınır:** lifecycle::read_bundle her katalog paketi için verify çağırır; brain.rs güven düzeyine göre --allow-unattested kararını verir. tools/bundle_signing.py aynı ifadeyi imzalar; docs/decisions/BUNDLE_TRUST.md karar kaydıdır.
+
+### src-tauri
+
+#### [`src-tauri/tauri.conf.json`](../src-tauri/tauri.conf.json)
+
+**Rol:** Tauri development config.
+
+**Amaç / sorumluluk:** Respected Hub ürün kimliğini, Vite dev URL'sini (127.0.0.1:1420), ../dist frontendDist'ini, ana pencere boyutlarını ve yalnızca self/ipc'ye izin veren CSP'yi tanımlar; bundle kapalıdır.
+
+**İlişkiler ve sınır:** Tauri CLI/derleyici ve native pencere tarafından okunur; npm run dev/build komutlarını tetikler. Production release veya signing iddiası taşımaz.
+
+### src-tauri/tests
+
+#### [`src-tauri/tests/brain_concurrency_e2e.rs`](../src-tauri/tests/brain_concurrency_e2e.rs)
+
+**Rol:** Rust e2e testi.
+
+**Amaç / sorumluluk:** SecondBrain kurulumu sürerken durum yoklamaları ve sihirbaz planları çalışsa da kurulumun kilitlenmeden bittiğini ve yoklamaların program klasöründen çalışmadığını kanıtlar. Geçici köklerde yürür.
+
+**İlişkiler ve sınır:** brain.rs, rpp.rs Gate ve lifecycle.rs'yi gerçek ürün kaynaklarıyla sınar. cargo test ile çalışır; ../orchestrator ve ../secondbrain kardeş kaynaklarına bağlıdır.
+
+#### [`src-tauri/tests/brain_e2e.rs`](../src-tauri/tests/brain_e2e.rs)
+
+**Rol:** Rust e2e testi.
+
+**Amaç / sorumluluk:** SecondBrain'in motor-yönetimli yaşam döngüsünü uçtan uca kanıtlar: doğrulanmış paket, salt-okunur SIL planı, AI istemci entegrasyonlu setup, RPP kontrolleri, onarım, geri alma ve kaldırma. Sahte HOME ve geçici kökler; kullanıcının gerçek yapılandırmaları okunmaz/yazılmaz. İstemci yapılandırmasını yeniden yazdıktan sonra kaldırmada yalnızca bizim girdilerimizin gittiği ve manifest/günlüklerde gizli bilginin tutulmadığı gerçek akışta doğrulanır.
+
+**İlişkiler ve sınır:** brain.rs ve lifecycle.rs'yi gerçek donmuş launcher ile sınar. cargo test ile çalışır; kardeş secondbrain dağıtımına bağlıdır.
+
+#### [`src-tauri/tests/campaign_e2e.rs`](../src-tauri/tests/campaign_e2e.rs)
+
+**Rol:** Rust e2e testi.
+
+**Amaç / sorumluluk:** Kampanya takibini gerçek motorla sınar: kimlik kuralları motorla uyumlu, liste yalnızca geçerli klasörleri yeniden eskiye döndürür, geçersiz kimlik süreç başlamadan reddedilir, geçersiz spec motor hatası verir. Geçici veri kökü; kampanya işçisi hiç başlatılmaz.
+
+**İlişkiler ve sınır:** Hub'ın kampanya çağrılarını ve valid_campaign_id kuralını gerçek motorla sınar. cargo test ile çalışır; kardeş orchestrator motoruna bağlıdır.
+
+#### [`src-tauri/tests/cleanup_e2e.rs`](../src-tauri/tests/cleanup_e2e.rs)
+
+**Rol:** Hub kaldırma temizliği uçtan uca testi.
+
+**Amaç / sorumluluk:** Gerçek respected-hub.exe --uninstall-products komutunu sahte HOME ve geçici köklerle çalıştırır: SecondBrain ve Orchestrator kurulu, Claude ve Codex yapılandırmalarına kayıtlı ve istemciler dosyalarını yeniden yazmışken kayıtlarımız kalkar, istemci ve kullanıcı değişiklikleri, kasa notu korunur, yönetilen klasör silinir; boş makinede komut hiçbir şey yaratmaz.
+
+**İlişkiler ve sınır:** cleanup.rs, lib.rs, mcp_access ve brain yaşam döngüsünü gerçek ürünlerle çalıştırır.
+
+#### [`src-tauri/tests/lifecycle_e2e.rs`](../src-tauri/tests/lifecycle_e2e.rs)
+
+**Rol:** Rust e2e testi.
+
+**Amaç / sorumluluk:** Hub yönetimli yaşam döngüsünü gerçek ürün kaynaklarından üretilen paketlerle kanıtlar: iki ürün kur/doğrula/onar/güncelle/kaldır, motorun çalıştıramadığı kopya asla etkinleştirilmez, ürünler sistem Python'u olmadan Hub'ın Python'unda çalışır. Yalnızca geçici kök. Yerel paketler geliştirme imzasıyla doğrulanır (trust: development); bozuk ama geçerli imzalı paket motor doğrulamasıyla durdurulur.
+
+**İlişkiler ve sınır:** lifecycle.rs ve rpp.rs'yi gerçek motorlarla sınar. cargo test ile çalışır; kardeş orchestrator/secondbrain kaynaklarına bağlıdır.
+
+#### [`src-tauri/tests/mcp_access_e2e.rs`](../src-tauri/tests/mcp_access_e2e.rs)
+
+**Rol:** Rust e2e testi.
+
+**Amaç / sorumluluk:** Orchestrator MCP kaydını sahte HOME'da uçtan uca sınar: plan, onaya bağlı uygulama, kayıtlı komutun Hub olmadan istemci gibi çalışması, kapatma/geri alma ve yabancı girdilerin korunması. Ayrıca env ile açılan, çalışma setine dahil olmayan bir doğrulama yardımcısı içerir.
+
+**İlişkiler ve sınır:** mcp_access.rs ve lifecycle.rs'yi sınar. cargo test ile çalışır; RESPECTED_MCP_KEEP_DIR yalnızca yardımcı testi tetikler.
+
+#### [`src-tauri/tests/memory_access_e2e.rs`](../src-tauri/tests/memory_access_e2e.rs)
+
+**Rol:** Rust e2e testi.
+
+**Amaç / sorumluluk:** SecondBrain bellek erişiminin Orchestrator için gerçek motorlarla açılıp kapatılmasını sınar; grant belirteci test API'sine hiç sızmaz. Geçici veri kökleri ve sahte home.
+
+**İlişkiler ve sınır:** memory_access.rs ve rpp.rs'yi gerçek motorlarla sınar. cargo test ile çalışır; kardeş ürün kaynaklarına bağlıdır.
+
+#### [`src-tauri/tests/memory_index_e2e.rs`](../src-tauri/tests/memory_index_e2e.rs)
+
+**Rol:** Rust e2e testi.
+
+**Amaç / sorumluluk:** SecondBrain bellek arama indeksinin gerçek motorla okunup yenilenmesini sınar ve vault notlarının bayt düzeyinde değişmediğini doğrular. Geçici veri kökleri ve sahte home.
+
+**İlişkiler ve sınır:** memory_index.rs ve rpp.rs'yi gerçek motorla sınar. cargo test ile çalışır; kardeş secondbrain kaynağına bağlıdır.
+
+#### [`src-tauri/tests/rpp_e2e.rs`](../src-tauri/tests/rpp_e2e.rs)
+
+**Rol:** Rust e2e testi.
+
+**Amaç / sorumluluk:** Hub'ın gerçek Orchestrator ve SecondBrain motorlarını RPP 1.0/1.1 ile sürdüğünü kanıtlar: manifest/sağlık/şema, bilinmeyen anahtar reddi, uygula-geri oku ve idempotent tekrar, bilinmeyen op'un yerel reddi, motor bulunamadı, protokol uyuşmazlığı ve yaşam döngüsü planı. Geçici veri kökleri.
+
+**İlişkiler ve sınır:** rpp.rs'yi gerçek motorlarla sınar. cargo test ile çalışır; kardeş orchestrator/secondbrain kaynaklarına bağlıdır.
+
+#### [`src-tauri/tests/trust_catalog_e2e.rs`](../src-tauri/tests/trust_catalog_e2e.rs)
+
+**Rol:** Katalog güveni saldırı testi.
+
+**Amaç / sorumluluk:** Gerçek build_bundle çıktısı üzerinde katalogun yalnızca güvenilir anahtarla imzalı paketi sunduğunu kanıtlar: sürüm/tür değişimi, yeniden özetlenmiş içerik, bozulmuş imza, bilinmeyen algoritma, imza silme ve saldırgan anahtarıyla yeniden imzalama reddedilir; imzasız paket yalnızca geliştirme isteğiyle kabul edilir.
+
+**İlişkiler ve sınır:** lifecycle::catalog ve status, trust.rs ve tools/bundle_signing.py ile birlikte çalışır.
+
+### src
+
+#### [`src/App.tsx`](../src/App.tsx)
+
+**Rol:** Görsel yönetim.
+
+**Amaç / sorumluluk:** Hub kabuğunu çizer: global rail (Hub sayfaları ve uygulama çalışma alanları), üst çubuk, sağlık özeti ve yenileme; route'a göre Home, MyApps, Discover, Connections, Activity, Settings ve AppWorkspace görünümlerini gösterir. Tarayıcı önizlemesinde gerçek veri uydurmaz, uyarı gösterir. Seçili sayfa oturum boyunca sessionStorage'da tutulur; WebView yeniden yüklenirse (ör. kurulum sırasında) kullanıcı Ana Sayfa'ya atılmaz. Product kurulumcularından gelen --install niyeti oturum başına bir kez ilgili sayfayı açar (startupIntent). startup-intent olayı dinlenir: Hub açıkken başlatılan ürün kurucusunun seçimi ilgili sayfayı açar.
+
+**İlişkiler ve sınır:** main.tsx çağırır; apps.ts, api.ts (native), useEcosystem.ts, shellModel.ts (globalHealth), ui.tsx ve views/* kullanır. Kabuk modeli ve gezinme testleri sağlık/rota mantığını kapsar.
+
+#### [`src/api.ts`](../src/api.ts)
+
+**Rol:** Tipli native API.
+
+**Amaç / sorumluluk:** Tauri invoke ile explicit engine/settings/product işlemleri ve runtime detection/types sağlar. startup_intent komutunu startupIntent olarak sunar.
+
+**İlişkiler ve sınır:** Rust command handler tüketilir; generic shell plugin veya sahte sonuç yoktur.
+
+#### [`src/apps.ts`](../src/apps.ts)
+
+**Rol:** Uygulama kayıt defteri.
+
+**Amaç / sorumluluk:** Hub'ın tanıdığı ekosistem uygulamalarını (SecondBrain, Orchestrator), üst gezinme öğelerini ve sayfa listelerini tanımlar. Yeni uygulama eklemek bu listeye kayıt eklemektir; `rpp` yalnızca RPP konuşan ürünlerde dolar. SecondBrain sayfalarına 'Hafıza' eklendi.
+
+**İlişkiler ve sınır:** useEcosystem.ts, Home/MyApps/Discover görünümleri ve shell tarafından okunur; orchestrator/workspaceModel.ts'ten ORCHESTRATOR_PAGES alır. tests/appNav.test.ts kapsar.
+
+#### [`src/brainClients.ts`](../src/brainClients.ts)
+
+**Rol:** AI istemci seçimi modeli.
+
+**Amaç / sorumluluk:** SecondBrain'in bağlanabildiği AI istemcilerini (hooks/mcp yetenekleri) ve kullanıcı seçimini ürünün beklediği `desired` nesnesine çeviren saf mantığı içerir. Kayıtlı entegrasyonlardan seçimi geri üretir; ürün her id'yi yine doğrular.
+
+**İlişkiler ve sınır:** ClientPicker, BrainSetup/BrainInstall ve BrainIntegrations görünümleri kullanır. tests/brainClients.test.ts kapsar.
+
+#### [`src/campaigns.ts`](../src/campaigns.ts)
+
+**Rol:** Kampanya istemcisi.
+
+**Amaç / sorumluluk:** Hub kampanya takibi için tipli, salt-okunur/başlatma native komut istemcisi ve kampanya durumunu sade özete (faz, şeritler, zaman çizelgesi) çeviren saf mantık. Tauri dışında çağrılar reddedilir, sahte başarı üretilmez.
+
+**İlişkiler ve sınır:** Campaigns.tsx, AppWorkspace.tsx ve EvidencePanel tarafından kullanılır; api.ts üzerinden native'e gider. tests/campaigns.test.ts ve tests/coverageApi.test.ts kapsar.
+
+#### [`src/design.css`](../src/design.css)
+
+**Rol:** Görsel yönetim.
+
+**Amaç / sorumluluk:** Hub tasarım sistemi v2: renk/boşluk token'ları, kabuk, başlatıcı sayfalar, ortak bileşenler ve çalışma alanı panellerinin kullandığı eski sınıf adları. Tek stil kaynağıdır; dar ekranda ikon rayına düşer.
+
+**İlişkiler ve sınır:** Uygulama girişi ve tüm görünümler tarafından yüklenir; orchestrator/*.css bu sınıflara dayanır. Eski hub.css ve style.css'in yerine geçer.
+
+#### [`src/homeModel.ts`](../src/homeModel.ts)
+
+**Rol:** Ana sayfa karar modeli.
+
+**Amaç / sorumluluk:** Gerçek ekosistem durumuna göre Ana Sayfa modunu (önizleme, yükleniyor, ilk açılış, dikkat, kurulum eksik, aktif) seçen saf karar fonksiyonu. React ve Tauri içermez.
+
+**İlişkiler ve sınır:** views/Home.tsx tarafından çağrılır; productsModel.ts'ten ProductStatusKind türünü kullanır. tests/homeModel.test.ts kapsar.
+
+#### [`src/lifecycle.ts`](../src/lifecycle.ts)
+
+**Rol:** Ürün yaşam döngüsü istemcisi.
+
+**Amaç / sorumluluk:** Hub yönetimli ürünlerin kurulum/güncelleme/onarım/kaldırma/geri alma işlemleri için tipli native istemci, plan ve günlük türleri ve etiket/hata/geri alma yardımcıları. Native { ok, result, error } döner; hiçbir şey simüle edilmez. Güven düzeyi (trust) türü; SecondBrain kaldırması geri alınamaz olarak işaretlenir (canRollback).
+
+**İlişkiler ve sınır:** LifecycleControls, BrainSetup/BrainInstall, Activity, Discover, useEcosystem ve mcpAccess kullanır. tests/lifecycleModel.test.ts kapsar.
+
+#### [`src/main.tsx`](../src/main.tsx)
+
+**Rol:** React başlangıcı.
+
+**Amaç / sorumluluk:** #root üzerinde React root oluşturur, App'i StrictMode içinde render eder ve design.css stilini yükler.
+
+**İlişkiler ve sınır:** index.html tarafından yüklenir; App.tsx'i çağırır. StrictMode effect cleanup davranışı korunmalıdır.
+
+#### [`src/mcpAccess.ts`](../src/mcpAccess.ts)
+
+**Rol:** Orchestrator MCP erişim istemcisi.
+
+**Amaç / sorumluluk:** Orchestrator'ın AI istemcilerine MCP sunucusu olarak bağlanması için plan/uygula native çağrıları ve anahtar durumu yardımcıları. Yapılandırmayı Orchestrator yazar; Hub planlar, onay ister ve günlüğe işler. Yalnızca farklı olan istemciler gönderilir.
+
+**İlişkiler ve sınır:** views/OrchestratorMcp.tsx kullanır; lifecycle.ts türlerine dayanır. tests/mcpAccess.test.ts kapsar.
+
+#### [`src/memoryAccess.ts`](../src/memoryAccess.ts)
+
+**Rol:** Hafıza erişim istemcisi.
+
+**Amaç / sorumluluk:** Orchestrator'ın SecondBrain hafızasına erişimini açma/kapama/durum native çağrıları ve durumu Türkçe açıklamaya çeviren mantık. Erişim token'ı yalnızca Rust tarafında kalır; burada alınmaz, saklanmaz, gösterilmez.
+
+**İlişkiler ve sınır:** views/MemoryAccess.tsx kullanır; lifecycle.ts hata türüne dayanır. tests/memoryAccess.test.ts kapsar.
+
+#### [`src/memoryIndex.ts`](../src/memoryIndex.ts)
+
+**Rol:** Hafıza dizini istemcisi.
+
+**Amaç / sorumluluk:** SecondBrain arama dizininin durumu, oturum yakalama ve kullanıcı onaylı yenileme için güvenilir Rust komutlarını saran tipli istemci ve durum/sonuç açıklayıcıları.
+
+**İlişkiler ve sınır:** views/MemoryIndex.tsx kullanır. tests/memoryIndex.test.ts kapsar.
+
+#### [`src/memorySemantic.ts`](../src/memorySemantic.ts)
+
+**Rol:** Anlamsal arama istemcisi.
+
+**Amaç / sorumluluk:** SecondBrain'in isteğe bağlı yerel anlamsal aramasının durum/aç/kapat native çağrıları ve durumu başlık, ayrıntı ve ton olarak açıklayan mantık. Varsayılan kapalıdır; tam metin arama her durumda çalışır.
+
+**İlişkiler ve sınır:** views/MemoryIndex.tsx kullanır. tests/memorySemantic.test.ts kapsar.
+
+#### [`src/memoryWorkspace.ts`](../src/memoryWorkspace.ts)
+
+**Rol:** Tauri IPC sarmalayıcı.
+
+**Amaç / sorumluluk:** SecondBrain hafıza çalışma alanı için güvenilir Rust komutlarının (memory_search, memory_note_read, memory_capture_note, memory_briefing_run) tür tanımlı sarmalayıcıları, motorun bilinen notları (Son oturum, Açık konular, Kurallar, günlük, brifing) ve dürüst Türkçe hata/arama modu metinleri.
+
+**İlişkiler ve sınır:** views/MemoryWorkspace.tsx kullanır; masaüstü dışında UNAVAILABLE döner. Testi tests/memoryWorkspace.test.ts.
+
+#### [`src/productClient.ts`](../src/productClient.ts)
+
+**Rol:** RPP ürün istemcisi.
+
+**Amaç / sorumluluk:** Özel 'rpp_request' komutu üzerine ince tipli sarmalayıcı. Tauri dışında net bir hatayla reddeder; taşıma katmanı birim testler için enjekte edilebilir.
+
+**İlişkiler ve sınır:** useEcosystem, Products, BrainSetup/BrainInstall ve AppWorkspace kullanır; rpp.ts ile istek/yanıt kurar. tests/productClient.test.ts ve tests/coverageApi.test.ts kapsar.
+
+#### [`src/rpp.ts`](../src/rpp.ts)
+
+**Rol:** RPP sözleşmesi.
+
+**Amaç / sorumluluk:** Respected Product Protocol v1.0/v1.1 için paylaşılan TypeScript sözleşmesi: istek kurma, yanıt ayrıştırma, sürüm pazarlığı, ayar şeması türleri ve sır maskeleme. Bir JSON istek, bir JSON yanıt satırı; MCP veya daemon değildir.
+
+**İlişkiler ve sınır:** productClient.ts, productsModel.ts ve Products görünümü kullanır. tests/rpp.test.ts kapsar.
+
+#### [`src/shellModel.ts`](../src/shellModel.ts)
+
+**Rol:** Kabuk modeli.
+
+**Amaç / sorumluluk:** Global kabuk için üst çubuk sağlık hapı ve ekran metnini üreten saf model. Native yoksa 'Tarayıcı önizlemesi', yoksa ürün durumlarından sağlık tonu ve etiket verir.
+
+**İlişkiler ve sınır:** Uygulama kabuğu (App) tarafından çağrılır; productsModel.ts'ten durum türünü alır. tests/shellModel.test.ts kapsar.
+
+#### [`src/tasks.ts`](../src/tasks.ts)
+
+**Rol:** Form doğrulaması.
+
+**Amaç / sorumluluk:** Project/task/scope, JSON argv acceptance/custom komut, deadline ve pending/terminal sınırlarını doğrular.
+
+**İlişkiler ve sınır:** App submit ve 4 Node testi gerçek üretim fonksiyonlarını kullanır.
+
+#### [`src/ui.tsx`](../src/ui.tsx)
+
+**Rol:** Ortak sunum bileşenleri.
+
+**Amaç / sorumluluk:** Paylaşılan sunum parçaları: ikon seti, uygulama amblemleri, dekoratif Weave ve sade dilde durum etiketi/tonu yardımcıları. İş mantığı içermez.
+
+**İlişkiler ve sınır:** Home, MyApps, Discover, Activity, LifecycleControls ve kabuk kullanır. tests/coverageViews.test.ts doğrudan kapsamaz; görünümler üzerinden kullanılır.
+
+#### [`src/useEcosystem.ts`](../src/useEcosystem.ts)
+
+**Rol:** Ekosistem durum kancası.
+
+**Amaç / sorumluluk:** Kabuk için canlı ekosistem durumunu toplayan React kancası: her uygulamanın RPP manifest/sağlık/ayar özeti, yapılandırma kaynağı, engine koşuları, yaşam döngüsü genel bakışı ve günlük. Native yoksa dürüstçe boş durum döner. Yenileme tek seferde bir tane çalışır; arada gelen istek bir kez daha çalıştırılır.
+
+**İlişkiler ve sınır:** Kabuk ve tüm üst düzey görünümler tarafından kullanılır; apps.ts, productClient.ts, lifecycle.ts ve productsModel.ts'e dayanır. Doğrudan test yok; modelleri homeModel/shellModel/productsModel testleriyle kapsanır.
+
+### src/views
+
+#### [`src/views/Activity.tsx`](../src/views/Activity.tsx)
+
+**Rol:** Etkinlik görünümü.
+
+**Amaç / sorumluluk:** Engine koşularını ve ürün yaşam döngüsü günlüğünü listeler; uygun girdiler için geri alma sunar. Hata mesajlarını kullanıcıya gösterir.
+
+**İlişkiler ve sınır:** Kabuk tarafından Etkinlik rotasında açılır; useEcosystem, lifecycle.ts ve tasks.ts kullanır. Kapsam: tests/lifecycleModel.test.ts (günlük cümleleri).
+
+#### [`src/views/AppWorkspace.tsx`](../src/views/AppWorkspace.tsx)
+
+**Rol:** Uygulama çalışma alanı.
+
+**Amaç / sorumluluk:** Seçilen uygulamanın sayfalarını (SecondBrain kurulum/ayarlar, Orchestrator genel bakış, ajanlar, kanıtlar, kampanyalar, görevler, MCP, hafıza) uygun panele bağlayan bağlayıcı görünüm. 'memory' sayfası MemoryWorkspace'i bağlar.
+
+**İlişkiler ve sınır:** Kabuk tarafından açılır; BrainSetup, BrainInstall, Tasks, Products, Campaigns, MemoryAccess, MemoryIndex, OrchestratorMcp ve orchestrator panellerini bağlar. workspaceModel.ts karar mantığı tests/orchestratorWorkspace.test.ts ile kapsanır.
+
+#### [`src/views/BrainInstall.tsx`](../src/views/BrainInstall.tsx)
+
+**Rol:** SecondBrain kurulum sihirbazı.
+
+**Amaç / sorumluluk:** SecondBrain'in kendi kurucusu üzerinden ilk kurulum: Kimlik → Hafıza → Kaynaklar → İzinler → Onay adımları. Önce salt-okunur plan gösterir, onayla uygular. Kısayol açıklaması kasa klasörünü açan kısayol olarak düzeltildi.
+
+**İlişkiler ve sınır:** AppWorkspace kurulum sayfasında açar; lifecycle.ts, productClient.ts, brainClients.ts, ClientPicker ve IntegrationPreview kullanır. Kapsam: tests/brainClients.test.ts, tests/lifecycleModel.test.ts.
+
+#### [`src/views/BrainIntegrations.tsx`](../src/views/BrainIntegrations.tsx)
+
+**Rol:** SecondBrain entegrasyon seçimi.
+
+**Amaç / sorumluluk:** Kurulu SecondBrain için hangi AI istemcisinde hafıza yakalanacağını (Kaynaklar) ve kimin MCP ile kullanacağını (İzinler) seçtirir; önce açık, salt-okunur önizleme verir ve onayla uygular. Kısayol açıklaması kasa klasörünü açan kısayol olarak düzeltildi.
+
+**İlişkiler ve sınır:** BrainSetup içinden kullanılır; ClientPicker, IntegrationPreview, brainClients.ts ve lifecycle.ts'e dayanır. Kapsam: tests/brainClients.test.ts.
+
+#### [`src/views/BrainSetup.tsx`](../src/views/BrainSetup.tsx)
+
+**Rol:** SecondBrain ayar görünümü.
+
+**Amaç / sorumluluk:** SecondBrain'in gerçek ayarlarını ürün şemasından forma çevirir, değişenleri uygular ve geri okuma ile doğrular; asistan adı kişiselleştirmesini localStorage'da saklar. Entegrasyon seçimini içerir.
+
+**İlişkiler ve sınır:** AppWorkspace ve Home tarafından kullanılır; productClient.ts, rpp.ts, productsModel.ts ve BrainIntegrations'a dayanır. Kapsam: tests/productsModel.test.ts.
+
+#### [`src/views/Campaigns.tsx`](../src/views/Campaigns.tsx)
+
+**Rol:** Kampanyalar görünümü.
+
+**Amaç / sorumluluk:** Hub kampanya takibi: kampanya listesi, başlatma ve durum özeti. Gerçek veri gösterir; Tauri dışında dürüst bir uyarı verir. Zamanı tr-TR biçimler.
+
+**İlişkiler ve sınır:** AppWorkspace Kampanyalar sayfasında açar; campaigns.ts ve api.ts kullanır. Kapsam: tests/campaigns.test.ts.
+
+#### [`src/views/ClientPicker.tsx`](../src/views/ClientPicker.tsx)
+
+**Rol:** AI istemci seçici.
+
+**Amaç / sorumluluk:** Desteklenen her AI istemcisi için bir anahtar sunar. Bu bilgisayarda bulunmayan istemciler yeni seçilemez (klasörleri oluşturulmasın diye).
+
+**İlişkiler ve sınır:** BrainInstall ve BrainIntegrations tarafından kullanılır; brainClients.ts'ten CLIENTS ve toggle alır. Kapsam: tests/brainClients.test.ts.
+
+#### [`src/views/Connections.tsx`](../src/views/Connections.tsx)
+
+**Rol:** Bağlantılar görünümü.
+
+**Amaç / sorumluluk:** Geliştirme kaynak bağlantılarını (python/ürün kökleri) ve her ürünün RPP ayarlarını gösterir. Ayar kaydı sonucu doğrular ve hataları kullanıcıya iletir. Form yalnızca dört bilinen kaynak alanını gösterir. Kaynak bağlantıları paneli yalnızca geliştirme derlemelerinde gösterilir.
+
+**İlişkiler ve sınır:** Kabuk Bağlantılar rotasında açılır; api.ts ve Products.tsx kullanır. Doğrudan test yok; ayar modeli tests/productsModel.test.ts ile kapsanır.
+
+#### [`src/views/Discover.tsx`](../src/views/Discover.tsx)
+
+**Rol:** Keşfet görünümü.
+
+**Amaç / sorumluluk:** Yerel katalogdaki doğrulanmış paketleri ve her ürünün kurulum durumunu listeler. Kurulum/güncelleme/onarım Uygulamalarım sayfasına yönlendirilir. Paket güveni etiketi: üretim imzalı, geliştirme imzası (yerel) veya imzasız yerel.
+
+**İlişkiler ve sınır:** Kabuk Keşfet rotasında açılır; APPS, useEcosystem ve lifecycle.ts kullanır. Doğrudan test yok.
+
+#### [`src/views/Home.tsx`](../src/views/Home.tsx)
+
+**Rol:** Ana sayfa görünümü.
+
+**Amaç / sorumluluk:** Ekosistemin gerçek durumuna göre (homeMode) karşılama, dikkat gerektirenler, kurulum eksikleri ve çalışan görevleri gösteren ana sayfa. Go yönlendirme türünü tanımlar.
+
+**İlişkiler ve sınır:** Kabuk tarafından açılır; homeModel.ts, useEcosystem ve ui.tsx kullanır. Kapsam: tests/homeModel.test.ts.
+
+#### [`src/views/IntegrationPreview.tsx`](../src/views/IntegrationPreview.tsx)
+
+**Rol:** Entegrasyon önizlemesi.
+
+**Amaç / sorumluluk:** Ürünün salt-okunur planını gösterir: nelerin bulunduğu, tam olarak neyin değişeceği ve dokunulmayanlar. Değişiklik yoksa bunu açıkça söyler.
+
+**İlişkiler ve sınır:** BrainInstall ve BrainIntegrations kullanır; lifecycle.ts IntegrationPlan türüne dayanır. Doğrudan test yok.
+
+#### [`src/views/LifecycleControls.tsx`](../src/views/LifecycleControls.tsx)
+
+**Rol:** Yaşam döngüsü kontrolleri.
+
+**Amaç / sorumluluk:** Tek bir Hub yönetimli ürün için kur/güncelle/onar/kaldır: önce plan, onay, uygulama, sonra geri alma ve yedek temizleme sunar. Geri döndürülemez adımlar açıkça belirtilir. Yedekleri temizleme ve SecondBrain kaldırma metni iki adımlı onay ve doğru kapsam açıklamasıyla gösterilir.
+
+**İlişkiler ve sınır:** MyApps tarafından kullanılır; lifecycle.ts işlemlerini çağırır. Kapsam: tests/lifecycleModel.test.ts.
+
+#### [`src/views/MemoryAccess.tsx`](../src/views/MemoryAccess.tsx)
+
+**Rol:** Hafıza erişimi görünümü.
+
+**Amaç / sorumluluk:** SecondBrain hafıza erişimini (salt okunur veya yazma dahil) onayla açar/kapatır ve durumu gösterir. Erişim token'ı bileşene hiç ulaşmaz.
+
+**İlişkiler ve sınır:** AppWorkspace tarafından açılır; memoryAccess.ts kullanır. Kapsam: tests/memoryAccess.test.ts.
+
+#### [`src/views/MemoryIndex.tsx`](../src/views/MemoryIndex.tsx)
+
+**Rol:** Hafıza dizini görünümü.
+
+**Amaç / sorumluluk:** SecondBrain arama dizininin durumunu, oturum yakalamayı ve anlamsal aramayı gösterir; dizin yenilemeyi açık onaydan sonra çalıştırır. Bekleyen oturumları yakalama iki adımlı onay ister (oturumlar yapay zeka sağlayıcısına gönderilir).
+
+**İlişkiler ve sınır:** AppWorkspace tarafından açılır; memoryIndex.ts ve memorySemantic.ts kullanır. Kapsam: tests/memoryIndex.test.ts, tests/memorySemantic.test.ts.
+
+#### [`src/views/MemoryWorkspace.tsx`](../src/views/MemoryWorkspace.tsx)
+
+**Rol:** Kullanıcı arayüzü.
+
+**Amaç / sorumluluk:** SecondBrain 'Hafıza' sayfası: not arama (tam metin, hazırsa anlamsal; vurgu işaretleri temizlenir), not okuyucu ve bilinen not düğmeleri, hızlı not yakalama ve 'brifingi şimdi çalıştır'. Eski yerel panelin işlevlerini Hub'a taşır; hiçbir HTML enjekte etmez.
+
+**İlişkiler ve sınır:** AppWorkspace.tsx 'memory' sayfasında bağlar; yalnız memoryWorkspace.ts ve react kullanır. Bu görünüm Orchestrator şeridinde yazıldı, native E2E ile doğrulandı.
+
+#### [`src/views/MyApps.tsx`](../src/views/MyApps.tsx)
+
+**Rol:** Uygulamalarım görünümü.
+
+**Amaç / sorumluluk:** Hub'a bağlı ürünleri durum, sürüm ve yetenekleriyle listeler (ürünün kendi sağlık yanıtından); kurulum eksikse sihirbaza yönlendirir ve yaşam döngüsü kontrollerini barındırır.
+
+**İlişkiler ve sınır:** Kabuk tarafından açılır; useEcosystem, LifecycleControls ve ui.tsx kullanır. Doğrudan test yok.
+
+#### [`src/views/OrchestratorMcp.tsx`](../src/views/OrchestratorMcp.tsx)
+
+**Rol:** Orchestrator MCP görünümü.
+
+**Amaç / sorumluluk:** Orchestrator'ı AI istemcilerine MCP sunucusu olarak bağlar. Kullanıcı tam planı onaylamadan hiçbir şey yazılmaz.
+
+**İlişkiler ve sınır:** AppWorkspace tarafından açılır; mcpAccess.ts kullanır. Kapsam: tests/mcpAccess.test.ts.
+
+#### [`src/views/Products.tsx`](../src/views/Products.tsx)
+
+**Rol:** Ürün ayarları görünümü.
+
+**Amaç / sorumluluk:** Orchestrator ve SecondBrain için RPP ayar şemasından form üretir, doğrular, uygular ve geri okumayla doğrular. Sır alanları maskeli kalır. Mevcut ayarlar okunamadıysa Uygula kapalıdır (varsayılanlar gerçek ayarların üzerine yazılmaz).
+
+**İlişkiler ve sınır:** Connections ve AppWorkspace (ProductPanel) kullanır; productClient.ts, rpp.ts, productsModel.ts'e dayanır. Kapsam: tests/productsModel.test.ts.
+
+#### [`src/views/Settings.tsx`](../src/views/Settings.tsx)
+
+**Rol:** Hub ayarları görünümü.
+
+**Amaç / sorumluluk:** Python yolu, ürün kaynak klasörleri ve görev verisi klasörü gibi geliştirme ayarlarını düzenletir; kayıt sonrası durumu (kaydediliyor/uygulandı/doğrulandı/başarısız) bildirir.
+
+**İlişkiler ve sınır:** Kabuk Ayarlar rotasında açılır; api.ts ve lifecycle.ts kullanır. Doğrudan test yok.
+
+#### [`src/views/Tasks.tsx`](../src/views/Tasks.tsx)
+
+**Rol:** Görevler görünümü.
+
+**Amaç / sorumluluk:** Orchestrator görevi oluşturma ve koşu inceleme. Görev durumunu engine tutar; görünüm yalnızca izinli engine işlemlerini çağırır.
+
+**İlişkiler ve sınır:** AppWorkspace Görevler sayfasında açar; api.ts ve tasks.ts kullanır. Kapsam: tests/coverageApi.test.ts (native reddi).
+
+### src/views/orchestrator
+
+#### [`src/views/orchestrator/AgentsPanel.tsx`](../src/views/orchestrator/AgentsPanel.tsx)
+
+**Rol:** Ajanlar ve modeller paneli.
+
+**Amaç / sorumluluk:** Engine'den gelen gerçek worker CLI'larını ve RPP ayarlarındaki model/sağlayıcı profillerini gösterir. Uydurma sağlayıcı veya canlı metrik içermez.
+
+**İlişkiler ve sınır:** AppWorkspace tarafından açılır; agentsModel.ts ve agents.css kullanır. Kapsam: tests/orchestratorAgents.test.ts.
+
+#### [`src/views/orchestrator/EvidencePanel.tsx`](../src/views/orchestrator/EvidencePanel.tsx)
+
+**Rol:** Kanıt ve inceleme paneli.
+
+**Amaç / sorumluluk:** Seçilen koşu veya kampanya için engine 'inspect' ve kampanya durumu yanıtlarını sade Türkçe kanıt, karar ve yama özeti olarak gösterir.
+
+**İlişkiler ve sınır:** AppWorkspace tarafından açılır; evidenceModel.ts, campaigns.ts ve api.ts kullanır. Kapsam: tests/orchestratorEvidence.test.ts.
+
+#### [`src/views/orchestrator/OverviewPanel.tsx`](../src/views/orchestrator/OverviewPanel.tsx)
+
+**Rol:** Orchestrator genel bakış paneli.
+
+**Amaç / sorumluluk:** Engine koşu sayılarını, son koşuları ve worker CLI durumunu gösterir; eksik engine verisi dürüst uyarıya dönüşür. Görevler ve koşu ayrıntısına geçiş sunar.
+
+**İlişkiler ve sınır:** AppWorkspace tarafından açılır; overviewModel.ts ve overview.css kullanır. Kapsam: tests/orchestratorOverview.test.ts, tests/coverageViews.test.ts.
+
+#### [`src/views/orchestrator/agents.css`](../src/views/orchestrator/agents.css)
+
+**Rol:** Panel stili.
+
+**Amaç / sorumluluk:** Ajanlar ve modeller panelinin yerleşimi; genel .panel-glass, .muted, .capabilities ve .notice sınıflarını yeniden kullanır.
+
+**İlişkiler ve sınır:** AgentsPanel.tsx içe aktarır. design.css sınıflarına dayanır.
+
+#### [`src/views/orchestrator/agentsModel.ts`](../src/views/orchestrator/agentsModel.ts)
+
+**Rol:** Ajanlar paneli modeli.
+
+**Amaç / sorumluluk:** Ajanlar/modeller paneli için saf model: engine status.workers'tan worker CLI'ları ve RPP settings.readback'ten gerçekte var olan model/sağlayıcı profillerini türetir. React/Tauri içermez, veri uydurmaz.
+
+**İlişkiler ve sınır:** AgentsPanel.tsx çağırır. tests/orchestratorAgents.test.ts kapsar.
+
+#### [`src/views/orchestrator/evidence.css`](../src/views/orchestrator/evidence.css)
+
+**Rol:** Panel stili.
+
+**Amaç / sorumluluk:** Kanıt/inceleme panelinin yerleşimi ve seçim alanları; Hub tasarım token'larını güvenli yedek değerlerle kullanır.
+
+**İlişkiler ve sınır:** EvidencePanel.tsx içe aktarır. design.css token'larına dayanır.
+
+#### [`src/views/orchestrator/evidenceModel.ts`](../src/views/orchestrator/evidenceModel.ts)
+
+**Rol:** Kanıt paneli modeli.
+
+**Amaç / sorumluluk:** Ham engine 'inspect' ve campaign-status yanıtlarını sade Türkçe kanıt, karar (verdict), inceleme ve yama bilgisine çeviren saf model. Durum ifadeleri campaigns.ts ile uyumludur ama Tauri'ye bağlı istemci içe aktarılmaz.
+
+**İlişkiler ve sınır:** EvidencePanel.tsx çağırır. tests/orchestratorEvidence.test.ts kapsar.
+
+#### [`src/views/orchestrator/overview.css`](../src/views/orchestrator/overview.css)
+
+**Rol:** Panel stili.
+
+**Amaç / sorumluluk:** Orchestrator genel bakış panelinin yerleşimi; genel .panel-glass, .status ve .notice sınıflarını yeniden kullanır.
+
+**İlişkiler ve sınır:** OverviewPanel.tsx içe aktarır. design.css sınıflarına dayanır.
+
+#### [`src/views/orchestrator/overviewModel.ts`](../src/views/orchestrator/overviewModel.ts)
+
+**Rol:** Genel bakış modeli.
+
+**Amaç / sorumluluk:** Koşuları etkin/başarılı/başarısız/diğer olarak sayan, son koşuları (LATEST_LIMIT) seçen ve eksik engine verisini dürüst uyarıya çeviren saf model.
+
+**İlişkiler ve sınır:** OverviewPanel.tsx çağırır; tasks.ts terminal durumunu kullanır. tests/orchestratorOverview.test.ts ve tests/coverageViews.test.ts kapsar.
+
+#### [`src/views/orchestrator/settings.css`](../src/views/orchestrator/settings.css)
+
+**Rol:** Panel stili.
+
+**Amaç / sorumluluk:** Orchestrator çalışma alanı ayarlarındaki veri kökü özet bloğunun küçük boşluk stili.
+
+**İlişkiler ve sınır:** Orchestrator ayar/çalışma alanı görünümleri tarafından kullanılır. design.css ile birlikte yüklenir.
+
+#### [`src/views/orchestrator/workspaceModel.ts`](../src/views/orchestrator/workspaceModel.ts)
+
+**Rol:** Çalışma alanı modeli.
+
+**Amaç / sorumluluk:** Orchestrator çalışma alanı sekmelerini (ORCHESTRATOR_PAGES) ve bağlama kararlarını tutan saf mantık; kayıt defteri ile bağlama mantığının ayrışmaması için tek kaynaktır. Tarayıcı önizlemesi dürüstçe etiketlenir. SecondBrain için 'memory' bağlama noktası eklendi.
+
+**İlişkiler ve sınır:** apps.ts ve AppWorkspace.tsx kullanır. tests/orchestratorWorkspace.test.ts ve tests/appNav.test.ts kapsar.
+
+### src/views
+
+#### [`src/views/productsModel.ts`](../src/views/productsModel.ts)
+
+**Rol:** Ürün ayarları modeli.
+
+**Amaç / sorumluluk:** Ürünler görünümü için saf model: manifest/sağlıktan ürün özeti ve durum türü, ayar şemasından form alanları, değişen ayarlar, değer ayrıştırma ve geri okuma doğrulaması. Sır değerleri maskeli kalır.
+
+**İlişkiler ve sınır:** Products, BrainSetup, homeModel, shellModel ve useEcosystem kullanır; rpp.ts'e dayanır. tests/productsModel.test.ts kapsar.
+
+### tests
+
+#### [`tests/appNav.test.ts`](../tests/appNav.test.ts)
+
+**Rol:** Gezinme testleri.
+
+**Amaç / sorumluluk:** Hub gezinmesinin altı sayfayı doğru sırada ve etiketle sunduğunu ve Orchestrator çalışma alanı sayfalarının sırasını doğrular. SecondBrain sayfa listesine memory eklendi.
+
+**İlişkiler ve sınır:** src/apps.ts ve workspaceModel.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/brainClients.test.ts`](../tests/brainClients.test.ts)
+
+**Rol:** İstemci seçimi testleri.
+
+**Amaç / sorumluluk:** AI istemci listesi, seçimden desired nesnesine dönüşüm ve kayıtlı entegrasyonlardan seçim geri üretimini doğrular.
+
+**İlişkiler ve sınır:** src/brainClients.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/campaigns.test.ts`](../tests/campaigns.test.ts)
+
+**Rol:** Kampanya testleri.
+
+**Amaç / sorumluluk:** Kampanya durumu özetinin (faz, şeritler, zaman çizelgesi, zincir) gerçek yanıtlardan doğru üretildiğini doğrular.
+
+**İlişkiler ve sınır:** src/campaigns.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/coverageApi.test.ts`](../tests/coverageApi.test.ts)
+
+**Rol:** Native sınır testleri.
+
+**Amaç / sorumluluk:** Tauri dışında engine, rppCall ve kampanya çağrılarının sahte başarı yerine reddedildiğini; SECRET_REDACTED gibi sabitlerin korunduğunu doğrular.
+
+**İlişkiler ve sınır:** src/api.ts, productClient.ts, campaigns.ts ve rpp.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/coverageViews.test.ts`](../tests/coverageViews.test.ts)
+
+**Rol:** Görünüm modeli kapsam testleri.
+
+**Amaç / sorumluluk:** Görünüm modellerinin dışa açık sabit ve yardımcılarını (ör. LATEST_LIMIT ve latestRuns) doğrulayan kapsam testleri.
+
+**İlişkiler ve sınır:** src/views/orchestrator/overviewModel.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/homeModel.test.ts`](../tests/homeModel.test.ts)
+
+**Rol:** Ana sayfa modeli testleri.
+
+**Amaç / sorumluluk:** homeMode karar sırasını (önizleme, yükleniyor, ilk açılış, dikkat, kurulum eksik, aktif) doğrular.
+
+**İlişkiler ve sınır:** src/homeModel.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/lifecycleModel.test.ts`](../tests/lifecycleModel.test.ts)
+
+**Rol:** Yaşam döngüsü testleri.
+
+**Amaç / sorumluluk:** Yaşam döngüsü etiketleri, kullanılabilir eylemler, geri alma uygunluğu, hata ve günlük cümleleri ile operasyon kimliği üretimini doğrular.
+
+**İlişkiler ve sınır:** src/lifecycle.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/mcpAccess.test.ts`](../tests/mcpAccess.test.ts)
+
+**Rol:** MCP erişim testleri.
+
+**Amaç / sorumluluk:** MCP planından başlangıç anahtar durumu, yalnızca değişenlerin gönderilmesi, istemci etiketleri ve hata açıklamasını doğrular.
+
+**İlişkiler ve sınır:** src/mcpAccess.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/memoryAccess.test.ts`](../tests/memoryAccess.test.ts)
+
+**Rol:** Hafıza erişim testleri.
+
+**Amaç / sorumluluk:** Hafıza erişim durumunun (desteklenmiyor, kapalı, açık, iptal bekliyor) açıklamalarını ve hata eşlemesini doğrular.
+
+**İlişkiler ve sınır:** src/memoryAccess.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/memoryIndex.test.ts`](../tests/memoryIndex.test.ts)
+
+**Rol:** Hafıza dizini testleri.
+
+**Amaç / sorumluluk:** Dizin durumu ve yenileme sonucu açıklayıcılarını ve hata eşlemesini doğrular.
+
+**İlişkiler ve sınır:** src/memoryIndex.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/memorySemantic.test.ts`](../tests/memorySemantic.test.ts)
+
+**Rol:** Anlamsal arama testleri.
+
+**Amaç / sorumluluk:** Anlamsal arama durumlarının başlık, ayrıntı ve ton açıklamalarını doğrular.
+
+**İlişkiler ve sınır:** src/memorySemantic.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/memoryWorkspace.test.ts`](../tests/memoryWorkspace.test.ts)
+
+**Rol:** Davranış/regresyon testi.
+
+**Amaç / sorumluluk:** Bilinen not yolları, arama modu metninin anlamsal aramanın kullanılamadığını dürüstçe söylemesi ve hata metni biçimi.
+
+**İlişkiler ve sınır:** src/memoryWorkspace.ts sınanır.
+
+#### [`tests/orchestratorAgents.test.ts`](../tests/orchestratorAgents.test.ts)
+
+**Rol:** Ajanlar paneli testleri.
+
+**Amaç / sorumluluk:** Ajanlar/modeller modelinin yalnızca gerçek worker ve ayar verisinden türetildiğini, eksik veriyle dürüstçe bozulduğunu doğrular.
+
+**İlişkiler ve sınır:** src/views/orchestrator/agentsModel.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/orchestratorEvidence.test.ts`](../tests/orchestratorEvidence.test.ts)
+
+**Rol:** Kanıt paneli testleri.
+
+**Amaç / sorumluluk:** Engine inspect ve kampanya yanıtlarının sade kanıt, karar ve yama bilgisine doğru çevrildiğini doğrular.
+
+**İlişkiler ve sınır:** src/views/orchestrator/evidenceModel.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/orchestratorOverview.test.ts`](../tests/orchestratorOverview.test.ts)
+
+**Rol:** Genel bakış testleri.
+
+**Amaç / sorumluluk:** Koşu gruplama, sayımlar, son koşu seçimi ve eksik veri uyarılarını doğrular.
+
+**İlişkiler ve sınır:** src/views/orchestrator/overviewModel.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/orchestratorWorkspace.test.ts`](../tests/orchestratorWorkspace.test.ts)
+
+**Rol:** Çalışma alanı testleri.
+
+**Amaç / sorumluluk:** Orchestrator çalışma alanı sekme sırası ve bağlama kararlarının gerçek veriye dayandığını doğrular. secondbrain/memory bağlama beklentisi eklendi.
+
+**İlişkiler ve sınır:** src/views/orchestrator/workspaceModel.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/productClient.test.ts`](../tests/productClient.test.ts)
+
+**Rol:** RPP istemci testleri.
+
+**Amaç / sorumluluk:** Enjekte edilen taşıma ile rppCallVia'nın istek kurma ve yanıt ayrıştırmasını doğrular.
+
+**İlişkiler ve sınır:** src/productClient.ts ve rpp.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/productsModel.test.ts`](../tests/productsModel.test.ts)
+
+**Rol:** Ürün modeli testleri.
+
+**Amaç / sorumluluk:** Ürün özeti, ayar formu, değişen ayarlar, değer ayrıştırma ve geri okuma doğrulamasını (sır maskeleme dahil) sınar.
+
+**İlişkiler ve sınır:** src/views/productsModel.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/rpp.test.ts`](../tests/rpp.test.ts)
+
+**Rol:** RPP sözleşme testleri.
+
+**Amaç / sorumluluk:** RPP istek/yanıt kurma ve ayrıştırma, sürüm pazarlığı, operasyon kimliği zorunluluğu ve hata açıklamasını doğrular.
+
+**İlişkiler ve sınır:** src/rpp.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/shellModel.test.ts`](../tests/shellModel.test.ts)
+
+**Rol:** Kabuk modeli testleri.
+
+**Amaç / sorumluluk:** Üst çubuk sağlık hapının native yok, yükleniyor, hepsi hazır, bağlı değil ve karışık durumlardaki ton ve etiketini doğrular.
+
+**İlişkiler ve sınır:** src/shellModel.ts'i sınar. node --test ile çalışır.
+
+#### [`tests/tasks.test.ts`](../tests/tasks.test.ts)
+
+**Rol:** Form contract testleri.
+
+**Amaç / sorumluluk:** Structured submission, required scope/write verification, read/custom argv ve pending/terminal ayrımını dört testle sınar.
+
+**İlişkiler ve sınır:** Node test runner tasks.ts kullanır; native IPC kabulü yerine geçmez.
+
+### tools
+
+#### [`tools/hub_native_e2e.mjs`](../tools/hub_native_e2e.mjs)
+
+**Rol:** Native E2E aracı.
+
+**Amaç / sorumluluk:** Şu an boş bir yer tutucu dosyadır; içinde kod yoktur. Ürün yaşam döngüsü kararı Hub'un native E2E'sinin PATH'ten Python çıkarılarak çalıştırıldığını belirtir, ancak bu betik henüz bunu uygulamaz.
+
+**İlişkiler ve sınır:** HUB_PRODUCT_LIFECYCLE.md native E2E'ye atıf yapar; şu an hiçbir kod bu dosyayı çağırmaz. Doldurulana kadar kapsayan test yoktur.
+
+#### [`tools/repository_map.py`](../tools/repository_map.py)
+
+**Rol:** Atlas geliştirici aracı.
+
+**Amaç / sorumluluk:** Bağımsız ürün adıyla metadata/hash denetimi ve no-Git filesystem keşfi sağlar.
+
+**İlişkiler ve sınır:** Brain aracının bağımsız kopyasıdır; dış repo importu yoktur, normal Git CI modu korunur.
+
+### Depo kökü
+
+#### [`tsconfig.json`](../tsconfig.json)
+
+**Rol:** TypeScript build sınırı.
+
+**Amaç / sorumluluk:** Strict React JSX, DOM/ES modülleri ve noEmit typecheck ayarlarını sağlar.
+
+**İlişkiler ve sınır:** npm build tsc ardından Vite çalıştırır.
+
+#### [`vite.config.ts`](../vite.config.ts)
+
+**Rol:** Frontend paket tarifi.
+
+**Amaç / sorumluluk:** Vite yapılandırması: geliştirme sunucusunun dosya izlemesinde src-tauri/target ve src-tauri/gen altındaki Rust derleme çıktılarını yok sayar, böylece native derleme gereksiz yeniden yüklemeyi tetiklemez. Başka eklenti veya ayar içermez.
+
+**İlişkiler ve sınır:** package.json build (tsc --noEmit && vite build) ve dev komutları tarafından kullanılır. Tauri geliştirme akışında frontend'i src-tauri ile birlikte sunar.
+
+## Haritayı güncel tutma sözleşmesi
+
+Yeni dosya keşfi otomatiktir; yeni kodun doğru anlamsal açıklaması otomatik olarak bilinemeyeceği için insan/ajan incelemesi gerekir. `--update` yeni kayıtları `NEEDS_REVIEW` olarak ekler ve indeksten silinenleri çıkarır. Dosya değişikliği açıklamanın artık doğru olduğuna dair yeniden inceleme gerektirir; LF/CRLF dönüşümü değişiklik sayılmaz.
+
+```sh
+python tools/repository_map.py --update
+# JSON içindeki NEEDS_REVIEW alanlarını gerçek rol/amaç/ilişkilerle doldur.
+python tools/repository_map.py --accept-reviewed path/to/changed.py
+python tools/repository_map.py --write
+python tools/repository_map.py --check
+python -m unittest tests.repository_map_test -v
+```
+
+`--accept-reviewed` yalnız açıklaması incelenmiş açık bir yolun içerik hash'ini günceller; içerik açıklaması üretmez. Aynı komutta birden fazla seçenek verilebilir. `--write` keşfedilmiş eksikleri görünür biçimde üretebilir ama `--check` her `NEEDS_REVIEW` kaydını reddeder. CI kapısı eksik/fazla/çift kayıtları, kayıp dosyaları, eski açıklama hash'lerini ve Markdown üretim farkını hata kodu 1 ile durdurur. Staged deletion Git indeksinden kalktığı için envanterden çıkar; yalnız diskten silinmiş izlenen dosya hata olarak kalır.
+
+JSON envanteri ve üretilmiş Markdown kendi kendini hash'leme döngüsünü önlemek için `generated` damgası taşır. JSON açıklamalarındaki değişiklik yine Markdown üretim karşılaştırmasıyla yakalanır. Diğer dosyalar SHA256 inceleme damgasıyla bağlıdır. Hash, açıklamanın doğru olduğunu matematiksel olarak kanıtlamaz; açıklamayı yazan kişi kodu ve ilişkileri okumakla sorumludur.
+
+Her dosya ekleme/silme/yeniden adlandırma ve davranış değişikliğinde bu güncelleme aynı iş içinde yapılır. CI çalışması dosyaya yazmaz. `--root` yalnız farklı bir kaynak checkout'u denetlemek içindir; kurulu AppRoot, DataRoot veya kişisel vault üzerinde bu aracı çalıştırmayın.
+
+
+`--filesystem-only` Git çalıştırmaz; kök ignore kurallarını ve gözden geçirilmiş kaynak yollarını kullanır. Eksik bilinen dosya check hatası olarak korunur. Staged durum ve iç içe ignore sözleşmelerinin Git ile eşdeğerliği bu modun kapsamı değildir; CI normal Git modunu kullanır.

@@ -1,0 +1,3 @@
+# Public Ed25519 release keys, one per line: "<key_id> <base64 public key>". Written by tools/release_keys.py.
+# While this has no key lines, a production build installs no bundle (fail closed).
+dabcb5265227bbdf emiotsJL+ETb6voS0yf3P8KfcLrZIJEn2K63FxH3ETc=

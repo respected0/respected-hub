@@ -1,0 +1,10 @@
+/* Orchestrator agents vs models panel. Reuses global .panel-glass, .muted,
+   .capabilities and .notice/.warning from design.css. */
+.agents-view { display: flex; flex-direction: column; gap: 16px; }
+
+.agent-roles, .agent-profiles { list-style: none; display: flex; flex-direction: column; gap: 8px; padding: 0; margin: 12px 0 0; }
+.agent-roles li, .agent-profiles li {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line-soft);
+}
+.agent-roles li span, .agent-profiles li span { color: var(--muted); font-size: 13px; }

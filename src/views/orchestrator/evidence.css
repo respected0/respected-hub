@@ -1,0 +1,20 @@
+/* Styles for the review/evidence panel. Uses the hub design tokens with safe fallbacks. */
+.evidence-view { display: flex; flex-direction: column; gap: 22px; }
+.evidence-choices { display: flex; flex-wrap: wrap; gap: 16px; }
+.evidence-choices label { display: flex; flex-direction: column; gap: 6px; min-width: 260px; font-size: 13px; color: var(--muted, #8e9bb4); }
+.evidence-choices select { padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line, #222c42);
+  background: var(--surface-2, #151b2b); color: var(--text, #e8edf8); font-size: 13.5px; }
+.evidence-card { display: flex; flex-direction: column; gap: 18px; padding: 22px 24px; }
+.evidence-card h3 { margin: 0 0 8px; font-size: 14px; }
+.evidence-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.evidence-list li { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line-soft, #1a2236); background: var(--surface, #0f1420); }
+.evidence-list strong { font-size: 12px; letter-spacing: .4px; text-transform: uppercase; color: var(--muted, #8e9bb4); }
+.evidence-list span { font-size: 13.5px; white-space: pre-wrap; word-break: break-word; }
+.evidence-reviews { width: 100%; border-collapse: collapse; font-size: 13px; }
+.evidence-reviews th, .evidence-reviews td { text-align: left; padding: 8px 10px; vertical-align: top;
+  border-bottom: 1px solid var(--line-soft, #1a2236); }
+.evidence-reviews th { color: var(--muted, #8e9bb4); font-weight: 500; }
+.evidence-next { margin: 0; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--line, #222c42);
+  background: #0b101b; color: var(--text, #e8edf8); font-size: 13px; white-space: pre-wrap;
+  word-break: break-word; user-select: text; }
