@@ -1,0 +1,15 @@
+/* Orchestrator workspace overview panel. Reuses global .panel-glass, .muted,
+   .capabilities, .status and .notice/.warning from design.css. */
+.overview-view { display: flex; flex-direction: column; gap: 16px; }
+
+.overview-counts { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; padding: 0; margin: 12px 0 0; }
+.overview-counts li { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line-soft); }
+.overview-counts li strong { font-size: 22px; }
+.overview-counts li span { color: var(--muted); font-size: 13px; }
+
+.overview-runs { list-style: none; display: flex; flex-direction: column; gap: 8px; padding: 0; margin: 12px 0; }
+.overview-runs li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line-soft); }
+.overview-runs li > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.overview-warnings { list-style: none; padding-left: 18px; margin: 0; }
+.overview-warnings li { margin: 2px 0; }
