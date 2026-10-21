@@ -32,7 +32,7 @@ fn settings_for(ecosystem: &Path, data_root: &Path) -> Settings {
         orchestrator_root: ecosystem.join("respected-orchestrator"),
         brain_root: ecosystem.join("respected-secondbrain"),
         data_root: data_root.to_path_buf(),
-        brain_data_root: Some(data_root.to_path_buf()), brain_exe: None, brain_app_dir: None,
+        brain_data_root: Some(data_root.to_path_buf()), brain_exe: None, brain_app_dir: None, orchestrator_exe: None,
     }
 }
 

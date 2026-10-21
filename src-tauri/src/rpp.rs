@@ -86,7 +86,8 @@ pub fn apply_test_home(command: &mut Command) {
     }
 }
 
-/// The managed Python must not pick up the user's Python environment (Anaconda PYTHONHOME, startup scripts, user site-packages).
+/// A development build runs product sources on a Python: it must not pick up the user's Python environment (Anaconda
+/// PYTHONHOME, startup scripts, user site-packages).
 pub fn isolate_python(command: &mut Command) {
     for name in ["PYTHONHOME", "PYTHONSTARTUP", "PYTHONUSERBASE", "PYTHONINSPECT", "PYTHONBREAKPOINT"] { command.env_remove(name); }
     command.env("PYTHONNOUSERSITE", "1");
@@ -224,30 +225,37 @@ pub fn brain_rpp_command(settings: &Settings) -> Option<(Vec<String>, serde_json
     Some((argv, env))
 }
 
-fn engine_command(settings: &Settings, product: &str) -> Option<Command> {
-    if product == "secondbrain" {
-        if let Some(command) = frozen_brain_command(settings) { return Some(command); }
-    }
-    let (module, root) = match product {
-        "orchestrator" => ("respected_orchestrator", &settings.orchestrator_root),
-        _ => ("respectedbrain", &settings.brain_root),
+/// The Orchestrator engine with `args` after its data root: the packaged executable the Hub installed, or (development
+/// builds only reach this) the source checkout on Python. `None` when neither exists.
+pub fn orchestrator_command(settings: &Settings, args: &[&str]) -> Option<Command> {
+    let mut command = match settings.orchestrator_exe.as_ref().filter(|exe| exe.is_file()) {
+        Some(exe) => Command::new(exe),
+        None => {
+            if !settings.orchestrator_root.join("src/respected_orchestrator/__main__.py").is_file() { return None; }
+            let mut command = Command::new(&settings.python);
+            isolate_python(&mut command);
+            command.env("PYTHONPATH", settings.orchestrator_root.join("src")).args(["-m", "respected_orchestrator"]);
+            command
+        }
     };
-    let source = root.join("src");
-    let package = source.join(module);
-    let module_present = package.join("__main__.py").is_file() || package.join("__init__.py").is_file()
-        || source.join(format!("{module}.py")).is_file();
-    if !module_present { return None; }
+    apply_test_home(&mut command);
+    command.arg("--data-root").arg(&settings.data_root).args(args).current_dir(neutral_cwd(settings))
+        .env("PYTHONDONTWRITEBYTECODE", "1").stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
+    Some(command)
+}
+
+fn engine_command(settings: &Settings, product: &str) -> Option<Command> {
+    if product == "orchestrator" { return orchestrator_command(settings, &["rpp"]); }
+    if let Some(command) = frozen_brain_command(settings) { return Some(command); }
+    let source = settings.brain_root.join("src");
+    let package = source.join("respectedbrain");
+    if !(package.join("__main__.py").is_file() || package.join("__init__.py").is_file() || source.join("respectedbrain.py").is_file()) { return None; }
     let mut command = Command::new(&settings.python);
     apply_test_home(&mut command);
     isolate_python(&mut command);
-    command.current_dir(neutral_cwd(settings)).env("PYTHONPATH", root.join("src")).env("PYTHONDONTWRITEBYTECODE", "1")
-        .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
-    if product == "orchestrator" {
-        command.args(["-m", module, "--data-root"]).arg(&settings.data_root).arg("rpp");
-    } else {
-        command.args(["-m", module, "rpp"]);
-        if let Some(data_root) = &settings.brain_data_root { command.arg("--data-root").arg(data_root); }
-    }
+    command.current_dir(neutral_cwd(settings)).env("PYTHONPATH", source).env("PYTHONDONTWRITEBYTECODE", "1")
+        .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).args(["-m", "respectedbrain", "rpp"]);
+    if let Some(data_root) = &settings.brain_data_root { command.arg("--data-root").arg(data_root); }
     Some(command)
 }
 
@@ -313,8 +321,8 @@ fn dispatch(settings: &Settings, product: &str, op: &str, payload: Option<Value>
     } else { operation_id };
     let mut command = match engine_command(settings, product) {
         Some(command) => command,
-        None => return err_envelope(rpp_version, operation_id, "ENGINE_NOT_FOUND", &format!("The {product} engine source was not found."),
-            "Check the product root path in settings."),
+        None => return err_envelope(rpp_version, operation_id, "ENGINE_NOT_FOUND", &format!("The {product} engine is not installed."),
+            "Install the product from the Hub."),
     };
     strip_secret_env(&mut command);
     #[cfg(windows)] {
@@ -329,8 +337,8 @@ fn dispatch(settings: &Settings, product: &str, op: &str, payload: Option<Value>
     let output = match pump(command, Some(payload_bytes), timeout, MAX_OUTPUT) {
         Ok(output) => output,
         Err(PumpError::Spawn(error)) => return err_envelope(rpp_version, operation_id, "ENGINE_UNAVAILABLE",
-            &format!("The Python runtime for the {product} engine could not be started ({error})."),
-            "Check the Python executable path in settings."),
+            &format!("The {product} engine could not be started ({error})."),
+            "Repair the product from the Hub."),
         Err(PumpError::Timeout) => return err_envelope(rpp_version, operation_id, "ENGINE_TIMEOUT",
             &format!("The {product} engine did not answer within {} seconds.", timeout.as_secs()), "Retry the request."),
         Err(error) => return err_envelope(rpp_version, operation_id, "BAD_RESPONSE",
@@ -356,7 +364,7 @@ mod tests {
 
     fn settings(python: &str, root: &str, brain: &str) -> Settings {
         Settings { python: python.into(), orchestrator_root: PathBuf::from(root), brain_root: PathBuf::from(brain),
-            data_root: PathBuf::from("/tmp/hub-rpp-unit"), brain_data_root: None, brain_exe: None, brain_app_dir: None }
+            data_root: PathBuf::from("/tmp/hub-rpp-unit"), brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None }
     }
 
     #[test]

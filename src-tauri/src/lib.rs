@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::{fs, io::{Read, Write}, path::{Path, PathBuf}, process::{Command, Stdio}, time::{Duration, Instant}};
+use std::{fs, io::{Read, Write}, path::{Path, PathBuf}, process::Command, time::{Duration, Instant}};
 use tauri::Manager;
 
 pub mod catalog;
@@ -27,6 +27,9 @@ pub struct Settings {
     /// Application folder the launcher should treat as its install location (RESPECTED_APP_DIR).
     #[serde(default)]
     pub brain_app_dir: Option<PathBuf>,
+    /// Packaged Orchestrator (the Hub-managed copy's respected-orchestrator.exe); absent means the source checkout on Python.
+    #[serde(default)]
+    pub orchestrator_exe: Option<PathBuf>,
 }
 
 fn settings_file(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -60,7 +63,7 @@ fn get_settings(app: tauri::AppHandle) -> Result<Settings, String> {
     };
     Ok(Settings { python: "python".into(), orchestrator_root: siblings.join("respected-orchestrator"),
         brain_root: siblings.join("respected-secondbrain"), data_root,
-        brain_data_root: None, brain_exe: None, brain_app_dir: None })
+        brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None })
 }
 
 fn validate(settings: &Settings) -> Result<(), String> {
@@ -120,8 +123,8 @@ pub(crate) fn pump(mut command: Command, request: Option<Vec<u8>>, timeout: Dura
             if let Err(error) = input.write_all(&payload) { let _ = child.kill(); let _ = child.wait(); return Err(PumpError::Io(error.to_string())); }
         }
     }
-    let mut stdout = child.stdout.take().ok_or(PumpError::Missing("Missing stdout"))?;
-    let mut stderr = child.stderr.take().ok_or(PumpError::Missing("Missing stderr"))?;
+    let stdout = child.stdout.take().ok_or(PumpError::Missing("Missing stdout"))?;
+    let stderr = child.stderr.take().ok_or(PumpError::Missing("Missing stderr"))?;
     let limit = max_output.saturating_add(1) as u64;
     let out = std::thread::spawn(move || { let mut bytes = Vec::new(); stdout.take(limit).read_to_end(&mut bytes).map(|_| bytes) });
     let err = std::thread::spawn(move || { let mut bytes = Vec::new(); stderr.take(1 << 20).read_to_end(&mut bytes).map(|_| bytes) });
@@ -154,7 +157,6 @@ pub fn valid_campaign_id(id: &str) -> bool {
 }
 
 pub fn call_engine(settings: Settings, action: &str, run_id: Option<String>, request: Option<Value>) -> Result<Value, String> {
-    validate(&settings)?;
     if !["status", "create", "start", "list", "inspect", "cancel", "check", "retry", "campaign-start", "campaign-status"].contains(&action) {
         return Err("Unsupported engine operation".into());
     }
@@ -172,11 +174,7 @@ pub fn call_engine(settings: Settings, action: &str, run_id: Option<String>, req
         }
         _ => {}
     }
-    let mut command = Command::new(&settings.python);
-    command.args(["-m", "respected_orchestrator", "--data-root"])
-        .arg(&settings.data_root).arg(action).current_dir(rpp::neutral_cwd(&settings))
-        .env("PYTHONPATH", settings.orchestrator_root.join("src")).env("PYTHONNOUSERSITE", "1").env_remove("PYTHONHOME").env_remove("PYTHONSTARTUP").env_remove("PYTHONUSERBASE")
-        .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
+    let mut command = rpp::orchestrator_command(&settings, &[action]).ok_or("Orchestrator kurulu değil; Hub'dan kurun.")?;
     if let Some(id) = run_id { command.arg(id); }
     #[cfg(windows)] {
         use std::os::windows::process::CommandExt;
@@ -227,7 +225,7 @@ async fn rpp_request(app: tauri::AppHandle, product: String, op: String, payload
 async fn product_status(app: tauri::AppHandle) -> Result<Value, String> {
     let settings = resolved_settings(&app)?;
     let brain = settings.brain_root.join("src/respectedbrain/__init__.py").is_file();
-    let orchestrator = settings.orchestrator_root.join("src/respected_orchestrator/__main__.py").is_file();
+    let orchestrator = settings.orchestrator_exe.as_ref().map_or(false, |exe| exe.is_file()) || settings.orchestrator_root.join("src/respected_orchestrator/__main__.py").is_file();
     let engine = tauri::async_runtime::spawn_blocking(move || call_engine(settings, "status", None, None)).await.map_err(|e| e.to_string())?;
     Ok(json!({ "development": trust::dev_enabled(), "brain_available": brain, "orchestrator_available": orchestrator,
         "hub_version": env!("CARGO_PKG_VERSION"), "engine": engine.unwrap_or_else(|error| json!({"error": error})) }))
@@ -244,13 +242,19 @@ pub fn standard_roots() -> lifecycle::Roots {
     lifecycle::Roots { managed, catalog }
 }
 
+/// The packaged Orchestrator's launcher inside its Hub-managed copy.
+pub const ORCHESTRATOR_EXE: &str = "respected-orchestrator.exe";
+
+/// Point settings at the Hub-managed copies: the packaged Orchestrator and SecondBrain's installed launcher.
+pub fn overlay(roots: &lifecycle::Roots, dirs: &brain::BrainDirs, settings: &mut Settings) {
+    if let Some(exe) = lifecycle::installed_launcher(roots, "orchestrator", ORCHESTRATOR_EXE) { settings.orchestrator_exe = Some(exe); }
+    brain::overlay(roots, dirs, settings);
+}
+
 /// Saved connections with each Hub-managed product pointing at its active verified copy.
 fn resolved_settings(app: &tauri::AppHandle) -> Result<Settings, String> {
     let mut settings = get_settings(app.clone())?;
-    let roots = lifecycle_roots(app)?;
-    lifecycle::overlay_roots(&roots, &mut settings.orchestrator_root, &mut settings.brain_root);
-    if let Some(python) = lifecycle::managed_python(&roots) { settings.python = python.to_string_lossy().to_string(); }
-    brain::overlay(&roots, &brain::dirs(), &mut settings);
+    overlay(&lifecycle_roots(app)?, &brain::dirs(), &mut settings);
     Ok(settings)
 }
 
@@ -263,18 +267,10 @@ pub fn engine_verifier(settings: &Settings) -> impl Fn(&str, &Path) -> Result<()
     let base = settings.clone();
     move |product, dir| {
         let scratch = std::env::temp_dir().join(format!("hub-verify-{}-{}", std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0)));
+        if product != "orchestrator" { return Err(format!("{product} is installed by its own engine, not verified here")); }
         fs::create_dir_all(&scratch).map_err(|e| e.to_string())?;
-        if product == "runtime" {
-            let python = dir.join("runtime").join("python.exe");
-            let mut command = Command::new(&python);
-            command.args(["-I", "-c", "import agent_framework, ssl, sqlite3, asyncio"]).current_dir(&scratch).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
-            #[cfg(windows)] { use std::os::windows::process::CommandExt; command.creation_flags(0x08000000); }
-            let outcome = pump(command, None, Duration::from_secs(60), 64 * 1024).map_err(|e| e.message()).and_then(|out| if out.success { Ok(()) } else { Err(String::from_utf8_lossy(&out.stderr).chars().take(300).collect()) });
-            let _ = fs::remove_dir_all(&scratch);
-            return outcome;
-        }
         let mut settings = base.clone();
-        if product == "orchestrator" { settings.orchestrator_root = dir.to_path_buf(); } else { settings.brain_root = dir.to_path_buf(); }
+        settings.orchestrator_exe = Some(dir.join(ORCHESTRATOR_EXE));
         settings.data_root = scratch.clone();
         settings.brain_data_root = Some(scratch.clone());
         let outcome = (|| {
@@ -282,14 +278,10 @@ pub fn engine_verifier(settings: &Settings) -> impl Fn(&str, &Path) -> Result<()
                 let response = rpp::rpp_call(&settings, product, op, None, None);
                 if response["ok"] != true { return Err(format!("{op}: {}", response["error"]["message"].as_str().unwrap_or("yanıt yok"))); }
             }
-            if product == "orchestrator" {
-                // Record the install in the product's own manifest (position independent) so the product and the Hub agree.
-                // Hand the product the verified file contents so its own integrity check (verify) covers them too.
-                let mut files = serde_json::Map::new();
-                if let Ok(bundle) = lifecycle::read_bundle(dir) {
-                    for (path, _, _) in &bundle.files { if let Ok(text) = fs::read_to_string(dir.join(path)) { files.insert(path.clone(), Value::String(text)); } }
-                }
-                let target = json!({ "action": "install", "target": { "app_root": dir, "files": files } });
+            {
+                // The product records the install in its own manifest from its distribution.json (every file hash checked
+                // again on its side), so the product and the Hub agree on what is installed and when it needs repair.
+                let target = json!({ "action": "install", "target": { "app_root": dir, "distribution": true } });
                 let recorded = rpp::rpp_call_trusted(&settings, product, "lifecycle.apply", Some(target), Some(format!("hub-record-{}", std::process::id())));
                 if recorded["ok"] != true { return Err(format!("install record: {}", recorded["error"]["message"].as_str().unwrap_or("yanıt yok"))); }
                 let manifest = rpp::rpp_call(&settings, product, "manifest", None, None);
@@ -302,30 +294,18 @@ pub fn engine_verifier(settings: &Settings) -> impl Fn(&str, &Path) -> Result<()
     }
 }
 
-/// Products run on the Hub-managed Python runtime, so a product install first provisions it (own journal
-/// entry) when it is missing and a runtime package exists. Without a package the system Python is used.
-pub fn apply_with_runtime(roots: &lifecycle::Roots, mut settings: Settings, product: &str, action: &str, operation_id: &str) -> Result<Value, lifecycle::LifecycleError> {
-    if matches!(action, "install" | "update") && product != "runtime" && lifecycle::managed_python(roots).is_none() && !lifecycle::catalog(roots, "runtime").0.is_empty() {
-        let id: String = format!("rt-{operation_id}").chars().take(64).collect();
-        let verifier = engine_verifier(&settings);
-        lifecycle::apply(roots, "runtime", "install", &id, &verifier)?;
-    }
-    if let Some(python) = lifecycle::managed_python(roots) { settings.python = python.to_string_lossy().to_string(); }
-    if product == "orchestrator" && action == "uninstall" { mcp_access::disable_all(roots, &settings, operation_id); }
-    let verifier = engine_verifier(&settings);
-    let applied = lifecycle::apply(roots, product, action, operation_id, &verifier);
-    if product == "orchestrator" && applied.is_ok() && matches!(action, "install" | "update" | "repair") { mcp_access::refresh_launcher(roots, &settings); }
-    // the MCP launcher stores the versioned Python path: keep it pointing at the live runtime (audit P1 #11)
-    if product == "runtime" && applied.is_ok() && matches!(action, "install" | "update" | "repair") && lifecycle::read_current(roots, "orchestrator").is_some() {
-        if let Some(python) = lifecycle::managed_python(roots) { settings.python = python.to_string_lossy().to_string(); }
-        mcp_access::refresh_launcher(roots, &settings);
-    }
+/// Install, update, repair or uninstall the Hub-managed packaged Orchestrator; its MCP registrations follow the copy.
+pub fn apply_orchestrator(roots: &lifecycle::Roots, settings: Settings, action: &str, operation_id: &str) -> Result<Value, lifecycle::LifecycleError> {
+    if action == "uninstall" { mcp_access::disable_all(roots, &settings, operation_id); }
+    let applied = lifecycle::apply(roots, "orchestrator", action, operation_id, &engine_verifier(&settings));
+    // the stable MCP launcher names the versioned executable: rewrite it whenever the active copy changes
+    if applied.is_ok() && matches!(action, "install" | "update" | "repair") { mcp_access::refresh_launcher(roots, &settings); }
     applied
 }
 
 /// Component status: SecondBrain comes from its own engine, the rest from the Hub-managed copies.
 pub fn hub_status(roots: &lifecycle::Roots, d: &brain::BrainDirs) -> Value {
-    let products: Vec<Value> = lifecycle::COMPONENTS.iter().map(|p| {
+    let products: Vec<Value> = lifecycle::PRODUCTS.iter().map(|p| {
         let mut status = if *p == "secondbrain" { brain::status(roots, d) } else { lifecycle::status(roots, p).unwrap_or(Value::Null) };
         catalog::overlay_status(roots, &mut status);
         status
@@ -333,16 +313,11 @@ pub fn hub_status(roots: &lifecycle::Roots, d: &brain::BrainDirs) -> Value {
     json!({ "ok": true, "result": { "products": products, "managed_root": roots.managed, "catalog_root": roots.catalog, "brain_app_dir": d.app, "brain_data_dir": d.data }, "error": Value::Null })
 }
 
-/// Download (once) the bundles an action needs: the newest release for install/update, the installed version for repair,
-/// and the Python runtime before the first Orchestrator install.
+/// Download (once) the bundles an action needs: the newest release for install/update, the installed version for repair.
 fn ensure_bundles(roots: &lifecycle::Roots, d: &brain::BrainDirs, product: &str, action: &str) -> Result<(), lifecycle::LifecycleError> {
     match action {
         "install" | "update" => {
             catalog::ensure_bundle(roots, product, None)?;
-            if product == "orchestrator" && lifecycle::managed_python(roots).is_none() {
-                // with a published catalog the runtime is required; a development setup without one may use the system Python
-                if let Err(error) = catalog::ensure_bundle(roots, "runtime", None) { if catalog::cached(roots).is_some() { return Err(error); } }
-            }
         }
         "repair" => {
             let installed = if product == "secondbrain" { brain::status(roots, d)["version"].as_str().map(str::to_string) } else { lifecycle::read_current(roots, product).map(|c| c.0) };
@@ -356,13 +331,7 @@ fn ensure_bundles(roots: &lifecycle::Roots, d: &brain::BrainDirs, product: &str,
 pub fn hub_plan(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: &Settings, product: &str, action: &str, params: &Value) -> Result<Value, lifecycle::LifecycleError> {
     ensure_bundles(roots, d, product, action)?;
     if product == "secondbrain" { return brain::plan(roots, d, settings, action, params); }
-    let mut plan = lifecycle::plan(roots, product, action)?;
-    if matches!(action, "install" | "update") && product != "runtime" && lifecycle::managed_python(roots).is_none() && !lifecycle::catalog(roots, "runtime").0.is_empty() {
-        if let Some(steps) = plan["plan"]["steps"].as_array_mut() {
-            steps.insert(0, json!({ "id": "runtime", "summary": "Önce Hub'ın Python çalışma ortamını kur (sistemde Python gerekmez)", "reversible": true, "irreversible_reason": Value::Null }));
-        }
-    }
-    Ok(plan)
+    lifecycle::plan(roots, product, action)
 }
 
 pub fn hub_apply(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: Settings, product: &str, action: &str, params: &Value, id: &str) -> Result<Value, lifecycle::LifecycleError> {
@@ -377,7 +346,7 @@ pub fn hub_apply(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: Setti
 
 /// No leftovers: only the installed version of each component stays, in the managed folder and in the catalog cache.
 pub fn sweep(roots: &lifecycle::Roots, d: &brain::BrainDirs) {
-    for product in lifecycle::COMPONENTS {
+    for product in lifecycle::PRODUCTS {
         lifecycle::prune_old_versions(roots, product);
         let installed = if product == "secondbrain" { brain::status(roots, d)["version"].as_str().map(str::to_string) } else { lifecycle::read_current(roots, product).map(|c| c.0) };
         if let Some(version) = installed { catalog::prune(roots, product, &version); }
@@ -396,7 +365,7 @@ fn hub_apply_inner(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: Set
         }
         return applied;
     }
-    apply_with_runtime(roots, settings, product, action, id)
+    apply_orchestrator(roots, settings, action, id)
 }
 
 pub fn hub_rollback(roots: &lifecycle::Roots, d: &brain::BrainDirs, id: &str) -> Result<Value, lifecycle::LifecycleError> {
@@ -655,10 +624,8 @@ pub fn headless_uninstall_products() -> i32 {
         default_data_root(trust::dev_env("RESPECTED_ORCHESTRATOR_DATA_ROOT").and_then(|v| v.into_string().ok()).as_deref(), base.with_file_name("RespectedOrchestratorDevelopment"))
     } else { brain::respected_root().join("RespectedOrchestrator").join("data") };
     let mut settings = Settings { python: "python".into(), orchestrator_root: base.join("no-source-checkout").join("respected-orchestrator"),
-        brain_root: base.join("no-source-checkout").join("respected-secondbrain"), data_root, brain_data_root: None, brain_exe: None, brain_app_dir: None };
-    lifecycle::overlay_roots(&roots, &mut settings.orchestrator_root, &mut settings.brain_root);
-    if let Some(python) = lifecycle::managed_python(&roots) { settings.python = python.to_string_lossy().to_string(); }
-    brain::overlay(&roots, &dirs, &mut settings);
+        brain_root: base.join("no-source-checkout").join("respected-secondbrain"), data_root, brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None };
+    overlay(&roots, &dirs, &mut settings);
     let report = cleanup::remove_products(&roots, &dirs, &settings);
     registration::sync(&roots, &dirs);
     let log_dir = roots.managed.parent().map(Path::to_path_buf).unwrap_or(base); // beside the managed folder: the Hub's own data folder
@@ -718,7 +685,7 @@ mod tests {
         assert_eq!(intent(args(&["hub.exe", "--manage=secondbrain"])), Some(json!({ "action": "manage", "product": "secondbrain" })));
         assert_eq!(intent(args(&["hub.exe", "--install=../evil"])), None);
         assert_eq!(intent(args(&["hub.exe", "--uninstall-products"])), None);
-        assert_eq!(intent(args(&["hub.exe", "--uninstall=runtime"])), None, "the runtime is not a product the person removes");
+        assert_eq!(intent(args(&["hub.exe", "--uninstall=runtime"])), None, "only the two products can be named");
         assert_eq!(intent(args(&["hub.exe"])), None);
     }
 

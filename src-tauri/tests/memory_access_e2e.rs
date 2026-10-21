@@ -49,7 +49,7 @@ fn memory_access_is_enabled_and_disabled_through_the_real_engines() {
     let (orch_data, brain_data, home, vault) = (Temp::new("orch"), Temp::new("brain"), Temp::new("home"), Temp::new("vault"));
     std::env::set_var("RESPECTED_HUB_TEST_HOME", &home.0);
     let settings = Settings { python: "python".into(), orchestrator_root: eco.join("respected-orchestrator"), brain_root: eco.join("respected-secondbrain"),
-        data_root: orch_data.0.clone(), brain_data_root: Some(brain_data.0.clone()), brain_exe: None, brain_app_dir: None };
+        data_root: orch_data.0.clone(), brain_data_root: Some(brain_data.0.clone()), brain_exe: None, brain_app_dir: None, orchestrator_exe: None };
     let call = |p: &str, o: &str, pl: Option<Value>, id: Option<String>| rpp_call_trusted(&settings, p, o, pl, id);
 
     // SecondBrain needs a registered vault before it can grant anything.

@@ -10,7 +10,7 @@ import { useState } from 'react';
 export default function Activity({ eco, go }: { eco: Ecosystem; go: Go }) {
   const running = eco.runs.filter(run => !terminal(run.status)).length;
   const [error, setError] = useState('');
-  const nameOf = (id: string) => APPS.find(app => app.id === id)?.name ?? (id === 'runtime' ? 'Python çalışma ortamı' : id);
+  const nameOf = (id: string) => APPS.find(app => app.id === id)?.name ?? id;
   async function undo(id: string) {
     setError('');
     const reply = await lifecycleRollback(id);

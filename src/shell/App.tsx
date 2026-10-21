@@ -75,7 +75,7 @@ export default function App() {
   const pageLabel = app ? app.pages.find(page => page.id === (route as { page: string }).page)?.label : undefined;
   const navItem = (id: string, label: string, active: boolean) => <button key={id} className={`nav-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined} title={label} onClick={() => setRoute({ kind: id as HubRoute })}><Icon name={id} /><span className="nav-text">{label}</span></button>;
   const refresh = () => { eco.refresh(); setSpin(true); window.setTimeout(() => setSpin(false), 800); };
-  const names: Record<string, string> = { secondbrain: 'SecondBrain', orchestrator: 'Orchestrator', runtime: 'Python çalışma ortamı' };
+  const names: Record<string, string> = { secondbrain: 'SecondBrain', orchestrator: 'Orchestrator' };
   const productUpdates = (eco.lifecycle?.products ?? []).filter(item => item?.install_state === 'update-available' && item.available && !later.includes(`${item.product}@${item.available.version}`));
   const hubOffer = hubUpdate?.available && !later.includes(`hub@${hubUpdate.available.version}`) ? hubUpdate.available : null;
 

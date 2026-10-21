@@ -60,8 +60,8 @@ fn only_a_bundle_signed_by_a_trusted_key_is_offered() {
     edit(&bundle, |d| d["version"] = json!("9.9.9"));
     assert_eq!(offered(&catalog).0, 0, "version swap must break the signature");
     std::fs::write(bundle.join("bundle.json"), serde_json::to_vec(&original).unwrap()).unwrap();
-    edit(&bundle, |d| d["kind"] = json!("distribution"));
-    assert_eq!(offered(&catalog).0, 0, "kind swap must break the signature");
+    edit(&bundle, |d| d["kind"] = json!("source"));
+    assert_eq!(offered(&catalog).0, 0, "only packaged distributions are installable, whatever the signature covers");
     std::fs::write(bundle.join("bundle.json"), serde_json::to_vec(&original).unwrap()).unwrap();
 
     // 3. a changed payload list (even with a recomputed digest) is not covered by the old signature

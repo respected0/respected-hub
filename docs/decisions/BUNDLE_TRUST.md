@@ -11,7 +11,7 @@ anyone who could write the catalog folder could install code as "signed". Second
 * Every bundle carries an Ed25519 signature over a canonical, domain-separated statement
   (`respected-bundle-v1\n` + sorted compact JSON of schema, product, kind, version, bundle_digest); the digest already
   binds every file path, size and hash, so a signature cannot be moved to another product, kind, version or payload.
-  Signing: `tools/bundle_signing.py`; `build_bundle.py` and `build_runtime.py` sign every bundle.
+  Signing: `release/tools/bundle_signing.py`; `build_bundle.py` signs every bundle.
 * `src/trust.rs` verifies at catalog read time (`read_bundle`), which gates both "available" and install. Anything that
   does not verify is skipped with a reason; nothing is accepted silently.
 * **Trust is separated by key and by build, not by a flag in the data:**
@@ -24,7 +24,7 @@ anyone who could write the catalog folder could install code as "signed". Second
   * The dev PRIVATE key lives in `.build-cache/signing` (ignored by git, created on first use) and is never copied into an
     installer or bundle. Installers ship only its public half, and only in development installers.
 * SecondBrain gets `--allow-unattested` only when the staged package is not production-signed.
-* `tools/build_hub_installer.py` builds a DEVELOPMENT installer by default (banner says so); `--release-key FILE` builds a
+* `release/tools/build_hub_installer.py` builds a DEVELOPMENT installer by default (banner says so); `--release-key FILE` builds a
   PRODUCTION one (no dev-trust feature, no dev public key, bundles signed with that key).
 
 ## Proven

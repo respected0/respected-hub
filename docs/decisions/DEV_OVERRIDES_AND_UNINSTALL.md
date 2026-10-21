@@ -20,7 +20,7 @@ to the Orchestrator's memory provider, the fallback to the source checkout (`CAR
 Before: uninstalling the Hub left SecondBrain's hooks, MCP entries, scheduled task and shortcut and the Orchestrator MCP entries behind with no UI to
 remove them. Now the uninstaller (`packaging/windows/hub_setup.iss`) asks "remove the products too?" (default **No**; silent uninstalls pass
 `/REMOVEPRODUCTS=1`). Yes runs `respected-hub.exe --uninstall-products` (no window; `cleanup.rs`): Orchestrator MCP registrations are undone,
-SecondBrain goes through its own uninstaller (vault and data kept, foreign config entries restored), then Orchestrator and the runtime, then the Hub's
+SecondBrain goes through its own uninstaller (vault and data kept, foreign config entries restored), then Orchestrator, then the Hub's
 managed folder is deleted; a log is written beside it. Notes, vaults and Orchestrator run data are never touched.
 Proof: `tests/cleanup_e2e.rs` runs the real executable on a fake HOME with SecondBrain and the Orchestrator installed and registered in Claude and
 Codex configs, after the clients rewrote their files: our entries are gone, the clients' and user's changes survive, the vault note is intact, the

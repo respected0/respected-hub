@@ -37,7 +37,7 @@ fn the_search_index_is_read_and_refreshed_through_the_real_engine() {
     let (orch_data, brain_data, home, vault) = (Temp::new("orch"), Temp::new("brain"), Temp::new("home"), Temp::new("vault"));
     std::env::set_var("RESPECTED_HUB_TEST_HOME", &home.0);
     let settings = Settings { python: "python".into(), orchestrator_root: eco.join("respected-orchestrator"), brain_root: eco.join("respected-secondbrain"),
-        data_root: orch_data.0.clone(), brain_data_root: Some(brain_data.0.clone()), brain_exe: None, brain_app_dir: None };
+        data_root: orch_data.0.clone(), brain_data_root: Some(brain_data.0.clone()), brain_exe: None, brain_app_dir: None, orchestrator_exe: None };
     let call = |p: &str, o: &str, pl: Option<Value>, id: Option<String>| {
         let timeout = if o == "memory.index.refresh" { Duration::from_secs(300) } else { Duration::from_secs(30) };
         rpp_call_trusted_timeout(&settings, p, o, pl, id, timeout)

@@ -12,7 +12,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const args = process.argv.slice(2);
 const exe = resolve(args.find(a => !a.startsWith('--')) ?? '');
 const remote = args.includes('--remote-catalog');
-const brainOnly = args.includes('--only-brain'); // targeted rerun: skip the Orchestrator/runtime scenarios
+const brainOnly = args.includes('--only-brain'); // targeted rerun: skip the Orchestrator scenarios
 const hub = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const eco = resolve(hub, '..');
 const tools = join(hub, 'release', 'tools');
@@ -32,10 +32,9 @@ writeFileSync(join(dirs.home, '.claude.json'), foreign);
 const guardFile = join(work, 'real-env-before.json');
 spawnSync('python', ['-B', join(tools, 'real_env_guard.py'), 'snapshot', guardFile], { encoding: 'utf8' });
 const py = (...a) => { const r = spawnSync('python', ['-B', ...a], { encoding: 'utf8' }); if (r.status !== 0) { console.error(r.stderr); process.exit(2); } return r.stdout.trim(); };
-const dist = py(join(tools, 'build_brain_dist.py')).split(/\r?\n/).pop();
+// both products as their packaged (frozen) builds, exactly as a release ships them
 py(join(tools, 'build_bundle.py'), 'orchestrator', '--out', dirs.catalog);
-py(join(tools, 'build_bundle.py'), 'secondbrain-dist', '--dist', dist, '--out', dirs.catalog);
-py(join(tools, 'build_runtime.py'), '--out', dirs.catalog);
+py(join(tools, 'build_bundle.py'), 'secondbrain', '--out', dirs.catalog);
 const served = join(work, 'served');
 if (remote) py(join(tools, 'publish_release.py'), 'local-catalog', ...readdirSync(dirs.catalog).flatMap(name => ['--bundle', join(dirs.catalog, name)]), '--out', served);
 
@@ -121,18 +120,17 @@ try {
   await rail('Uygulamalarım');
   await waitFor(`document.querySelector('.page-head h1')?.textContent==='Uygulamalarım'&&document.querySelectorAll('article.lib-item').length===2`, 'My Apps lists both products');
   await waitFor(cardHas('SecondBrain', 'Kurulu değil'), 'SecondBrain starts not installed');
-  check('Python runtime component is offered', await ev(`document.body.innerText.includes('Python çalışma ortamı')`));
+  check('no separate Python runtime is offered', !(await ev(`document.body.innerText.includes('Python çalışma ortamı')`)));
   await shot('01-my-apps-before');
 
-  if (!brainOnly) { // Orchestrator: the install also provisions the Hub's own Python runtime first.
+  if (!brainOnly) { // Orchestrator: the packaged engine is staged, verified by its own RPP answer, then activated.
   await inCard('Orchestrator', 'Kur');
-  await waitFor(cardHas('Orchestrator', 'Önce Hub'), 'Orchestrator plan announces the Python runtime step');
+  await waitFor(cardHas('Orchestrator', 'Paket dosyalarını'), 'Orchestrator plan lists the staging step');
   await shot('02-plan-orchestrator');
   await inCard('Orchestrator', 'Onayla ve uygula', false);
   await waitFor(cardHas('Orchestrator', 'Kurulu ve doğrulandı'), 'Orchestrator installed and verified', 240000);
-  check('runtime and orchestrator recorded', existsSync(join(dirs.managed, 'runtime', 'current.json')) && existsSync(join(dirs.managed, 'orchestrator', 'current.json')));
-  await waitFor(`document.querySelector('.sys-component')?.textContent.includes('Kurulu ve doğrulandı')`, 'runtime component shows installed');
-  await waitFor(`(()=>{const a=${card('Orchestrator')};return !!a&&!a.textContent.includes('Ürüne ulaşılamadı')&&/v0\\.1\\.0/.test(a.textContent)})()`, 'Orchestrator answers over RPP on the managed runtime', 60000);
+  check('orchestrator recorded, no runtime component', existsSync(join(dirs.managed, 'orchestrator', 'current.json')) && !existsSync(join(dirs.managed, 'runtime')));
+  await waitFor(`(()=>{const a=${card('Orchestrator')};return !!a&&!a.textContent.includes('Ürüne ulaşılamadı')&&/v0\\.1\\.0/.test(a.textContent)})()`, 'Orchestrator answers over RPP from its packaged executable', 60000);
   await shot('03-orchestrator-installed');
   }
 
@@ -269,7 +267,7 @@ try {
   await waitFor(`document.body.innerText.includes('Kurulum işlemleri')&&document.body.innerText.includes('kaldırıldı')&&document.body.innerText.includes('onarıldı')`, 'Activity lists lifecycle operations');
   await shot('08-activity');
 
-  if (!brainOnly) { // Orchestrator settings through RPP apply + readback on the managed runtime.
+  if (!brainOnly) { // Orchestrator settings through RPP apply + readback on the packaged engine.
   await rail('Orchestrator');
   await waitFor(`document.querySelector('.ws-tabs')!==null`, 'Orchestrator workspace opens');
   await clickText('Ayarlar', 'document.querySelector(".ws-tabs")');

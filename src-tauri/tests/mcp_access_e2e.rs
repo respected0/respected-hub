@@ -54,7 +54,7 @@ fn orchestrator_mcp_registration_is_planned_approved_working_and_reversible() {
     std::env::set_var("APPDATA", home.join("AppData"));
     let roots = Roots { managed: managed.0.clone(), catalog: work.0.join("catalog") };
     let settings = Settings { python: "python".into(), orchestrator_root: eco.join("respected-orchestrator"), brain_root: work.0.join("none"),
-        data_root: work.0.join("orch"), brain_data_root: None, brain_exe: None, brain_app_dir: None };
+        data_root: work.0.join("orch"), brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None };
 
     let status = mcp_access::plan(&roots, &settings, &json!({})).unwrap();
     let state = |plan: &Value, client: &str| plan["clients"].as_array().unwrap().iter().find(|c| c["client"] == client).unwrap().clone();
@@ -127,7 +127,7 @@ fn registers_a_disposable_home_for_real_client_checks() {
     std::env::set_var("APPDATA", home.join("AppData"));
     let roots = Roots { managed: keep.join("managed"), catalog: keep.join("catalog") };
     let settings = Settings { python: "python".into(), orchestrator_root: eco.join("respected-orchestrator"), brain_root: keep.join("none"),
-        data_root: keep.join("orch"), brain_data_root: None, brain_exe: None, brain_app_dir: None };
+        data_root: keep.join("orch"), brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None };
     let desired = json!({ "claude-code": !off, "codex": !off });
     let planned = mcp_access::plan(&roots, &settings, &desired).unwrap();
     mcp_access::apply(&roots, &settings, &desired, planned["plan_digest"].as_str().unwrap(), if off { "e2e-mcp-keep-002" } else { "e2e-mcp-keep-001" }).unwrap();

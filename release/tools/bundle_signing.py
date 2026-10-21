@@ -27,8 +27,6 @@ DOMAIN = b"respected-bundle-v1\n"
 
 def statement(manifest: dict) -> bytes:
     body = {k: manifest.get(k) for k in ("schema", "product", "kind", "version", "bundle_digest")}
-    if body["kind"] is None:                       # source bundles omit the field; the Hub derives it the same way
-        body["kind"] = "runtime" if manifest.get("product") == "runtime" else "source"
     return DOMAIN + json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 

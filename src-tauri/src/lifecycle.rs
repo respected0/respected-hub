@@ -1,6 +1,6 @@
 // Hub-managed product lifecycle: install / update / repair / uninstall / rollback / recover.
 //
-// A product is a verified copy of a catalog bundle (`bundle.json` + `payload/src/...`) placed in
+// A product is a verified copy of a catalog bundle (`bundle.json` + `payload/<frozen distribution>`) placed in
 // `<managed>/<product>/versions/<version>`. `current.json` is the single commit point: it is
 // written atomically only after every file hash and the product's own RPP answer verified.
 // Every operation is journaled under `<managed>/journal`, so an interrupted run is recovered
@@ -14,8 +14,6 @@ use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub const PRODUCTS: [&str; 2] = ["orchestrator", "secondbrain"];
-/// Everything the lifecycle can manage: the two products plus the Hub-managed Python runtime.
-pub const COMPONENTS: [&str; 3] = ["orchestrator", "secondbrain", "runtime"];
 pub const ACTIONS: [&str; 4] = ["install", "update", "repair", "uninstall"];
 const MAX_FILES: usize = 5000;
 const MAX_TOTAL_BYTES: u64 = 200 * 1024 * 1024;
@@ -71,10 +69,9 @@ pub fn valid_operation_id(id: &str) -> bool {
     (8..=64).contains(&id.len()) && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
 }
 
-/// A bundle file path must be a clean relative path inside the kind's payload folder (no drive, no
-/// traversal, no backslash). Distribution bundles are whole product folders, so any clean path is fine.
-fn valid_bundle_path(path: &str, kind: &str) -> bool {
-    if path.is_empty() || path.chars().any(|c| c.is_control() || matches!(c, '<' | '>' | '"' | '|' | '?' | '*')) || path.contains('\\') || path.contains(':') || path == "bundle.json" || !match kind { "source" => path.starts_with("src/"), "runtime" => path.starts_with("runtime/"), _ => true } { return false; }
+/// A bundle file path must be a clean relative path inside the product folder (no drive, no traversal, no backslash).
+fn valid_bundle_path(path: &str) -> bool {
+    if path.is_empty() || path.chars().any(|c| c.is_control() || matches!(c, '<' | '>' | '"' | '|' | '?' | '*')) || path.contains('\\') || path.contains(':') || path == "bundle.json" || path == ".respected" || path.starts_with(".respected/") { return false; }
     path.split('/').all(|part| !part.is_empty() && part != "." && part != ".." && Path::new(part).components().all(|c| matches!(c, Component::Normal(_))))
 }
 
@@ -107,7 +104,7 @@ fn journal_dir(roots: &Roots) -> PathBuf { roots.managed.join("journal") }
 fn journal_path(roots: &Roots, id: &str) -> PathBuf { journal_dir(roots).join(format!("{id}.json")) }
 
 fn check_product(product: &str) -> Result<(), LifecycleError> {
-    if COMPONENTS.contains(&product) { Ok(()) } else { fail("BAD_REQUEST", format!("Bilinmeyen ürün: {product}."), "orchestrator, secondbrain veya runtime kullanın.") }
+    if PRODUCTS.contains(&product) { Ok(()) } else { fail("BAD_REQUEST", format!("Bilinmeyen ürün: {product}."), "orchestrator veya secondbrain kullanın.") }
 }
 
 // ---------- bundles ----------
@@ -118,9 +115,10 @@ pub fn read_bundle(dir: &Path) -> Result<Bundle, LifecycleError> {
     let doc: Value = match serde_json::from_slice(&bytes) { Ok(v) => v, Err(e) => return bad(format!("bundle.json JSON değil ({e})")) };
     if doc["schema"] != 1 { return bad("desteklenmeyen şema".into()); }
     let product = doc["product"].as_str().unwrap_or("").to_string();
-    if !COMPONENTS.contains(&product.as_str()) { return bad("bilinmeyen ürün".into()); }
-    let kind = doc["kind"].as_str().unwrap_or(if product == "runtime" { "runtime" } else { "source" }).to_string();
-    if !["source", "runtime", "distribution"].contains(&kind.as_str()) || (product == "runtime") != (kind == "runtime") { return bad("geçersiz paket türü".into()); }
+    if !PRODUCTS.contains(&product.as_str()) { return bad("bilinmeyen ürün".into()); }
+    // every product ships as its packaged (frozen) distribution folder
+    let kind = doc["kind"].as_str().unwrap_or("").to_string();
+    if kind != "distribution" { return bad("geçersiz paket türü".into()); }
     let version = doc["version"].as_str().unwrap_or("").to_string();
     if !valid_version(&version) { return bad("geçersiz sürüm".into()); }
     let list = match doc["files"].as_array() { Some(l) if !l.is_empty() && l.len() <= MAX_FILES => l, _ => return bad("dosya listesi boş veya çok büyük".into()) };
@@ -131,7 +129,7 @@ pub fn read_bundle(dir: &Path) -> Result<Bundle, LifecycleError> {
         let path = item["path"].as_str().unwrap_or("");
         let size = item["size"].as_u64();
         let sha = item["sha256"].as_str().unwrap_or("");
-        if !valid_bundle_path(path, &kind) || size.is_none() || sha.len() != 64 || !sha.bytes().all(|b| b.is_ascii_hexdigit()) { return bad(format!("geçersiz dosya girdisi '{path}'")); }
+        if !valid_bundle_path(path) || size.is_none() || sha.len() != 64 || !sha.bytes().all(|b| b.is_ascii_hexdigit()) { return bad(format!("geçersiz dosya girdisi '{path}'")); }
         if !seen.insert(path.to_string()) { return bad(format!("yinelenen yol '{path}'")); }
         total += size.unwrap_or(0);
         files.push((path.to_string(), size.unwrap_or(0), sha.to_ascii_lowercase()));
@@ -174,18 +172,15 @@ pub fn version_key(version: &str) -> (Vec<u64>, u8, Vec<(u8, u64, String)>) {
     (numbers, if ids.is_empty() { 1 } else { 0 }, ids)
 }
 
-/// Valid catalog bundles for `product` (source/runtime copies), newest first, plus the reasons others were skipped.
-pub fn catalog(roots: &Roots, product: &str) -> (Vec<Bundle>, Vec<String>) { catalog_kind(roots, product, false) }
-
-/// Same listing for whole-distribution bundles (`distribution == true`) or for the managed-copy kinds.
-pub fn catalog_kind(roots: &Roots, product: &str, distribution: bool) -> (Vec<Bundle>, Vec<String>) {
+/// Valid catalog bundles for `product`, newest first, plus the reasons others were skipped.
+pub fn catalog(roots: &Roots, product: &str) -> (Vec<Bundle>, Vec<String>) {
     let (mut found, mut skipped) = (Vec::new(), Vec::new());
     if let Ok(entries) = fs::read_dir(&roots.catalog) {
         for entry in entries.flatten() {
             let path = entry.path();
             if !path.is_dir() || is_link(&path) || !path.join("bundle.json").is_file() { continue; }
             match read_bundle(&path) {
-                Ok(b) if b.product == product && (b.kind == "distribution") == distribution => found.push(b),
+                Ok(b) if b.product == product => found.push(b),
                 Ok(_) => {}
                 Err(e) => skipped.push(format!("{}: {}", entry.file_name().to_string_lossy(), e.message)),
             }
@@ -195,7 +190,7 @@ pub fn catalog_kind(roots: &Roots, product: &str, distribution: bool) -> (Vec<Bu
     (found, skipped)
 }
 
-/// Compare `root` (a directory holding `src/...`) with the bundle manifest: returns problems.
+/// Compare `root` (an installed product folder) with the bundle manifest: returns problems.
 pub(crate) fn tree_problems(root: &Path, bundle: &Bundle) -> Vec<String> {
     let mut problems = Vec::new();
     let mut expected = BTreeSet::new();
@@ -206,14 +201,15 @@ pub(crate) fn tree_problems(root: &Path, bundle: &Bundle) -> Vec<String> {
         if fs::metadata(&file).map(|m| m.len()).ok() != Some(*size) { problems.push(format!("boyut farklı: {path}")); continue; }
         match sha256_file(&file) { Ok(actual) if &actual == sha => {}, _ => problems.push(format!("içerik farklı: {path}")) }
     }
-    let mut stack = vec![if bundle.kind == "distribution" { root.to_path_buf() } else { root.join(if bundle.kind == "runtime" { "runtime" } else { "src" }) }];
+    let mut stack = vec![root.to_path_buf()];
     while let Some(dir) = stack.pop() {
         let Ok(entries) = fs::read_dir(&dir) else { continue };
         for entry in entries.flatten() {
             let path = entry.path();
             let name = entry.file_name().to_string_lossy().to_string();
             if is_link(&path) { problems.push(format!("bağlantı yasak: {name}")); continue; }
-            if path.is_dir() { if name != "__pycache__" { stack.push(path); } continue; }
+            // .respected/ at the top holds the product's own install record (written while the Hub verified the copy)
+            if path.is_dir() { if name != "__pycache__" && !(name == ".respected" && path.parent() == Some(root)) { stack.push(path); } continue; }
             if name.ends_with(".pyc") || (name == "bundle.json" && path.parent() == Some(root)) { continue; }
             let relative = path.strip_prefix(root).map(|p| p.to_string_lossy().replace('\\', "/")).unwrap_or_default();
             if !expected.contains(&relative) { problems.push(format!("fazladan dosya: {relative}")); }
@@ -323,7 +319,6 @@ pub fn plan(roots: &Roots, product: &str, action: &str) -> Result<Value, Lifecyc
         }
         _ => {
             if !installed { return fail("LIFECYCLE_CONFLICT", "Ürün kurulu değil.", "Kaldırılacak bir şey yok."); }
-            if product == "runtime" && read_current(roots, "orchestrator").is_some() { return fail("LIFECYCLE_CONFLICT", "Orchestrator bu Python çalışma ortamını kullanıyor.", "Önce Orchestrator'ı kaldırın."); }
             steps.push(step("remove", "Hub'ın yönettiği program kopyasını ve ürüne ait tüm dosyaları kaldır (geri alma kopyası tutulmaz)", false, Some("Kaldırma geri alınamaz; yeniden kurmak gerekir")));
             steps.push(step("keep-data", "Verileriniz, notlarınız ve çalışma kayıtlarınız silinmez", true, None));
         }
@@ -532,7 +527,7 @@ pub fn recover(roots: &Roots) -> Vec<Value> {
         let status = entry["status"].as_str().unwrap_or("").to_string();
         if is_terminal(&status) { continue; }
         let product = entry["product"].as_str().unwrap_or("").to_string();
-        if !COMPONENTS.contains(&product.as_str()) { continue; }
+        if !PRODUCTS.contains(&product.as_str()) { continue; }
         let id = entry["operation_id"].as_str().unwrap_or("").to_string();
         let current = read_current(roots, &product);
         let target = entry["to_version"].as_str().map(|v| v.to_string());
@@ -553,17 +548,11 @@ pub fn recover(roots: &Roots) -> Vec<Value> {
     report
 }
 
-/// Settings with each managed product's root replaced by its active verified copy.
-pub fn overlay_roots(roots: &Roots, orchestrator: &mut PathBuf, brain: &mut PathBuf) {
-    if let Some((v, _)) = read_current(roots, "orchestrator") { let dir = version_dir(roots, "orchestrator", &v); if dir.join("src").is_dir() { *orchestrator = dir; } }
-    if let Some((v, _)) = read_current(roots, "secondbrain") { let dir = version_dir(roots, "secondbrain", &v); if dir.join("src").is_dir() { *brain = dir; } }
-}
-
-/// The Hub-managed Python interpreter, when the runtime component is installed and intact on disk.
-pub fn managed_python(roots: &Roots) -> Option<PathBuf> {
-    let (version, _) = read_current(roots, "runtime")?;
-    let python = version_dir(roots, "runtime", &version).join("runtime").join("python.exe");
-    python.is_file().then_some(python)
+/// The launcher of a Hub-managed product's active verified copy, when it is installed and on disk.
+pub fn installed_launcher(roots: &Roots, product: &str, launcher: &str) -> Option<PathBuf> {
+    let (version, _) = read_current(roots, product)?;
+    let exe = version_dir(roots, product, &version).join(launcher);
+    exe.is_file().then_some(exe)
 }
 
 #[cfg(test)]
@@ -589,7 +578,7 @@ mod tests {
         let canonical = serde_json::to_string(&Value::Array(list.clone())).unwrap();
         let digest = hex(&Sha256::digest(canonical.as_bytes()));
         std::env::set_var("RESPECTED_HUB_ALLOW_UNSIGNED", "1"); // these fixtures are hand-made unsigned bundles: the explicit development opt-in
-        fs::write(dir.join("bundle.json"), serde_json::to_vec(&json!({ "schema": 1, "product": product, "version": version, "files": list, "bundle_digest": digest, "signature": null })).unwrap()).unwrap();
+        fs::write(dir.join("bundle.json"), serde_json::to_vec(&json!({ "schema": 1, "product": product, "kind": "distribution", "version": version, "files": list, "bundle_digest": digest, "signature": null })).unwrap()).unwrap();
         dir
     }
 
@@ -610,8 +599,8 @@ mod tests {
 
     #[test]
     fn path_rules_reject_traversal_and_foreign_roots() {
-        for good in ["src/a.py", "src/pkg/b.py"] { assert!(valid_bundle_path(good, "source"), "{good}"); }
-        for bad in ["", "a.py", "src/../x", "/src/a", "src\\a.py", "C:/x", "src//a", "src/./a", "../src/a"] { assert!(!valid_bundle_path(bad, "source"), "{bad}"); }
+        for good in ["respected-orchestrator.exe", "app/base_library.zip", "app/pkg/b.pyd"] { assert!(valid_bundle_path(good), "{good}"); }
+        for bad in ["", "app/../x", "/app/a", "app\\a.dll", "C:/x", "app//a", "app/./a", "../app/a", "bundle.json", ".respected/install.json"] { assert!(!valid_bundle_path(bad), "{bad}"); }
     }
 
     #[test]

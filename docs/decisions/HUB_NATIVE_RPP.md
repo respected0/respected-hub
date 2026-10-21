@@ -26,7 +26,7 @@ without opening HTTP ports, without a public CLI and without adding dependencies
   at 1 MiB. Secret-looking environment variables (names containing key/token/secret/
   passw/credential/auth/cookie/session) are not forwarded to the child.
 - Native failures become envelopes: `ENGINE_NOT_FOUND` (root/module missing),
-  `ENGINE_UNAVAILABLE` (cannot spawn Python), `ENGINE_TIMEOUT`, `BAD_RESPONSE`
+  `ENGINE_UNAVAILABLE` (cannot start the engine), `ENGINE_TIMEOUT`, `BAD_RESPONSE`
   (no/invalid JSON or an envelope that does not match the contract). The process
   pump is extracted from `call_engine` in `lib.rs`, so the existing Orchestrator
   path keeps identical behaviour and error strings.

@@ -42,7 +42,7 @@ fn settings_for(ecosystem: &Path, data_root: &Path) -> Settings {
         orchestrator_root: product_root(ecosystem, "orchestrator"),
         brain_root: product_root(ecosystem, "secondbrain"),
         data_root: data_root.to_path_buf(),
-        brain_data_root: Some(data_root.to_path_buf()), brain_exe: None, brain_app_dir: None,
+        brain_data_root: Some(data_root.to_path_buf()), brain_exe: None, brain_app_dir: None, orchestrator_exe: None,
     }
 }
 
@@ -172,7 +172,7 @@ fn missing_engine_root_reports_engine_not_found() {
         orchestrator_root: data.0.join("no-orchestrator"),
         brain_root: data.0.join("no-secondbrain"),
         data_root: data.0.clone(),
-        brain_data_root: Some(data.0.clone()), brain_exe: None, brain_app_dir: None,
+        brain_data_root: Some(data.0.clone()), brain_exe: None, brain_app_dir: None, orchestrator_exe: None,
     };
     for product in PRODUCTS {
         let response = call(&settings, product, "manifest", None, None);

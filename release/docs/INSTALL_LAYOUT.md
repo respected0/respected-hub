@@ -15,7 +15,7 @@ installer**: the Hub downloads it from the signed catalog on GitHub Releases whe
 | Desktop, Start Menu | `Respected Hub.lnk` |
 | Installed apps (HKCU) | `Respected Hub` (Inno AppId `{5C0F6A1E-3B7D-4E2A-9D55-7A1C2F0E8B31}_is1`) |
 | First Hub start | `%LOCALAPPDATA%\com.respected.hub\` (WebView2 cache, window state), `%APPDATA%\com.respected.hub\` (Hub settings), `...\RespectedHub\managed\catalog-index.json` (+ `.sig`, the verified catalog) |
-| NOT created | no PATH change, no service, no scheduled task, no AI-client config, no vault, no Python outside the Hub |
+| NOT created | no PATH change, no service, no scheduled task, no AI-client config, no vault, no Python |
 
 ## 2. Installing SecondBrain (Hub wizard)
 | Where | What |
@@ -32,9 +32,8 @@ installer**: the Hub downloads it from the signed catalog on GitHub Releases whe
 ## 3. Installing Orchestrator
 | Where | What |
 |---|---|
-| `...\RespectedHub\managed\catalog\{orchestrator,runtime}-<version>\` | downloaded, verified packages (Python runtime ~44 MB, only the first time) |
-| `...\RespectedHub\managed\runtime\{current.json, versions\<python>\}` | the Hub's own CPython + agent framework |
-| `...\RespectedHub\managed\orchestrator\{current.json, versions\<version>\}` | the Orchestrator program |
+| `...\RespectedHub\managed\catalog\orchestrator-<version>\` | the downloaded, verified package (~29 MB, kept for offline repair) |
+| `...\RespectedHub\managed\orchestrator\{current.json, versions\<version>\}` | the Orchestrator program (`respected-orchestrator.exe` + `app`, no Python needed) |
 | `%LOCALAPPDATA%\Respected\RespectedOrchestrator\data\` | run records, receipts, settings (created when used) |
 | Only if MCP access is enabled | `...\managed\orchestrator\mcp\respected-orchestrator-mcp.cmd` + an entry in the ticked clients' MCP files; the server hands each client the kod-orkestrasyon instructions |
 | Installed apps | `Respected Orchestrator` |
@@ -51,8 +50,8 @@ installer**: the Hub downloads it from the signed catalog on GitHub Releases whe
 
 ## 5. Uninstall
 * **A product** (Hub › Kaldır, or Windows Installed apps › Uninstall): its program, its `managed` folder and cached archive, its
-  data folder (with backups), our hook/MCP/schedule/shortcut entries (others' entries untouched) and its Installed-apps entry; the
-  runtime goes with the last Python product. **Stays: the vault and its notes.** Not undoable.
+  data folder (with backups), our hook/MCP/schedule/shortcut entries (others' entries untouched) and its Installed-apps entry.
+  **Stays: the vault and its notes.** Not undoable.
 * **The Hub** (Installed apps): asks "products too?" (default *No*).
   * *Yes*: everything above for every product, then `managed`, the Hub files, shortcuts, WebView cache and Hub settings.
   * *No*: products keep working (they do not need the Hub to run) but cannot be updated or repaired. The Hub executable is copied to

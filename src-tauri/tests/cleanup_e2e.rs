@@ -42,14 +42,11 @@ fn uninstalling_the_hub_can_remove_the_products_and_every_registration_without_t
         let done = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_bundle.py")).args(args).arg("--out").arg(out).status().unwrap();
         assert!(done.success());
     };
-    let frozen = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_brain_dist.py")).output().unwrap();
-    assert!(frozen.status.success(), "{}", String::from_utf8_lossy(&frozen.stderr));
-    let dist = String::from_utf8_lossy(&frozen.stdout).lines().last().unwrap().trim().to_string();
-    built(&["secondbrain-dist", "--dist", &dist], &catalog.0);
+    built(&["secondbrain"], &catalog.0);
     built(&["orchestrator"], &catalog.0);
     let roots = Roots { managed: managed_root.clone(), catalog: catalog.0.clone() };
     let settings = Settings { python: "python".into(), orchestrator_root: eco.join("respected-orchestrator"), brain_root: work.0.join("none"),
-        data_root: work.0.join("orch"), brain_data_root: None, brain_exe: None, brain_app_dir: None };
+        data_root: work.0.join("orch"), brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None };
 
     let vault = work.0.join("Vault");
     let params = json!({ "vault_path": vault, "profile": { "USER_NAME": "Test" }, "desired": { "global": true, "mcp": true } });
