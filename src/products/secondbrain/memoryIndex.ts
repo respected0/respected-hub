@@ -18,8 +18,8 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
 }
 
 export const memoryIndexStatus = () => call<IndexStatus>('memory_index_status');
-export interface CaptureResult { captured_sessions: number; compile_status: number; }
-export const memoryCaptureRun = () => call<CaptureResult>('memory_capture_run');
+interface CaptureRunResult { captured_sessions: number; compile_status: number; }
+export const memoryCaptureRun = () => call<CaptureRunResult>('memory_capture_run');
 export const memoryIndexRefresh = (force = false) => call<IndexRefreshResult>('memory_index_refresh', { force });
 
 interface IndexDescription { state: IndexState; title: string; detail: string; }

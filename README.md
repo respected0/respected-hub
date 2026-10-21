@@ -29,7 +29,7 @@ WebView2). The Rust end-to-end tests build the sibling products, so the three re
 npm ci
 npm run check                                   # tsc + unit tests
 cargo test --manifest-path src-tauri/Cargo.toml # unit + end-to-end (builds both products once, cached)
-python release/tools/accept_hub.py              # both, guarded against any change to your real AI-client config
+python release/tools/acceptance/accept_hub.py              # both, guarded against any change to your real AI-client config
 npm run tauri -- dev
 ```
 

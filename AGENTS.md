@@ -9,6 +9,6 @@ Do not install global tools, edit existing AI configs or modify live SecondBrain
 agents unless the user asks. Orchestrator runs must survive the Hub closing; the engine owns task state and cancellation.
 Expose only explicitly allowed private engine operations; no generic shell execution.
 
-Before calling a change done: `npm run check`, `cargo test` (or `python release/tools/accept_hub.py`), and for UI or
+Before calling a change done: `npm run check`, `cargo test` (or `python release/tools/acceptance/accept_hub.py`), and for UI or
 lifecycle changes the native driver `tests/native/hub_native_e2e.mjs` against a built exe. Binding decisions live in
 `docs/decisions/` and change in the same task as the code. Documentation references never become runtime imports.

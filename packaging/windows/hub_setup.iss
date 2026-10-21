@@ -1,5 +1,5 @@
 ﻿; Respected Hub - per-user Windows installer (no administrator rights).
-; Built by release/tools/build_hub_installer.py, which stages the Hub executable. Products are not inside: the Hub downloads
+; Built by release/tools/build/build_hub_installer.py, which stages the Hub executable. Products are not inside: the Hub downloads
 ; them from the signed catalog on GitHub Releases when the person installs them.
 #ifndef AppVersion
   #define AppVersion "0.1.0-beta.1"
@@ -91,7 +91,7 @@ begin
   Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
 end;
 
-// The Hub lists each product it installed in Installed apps (src-tauri/src/registration.rs): that is how we know any exist.
+// The Hub lists each product it installed in Installed apps (src-tauri/src/hub/registration.rs): that is how we know any exist.
 function ProductsInstalled(): Boolean;
 begin
   Result := RegKeyExists(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\RespectedSecondBrain') or

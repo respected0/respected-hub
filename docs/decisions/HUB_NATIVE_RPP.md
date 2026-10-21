@@ -28,9 +28,9 @@ without opening HTTP ports, without a public CLI and without adding dependencies
 - Native failures become envelopes: `ENGINE_NOT_FOUND` (root/module missing),
   `ENGINE_UNAVAILABLE` (cannot start the engine), `ENGINE_TIMEOUT`, `BAD_RESPONSE`
   (no/invalid JSON or an envelope that does not match the contract). The process
-  pump is extracted from `call_engine` in `lib.rs`, so the existing Orchestrator
+  pump is extracted from `call_engine` (now `process.rs`), so the existing Orchestrator
   path keeps identical behaviour and error strings.
-- `lib.rs` exposes `#[tauri::command] async fn rpp_request(...)`, which loads
+- `commands/engine.rs` exposes `#[tauri::command] async fn rpp_request(...)`, which loads
   settings, runs `rpp_call` in `spawn_blocking` and returns the envelope as JSON.
   `Settings` is public, gains `#[serde(default)] brain_data_root: Option<PathBuf>`
   (backwards compatible with an existing `connections.json`) and the default brain
