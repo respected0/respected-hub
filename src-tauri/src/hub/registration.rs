@@ -28,8 +28,9 @@ fn reg(args: &[&str]) -> bool {
 /// Installed version of each Hub-managed product (None = not installed).
 fn installed(roots: &Roots, d: &BrainDirs) -> [(usize, Option<String>); 2] {
     let brain = secondbrain::status(roots, d);
-    [(0, if brain["installed"] == true { brain["version"].as_str().map(str::to_string) } else { None }),
-     (1, lifecycle::read_current(roots, "orchestrator").map(|c| c.0))]
+    [(0, if brain["installed"] == true && !super::standalone::brain_has_installer(d) { brain["version"].as_str().map(str::to_string) } else { None }),
+     // a product with its own installer owns its Installed-apps entry: the Hub writes none (and drops one it wrote earlier)
+     (1, if super::standalone::orchestrator().is_some() { None } else { lifecycle::read_current(roots, "orchestrator").map(|c| c.0) })]
 }
 
 /// Write the entries of installed products and delete the others. Returns how many products are installed.

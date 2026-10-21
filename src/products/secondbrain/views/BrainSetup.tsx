@@ -7,9 +7,8 @@ import type { RppResponse, SettingsSchema } from '../../../shared/rpp.ts';
 import { changedSettings, formFromSchema, parseFieldValue, verifyReadback } from '../../../shared/productsModel.ts';
 import type { FormField } from '../../../shared/productsModel.ts';
 
-const NAME_KEY = 'hub.secondbrain.assistantName';
-export const readAssistantName = () => { try { return localStorage.getItem(NAME_KEY) ?? ''; } catch { return ''; } };
-const writeAssistantName = (name: string) => { try { localStorage.setItem(NAME_KEY, name); } catch { /* optional personalization */ } };
+// The assistant's name is a SecondBrain setting (`assistant_name`), read and written like every other schema field.
+const NAME_FIELD = 'assistant_name';
 
 // Plain-language help for the engine's real settings; unknown keys fall back to the schema label.
 const HELP: Record<string, string> = {
@@ -36,14 +35,13 @@ export default function BrainSetup({ configured, onDone, engine = false }: { con
   const [fields, setFields] = useState<FormField[]>([]);
   const [original, setOriginal] = useState<Record<string, unknown>>({});
   const [schema, setSchema] = useState<SettingsSchema | null>(null);
-  const [name, setName] = useState(readAssistantName);
   const [state, setState] = useState<'loading' | 'ready' | 'failed'>('loading');
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
   const [busy, setBusy] = useState(false);
   const [vault, setVault] = useState<string | null>(null);
   const [parent, setParent] = useState('');
-  const [vaultName, setVaultName] = useState('SecondBrain');
+  const [vaultName, setVaultName] = useState('RespectedOS');
 
   useEffect(() => {
     let active = true;
@@ -65,7 +63,8 @@ export default function BrainSetup({ configured, onDone, engine = false }: { con
   const values = () => Object.fromEntries(fields.filter(item => !(engine && item.key.startsWith('integrations.'))).map(item => [item.key, parseFieldValue(item, typeof item.value === 'boolean' ? String(item.value) : item.value)]));
   // A fresh install has no config file yet: write every value once so the engine reports source "file".
   const intended = () => configured ? changedSettings(original, values()) : values();
-  const providerFields = fields.filter(item => !item.key.startsWith('integrations.'));
+  const name = String(fields.find(item => item.key === NAME_FIELD)?.value ?? '');
+  const providerFields = fields.filter(item => !item.key.startsWith('integrations.') && item.key !== NAME_FIELD);
   const integrationFields = fields.filter(item => item.key.startsWith('integrations.'));
 
   const separator = parent.includes('\\') ? '\\' : '/';
@@ -79,7 +78,7 @@ export default function BrainSetup({ configured, onDone, engine = false }: { con
   async function createVault() {
     setBusy(true); setError('');
     try {
-      const response = await rppCall('secondbrain', 'lifecycle.apply', { action: 'install', target: { vault_path: vaultPath, profile: name.trim() ? { USER_NAME: name.trim() } : {} } }, crypto.randomUUID());
+      const response = await rppCall('secondbrain', 'lifecycle.apply', { action: 'install', target: { vault_path: vaultPath, profile: {} } }, crypto.randomUUID());
       if (!response.ok) { setError(failure(response)); return; }
       const manifest = await rppCall('secondbrain', 'manifest');
       const registered = manifest.ok ? ((manifest.result as { roots?: { vault?: string | null } }).roots?.vault ?? null) : null;
@@ -99,7 +98,6 @@ export default function BrainSetup({ configured, onDone, engine = false }: { con
       const current = (readback.result as { settings?: Record<string, unknown> }).settings ?? {};
       const verdict = verifyReadback(payload, current);
       if (!verdict.verified) { setError(`Geri okuma farklı: ${verdict.mismatches.map(m => m.key).join(', ')}`); return; }
-      writeAssistantName(name.trim());
       setOriginal(current); setFields(formFromSchema(schema, current));
       setDone('SecondBrain yapılandırıldı ve motordan geri okunarak doğrulandı.');
       onDone();
@@ -124,8 +122,8 @@ export default function BrainSetup({ configured, onDone, engine = false }: { con
     {step === 0 && <div className="step-body">
       <h2>{configured ? 'SecondBrain ayarlarını gözden geçir' : "SecondBrain'i hazırlayalım"}</h2>
       <p>Bu sihirbaz yalnızca SecondBrain'in desteklediği ayarları yazar; dosya düzenlemen ya da komut satırı gerekmez.</p>
-      <label>Hafıza asistanının adı <small>İsteğe bağlı. Yalnızca Hub'da görünen kişiselleştirmedir; hafıza motorunu etkilemez.</small>
-        <input value={name} maxLength={40} placeholder="ör. Jarvis" onChange={event => setName(event.target.value)} /></label>
+      <label>Hafıza asistanının adı <small>İsteğe bağlı. SecondBrain'de saklanır; Hub bu adı karşılama ekranında gösterir.</small>
+        <input value={name} maxLength={40} placeholder="ör. Jarvis" onChange={event => set(NAME_FIELD, event.target.value)} /></label>
       <h3>Not kasası</h3>
       {vault ? <p>Kayıtlı kasa: <strong className="mono">{vault}</strong> <small>(mevcut notların korunur; Hub kasayı değiştirmez)</small></p>
         : <div className="vault-create"><p className="muted">Henüz kayıtlı kasa yok. Boş veya yeni bir klasör seç; mevcut notların üzerine yazılmaz.</p>
@@ -139,7 +137,6 @@ export default function BrainSetup({ configured, onDone, engine = false }: { con
     {step === 2 && engine && <BrainIntegrations initial={Object.fromEntries(integrationFields.map(item => [item.key.replace('integrations.', ''), item.value === true]))} onApplied={onDone} />}
     {step === 2 && !engine && <div className="step-body"><h2>Entegrasyon tercihleri</h2><p className="muted">Bu seçimler SecondBrain yapılandırmasına tercih olarak kaydedilir. AI araçlarının kendi ayarlarına uygulanması SecondBrain'in kendi kurucusu tarafından yapılır; Hub şu an AI araç yapılandırmalarını değiştirmez.</p>{integrationFields.map(control)}</div>}
     {step === 3 && <div className="step-body"><h2>Onay</h2>
-      {name.trim() && <p>Asistan adı: <strong>{name.trim()}</strong> <small>(Hub'da saklanır)</small></p>}
       <ul className="review">{fields.map(item => <li key={item.key}><span>{item.label}</span><strong>{typeof item.value === 'boolean' ? (item.value ? 'Açık' : 'Kapalı') : item.value}</strong></li>)}</ul>
       <p className="muted">{configured ? `${pending.length} değişiklik uygulanacak.` : 'İlk kurulum: tüm değerler SecondBrain yapılandırmasına yazılacak.'}</p></div>}
     {error && <p className="error" role="alert">{error}</p>}
