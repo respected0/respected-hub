@@ -1,18 +1,20 @@
 // Real desktop end-to-end drive of a built Hub (dev build or the installed one) through WebView2's DevTools port.
-//   node tools/hub_native_e2e.mjs <hub.exe> [--shipped-catalog] [--report DIR]
+//   node tools/hub_native_e2e.mjs <hub.exe> [--remote-catalog] [--report DIR]
+// --remote-catalog: products come through the download path (a signed file:// catalog made by release/tools/publish_release.py).
 // Everything runs on disposable roots and a FAKE user home (a foreign ~/.claude.json to be preserved). The
 // Hub is started with Python removed from PATH, so passing proves products run without a system Python.
 import { spawn, spawnSync } from 'node:child_process';
 import { cpSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname, delimiter } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const args = process.argv.slice(2);
 const exe = resolve(args.find(a => !a.startsWith('--')) ?? '');
-const shipped = args.includes('--shipped-catalog');
+const remote = args.includes('--remote-catalog');
 const brainOnly = args.includes('--only-brain'); // targeted rerun: skip the Orchestrator/runtime scenarios
 const eco = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const tools = join(eco, 'release', 'tools');
 const reportDir = resolve(args.includes('--report') ? args[args.indexOf('--report') + 1] : join(eco, '.campaign-data', 'master-plan', 'reports', 'hub-native'));
 mkdirSync(reportDir, { recursive: true });
 if (!existsSync(exe)) { console.error('exe not found:', exe); process.exit(2); }
@@ -27,14 +29,14 @@ writeFileSync(join(dirs.home, '.claude.json'), foreign);
 
 // Guard: the run must not change the REAL AI-client configuration (tools/real_env_guard.py compares before and after).
 const guardFile = join(work, 'real-env-before.json');
-spawnSync('python', ['-B', join(eco, 'tools', 'real_env_guard.py'), 'snapshot', guardFile], { encoding: 'utf8' });
+spawnSync('python', ['-B', join(tools, 'real_env_guard.py'), 'snapshot', guardFile], { encoding: 'utf8' });
 const py = (...a) => { const r = spawnSync('python', ['-B', ...a], { encoding: 'utf8' }); if (r.status !== 0) { console.error(r.stderr); process.exit(2); } return r.stdout.trim(); };
-if (!shipped) {
-  const dist = py(join(eco, 'tools', 'build_brain_dist.py')).split(/\r?\n/).pop();
-  py(join(eco, 'tools', 'build_bundle.py'), 'orchestrator', '--out', dirs.catalog);
-  py(join(eco, 'tools', 'build_bundle.py'), 'secondbrain-dist', '--dist', dist, '--out', dirs.catalog);
-  py(join(eco, 'tools', 'build_runtime.py'), '--out', dirs.catalog);
-}
+const dist = py(join(tools, 'build_brain_dist.py')).split(/\r?\n/).pop();
+py(join(tools, 'build_bundle.py'), 'orchestrator', '--out', dirs.catalog);
+py(join(tools, 'build_bundle.py'), 'secondbrain-dist', '--dist', dist, '--out', dirs.catalog);
+py(join(tools, 'build_runtime.py'), '--out', dirs.catalog);
+const served = join(work, 'served');
+if (remote) py(join(tools, 'publish_release.py'), 'local-catalog', ...readdirSync(dirs.catalog).flatMap(name => ['--bundle', join(dirs.catalog, name)]), '--out', served);
 
 const port = 9333;
 const pathWithoutPython = process.env.PATH.split(delimiter).filter(p => !/python|WindowsApps/i.test(p)).join(delimiter);
@@ -42,7 +44,10 @@ const env = { ...process.env, PATH: pathWithoutPython, RESPECTED_HUB_TEST_HOME: 
   WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`, WEBVIEW2_USER_DATA_FOLDER: join(work, 'webview'),
   RESPECTED_HUB_MANAGED_ROOT: dirs.managed, RESPECTED_ORCHESTRATOR_DATA_ROOT: dirs.data,
   RESPECTED_HUB_BRAIN_APP_DIR: dirs.brainApp, RESPECTED_HUB_BRAIN_DATA_DIR: dirs.brainData, PYTHONDONTWRITEBYTECODE: '1' };
-if (!shipped) env.RESPECTED_HUB_CATALOG_ROOT = dirs.catalog;
+// development builds trust the local dev signing key only when told where it is (an installed dev build has dev-trust.pub beside it)
+env.RESPECTED_HUB_DEV_TRUST = join(eco, '..', '.build-cache', 'signing', 'dev-ed25519.pub');
+if (remote) env.RESPECTED_HUB_CATALOG_URL = pathToFileURL(join(served, 'catalog.json')).href; // cache: <managed>/catalog
+else env.RESPECTED_HUB_CATALOG_ROOT = dirs.catalog;
 const intent = args.find(a => a.startsWith('--intent='))?.slice(9); // product installers launch Hub with --install=<product>
 const child = spawn(exe, intent ? [`--install=${intent}`] : [], { env, stdio: 'ignore' });
 
@@ -307,14 +312,14 @@ try {
 } finally {
   try { ws?.close(); } catch { /* ignore */ }
   child.kill();
-  const guard = spawnSync('python', ['-B', join(eco, 'tools', 'real_env_guard.py'), 'verify', guardFile], { encoding: 'utf8' });
+  const guard = spawnSync('python', ['-B', join(tools, 'real_env_guard.py'), 'verify', guardFile], { encoding: 'utf8' });
   check('real AI client configuration untouched by this run', guard.status === 0, (guard.stdout ?? '').trim().slice(0, 300));
   spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
   await sleep(2000);
   rmSync(work, { recursive: true, force: true });
   writeFileSync(join(reportDir, 'page-events.txt'), events.join('\n'));
   const failed = results.filter(r => !r.ok);
-  writeFileSync(join(reportDir, 'result.md'), `# Hub native e2e (${new Date().toISOString()})\n\nexe: ${exe}${shipped ? ' (shipped catalog)' : ''}\n\n${results.map(r => `- ${r.ok ? 'PASS' : 'FAIL'} ${r.name}${r.detail ? ' — ' + r.detail : ''}`).join('\n')}\n\n${failed.length ? `${failed.length} FAILED` : 'ALL PASSED'}\n`);
+  writeFileSync(join(reportDir, 'result.md'), `# Hub native e2e (${new Date().toISOString()})\n\nexe: ${exe}${remote ? ' (remote catalog)' : ''}\n\n${results.map(r => `- ${r.ok ? 'PASS' : 'FAIL'} ${r.name}${r.detail ? ' — ' + r.detail : ''}`).join('\n')}\n\n${failed.length ? `${failed.length} FAILED` : 'ALL PASSED'}\n`);
   console.log(failed.length ? `${failed.length} FAILED` : 'ALL PASSED');
   process.exit(failed.length ? 1 : 0);
 }

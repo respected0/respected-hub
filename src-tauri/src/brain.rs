@@ -82,34 +82,29 @@ pub fn status(roots: &Roots, d: &BrainDirs) -> Value {
     })
 }
 
-/// Verified copy of the newest catalog distribution under `<managed>/secondbrain/dist/<version>`.
+/// The newest catalog distribution, used in place: its signed `payload` folder (re-verified file by file) is the package the
+/// engine installs from, so no second copy of the program is kept on disk.
 static STAGE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
-/// Serialised: the wizard asks for plans on every toggle, and two threads must never stage the same folder.
+/// Serialised: the wizard asks for plans on every toggle.
 pub fn stage(roots: &Roots) -> Result<(PathBuf, lifecycle::Bundle), LifecycleError> {
     let _guard = STAGE_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let (bundles, _) = lifecycle::catalog_kind(roots, PRODUCT, true);
     let Some(bundle) = bundles.into_iter().next() else {
-        return Err(err("BAD_REQUEST", "Katalogda SecondBrain dağıtım paketi yok.", "tools/build_bundle.py secondbrain-dist ile paket oluşturup kataloğa koyun."));
+        return Err(err("CATALOG_UNAVAILABLE", "SecondBrain paketi henüz indirilmedi.", "İnternet bağlantınızı kontrol edip yeniden deneyin."));
     };
-    let dest = roots.managed.join(PRODUCT).join("dist").join(&bundle.version);
-    if dest.join("respectedbrain.exe").is_file() && lifecycle::tree_problems(&dest, &bundle).is_empty() { return Ok((dest, bundle)); }
-    lifecycle::stage_bundle(&bundle, &dest)?;
-    let problems = lifecycle::tree_problems(&dest, &bundle);
-    if !problems.is_empty() {
-        let _ = fs::remove_dir_all(&dest);
-        return Err(err("VERIFY_FAILED", format!("Hazırlanan kopya doğrulanamadı: {}", problems.join("; ")), "Yeniden deneyin."));
-    }
-    Ok((dest, bundle))
+    let payload = bundle.dir.join("payload");
+    let problems = lifecycle::tree_problems(&payload, &bundle);
+    if !problems.is_empty() { return Err(err("VERIFY_FAILED", format!("SecondBrain paketi doğrulanamadı: {}", problems.join("; ")), "Ürün sayfasından yeniden deneyin; paket yeniden indirilir.")); }
+    Ok((payload, bundle))
 }
 
 /// Launcher used for read-only RPP calls: the installed one, else the staged one when it already exists.
 pub fn engine_exe(roots: &Roots, d: &BrainDirs) -> Option<PathBuf> {
-    // The staged, verified copy serves read-only RPP calls (RESPECTED_APP_DIR points it at the real install), so no
+    // The cached, verified package serves read-only RPP calls (RESPECTED_APP_DIR points it at the real install), so no
     // Hub process ever runs from - and locks - the installed program folder.
-    let staged_root = roots.managed.join(PRODUCT).join("dist");
     let (bundles, _) = lifecycle::catalog_kind(roots, PRODUCT, true);
-    let staged = bundles.first().map(|b| staged_root.join(&b.version).join("respectedbrain.exe")).filter(|p| p.is_file());
+    let staged = bundles.first().map(|b| b.dir.join("payload").join("respectedbrain.exe")).filter(|p| p.is_file());
     if staged.is_some() { return staged; }
     if is_installed(d) { return Some(installed_exe(d)); }
     None

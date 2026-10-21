@@ -4,6 +4,8 @@ use std::{fs, io::{Read, Write}, path::{Path, PathBuf}, process::{Command, Stdio
 use tauri::Manager;
 
 pub mod brain;
+pub mod catalog;
+pub mod registration;
 pub mod mcp_access;
 pub mod memory_access;
 pub mod memory_index;
@@ -233,16 +235,15 @@ async fn product_status(app: tauri::AppHandle) -> Result<Value, String> {
         "hub_version": env!("CARGO_PKG_VERSION"), "engine": engine.unwrap_or_else(|error| json!({"error": error})) }))
 }
 
-fn lifecycle_roots(app: &tauri::AppHandle) -> Result<lifecycle::Roots, String> {
-    let base = app.path().app_local_data_dir().map_err(|e| e.to_string())?;
-    let absolute = |name: &str| trust::dev_abs(name);
-    // Packaged builds ship their bundles beside the app; only a development build may fall back to <ecosystem>/catalog.
-    let shipped = app.path().resource_dir().ok().map(|p| p.join("catalog")).filter(|p| p.is_dir());
-    let sibling = shipped.or_else(|| if trust::dev_enabled() { Path::new(env!("CARGO_MANIFEST_DIR")).parent().and_then(Path::parent).map(|p| p.join("catalog")).filter(|p| p.is_dir()) } else { None });
-    Ok(lifecycle::Roots {
-        managed: absolute("RESPECTED_HUB_MANAGED_ROOT").unwrap_or_else(|| brain::respected_root().join("RespectedHub").join("managed")),
-        catalog: absolute("RESPECTED_HUB_CATALOG_ROOT").or(sibling).unwrap_or_else(|| base.join("catalog")),
-    })
+fn lifecycle_roots(_app: &tauri::AppHandle) -> Result<lifecycle::Roots, String> { Ok(standard_roots()) }
+
+/// `<Respected>\RespectedHub\managed` and its catalog cache (bundles downloaded from GitHub Releases). Only a development build
+/// may point elsewhere or fall back to `<ecosystem>/catalog` built by release/tools.
+pub fn standard_roots() -> lifecycle::Roots {
+    let managed = trust::dev_abs("RESPECTED_HUB_MANAGED_ROOT").unwrap_or_else(|| brain::respected_root().join("RespectedHub").join("managed"));
+    let sibling = if trust::dev_enabled() { Path::new(env!("CARGO_MANIFEST_DIR")).parent().and_then(Path::parent).map(|p| p.join("catalog")).filter(|p| p.is_dir()) } else { None };
+    let catalog = trust::dev_abs("RESPECTED_HUB_CATALOG_ROOT").or(sibling).unwrap_or_else(|| managed.join("catalog"));
+    lifecycle::Roots { managed, catalog }
 }
 
 /// Saved connections with each Hub-managed product pointing at its active verified copy.
@@ -326,11 +327,36 @@ pub fn apply_with_runtime(roots: &lifecycle::Roots, mut settings: Settings, prod
 
 /// Component status: SecondBrain comes from its own engine, the rest from the Hub-managed copies.
 pub fn hub_status(roots: &lifecycle::Roots, d: &brain::BrainDirs) -> Value {
-    let products: Vec<Value> = lifecycle::COMPONENTS.iter().map(|p| if *p == "secondbrain" { brain::status(roots, d) } else { lifecycle::status(roots, p).unwrap_or(Value::Null) }).collect();
+    let products: Vec<Value> = lifecycle::COMPONENTS.iter().map(|p| {
+        let mut status = if *p == "secondbrain" { brain::status(roots, d) } else { lifecycle::status(roots, p).unwrap_or(Value::Null) };
+        catalog::overlay_status(roots, &mut status);
+        status
+    }).collect();
     json!({ "ok": true, "result": { "products": products, "managed_root": roots.managed, "catalog_root": roots.catalog, "brain_app_dir": d.app, "brain_data_dir": d.data }, "error": Value::Null })
 }
 
+/// Download (once) the bundles an action needs: the newest release for install/update, the installed version for repair,
+/// and the Python runtime before the first Orchestrator install.
+fn ensure_bundles(roots: &lifecycle::Roots, d: &brain::BrainDirs, product: &str, action: &str) -> Result<(), lifecycle::LifecycleError> {
+    match action {
+        "install" | "update" => {
+            catalog::ensure_bundle(roots, product, None)?;
+            if product == "orchestrator" && lifecycle::managed_python(roots).is_none() {
+                // with a published catalog the runtime is required; a development setup without one may use the system Python
+                if let Err(error) = catalog::ensure_bundle(roots, "runtime", None) { if catalog::cached(roots).is_some() { return Err(error); } }
+            }
+        }
+        "repair" => {
+            let installed = if product == "secondbrain" { brain::status(roots, d)["version"].as_str().map(str::to_string) } else { lifecycle::read_current(roots, product).map(|c| c.0) };
+            catalog::ensure_bundle(roots, product, installed.as_deref())?;
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
 pub fn hub_plan(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: &Settings, product: &str, action: &str, params: &Value) -> Result<Value, lifecycle::LifecycleError> {
+    ensure_bundles(roots, d, product, action)?;
     if product == "secondbrain" { return brain::plan(roots, d, settings, action, params); }
     let mut plan = lifecycle::plan(roots, product, action)?;
     if matches!(action, "install" | "update") && product != "runtime" && lifecycle::managed_python(roots).is_none() && !lifecycle::catalog(roots, "runtime").0.is_empty() {
@@ -342,9 +368,22 @@ pub fn hub_plan(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: &Setti
 }
 
 pub fn hub_apply(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: Settings, product: &str, action: &str, params: &Value, id: &str) -> Result<Value, lifecycle::LifecycleError> {
+    ensure_bundles(roots, d, product, action)?;
     let applied = hub_apply_inner(roots, d, settings.clone(), product, action, params, id);
-    if applied.is_ok() && action == "uninstall" { cleanup::after_uninstall(roots, d, &settings, product, id); }
+    if applied.is_ok() {
+        if action == "uninstall" { cleanup::after_uninstall(roots, d, &settings, product, id); } else { sweep(roots, d); }
+        registration::sync(roots, d);
+    }
     applied
+}
+
+/// No leftovers: only the installed version of each component stays, in the managed folder and in the catalog cache.
+pub fn sweep(roots: &lifecycle::Roots, d: &brain::BrainDirs) {
+    for product in lifecycle::COMPONENTS {
+        lifecycle::prune_old_versions(roots, product);
+        let installed = if product == "secondbrain" { brain::status(roots, d)["version"].as_str().map(str::to_string) } else { lifecycle::read_current(roots, product).map(|c| c.0) };
+        if let Some(version) = installed { catalog::prune(roots, product, &version); }
+    }
 }
 
 fn hub_apply_inner(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: Settings, product: &str, action: &str, params: &Value, id: &str) -> Result<Value, lifecycle::LifecycleError> {
@@ -386,7 +425,40 @@ async fn lifecycle_plan(app: tauri::AppHandle, product: String, action: String, 
 async fn lifecycle_apply(app: tauri::AppHandle, product: String, action: String, operation_id: String, params: Option<Value>) -> Result<Value, String> {
     let roots = lifecycle_roots(&app)?;
     let settings = resolved_settings(&app)?;
-    tauri::async_runtime::spawn_blocking(move || lifecycle_reply(hub_apply(&roots, &brain::dirs(), settings, &product, &action, &params.unwrap_or(Value::Null), &operation_id))).await.map_err(|e| e.to_string())
+    let reply = tauri::async_runtime::spawn_blocking({ let roots = roots.clone(); move || lifecycle_reply(hub_apply(&roots, &brain::dirs(), settings, &product, &action, &params.unwrap_or(Value::Null), &operation_id)) }).await.map_err(|e| e.to_string())?;
+    // left behind by a kept-products Hub uninstall: once nothing is installed it has no job, so it removes itself
+    if registration::running_from_maintenance(&roots) && registration::sync(&roots, &brain::dirs()) == 0 {
+        registration::retire_maintenance(&roots);
+        std::thread::spawn(move || { std::thread::sleep(Duration::from_millis(2500)); app.exit(0); });
+    }
+    Ok(reply)
+}
+
+#[tauri::command]
+async fn catalog_refresh(app: tauri::AppHandle) -> Result<Value, String> {
+    let roots = lifecycle_roots(&app)?;
+    tauri::async_runtime::spawn_blocking(move || lifecycle_reply(catalog::refresh(&roots).map(|_| catalog::hub_update(&roots)))).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn catalog_set_channel(app: tauri::AppHandle, channel: String) -> Result<Value, String> {
+    let roots = lifecycle_roots(&app)?;
+    tauri::async_runtime::spawn_blocking(move || lifecycle_reply(catalog::set_channel(&roots, &channel).map(|_| catalog::hub_update(&roots)))).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn hub_update_status(app: tauri::AppHandle) -> Result<Value, String> {
+    let roots = lifecycle_roots(&app)?;
+    tauri::async_runtime::spawn_blocking(move || json!({ "ok": true, "result": catalog::hub_update(&roots), "error": Value::Null })).await.map_err(|e| e.to_string())
+}
+
+/// The person confirmed "install the Hub update": start the verified installer and close so it can replace this executable.
+#[tauri::command]
+async fn hub_update_install(app: tauri::AppHandle) -> Result<Value, String> {
+    let roots = lifecycle_roots(&app)?;
+    let reply = tauri::async_runtime::spawn_blocking(move || lifecycle_reply(catalog::install_hub_update(&roots).map(|_| json!({ "started": true })))).await.map_err(|e| e.to_string())?;
+    if reply["ok"] == true { std::thread::spawn(move || { std::thread::sleep(Duration::from_millis(800)); app.exit(0); }); }
+    Ok(reply)
 }
 
 #[tauri::command]
@@ -563,24 +635,23 @@ async fn activity_list(app: tauri::AppHandle, limit: Option<usize>) -> Result<Va
     tauri::async_runtime::spawn_blocking(move || json!({ "ok": true, "result": lifecycle::activity(&roots, limit.unwrap_or(50).min(200)), "error": Value::Null })).await.map_err(|e| e.to_string())
 }
 
-/// Product the user downloaded, passed by its installer as `--install=<product>`; anything else is ignored.
-fn install_intent(args: impl Iterator<Item = String>) -> Option<String> {
-    args.filter_map(|arg| arg.strip_prefix("--install=").map(str::to_string)).find(|p| p == "orchestrator" || p == "secondbrain")
+/// What the person came for: `--install=<product>` (product installer), `--uninstall=<product>` / `--manage=<product>`
+/// (Windows Installed apps). Unknown products and actions are ignored.
+fn intent(args: impl Iterator<Item = String>) -> Option<Value> {
+    args.filter_map(|arg| ["install", "uninstall", "manage"].into_iter().find_map(|action| arg.strip_prefix(&format!("--{action}=")).map(|p| (action, p.to_string()))))
+        .find(|(_, product)| lifecycle::PRODUCTS.contains(&product.as_str()))
+        .map(|(action, product)| json!({ "action": action, "product": product }))
 }
 
 #[tauri::command]
-fn startup_intent() -> Option<String> { install_intent(std::env::args()) }
+fn startup_intent() -> Option<Value> { intent(std::env::args()) }
 
 /// `respected-hub.exe --uninstall-products` (no window): called by the Hub's uninstaller when the user chose to remove the
 /// products too. Returns the process exit code and leaves a log beside the Hub's data.
 pub fn headless_uninstall_products() -> i32 {
     let local = std::env::var_os("LOCALAPPDATA").map(PathBuf::from).unwrap_or_else(std::env::temp_dir);
     let base = local.join("com.respected.hub");
-    let shipped = std::env::current_exe().ok().and_then(|p| p.parent().map(|d| d.join("catalog"))).filter(|p| p.is_dir());
-    let roots = lifecycle::Roots {
-        managed: trust::dev_abs("RESPECTED_HUB_MANAGED_ROOT").unwrap_or_else(|| brain::respected_root().join("RespectedHub").join("managed")),
-        catalog: trust::dev_abs("RESPECTED_HUB_CATALOG_ROOT").or(shipped).unwrap_or_else(|| base.join("catalog")),
-    };
+    let roots = standard_roots();
     let dirs = brain::dirs();
     let data_root = if trust::dev_enabled() {
         default_data_root(trust::dev_env("RESPECTED_ORCHESTRATOR_DATA_ROOT").and_then(|v| v.into_string().ok()).as_deref(), base.with_file_name("RespectedOrchestratorDevelopment"))
@@ -591,11 +662,16 @@ pub fn headless_uninstall_products() -> i32 {
     if let Some(python) = lifecycle::managed_python(&roots) { settings.python = python.to_string_lossy().to_string(); }
     brain::overlay(&roots, &dirs, &mut settings);
     let report = cleanup::remove_products(&roots, &dirs, &settings);
+    registration::sync(&roots, &dirs);
     let log_dir = roots.managed.parent().map(Path::to_path_buf).unwrap_or(base); // beside the managed folder: the Hub's own data folder
     let _ = fs::create_dir_all(&log_dir);
     let _ = fs::write(log_dir.join("uninstall-products.log"), serde_json::to_vec_pretty(&report).unwrap_or_default());
     if report["ok"] == true { 0 } else { 1 }
 }
+
+/// `respected-hub.exe --sync-registrations` (no window): the Hub uninstaller runs this from the maintenance copy when the
+/// person keeps the products, so their Installed-apps entries point at an executable that still exists.
+pub fn headless_sync_registrations() -> i32 { registration::sync(&standard_roots(), &brain::dirs()); 0 }
 
 pub fn run() {
     tauri::Builder::default()
@@ -604,18 +680,31 @@ pub fn run() {
             use tauri::{Emitter, Manager};
             if let Some(window) = app.webview_windows().values().next() { let _ = window.unminimize(); let _ = window.set_focus(); }
             // a product installer started meanwhile: tell the open window which product the user came to install
-            if let Some(product) = install_intent(args.into_iter()) { let _ = app.emit("startup-intent", product); }
+            if let Some(wanted) = intent(args.into_iter()) { let _ = app.emit("startup-intent", wanted); }
         }))
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![startup_intent, get_settings, save_settings, engine_request, rpp_request, product_status, campaign_list,
             lifecycle_status, lifecycle_plan, lifecycle_apply, lifecycle_rollback, lifecycle_purge_backups, activity_list,
+            catalog_refresh, catalog_set_channel, hub_update_status, hub_update_install,
             orchestrator_mcp_plan, orchestrator_mcp_apply,
             memory_access_status, memory_access_enable, memory_access_disable,
             memory_index_status, memory_index_refresh,
             memory_semantic_status, memory_semantic_enable, memory_semantic_disable, memory_capture_run,
             memory_search, memory_note_read, memory_capture_note, memory_briefing_run])
         // recovery can take minutes (engine call): never hold the window back for it
-        .setup(|app| { if let Ok(roots) = lifecycle_roots(app.handle()) { std::thread::spawn(move || { brain::recover_if_interrupted(&roots, &brain::dirs()); let _ = lifecycle::recover(&roots); }); } Ok(()) })
+        .setup(|app| { if let Ok(roots) = lifecycle_roots(app.handle()) {
+            // the catalog first and on its own: recovery below can take minutes, and the window must learn about products at once
+            let (handle, catalog_roots) = (app.handle().clone(), roots.clone());
+            std::thread::spawn(move || { use tauri::Emitter; let _ = catalog::refresh(&catalog_roots); let _ = handle.emit("catalog-updated", ()); });
+            std::thread::spawn(move || {
+                let dirs = brain::dirs();
+                brain::recover_if_interrupted(&roots, &dirs);
+                let _ = lifecycle::recover(&roots);
+                sweep(&roots, &dirs);                 // a folder an MCP server still held at update time goes now
+                registration::sync(&roots, &dirs);   // Installed-apps entries follow what is really installed
+                registration::drop_maintenance(&roots);
+            });
+        } Ok(()) })
         .run(tauri::generate_context!()).expect("Respected Hub startup failed");
 }
 
@@ -624,11 +713,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn install_intent_accepts_only_known_products() {
+    fn intents_accept_only_known_products_and_actions() {
         let args = |list: &[&str]| list.iter().map(|s| s.to_string()).collect::<Vec<_>>().into_iter();
-        assert_eq!(install_intent(args(&["hub.exe", "--install=secondbrain"])), Some("secondbrain".into()));
-        assert_eq!(install_intent(args(&["hub.exe", "--install=../evil"])), None);
-        assert_eq!(install_intent(args(&["hub.exe"])), None);
+        assert_eq!(intent(args(&["hub.exe", "--install=secondbrain"])), Some(json!({ "action": "install", "product": "secondbrain" })));
+        assert_eq!(intent(args(&["hub.exe", "--uninstall=orchestrator"])), Some(json!({ "action": "uninstall", "product": "orchestrator" })));
+        assert_eq!(intent(args(&["hub.exe", "--manage=secondbrain"])), Some(json!({ "action": "manage", "product": "secondbrain" })));
+        assert_eq!(intent(args(&["hub.exe", "--install=../evil"])), None);
+        assert_eq!(intent(args(&["hub.exe", "--uninstall-products"])), None);
+        assert_eq!(intent(args(&["hub.exe", "--uninstall=runtime"])), None, "the runtime is not a product the person removes");
+        assert_eq!(intent(args(&["hub.exe"])), None);
     }
 
     #[test]

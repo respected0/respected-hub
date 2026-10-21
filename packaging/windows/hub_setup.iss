@@ -1,7 +1,8 @@
 ﻿; Respected Hub - per-user Windows installer (no administrator rights).
-; Built by tools/build_hub_installer.py, which stages the Hub executable and the product catalog first.
+; Built by release/tools/build_hub_installer.py, which stages the Hub executable. Products are not inside: the Hub downloads
+; them from the signed catalog on GitHub Releases when the person installs them.
 #ifndef AppVersion
-  #define AppVersion "0.1.0"
+  #define AppVersion "0.1.0-beta.1"
 #endif
 #ifndef Product
   #define Product ""
@@ -37,7 +38,7 @@ WizardStyle=modern
 InfoBeforeFile={#StageDir}\BETA_NOTICE.txt
 
 [InstallDelete]
-; the shipped catalog is replaced as a whole so bundles of an older/newer build never linger and look like updates
+; installers before 0.1.0-beta.1 shipped a product catalog here; products now come from the downloaded catalog cache
 Type: filesandordirs; Name: "{app}\catalog"
 
 [UninstallDelete]
@@ -52,7 +53,6 @@ Type: dirifempty; Name: "{localappdata}\Respected"
 [Files]
 Source: "{#StageDir}\respected-hub.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StageDir}\dev-trust.pub"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
-Source: "{#StageDir}\catalog\*"; DestDir: "{app}\catalog"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\Respected Hub"; Filename: "{app}\respected-hub.exe"
@@ -60,6 +60,8 @@ Name: "{autodesktop}\Respected Hub"; Filename: "{app}\respected-hub.exe"
 
 [Run]
 Filename: "{app}\respected-hub.exe"; Parameters: "{#Product}"; Description: "Respected Hub'ı başlat"; Flags: nowait postinstall skipifsilent
+; the Hub's own update runs this installer with /SILENT /RELAUNCH=1: open the Hub again afterwards
+Filename: "{app}\respected-hub.exe"; Flags: nowait; Check: RelaunchAfterUpdate
 
 [Code]
 var
@@ -84,6 +86,18 @@ begin
       'Yine de devam edilsin mi?', mbConfirmation, MB_YESNO) = IDYES;
 end;
 
+function RelaunchAfterUpdate(): Boolean;
+begin
+  Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
+end;
+
+// The Hub lists each product it installed in Installed apps (src-tauri/src/registration.rs): that is how we know any exist.
+function ProductsInstalled(): Boolean;
+begin
+  Result := RegKeyExists(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\RespectedSecondBrain') or
+            RegKeyExists(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\RespectedOrchestrator');
+end;
+
 function RemoveProducts(): Boolean;
 begin
   if not ProductsAsked then
@@ -91,10 +105,11 @@ begin
     ProductsAsked := True;
     if ExpandConstant('{param:REMOVEPRODUCTS|0}') = '1' then
       ProductsWanted := True
-    else if not UninstallSilent then
+    else if not UninstallSilent and ProductsInstalled() then
       ProductsWanted := MsgBox('Hub ile kurulan SecondBrain ve Orchestrator da kaldırılsın mı?' + #13#10 + #13#10 +
-        'Evet: AI araçlarındaki kancalar ve MCP kayıtları geri alınır, ürünler kaldırılır. Notlarınız, kasanız ve çalışma kayıtlarınız silinmez.' + #13#10 +
-        'Hayır: ürünler çalışmaya devam eder, ancak Hub olmadan yönetilemez.', mbConfirmation, MB_YESNO) = IDYES;
+        'Evet: ürünler, verileri ve AI araçlarındaki Respected kayıtları (kanca, MCP, görev, kısayol) kaldırılır. Not kasanız ve notlarınız silinmez.' + #13#10 + #13#10 +
+        'Hayır: ürünler çalışmaya devam eder ama Hub olmadan güncellenemez ve onarılamaz. Onları sonra Windows Ayarlar > Uygulamalar listesinden kaldırabilirsiniz; bunun için küçük bir bakım dosyası kalır.',
+        mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES;
   end;
   Result := ProductsWanted;
 end;
@@ -102,12 +117,23 @@ end;
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   ResultCode: Integer;
+  Maintenance: String;
 begin
-  // Before the Hub's own files are removed: undo the AI-client registrations of the products the Hub installed and remove them.
-  // (Decided here, not with an [UninstallRun] Check: Inno evaluates that Check at install time.)
-  if (CurUninstallStep = usUninstall) and RemoveProducts() then
-    Exec(ExpandConstant('{app}\respected-hub.exe'), '--uninstall-products', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  // Before the Hub's own files are removed. (Decided here, not with an [UninstallRun] Check: Inno evaluates that Check at install time.)
+  if CurUninstallStep = usUninstall then
+  begin
+    if RemoveProducts() then
+      // undo the AI-client registrations of the products the Hub installed and remove them
+      Exec(ExpandConstant('{app}\respected-hub.exe'), '--uninstall-products', '', SW_HIDE, ewWaitUntilTerminated, ResultCode)
+    else if ProductsInstalled() then
+    begin
+      // products kept: their Installed-apps entries must point at an executable that survives this uninstall
+      Maintenance := ExpandConstant('{localappdata}\Respected\RespectedHub\maintenance');
+      if ForceDirectories(Maintenance) and CopyFile(ExpandConstant('{app}\respected-hub.exe'), Maintenance + '\respected-hub.exe', False) then
+        Exec(Maintenance + '\respected-hub.exe', '--sync-registrations', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    end;
+  end;
 end;
 
 // Uninstall removes what the installer put here and, only when asked, the products the Hub installed (see above).
-// Notes, vaults and Orchestrator run data live elsewhere and are not touched.
+// Note vaults live elsewhere and are never touched.

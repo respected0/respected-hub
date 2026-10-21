@@ -2,7 +2,7 @@
 
 > Bu belge `tools/repository_map.py` tarafından `docs/repository_inventory.json` içindeki gözden geçirilmiş açıklamalardan üretilir. Doğrudan bu Markdown dosyasını düzenlemeyin.
 
-**Kapsam:** 143 proje dosyası. Git çalıştırmadan dosya sistemi ve kök ignore kurallarıyla keşfedilen Tauri ürün kaynağıdır. Bağımlılık/üretim önbellekleri ayrı kategoriler olarak açıklanır.
+**Kapsam:** 180 proje dosyası. Git çalıştırmadan dosya sistemi ve kök ignore kurallarıyla keşfedilen Tauri ürün kaynağıdır. Bağımlılık/üretim önbellekleri ayrı kategoriler olarak açıklanır.
 
 ## Eksiksiz kaynak ağacı
 
@@ -25,7 +25,8 @@ respected-hub/
 │   │   ├── HUB_WORKSPACE_AGENTS.md
 │   │   ├── HUB_WORKSPACE_EVIDENCE.md
 │   │   ├── HUB_WORKSPACE_MOUNT.md
-│   │   └── HUB_WORKSPACE_OVERVIEW.md
+│   │   ├── HUB_WORKSPACE_OVERVIEW.md
+│   │   └── REMOTE_CATALOG_AND_LIFECYCLE.md
 │   ├── records/
 │   │   └── 2026-10-ux-track-b.md
 │   └── repository_inventory.json
@@ -35,6 +36,42 @@ respected-hub/
 ├── packaging/
 │   └── windows/
 │       └── hub_setup.iss
+├── release/
+│   ├── BETA_NOTICE.txt
+│   ├── BUILD_FROM_SCRATCH.md
+│   ├── README.md
+│   ├── docs/
+│   │   ├── AUDIT_REPORT_2026-10-17.md
+│   │   ├── CHATGPT_BRIEF.md
+│   │   ├── INSTALL_LAYOUT.md
+│   │   ├── MASTER_HANDOFF.md
+│   │   ├── RELEASE_NOTES_BETA.md
+│   │   ├── RELEASE_PHASE_PLAN.md
+│   │   └── RESPECTED_MASTER_DIRECTIVE.md
+│   └── tools/
+│       ├── BRAIN_ACCEPT_REVIEW.md
+│       ├── BRAIN_ACCEPT_REVIEW2.md
+│       ├── BRAIN_ACCEPT_REVIEW3.md
+│       ├── BRAIN_REGRESSION_REVIEW.md
+│       ├── accept_hub.py
+│       ├── brain_lane_accept.py
+│       ├── brain_mirror_baseline.txt
+│       ├── build_brain_dist.py
+│       ├── build_bundle.py
+│       ├── build_hub_installer.py
+│       ├── build_runtime.py
+│       ├── bundle_signing.py
+│       ├── ecosystem_root.py
+│       ├── native_verify.py
+│       ├── publish_release.py
+│       ├── real_env_guard.py
+│       ├── real_env_report.py
+│       ├── release_keys.py
+│       ├── release_package.py
+│       ├── release_vault.py
+│       ├── rpp_conformance.py
+│       ├── run_brain_regression.py
+│       └── test_release_tools.py
 ├── src/
 │   ├── App.tsx
 │   ├── api.ts
@@ -117,6 +154,7 @@ respected-hub/
 │   ├── release-keys.txt
 │   ├── src/
 │   │   ├── brain.rs
+│   │   ├── catalog.rs
 │   │   ├── cleanup.rs
 │   │   ├── lib.rs
 │   │   ├── lifecycle.rs
@@ -125,6 +163,7 @@ respected-hub/
 │   │   ├── memory_access.rs
 │   │   ├── memory_index.rs
 │   │   ├── memory_semantic.rs
+│   │   ├── registration.rs
 │   │   ├── rpp.rs
 │   │   └── trust.rs
 │   ├── tauri.conf.json
@@ -137,6 +176,7 @@ respected-hub/
 │       ├── mcp_access_e2e.rs
 │       ├── memory_access_e2e.rs
 │       ├── memory_index_e2e.rs
+│       ├── remote_catalog_e2e.rs
 │       ├── rpp_e2e.rs
 │       └── trust_catalog_e2e.rs
 ├── tests/
@@ -306,6 +346,14 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **İlişkiler ve sınır:** src/views/orchestrator/overviewModel.ts ve OverviewPanel.tsx tasarım gerekçesidir; src/tasks.ts terminal() yardımcısını kullanır. tests/ altındaki overview testi ve HUB_WORKSPACE_MOUNT.md ile ilişkilidir.
 
+#### [`docs/decisions/REMOTE_CATALOG_AND_LIFECYCLE.md`](../docs/decisions/REMOTE_CATALOG_AND_LIFECYCLE.md)
+
+**Rol:** Karar kaydı.
+
+**Amaç / sorumluluk:** Başlatıcı modeli (2026-10-21): ürünler GitHub Releases'teki imzalı katalogdan indirilir, güncellemeler sorularak önerilir, beta/kararlı kanallar, Windows Yüklü uygulamalar kayıtları (Kaldır/Değiştir), Hub kaldırılınca ürünlerin bakım kopyasıyla çalışmaya devam etmesi; ilk sürümle donan sözleşmeler (katalog URL'si, imza alanı, şema, sürüm sırası, kayıt defteri anahtarları, Hub argümanları, klasörler).
+
+**İlişkiler ve sınır:** src-tauri/src/catalog.rs, registration.rs, lifecycle.rs ve packaging/windows/hub_setup.iss bu kararı uygular; release/tools/publish_release.py yayın tarafıdır.
+
 ### docs/records
 
 #### [`docs/records/2026-10-ux-track-b.md`](../docs/records/2026-10-ux-track-b.md)
@@ -348,7 +396,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Frontend paket tarifi.
 
-**Amaç / sorumluluk:** Respected Hub kimliği ve local dev/build/test/Tauri bağımlılıklarını tanımlar.
+**Amaç / sorumluluk:** Respected Hub kimliği ve local dev/build/test/Tauri bağımlılıklarını tanımlar. Sürüm 0.1.0-beta.1.
 
 **İlişkiler ve sınır:** npm local node_modules ile çalışır; ürün public CLI eklemez.
 
@@ -358,9 +406,279 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Windows paket tarifi.
 
-**Amaç / sorumluluk:** Inno Setup betiği: yönetici hakkı gerektirmeyen, kullanıcı başına Windows kurulum paketi (RespectedHub-Windows-Setup) üretir; respected-hub.exe ve catalog klasörünü kurar, Başlat menüsü kısayolu ekler. Kaldırma yalnızca kendi koyduğu dosyaları siler; Hub ile kurulan ürünlere, verilerine ve notlara dokunmaz. Kurulumda önce {app}/catalog silinir (eski/yeni derleme paketleri güncelleme gibi görünmesin); varsa dev-trust.pub (yalnızca geliştirme kurulumları) exe yanına kopyalanır. Kaldırma sırasında 'ürünler de kaldırılsın mı' sorulur (varsayılan hayır; sessiz kaldırmada /REMOVEPRODUCTS=1); evet ise CurUninstallStepChanged ile respected-hub.exe --uninstall-products çalıştırır. Dosya UTF-8 BOM ile kaydedilir. Kurulum öncesi beta/SmartScreen bildirimi gösterir ve WebView2 varlığını denetler (indirme yapmaz, uyarır).
+**Amaç / sorumluluk:** Inno Setup betiği: yönetici hakkı gerektirmeyen, kullanıcı başına Windows kurulum paketi (RespectedHub-Windows-Setup) üretir; respected-hub.exe'yi kurar, Başlat menüsü kısayolu ekler. Kaldırma yalnızca kendi koyduğu dosyaları siler; Hub ile kurulan ürünlere, verilerine ve notlara dokunmaz. varsa dev-trust.pub (yalnızca geliştirme kurulumları) exe yanına kopyalanır. Kaldırma sırasında 'ürünler de kaldırılsın mı' sorulur (varsayılan hayır; sessiz kaldırmada /REMOVEPRODUCTS=1); evet ise CurUninstallStepChanged ile respected-hub.exe --uninstall-products çalıştırır. Dosya UTF-8 BOM ile kaydedilir. Kurulum öncesi beta/SmartScreen bildirimi gösterir ve WebView2 varlığını denetler (indirme yapmaz, uyarır). 2026-10-21: kurulumda ürün kataloğu yoktur (Hub indirir); eski {app}\catalog silinir; ürün sorusu yalnızca Yüklü uygulamalar kaydı varken sorulur, Hayır seçilirse exe maintenance klasörüne kopyalanıp --sync-registrations çalıştırılır; /RELAUNCH=1 ile sessiz güncellemeden sonra Hub yeniden açılır.
 
-**İlişkiler ve sınır:** tools/build_hub_installer.py staging ve çıktı dizinlerini vererek bu betiği derler. HUB_PRODUCT_LIFECYCLE.md Windows dağıtım kararını açıklar.
+**İlişkiler ve sınır:** release/tools/build_hub_installer.py staging ve çıktı dizinlerini vererek bu betiği derler. docs/decisions/REMOTE_CATALOG_AND_LIFECYCLE.md kaldırma ve güncelleme davranışını açıklar.
+
+### release
+
+#### [`release/BETA_NOTICE.txt`](../release/BETA_NOTICE.txt)
+
+**Rol:** Yayın belgesi.
+
+**Amaç / sorumluluk:** Kurulumdan önce gösterilen TR/EN beta ve SmartScreen bildirimi: imzasız kurulum, Ed25519 ile imzalı ürünler, SHA-256 karşılaştırması, kullanıcı başına kurulum ve kaldırmada kasanın korunması.
+
+**İlişkiler ve sınır:** hub_setup.iss InfoBeforeFile olarak gösterir; build_hub_installer.py ve release_package.py kopyalar.
+
+#### [`release/BUILD_FROM_SCRATCH.md`](../release/BUILD_FROM_SCRATCH.md)
+
+**Rol:** Yayın belgesi.
+
+**Amaç / sorumluluk:** Yalnızca üç repodan geliştirmeye devam etme rehberi: klasör düzeni ve klonlama, kurulacak araçlar, günlük test komutları (doğru unittest deseni dahil), sürüm yükseltme ve publish_release.py ile yayın, git dışında yedeklenmesi gerekenler (imza kasası).
+
+**İlişkiler ve sınır:** release/tools araçlarını ve release/docs/MASTER_HANDOFF.md'yi gösterir.
+
+#### [`release/README.md`](../release/README.md)
+
+**Rol:** Yayın belgesi.
+
+**Amaç / sorumluluk:** release/ klasörünün dizini: araçlar (publish_release, release_package, imza, derleme), BETA_NOTICE ve belgeler; anahtar malzemesinin repoda tutulmadığını belirtir.
+
+**İlişkiler ve sınır:** release/tools ve release/docs içeriğini tanıtır; ecosystem_root.py klasör bulma kuralını sağlar.
+
+### release/docs
+
+#### [`release/docs/AUDIT_REPORT_2026-10-17.md`](../release/docs/AUDIT_REPORT_2026-10-17.md)
+
+**Rol:** Yayın belgesi.
+
+**Amaç / sorumluluk:** 2026-10-17 bağımsız denetim raporu (P0/P1/P2 bulgular) ve 2026-10-18 çözüm durumu, yayın engelleri ve kalan riskler. Tarihsel kayıttır.
+
+**İlişkiler ve sınır:** MASTER_HANDOFF.md §18 ve karar kayıtları bu rapora atıf yapar.
+
+#### [`release/docs/CHATGPT_BRIEF.md`](../release/docs/CHATGPT_BRIEF.md)
+
+**Rol:** Yayın belgesi.
+
+**Amaç / sorumluluk:** Planlama için kısa proje özeti (2026-10-18 durumu) ve 2026-10-21 başlatıcı modeline geçiş notu; alınmış kararlar, doğrulanmış/doğrulanmamış noktalar, aday işler.
+
+**İlişkiler ve sınır:** Ayrıntı için MASTER_HANDOFF.md, INSTALL_LAYOUT.md ve REMOTE_CATALOG_AND_LIFECYCLE.md'ye yönlendirir.
+
+#### [`release/docs/INSTALL_LAYOUT.md`](../release/docs/INSTALL_LAYOUT.md)
+
+**Rol:** Yayın belgesi.
+
+**Amaç / sorumluluk:** Windows betasında her adımın (Hub kurulumu, SecondBrain ve Orchestrator kurulumu, güncellemeler, kaldırma, Hub'ı ürünleri bırakarak kaldırma) neyi nerede oluşturduğunu, güncellediğini ve sildiğini listeler; bilinen boşluklar.
+
+**İlişkiler ve sınır:** Kod: catalog.rs, registration.rs, lifecycle.rs, cleanup.rs, hub_setup.iss; karar: docs/decisions/REMOTE_CATALOG_AND_LIFECYCLE.md.
+
+#### [`release/docs/MASTER_HANDOFF.md`](../release/docs/MASTER_HANDOFF.md)
+
+**Rol:** Yayın belgesi.
+
+**Amaç / sorumluluk:** Ekosistemin tarihçe ve durum devri: ürün durumları, doğrulama kanıtları, kararlar, yayın aşaması ve §20'de başlatıcı modeli (uzak katalog, Yüklü uygulamalar, sorulan güncellemeler) ile sıradaki işler.
+
+**İlişkiler ve sınır:** Diğer release/docs belgelerine ve karar kayıtlarına yönlendirir.
+
+#### [`release/docs/RELEASE_NOTES_BETA.md`](../release/docs/RELEASE_NOTES_BETA.md)
+
+**Rol:** Yayın belgesi.
+
+**Amaç / sorumluluk:** 0.1.0-beta.1 indirme sayfası metni: dosyalar, SmartScreen uyarısı ve SHA-256 doğrulaması, sorulan güncellemeler, kurulum yerleri (OneDrive uyarısı dahil), Windows Uygulamalar listesi, kaldırma kapsamı, bilinen sınırlar ve hata bildirim yeri.
+
+**İlişkiler ve sınır:** publish_release.py upload sürüm notu olarak kullanır.
+
+#### [`release/docs/RELEASE_PHASE_PLAN.md`](../release/docs/RELEASE_PHASE_PLAN.md)
+
+**Rol:** Yayın belgesi.
+
+**Amaç / sorumluluk:** Sertifikasız Windows beta yayın planı ve durum notları (2026-10-18 duraklama, 2026-10-21 başlatıcı modeline geçiş ve yeni yayın sırası).
+
+**İlişkiler ve sınır:** MASTER_HANDOFF.md §19-20 ile birlikte okunur.
+
+#### [`release/docs/RESPECTED_MASTER_DIRECTIVE.md`](../release/docs/RESPECTED_MASTER_DIRECTIVE.md)
+
+**Rol:** Yayın belgesi.
+
+**Amaç / sorumluluk:** Ekosistemin ürün vizyonu ve yönerge metni (SecondBrain, Orchestrator, Hub hedefleri ve çalışma kuralları). Tarihsel referans.
+
+**İlişkiler ve sınır:** MASTER_HANDOFF.md §0 vizyon kaynağı olarak gösterir.
+
+### release/tools
+
+#### [`release/tools/BRAIN_ACCEPT_REVIEW.md`](../release/tools/BRAIN_ACCEPT_REVIEW.md)
+
+**Rol:** İnceleme kaydı.
+
+**Amaç / sorumluluk:** brain_lane_accept.py kabul çalıştırıcısının bağımsız inceleme kaydı (sonuç: onaylandı). Tarihsel kanıt.
+
+**İlişkiler ve sınır:** release/tools/brain_lane_accept.py hakkındadır.
+
+#### [`release/tools/BRAIN_ACCEPT_REVIEW2.md`](../release/tools/BRAIN_ACCEPT_REVIEW2.md)
+
+**Rol:** İnceleme kaydı.
+
+**Amaç / sorumluluk:** brain_lane_accept.py kabul çalıştırıcısının bağımsız inceleme kaydı (sonuç: küçük düzeltmelerle onaylandı). Tarihsel kanıt.
+
+**İlişkiler ve sınır:** release/tools/brain_lane_accept.py hakkındadır.
+
+#### [`release/tools/BRAIN_ACCEPT_REVIEW3.md`](../release/tools/BRAIN_ACCEPT_REVIEW3.md)
+
+**Rol:** İnceleme kaydı.
+
+**Amaç / sorumluluk:** brain_lane_accept.py kabul çalıştırıcısının bağımsız inceleme kaydı (sonuç: küçük düzeltmelerle onaylandı). Tarihsel kanıt.
+
+**İlişkiler ve sınır:** release/tools/brain_lane_accept.py hakkındadır.
+
+#### [`release/tools/BRAIN_REGRESSION_REVIEW.md`](../release/tools/BRAIN_REGRESSION_REVIEW.md)
+
+**Rol:** İnceleme kaydı.
+
+**Amaç / sorumluluk:** run_brain_regression.py regresyon betiğinin inceleme kaydı: PYTHONPATH, tam keşif, hata başına tek izole yeniden deneme, en az 900 test ve çıkış kodu kuralları. Tarihsel kanıt.
+
+**İlişkiler ve sınır:** release/tools/run_brain_regression.py hakkındadır.
+
+#### [`release/tools/accept_hub.py`](../release/tools/accept_hub.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Hub kabul kapısı: kaynağın atılabilir bir kopyasında derler ve testleri çalıştırır, böylece derleme çıktısı çalışma alanını kirletmez.
+
+**İlişkiler ve sınır:** npm/cargo test komutlarını çalıştırır; BUILD_FROM_SCRATCH.md'de anılır.
+
+#### [`release/tools/brain_lane_accept.py`](../release/tools/brain_lane_accept.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Kopya çalışma ağaçları için SecondBrain kabulü: tam keşif yapar ama yalnızca brain_mirror_baseline.txt dışında kalan hataları sayar; gerçek kaynakta tam suite run_brain_regression.py ile ayrıca koşar.
+
+**İlişkiler ve sınır:** brain_mirror_baseline.txt'i okur; run_brain_regression.py ile tamamlanır.
+
+#### [`release/tools/brain_mirror_baseline.txt`](../release/tools/brain_mirror_baseline.txt)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Kopya ortamda (dist/.local yok) ortam gereği hep başarısız olan SecondBrain test kimlikleri, satır başına bir tane. Silinen Inno/migration testleri 2026-10-21'de çıkarıldı.
+
+**İlişkiler ve sınır:** brain_lane_accept.py okur.
+
+#### [`release/tools/build_brain_dist.py`](../release/tools/build_brain_dist.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Hub testleri ve yayın için donmuş SecondBrain dağıtımını üretir veya yeniden kullanır (<ecosystem>/.build-cache/brain-dist/RespectedBrain); SecondBrain'in kendi build_installer.py aracını çağırır, kaynak daha yeniyse yeniden derler.
+
+**İlişkiler ve sınır:** publish_release.py, Rust e2e testleri ve hub_native_e2e.mjs kullanır.
+
+#### [`release/tools/build_bundle.py`](../release/tools/build_bundle.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Hub kataloğu için doğrulanabilir ürün paketi üretir (orchestrator/secondbrain kaynak paketi veya secondbrain-dist dağıtım paketi): bundle.json dosya listesini boyut ve SHA-256 ile, liste özetini ve Ed25519 imzasını (geliştirme anahtarı veya --key ile yayın anahtarı) taşır.
+
+**İlişkiler ve sınır:** bundle_signing.py ile imzalar; publish_release.py ve Rust e2e testleri çağırır.
+
+#### [`release/tools/build_hub_installer.py`](../release/tools/build_hub_installer.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Hub'ın üç Windows kurulumunu (Hub, SecondBrain, Orchestrator adlı; aynı Hub) derler: release exe'sini sahneler, --release-key ile üretim (geliştirme güveni yok, exe dize denetimi) veya geliştirme derlemesi yapar ve hub_setup.iss'i Inno ile derler. Kurulumlarda ürün paketi yoktur.
+
+**İlişkiler ve sınır:** packaging/windows/hub_setup.iss; publish_release.py build çağırır.
+
+#### [`release/tools/build_runtime.py`](../release/tools/build_runtime.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Hub'ın yönettiği Python çalışma ortamı paketini (runtime-<python sürümü>) üretir: çalışan python.org yorumlayıcısını kopyalar, gereksizleri ayıklar, agent-framework-core bağımlılık kapanışını ekler; RESPECTED_SIGNING_KEY verilirse yayın anahtarıyla imzalar.
+
+**İlişkiler ve sınır:** publish_release.py ve Rust e2e testleri çağırır.
+
+#### [`release/tools/bundle_signing.py`](../release/tools/bundle_signing.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Katalog paketlerinin Ed25519 imzası: geliştirme anahtar çifti oluşturma, paket imzalama/doğrulama ve yayın anahtarı kasasını açma; Hub trust.rs ile aynı ifadeyi imzalar.
+
+**İlişkiler ve sınır:** build_bundle.py, build_runtime.py, publish_release.py ve release_package.py kullanır.
+
+#### [`release/tools/ecosystem_root.py`](../release/tools/ecosystem_root.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Üç ürün klasörünü yan yana tutan ekosistem klasörünü bulur; RESPECTED_ECOSYSTEM_ROOT ile geçersiz kılınabilir.
+
+**İlişkiler ve sınır:** release/tools altındaki tüm araçlar içe aktarır.
+
+#### [`release/tools/native_verify.py`](../release/tools/native_verify.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Native Hub duman testi sürücüsü: atılabilir kopyada ön yüz ve release exe derler, Hub'ın duman testini çalıştırır ve her zaman rapor yazar.
+
+**İlişkiler ve sınır:** respected-hub kaynak klasöründen çalıştırılır.
+
+#### [`release/tools/publish_release.py`](../release/tools/publish_release.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Yayını üretir, imzalar ve GitHub Releases'e yükler: build (kurulumlar + imzalı ürün arşivleri + entries.json), catalog (yayındaki kataloğa birleştirir, sequence büyütür, kanal ve min_hub uygular, respected-catalog-v1 alanıyla imzalar), upload (önce ürünler, en son katalog; --yes olmadan yalnızca gh komutlarını yazar), local-catalog (testler için file:// adresli geliştirme kataloğu).
+
+**İlişkiler ve sınır:** bundle_signing, build_bundle, build_brain_dist, build_runtime ve build_hub_installer'ı kullanır; Hub tarafı src-tauri/src/catalog.rs'dir; test_release_tools.py ve tests/remote_catalog_e2e.rs sınar.
+
+#### [`release/tools/real_env_guard.py`](../release/tools/real_env_guard.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Test çalıştırmalarının kullanıcının GERÇEK AI istemci yapılandırmasını değiştirmediğini veya test oturumu bırakmadığını snapshot/verify ile kanıtlar; çalıştırma için geçici bir ev klasörü üretir.
+
+**İlişkiler ve sınır:** run_brain_regression.py ve hub_native_e2e.mjs kullanır.
+
+#### [`release/tools/real_env_report.py`](../release/tools/real_env_report.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Geliştirme testlerinin gerçek kullanıcı ortamında bırakmış olabileceği artıkları salt okunur raporlar (istemci yapılandırması, oturum klasörleri, zamanlanmış görevler, kısayollar, kaldırma kayıtları, uygulama ve geçici klasörler).
+
+**İlişkiler ve sınır:** Temizlik ayrı, onaylı bir adımdır.
+
+#### [`release/tools/release_keys.py`](../release/tools/release_keys.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Üretim imza anahtarı töreni: anahtar üretme (repo yolunu ve üzerine yazmayı reddeder), genel anahtarı yazdırma ve bir anahtarın Hub tarafından güvenilir olup olmadığını denetleme.
+
+**İlişkiler ve sınır:** src-tauri/release-keys.txt; build_hub_installer.py --release-key denetimi kullanır.
+
+#### [`release/tools/release_package.py`](../release/tools/release_package.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** İndirme klasörü için kurulumların SHA256SUMS.txt listesini ve Ed25519 imzasını (SHA256SUMS.sig) üretir ve doğrular; BETA_NOTICE.txt'i kopyalar.
+
+**İlişkiler ve sınır:** publish_release sonrası --dir dist/release ile çalıştırılır; test_release_tools.py sınar.
+
+#### [`release/tools/release_vault.py`](../release/tools/release_vault.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Üretim Ed25519 anahtarı için parola korumalı kasa (scrypt -> AES-256-GCM): oluşturma ve doğrulama; düz anahtar diske yazılmaz.
+
+**İlişkiler ve sınır:** bundle_signing.load_private kasayı açar.
+
+#### [`release/tools/rpp_conformance.py`](../release/tools/rpp_conformance.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** Ürünler arası RPP uyum denetimi: iki gerçek sunucuyu geçici veri köklerinde çalıştırır ve her yanıtı Hub'ın ayrıştırıcısına verir; v1.1 müzakere, manifest, lifecycle ve hata türlerini ayrıca sınar.
+
+**İlişkiler ve sınır:** src-tauri/src/rpp.rs sözleşmesine dayanır.
+
+#### [`release/tools/run_brain_regression.py`](../release/tools/run_brain_regression.py)
+
+**Rol:** Yayın aracı.
+
+**Amaç / sorumluluk:** SecondBrain tam regresyonu: boş bir sanal ev profiliyle tam keşif (*test*.py), başarısız her test için tek izole yeniden deneme, en az 900 test şartı ve gerçek ortamın değişmediğinin kanıtı.
+
+**İlişkiler ve sınır:** real_env_guard.py kullanır; BRAIN_REGRESSION_REVIEW.md incelemesidir.
+
+#### [`release/tools/test_release_tools.py`](../release/tools/test_release_tools.py)
+
+**Rol:** Davranış/regresyon testi.
+
+**Amaç / sorumluluk:** Yayın araçlarının geçici klasörde öz-denetimi: anahtar üretme korumaları, imzalı SHA256SUMS doğrulama ve kurcalama reddi, katalog birleştirme (sequence, korunan girdiler, URL, min_hub), katalog imzası ve arşiv düzeni.
+
+**İlişkiler ve sınır:** release_keys, release_package, bundle_signing ve publish_release'i sınar.
 
 ### src-tauri
 
@@ -376,7 +694,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Native paket tarifi.
 
-**Amaç / sorumluluk:** respected-hub crate'ini ve respected_hub_lib kütüphanesini (staticlib/cdylib/rlib) tanımlar; Tauri 2, dialog eklentisi, serde/serde_json ve sha2 bağımlılıklarını bildirir. tauri-plugin-single-instance, ed25519-dalek ve base64 bağımlılıklarını, yalnızca geliştirme derlemelerinde güveni açan dev-trust özelliğini bildirir.
+**Amaç / sorumluluk:** respected-hub crate'ini ve respected_hub_lib kütüphanesini (staticlib/cdylib/rlib) tanımlar; Tauri 2, dialog eklentisi, serde/serde_json ve sha2 bağımlılıklarını bildirir. tauri-plugin-single-instance, ed25519-dalek ve base64 bağımlılıklarını, yalnızca geliştirme derlemelerinde güveni açan dev-trust özelliğini bildirir. Sürüm 0.1.0-beta.1 (SemVer; beta sürümün parçasıdır).
 
 **İlişkiler ve sınır:** build.rs, src/main.rs ve src/lib.rs ile birlikte derlenir; Python ürün kodu crate'e import edilmez. sha2 hem runtime hem dev-dependency olarak lifecycle/doğrulama ve Rust testleri tarafından kullanılır.
 
@@ -542,7 +860,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Üretim genel imza anahtarları.
 
-**Amaç / sorumluluk:** Üretim Hub derlemesine gömülen Ed25519 genel anahtarlar (satır başına 'anahtar_kimliği base64'). Özel anahtar asla buraya girmez; tools/release_keys.py yazar. Anahtar satırı yokken üretim derlemesi hiçbir paketi kurmaz.
+**Amaç / sorumluluk:** Üretim Hub derlemesine gömülen Ed25519 genel anahtarlar (satır başına 'anahtar_kimliği base64'). Özel anahtar asla buraya girmez; tools/release_keys.py yazar. Anahtar satırı yokken üretim derlemesi hiçbir paketi kurmaz. Şu an tek anahtar: dabcb5265227bbdf; katalog imzası da bu anahtarla doğrulanır.
 
 **İlişkiler ve sınır:** src-tauri/src/trust.rs include_str! ile derler; tools/release_keys.py ve build_hub_installer.py --release-key kontrol eder.
 
@@ -552,15 +870,23 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** SecondBrain yaşam döngüsü.
 
-**Amaç / sorumluluk:** SecondBrain ürününün motor-yönetimli kurulum, güncelleme, onarım, kaldırma ve geri almasını yürütür: katalogdan doğrulanmış dağıtımı hazırlar (stage, seri), ürünün kendi folderlarını (BrainDirs) kullanır, güvenli entegrasyon planını ürünün kendisinden salt-okunur alır ve istemci id'lerini doğrular. Çökme sonrası ürünün yarım işlemini tamamlatır/geri aldırır; ortam sırlardan arındırılmış çalışır, kullanıcı vault'una dokunmaz. SecondBrain kurulum/entegrasyon çağrılarına --allow-unattested yalnızca paket üretim imzalı değilse eklenir. Kurulum/güncelleme motor kapısını en çok 120 sn bekler; uzun bir işlem sürüyorsa açık bir 'meşgul' hatası verir; dizin geçersiz kılmaları yalnızca geliştirme derlemelerinde okunur.
+**Amaç / sorumluluk:** SecondBrain ürününün motor-yönetimli kurulum, güncelleme, onarım, kaldırma ve geri almasını yürütür: katalog önbelleğindeki doğrulanmış dağıtımı yerinde kullanır (stage, seri; ikinci kopya tutulmaz), ürünün kendi folderlarını (BrainDirs) kullanır, güvenli entegrasyon planını ürünün kendisinden salt-okunur alır ve istemci id'lerini doğrular. Çökme sonrası ürünün yarım işlemini tamamlatır/geri aldırır; ortam sırlardan arındırılmış çalışır, kullanıcı vault'una dokunmaz. Hub Ed25519 imzasını doğruladığı için SecondBrain çağrılarına --allow-unattested eklenir (SLSA CI gelene kadar). Kurulum/güncelleme motor kapısını en çok 120 sn bekler; uzun bir işlem sürüyorsa açık bir 'meşgul' hatası verir; dizin geçersiz kılmaları yalnızca geliştirme derlemelerinde okunur.
 
 **İlişkiler ve sınır:** lifecycle.rs journal/Roots/Bundle yapılarını kullanır; rpp.rs üzerinden ürün motorunu çağırır; main.rs komutları bunu çağırır. src-tauri/tests/brain_e2e.rs ve brain_concurrency_e2e.rs ile test edilir.
+
+#### [`src-tauri/src/catalog.rs`](../src-tauri/src/catalog.rs)
+
+**Rol:** Uzak katalog.
+
+**Amaç / sorumluluk:** GitHub Releases'teki imzalı katalog: indeksi curl.exe ile indirir, respected-catalog-v1 imzasını ve sequence'i doğrular, önbelleğe alır; beta/kararlı kanal seçimi; ürün arşivini yalnızca kur/güncelle/onar sırasında indirir, boyut ve SHA-256 ile denetler, tar.exe ile açar, paket imzası ve dosya özetleriyle yeniden doğrular ve yerel katalog önbelleğine koyar; bozuk önbelleği yeniler, eski sürümleri budar, durum çıktısına güncellemeyi ekler; Hub'ın kendi güncellemesini indirip /SILENT /RELAUNCH=1 ile başlatır.
+
+**İlişkiler ve sınır:** lib.rs (ensure_bundles, hub_status, komutlar), trust.rs (verify_detached), lifecycle.rs (version_key, read_bundle) ile çalışır; tests/remote_catalog_e2e.rs ve birim testleri sınar.
 
 #### [`src-tauri/src/cleanup.rs`](../src-tauri/src/cleanup.rs)
 
 **Rol:** Ürün temizliği (Hub kaldırılırken).
 
-**Amaç / sorumluluk:** Hub kaldırılırken kullanıcı isterse Hub'ın kurduğu ürünleri geri alır: Orchestrator MCP kayıtlarını kapatır, SecondBrain'i kendi kaldırıcısıyla (kasa ve veri kalır) kaldırır, Orchestrator ve çalışma zamanını kaldırır ve yönetilen klasörü siler. Notlar, kasalar ve Orchestrator çalışma kayıtları asla silinmez.
+**Amaç / sorumluluk:** Hub kaldırılırken kullanıcı isterse Hub'ın kurduğu ürünleri geri alır: Orchestrator MCP kayıtlarını kapatır, SecondBrain'i kendi kaldırıcısıyla (kasa ve veri kalır) kaldırır, Orchestrator ve çalışma zamanını kaldırır ve yönetilen klasörü siler. Not kasaları ve notlar asla silinmez. Kaldırılan ürünün katalog önbelleğindeki paketleri de silinir; Yüklü uygulamalar kayıtları headless kaldırmadan sonra senkronlanır.
 
 **İlişkiler ve sınır:** lib.rs headless_uninstall_products (respected-hub.exe --uninstall-products) tarafından çağrılır; Inno kaldırıcısı hub_setup.iss (CurUninstallStepChanged) ile çalıştırır. hub_apply, brain::status ve mcp_access::disable_all ile aynı günlüklü yaşam döngüsü yollarını kullanır; tests/cleanup_e2e.rs ile doğrulanır.
 
@@ -568,15 +894,15 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Native engine köprüsü.
 
-**Amaç / sorumluluk:** Settings kalıcılığını ve doğrulamasını, motor/RPP isteklerini sınırlı JSON işlemleriyle yürütmeyi, ürün durumu, yaşam döngüsü (plan/apply/rollback/purge), orchestrator MCP, bellek erişimi/indeks/anlamsal arama ve etkinlik Tauri komutlarını sunar. Yalnızca açıkça izin verilen komutlar kayıtlıdır; kampanya id'si ve spec boyutu doğrulanır, açılışta yarım kalmış işlemler recover edilir. memory_search, memory_note_read, memory_capture_note ve memory_briefing_run komutları (motorun kendi yanıtını geçirir) eklendi. Tek örnek eklentisi ikinci pencereyi açmaz, mevcut pencereyi öne alır; açılış kurtarması arka plan iş parçacığında çalışır; motor süreç ağacı zaman aşımında sonlandırılır, okuyucu iş parçacıkları süre sınırlıdır, stderr 1 MB ile sınırlıdır; runtime işlemleri sonrası MCP launcher yenilenir; SecondBrain kurulum/güncellemesi sonrası Orchestrator bellek komutu yenilenir. Geliştirme ortam değişkenleri, kaynak dizin ve katalog varsayılanları yalnızca dev_enabled iken geçerlidir; save_settings üretimde reddedilir; product_status development alanı dev_enabled'dır; headless_uninstall_products ürün temizliğini başlatır; tek örnek eklentisi --install niyetini açık pencereye startup-intent olayıyla iletir.
+**Amaç / sorumluluk:** Settings kalıcılığını ve doğrulamasını, motor/RPP isteklerini sınırlı JSON işlemleriyle yürütmeyi, ürün durumu, yaşam döngüsü (plan/apply/rollback/purge), orchestrator MCP, bellek erişimi/indeks/anlamsal arama ve etkinlik Tauri komutlarını sunar. Yalnızca açıkça izin verilen komutlar kayıtlıdır; kampanya id'si ve spec boyutu doğrulanır, açılışta yarım kalmış işlemler recover edilir. memory_search, memory_note_read, memory_capture_note ve memory_briefing_run komutları (motorun kendi yanıtını geçirir) eklendi. Tek örnek eklentisi ikinci pencereyi açmaz, mevcut pencereyi öne alır; açılış kurtarması arka plan iş parçacığında çalışır; motor süreç ağacı zaman aşımında sonlandırılır, okuyucu iş parçacıkları süre sınırlıdır, stderr 1 MB ile sınırlıdır; runtime işlemleri sonrası MCP launcher yenilenir; SecondBrain kurulum/güncellemesi sonrası Orchestrator bellek komutu yenilenir. Geliştirme ortam değişkenleri, kaynak dizin ve katalog varsayılanları yalnızca dev_enabled iken geçerlidir; save_settings üretimde reddedilir; product_status development alanı dev_enabled'dır; headless_uninstall_products ürün temizliğini başlatır; tek örnek eklentisi --install niyetini açık pencereye startup-intent olayıyla iletir. 2026-10-21: katalog kökü <managed>/catalog (standard_roots); plan/apply öncesi ensure_bundles gereken paketi indirir (yayınlanmış katalog varsa çalışma ortamı zorunlu); hub_status uzak katalog güncellemesini ekler; başarılı işlemden sonra sweep (yalnız kurulu sürüm kalır) ve Yüklü uygulamalar senkronu; catalog_refresh, catalog_set_channel, hub_update_status, hub_update_install komutları; --install/--uninstall/--manage niyetleri; açılışta kurtarma, budama, kayıt senkronu, bakım kopyası temizliği ve katalog yenileme; headless --sync-registrations.
 
-**İlişkiler ve sınır:** React api.ts invoke ile çağırır; brain, lifecycle, rpp, mcp_access, memory_access, memory_index ve memory_semantic modüllerini kullanır. Rust birim/e2e testleri ve src-tauri/src/main.rs (run çağrısı) kapsar; native IPC kabulü ayrı kapıdır.
+**İlişkiler ve sınır:** React api.ts ve lifecycle.ts invoke ile çağırır; brain, catalog, registration, lifecycle, rpp, mcp_access, memory_* modüllerini kullanır. Rust birim/e2e testleri ve src-tauri/src/main.rs (run çağrısı) kapsar; native IPC kabulü ayrı kapıdır.
 
 #### [`src-tauri/src/lifecycle.rs`](../src-tauri/src/lifecycle.rs)
 
 **Rol:** Yaşam döngüsü çekirdeği.
 
-**Amaç / sorumluluk:** Hub yönetimli ürünlerin (Orchestrator, SecondBrain, Python çalışma zamanı) katalog doğrulaması, sürümlü kurulum/güncelleme/onarım/kaldırma, journal'lı işlemler, geri alma, yedek temizleme ve kesintiden sonra kurtarmasını yapar. Yol geçişi, bozuk/imzasız paket ve hash uyuşmazlığını reddeder; doğrulama başarısızsa hiçbir şeyi değiştirmez. Her katalog paketi trust::verify ile doğrulanır (güven düzeyi Bundle.trust ve durum çıktısında); journal kimlikleri okuma/yazmada doğrulanır; Orchestrator kuruluyken runtime kaldırılamaz.
+**Amaç / sorumluluk:** Hub yönetimli ürünlerin (Orchestrator, SecondBrain, Python çalışma zamanı) katalog doğrulaması, sürümlü kurulum/güncelleme/onarım/kaldırma, journal'lı işlemler, geri alma, yedek temizleme ve kesintiden sonra kurtarmasını yapar. Yol geçişi, bozuk/imzasız paket ve hash uyuşmazlığını reddeder; doğrulama başarısızsa hiçbir şeyi değiştirmez. Her katalog paketi trust::verify ile doğrulanır (güven düzeyi Bundle.trust ve durum çıktısında); journal kimlikleri okuma/yazmada doğrulanır; Orchestrator kuruluyken runtime kaldırılamaz. version_key SemVer sırası ve PEP 440 yazımlarıyla karşılaştırır (her Hub sürümünde sabit kalmalı); güncellemeden sonra yalnızca etkin sürüm diskte kalır (prune_old_versions), bu yüzden güncelleme geri alınamaz.
 
 **İlişkiler ve sınır:** brain.rs, mcp_access.rs ve main.rs tarafından çağrılır; Bundle/Roots/LifecycleError tiplerini sağlar. Birim testleri kendi içinde; src-tauri/tests/lifecycle_e2e.rs gerçek motorlarla uçtan uca test eder.
 
@@ -584,7 +910,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** GUI executable girişi.
 
-**Amaç / sorumluluk:** Release Windows console görünürlüğünü kapatıp Hub runtime'ını başlatır. --uninstall-products bağımsız değişkeni pencere açmadan ürün temizliğini çalıştırır.
+**Amaç / sorumluluk:** Release Windows console görünürlüğünü kapatıp Hub runtime'ını başlatır. --uninstall-products bağımsız değişkeni pencere açmadan ürün temizliğini çalıştırır. --sync-registrations pencere açmadan Yüklü uygulamalar kayıtlarını bu exe'ye göre yeniler.
 
 **İlişkiler ve sınır:** lib.rs run çağrılır; ayrı kullanıcı CLI/setup wizard değildir.
 
@@ -620,6 +946,14 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **İlişkiler ve sınır:** rpp.rs trusted çağrılarıyla SecondBrain motoruna konuşur; main.rs komutları çağırır. Yalnızca dosya içi birim testleriyle (sahte motor) kapsanır.
 
+#### [`src-tauri/src/registration.rs`](../src-tauri/src/registration.rs)
+
+**Rol:** Windows kayıtları.
+
+**Amaç / sorumluluk:** SecondBrain ve Orchestrator için Windows Yüklü uygulamalar kayıtlarını (HKCU Uninstall) kurulu duruma göre yazar/siler: Kaldır --uninstall=<ürün>, Değiştir --manage=<ürün> ile Hub'ı açar; Hub ürünler bırakılarak kaldırıldığında maintenance kopyasını tanır, tam Hub dönünce onu siler, son ürün gidince kendini ve klasörlerini temizler. Geliştirme derlemesi yalnızca açıkça verilen test anahtarına yazar.
+
+**İlişkiler ve sınır:** lib.rs başlangıçta ve her yaşam döngüsü işleminden sonra sync çağırır; hub_setup.iss --sync-registrations ve kayıt anahtarlarını kullanır.
+
 #### [`src-tauri/src/rpp.rs`](../src-tauri/src/rpp.rs)
 
 **Rol:** RPP motor köprüsü.
@@ -632,7 +966,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Paket özgünlüğü doğrulaması.
 
-**Amaç / sorumluluk:** Katalog paketlerinin Ed25519 imzasını doğrular (fail-closed): imzalanan metin product, kind, version, schema ve bundle_digest'in alan ayrımlı kanonik JSON'udur; PRODUCTION_KEYS derlemeye gömülür (yayın aşamasına kadar boş), geliştirme anahtarı ve RESPECTED_HUB_ALLOW_UNSIGNED yalnızca debug veya dev-trust derlemelerinde vardır ve üretim derlemesinde koddan çıkarılır. Python aracıyla (tools/bundle_signing.py) üretilmiş bir imza birim testiyle doğrulanır. dev_env/dev_abs: geliştirme ortam değişkenleri üretim derlemesinde hiç okunmaz; üretim testi tüm geçersiz kılmaların yok sayıldığını kanıtlar. Üretim anahtarları release-keys.txt dosyasından derlenir.
+**Amaç / sorumluluk:** Katalog paketlerinin Ed25519 imzasını doğrular (fail-closed): imzalanan metin product, kind, version, schema ve bundle_digest'in alan ayrımlı kanonik JSON'udur; PRODUCTION_KEYS derlemeye gömülür (yayın aşamasına kadar boş), geliştirme anahtarı ve RESPECTED_HUB_ALLOW_UNSIGNED yalnızca debug veya dev-trust derlemelerinde vardır ve üretim derlemesinde koddan çıkarılır. Python aracıyla (tools/bundle_signing.py) üretilmiş bir imza birim testiyle doğrulanır. dev_env/dev_abs: geliştirme ortam değişkenleri üretim derlemesinde hiç okunmaz; üretim testi tüm geçersiz kılmaların yok sayıldığını kanıtlar. Üretim anahtarları release-keys.txt dosyasından derlenir. verify_detached: katalog indeksinin '<key_id> <base64>' biçimli ayrık imzasını aynı anahtarlarla doğrular (imzasız seçeneği yoktur).
 
 **İlişkiler ve sınır:** lifecycle::read_bundle her katalog paketi için verify çağırır; brain.rs güven düzeyine göre --allow-unattested kararını verir. tools/bundle_signing.py aynı ifadeyi imzalar; docs/decisions/BUNDLE_TRUST.md karar kaydıdır.
 
@@ -642,7 +976,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Tauri development config.
 
-**Amaç / sorumluluk:** Respected Hub ürün kimliğini, Vite dev URL'sini (127.0.0.1:1420), ../dist frontendDist'ini, ana pencere boyutlarını ve yalnızca self/ipc'ye izin veren CSP'yi tanımlar; bundle kapalıdır.
+**Amaç / sorumluluk:** Respected Hub ürün kimliğini, Vite dev URL'sini (127.0.0.1:1420), ../dist frontendDist'ini, ana pencere boyutlarını ve yalnızca self/ipc'ye izin veren CSP'yi tanımlar; bundle kapalıdır. Sürüm 0.1.0-beta.1.
 
 **İlişkiler ve sınır:** Tauri CLI/derleyici ve native pencere tarafından okunur; npm run dev/build komutlarını tetikler. Production release veya signing iddiası taşımaz.
 
@@ -652,7 +986,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Rust e2e testi.
 
-**Amaç / sorumluluk:** SecondBrain kurulumu sürerken durum yoklamaları ve sihirbaz planları çalışsa da kurulumun kilitlenmeden bittiğini ve yoklamaların program klasöründen çalışmadığını kanıtlar. Geçici köklerde yürür.
+**Amaç / sorumluluk:** SecondBrain kurulumu sürerken durum yoklamaları ve sihirbaz planları çalışsa da kurulumun kilitlenmeden bittiğini ve yoklamaların program klasöründen çalışmadığını kanıtlar. Geçici köklerde yürür. Yayın araçlarını respected-hub/release/tools yolundan çağırır.
 
 **İlişkiler ve sınır:** brain.rs, rpp.rs Gate ve lifecycle.rs'yi gerçek ürün kaynaklarıyla sınar. cargo test ile çalışır; ../orchestrator ve ../secondbrain kardeş kaynaklarına bağlıdır.
 
@@ -660,7 +994,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Rust e2e testi.
 
-**Amaç / sorumluluk:** SecondBrain'in motor-yönetimli yaşam döngüsünü uçtan uca kanıtlar: doğrulanmış paket, salt-okunur SIL planı, AI istemci entegrasyonlu setup, RPP kontrolleri, onarım, geri alma ve kaldırma. Sahte HOME ve geçici kökler; kullanıcının gerçek yapılandırmaları okunmaz/yazılmaz. İstemci yapılandırmasını yeniden yazdıktan sonra kaldırmada yalnızca bizim girdilerimizin gittiği ve manifest/günlüklerde gizli bilginin tutulmadığı gerçek akışta doğrulanır.
+**Amaç / sorumluluk:** SecondBrain'in motor-yönetimli yaşam döngüsünü uçtan uca kanıtlar: doğrulanmış paket, salt-okunur SIL planı, AI istemci entegrasyonlu setup, RPP kontrolleri, onarım, geri alma ve kaldırma. Sahte HOME ve geçici kökler; kullanıcının gerçek yapılandırmaları okunmaz/yazılmaz. İstemci yapılandırmasını yeniden yazdıktan sonra kaldırmada yalnızca bizim girdilerimizin gittiği ve manifest/günlüklerde gizli bilginin tutulmadığı gerçek akışta doğrulanır. Yayın araçlarını respected-hub/release/tools yolundan çağırır.
 
 **İlişkiler ve sınır:** brain.rs ve lifecycle.rs'yi gerçek donmuş launcher ile sınar. cargo test ile çalışır; kardeş secondbrain dağıtımına bağlıdır.
 
@@ -676,7 +1010,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Hub kaldırma temizliği uçtan uca testi.
 
-**Amaç / sorumluluk:** Gerçek respected-hub.exe --uninstall-products komutunu sahte HOME ve geçici köklerle çalıştırır: SecondBrain ve Orchestrator kurulu, Claude ve Codex yapılandırmalarına kayıtlı ve istemciler dosyalarını yeniden yazmışken kayıtlarımız kalkar, istemci ve kullanıcı değişiklikleri, kasa notu korunur, yönetilen klasör silinir; boş makinede komut hiçbir şey yaratmaz.
+**Amaç / sorumluluk:** Gerçek respected-hub.exe --uninstall-products komutunu sahte HOME ve geçici köklerle çalıştırır: SecondBrain ve Orchestrator kurulu, Claude ve Codex yapılandırmalarına kayıtlı ve istemciler dosyalarını yeniden yazmışken kayıtlarımız kalkar, istemci ve kullanıcı değişiklikleri, kasa notu korunur, yönetilen klasör silinir; boş makinede komut hiçbir şey yaratmaz. Yayın araçlarını respected-hub/release/tools yolundan çağırır.
 
 **İlişkiler ve sınır:** cleanup.rs, lib.rs, mcp_access ve brain yaşam döngüsünü gerçek ürünlerle çalıştırır.
 
@@ -684,7 +1018,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Rust e2e testi.
 
-**Amaç / sorumluluk:** Hub yönetimli yaşam döngüsünü gerçek ürün kaynaklarından üretilen paketlerle kanıtlar: iki ürün kur/doğrula/onar/güncelle/kaldır, motorun çalıştıramadığı kopya asla etkinleştirilmez, ürünler sistem Python'u olmadan Hub'ın Python'unda çalışır. Yalnızca geçici kök. Yerel paketler geliştirme imzasıyla doğrulanır (trust: development); bozuk ama geçerli imzalı paket motor doğrulamasıyla durdurulur.
+**Amaç / sorumluluk:** Hub yönetimli yaşam döngüsünü gerçek ürün kaynaklarından üretilen paketlerle kanıtlar: iki ürün kur/doğrula/onar/güncelle/kaldır, motorun çalıştıramadığı kopya asla etkinleştirilmez, ürünler sistem Python'u olmadan Hub'ın Python'unda çalışır. Yalnızca geçici kök. Yerel paketler geliştirme imzasıyla doğrulanır (trust: development); bozuk ama geçerli imzalı paket motor doğrulamasıyla durdurulur. Yayın araçlarını respected-hub/release/tools yolundan çağırır.
 
 **İlişkiler ve sınır:** lifecycle.rs ve rpp.rs'yi gerçek motorlarla sınar. cargo test ile çalışır; kardeş orchestrator/secondbrain kaynaklarına bağlıdır.
 
@@ -712,6 +1046,14 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **İlişkiler ve sınır:** memory_index.rs ve rpp.rs'yi gerçek motorla sınar. cargo test ile çalışır; kardeş secondbrain kaynağına bağlıdır.
 
+#### [`src-tauri/tests/remote_catalog_e2e.rs`](../src-tauri/tests/remote_catalog_e2e.rs)
+
+**Rol:** Rust e2e testi.
+
+**Amaç / sorumluluk:** İndirme yolunu uçtan uca kanıtlar: gerçek publish_release.py ile üretilmiş, geliştirme anahtarıyla imzalı file:// katalog curl ile alınır, arşiv tar ile açılıp önbelleğe girer, onarım ağ gerektirmez, bozuk önbellek yenilenir; kurcalanmış arşiv, kurcalanmış indeks ve daha eski sequence reddedilir.
+
+**İlişkiler ve sınır:** catalog.rs ve lifecycle.rs'yi sınar; release/tools/build_bundle.py ve publish_release.py'yi çağırır.
+
 #### [`src-tauri/tests/rpp_e2e.rs`](../src-tauri/tests/rpp_e2e.rs)
 
 **Rol:** Rust e2e testi.
@@ -724,7 +1066,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Katalog güveni saldırı testi.
 
-**Amaç / sorumluluk:** Gerçek build_bundle çıktısı üzerinde katalogun yalnızca güvenilir anahtarla imzalı paketi sunduğunu kanıtlar: sürüm/tür değişimi, yeniden özetlenmiş içerik, bozulmuş imza, bilinmeyen algoritma, imza silme ve saldırgan anahtarıyla yeniden imzalama reddedilir; imzasız paket yalnızca geliştirme isteğiyle kabul edilir.
+**Amaç / sorumluluk:** Gerçek build_bundle çıktısı üzerinde katalogun yalnızca güvenilir anahtarla imzalı paketi sunduğunu kanıtlar: sürüm/tür değişimi, yeniden özetlenmiş içerik, bozulmuş imza, bilinmeyen algoritma, imza silme ve saldırgan anahtarıyla yeniden imzalama reddedilir; imzasız paket yalnızca geliştirme isteğiyle kabul edilir. Yayın araçlarını respected-hub/release/tools yolundan çağırır.
 
 **İlişkiler ve sınır:** lifecycle::catalog ve status, trust.rs ve tools/bundle_signing.py ile birlikte çalışır.
 
@@ -734,7 +1076,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Görsel yönetim.
 
-**Amaç / sorumluluk:** Hub kabuğunu çizer: global rail (Hub sayfaları ve uygulama çalışma alanları), üst çubuk, sağlık özeti ve yenileme; route'a göre Home, MyApps, Discover, Connections, Activity, Settings ve AppWorkspace görünümlerini gösterir. Tarayıcı önizlemesinde gerçek veri uydurmaz, uyarı gösterir. Seçili sayfa oturum boyunca sessionStorage'da tutulur; WebView yeniden yüklenirse (ör. kurulum sırasında) kullanıcı Ana Sayfa'ya atılmaz. Product kurulumcularından gelen --install niyeti oturum başına bir kez ilgili sayfayı açar (startupIntent). startup-intent olayı dinlenir: Hub açıkken başlatılan ürün kurucusunun seçimi ilgili sayfayı açar.
+**Amaç / sorumluluk:** Hub kabuğunu çizer: global rail (Hub sayfaları ve uygulama çalışma alanları), üst çubuk, sağlık özeti ve yenileme; route'a göre Home, MyApps, Discover, Connections, Activity, Settings ve AppWorkspace görünümlerini gösterir. Tarayıcı önizlemesinde gerçek veri uydurmaz, uyarı gösterir. Seçili sayfa oturum boyunca sessionStorage'da tutulur; WebView yeniden yüklenirse (ör. kurulum sırasında) kullanıcı Ana Sayfa'ya atılmaz. Product kurulumcularından gelen --install niyeti oturum başına bir kez ilgili sayfayı açar (startupIntent). startup-intent olayı dinlenir: Hub açıkken başlatılan ürün kurucusunun seçimi ilgili sayfayı açar. Windows Yüklü uygulamalar ve ürün kurulumlarından gelen niyetleri (install/uninstall/manage) işler; Hub ve ürün güncellemelerini Güncelle/Sonra bildirimiyle önerir, Hub güncellemesini başlatır; Hub sürümünü gösterir.
 
 **İlişkiler ve sınır:** main.tsx çağırır; apps.ts, api.ts (native), useEcosystem.ts, shellModel.ts (globalHealth), ui.tsx ve views/* kullanır. Kabuk modeli ve gezinme testleri sağlık/rota mantığını kapsar.
 
@@ -742,7 +1084,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Tipli native API.
 
-**Amaç / sorumluluk:** Tauri invoke ile explicit engine/settings/product işlemleri ve runtime detection/types sağlar. startup_intent komutunu startupIntent olarak sunar.
+**Amaç / sorumluluk:** Tauri invoke ile explicit engine/settings/product işlemleri ve runtime detection/types sağlar. startup_intent komutunu startupIntent olarak sunar. StartupIntent türü: { action: install|uninstall|manage, product }.
 
 **İlişkiler ve sınır:** Rust command handler tüketilir; generic shell plugin veya sahte sonuç yoktur.
 
@@ -790,7 +1132,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Ürün yaşam döngüsü istemcisi.
 
-**Amaç / sorumluluk:** Hub yönetimli ürünlerin kurulum/güncelleme/onarım/kaldırma/geri alma işlemleri için tipli native istemci, plan ve günlük türleri ve etiket/hata/geri alma yardımcıları. Native { ok, result, error } döner; hiçbir şey simüle edilmez. Güven düzeyi (trust) türü; SecondBrain kaldırması geri alınamaz olarak işaretlenir (canRollback).
+**Amaç / sorumluluk:** Hub yönetimli ürünlerin kurulum/güncelleme/onarım/kaldırma/geri alma işlemleri için tipli native istemci, plan ve günlük türleri ve etiket/hata/geri alma yardımcıları. Native { ok, result, error } döner; hiçbir şey simüle edilmez. Güven düzeyi (trust) türü; SecondBrain kaldırması geri alınamaz olarak işaretlenir (canRollback). Uzak katalog ve Hub güncellemesi istemcileri (hubUpdateStatus, catalogRefresh, catalogSetChannel, hubUpdateInstall), kanal türü, yeni hata kodları; güncelleme geri alınamaz (eski sürüm silinir).
 
 **İlişkiler ve sınır:** LifecycleControls, BrainSetup/BrainInstall, Activity, Discover, useEcosystem ve mcpAccess kullanır. tests/lifecycleModel.test.ts kapsar.
 
@@ -984,7 +1326,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Yaşam döngüsü kontrolleri.
 
-**Amaç / sorumluluk:** Tek bir Hub yönetimli ürün için kur/güncelle/onar/kaldır: önce plan, onay, uygulama, sonra geri alma ve yedek temizleme sunar. Geri döndürülemez adımlar açıkça belirtilir. Yedekleri temizleme ve SecondBrain kaldırma metni iki adımlı onay ve doğru kapsam açıklamasıyla gösterilir.
+**Amaç / sorumluluk:** Tek bir Hub yönetimli ürün için kur/güncelle/onar/kaldır: önce plan, onay, uygulama, sonra geri alma ve yedek temizleme sunar. Geri döndürülemez adımlar açıkça belirtilir. Yedekleri temizleme ve SecondBrain kaldırma metni iki adımlı onay ve doğru kapsam açıklamasıyla gösterilir. autoAction ile başka yerde seçilmiş işlemin (Yüklü uygulamalar, güncelleme bildirimi) planını doğrudan açar; paket indirilirken durum metni gösterir; katalog alınamadıysa Ayarlar'a yönlendirir.
 
 **İlişkiler ve sınır:** MyApps tarafından kullanılır; lifecycle.ts işlemlerini çağırır. Kapsam: tests/lifecycleModel.test.ts.
 
@@ -1016,7 +1358,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Uygulamalarım görünümü.
 
-**Amaç / sorumluluk:** Hub'a bağlı ürünleri durum, sürüm ve yetenekleriyle listeler (ürünün kendi sağlık yanıtından); kurulum eksikse sihirbaza yönlendirir ve yaşam döngüsü kontrollerini barındırır.
+**Amaç / sorumluluk:** Hub'a bağlı ürünleri durum, sürüm ve yetenekleriyle listeler (ürünün kendi sağlık yanıtından); kurulum eksikse sihirbaza yönlendirir ve yaşam döngüsü kontrollerini barındırır. App'ten gelen istenen işlemi (ask) ilgili ürünün kontrollerine iletir; ürünlerin imzalı katalogdan indirildiğini ve Windows Uygulamalar listesinde göründüğünü açıklar.
 
 **İlişkiler ve sınır:** Kabuk tarafından açılır; useEcosystem, LifecycleControls ve ui.tsx kullanır. Doğrudan test yok.
 
@@ -1040,7 +1382,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Hub ayarları görünümü.
 
-**Amaç / sorumluluk:** Python yolu, ürün kaynak klasörleri ve görev verisi klasörü gibi geliştirme ayarlarını düzenletir; kayıt sonrası durumu (kaydediliyor/uygulandı/doğrulandı/başarısız) bildirir.
+**Amaç / sorumluluk:** Python yolu, ürün kaynak klasörleri ve görev verisi klasörü gibi geliştirme ayarlarını düzenletir; kayıt sonrası durumu (kaydediliyor/uygulandı/doğrulandı/başarısız) bildirir. Güncellemeler bölümü: Hub sürümü, beta/kararlı kanal seçimi ve Güncellemeleri denetle.
 
 **İlişkiler ve sınır:** Kabuk Ayarlar rotasında açılır; api.ts ve lifecycle.ts kullanır. Doğrudan test yok.
 
@@ -1206,7 +1548,7 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Yaşam döngüsü testleri.
 
-**Amaç / sorumluluk:** Yaşam döngüsü etiketleri, kullanılabilir eylemler, geri alma uygunluğu, hata ve günlük cümleleri ile operasyon kimliği üretimini doğrular.
+**Amaç / sorumluluk:** Yaşam döngüsü etiketleri, kullanılabilir eylemler, geri alma uygunluğu, hata ve günlük cümleleri ile operasyon kimliği üretimini doğrular. Güncellemenin geri alınamadığını sınar.
 
 **İlişkiler ve sınır:** src/lifecycle.ts'i sınar. node --test ile çalışır.
 
@@ -1328,9 +1670,9 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **Rol:** Native E2E aracı.
 
-**Amaç / sorumluluk:** Şu an boş bir yer tutucu dosyadır; içinde kod yoktur. Ürün yaşam döngüsü kararı Hub'un native E2E'sinin PATH'ten Python çıkarılarak çalıştırıldığını belirtir, ancak bu betik henüz bunu uygulamaz.
+**Amaç / sorumluluk:** Derlenmiş Hub'ı (geliştirme veya kurulu) WebView2 DevTools portu üzerinden gerçek masaüstünde uçtan uca sürer: atılabilir kökler, sahte kullanıcı evi, PATH'ten Python çıkarılmış; ürün paketlerini release/tools ile üretir, --remote-catalog ile indirme yolunu (publish_release.py local-catalog) kullanır; gerçek ortamın değişmediğini real_env_guard ile kanıtlar ve rapor yazar.
 
-**İlişkiler ve sınır:** HUB_PRODUCT_LIFECYCLE.md native E2E'ye atıf yapar; şu an hiçbir kod bu dosyayı çağırmaz. Doldurulana kadar kapsayan test yoktur.
+**İlişkiler ve sınır:** release/tools/build_bundle.py, build_brain_dist.py, build_runtime.py, publish_release.py ve real_env_guard.py'yi çağırır.
 
 #### [`tools/repository_map.py`](../tools/repository_map.py)
 

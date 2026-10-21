@@ -1,7 +1,7 @@
 # Respected: project brief for planning (state at v0.1.0-beta.1, 2026-10-18)
 
 ## What it is
-Three separate GitHub repos (github.com/respected0): **respected-hub**, **respectedbrain** (local folder `respected-secondbrain`), **respected-orchestrator**. Windows beta, all at version **0.1.0**.
+Three separate GitHub repos (github.com/respected0): **respected-hub**, **respected-secondbrain**, **respected-orchestrator**. Windows beta, all at version **0.1.0-beta.1**. Since 2026-10-21 the Hub works like a game launcher: products are downloaded from a signed catalog on GitHub Releases (see `docs/decisions/REMOTE_CATALOG_AND_LIFECYCLE.md`); parts of this brief below describe the earlier bundled-catalog state.
 * **SecondBrain**: local, provider-neutral shared memory for AI tools, stored in the user's own Markdown/Obsidian vault. Frozen Windows engine (`respectedbrain.exe`; commands like `flush`, `compile`, `search`, `hook`, `mcp` are subcommands). Writes global hooks, skills and MCP entries into AI clients (Claude Code, Codex, Cursor, Gemini, Antigravity, Windsurf, Claude Desktop, VS Code agents) and can add a morning-briefing scheduled task and a desktop shortcut. The vault itself gets only notes + `.obsidian`.
 * **Orchestrator**: multi-agent task engine (Python, `agent-framework-core`). No window of its own: used through the Hub workspace and an MCP server that AI clients can call.
 * **Hub**: Tauri 2 + React desktop app. Installs/updates/repairs/removes the other two from a signed catalog shipped inside its installer; talks to products over their own protocol (RPP v1.0/1.1); shows activity, MCP access, product status.

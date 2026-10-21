@@ -272,3 +272,25 @@ DONE (code, untested in Sandbox yet): (1)+(4) `cleanup::after_uninstall` (called
 (Previously) Remaining: 1,3,4,5,6,7 (need the Sandbox `inventory.ps1` output for 1/4).
 Still open: clean-machine install tests (Sandbox needs admin+reboot, ask first), human UI checks, real CLI sessions, full-suite release gate, publishing (not authorised). Production build/sign needs the passphrase, so the user runs it in their own terminal. SecondBrain full regression has not been re-run since the backup restore fix (only backup/maintenance tests).
 
+
+## 20. Launcher model: remote catalog, Installed apps, offered updates (2026-10-21)
+User decisions (this session): Riot/Steam-like Hub; products downloaded from GitHub Releases (one repo each: respected-hub,
+respected-secondbrain, respected-orchestrator); updates offered with "Güncelle / Sonra", never silent; beta and stable channels in
+the version logic; Installed apps lists every product with Uninstall (Hub confirmation) and Modify (product page); uninstalling the
+Hub keeps the products working when the person says No, with a warning; keep the downloaded archive for offline repair but delete
+the old version after an update; one version for everything to start (`0.1.0-beta.1`); Windows-only CI (macOS/Linux code stays).
+Decision record with the frozen contracts: `respected-hub/docs/decisions/REMOTE_CATALOG_AND_LIFECYCLE.md`.
+* Done: `catalog.rs` (signed index, channels, curl/tar download, cache, Hub self-update), `registration.rs` (Installed apps,
+  maintenance copy), SemVer `version_key`, no previous version kept, SecondBrain installs from the cached package (no second copy),
+  intents `--install/--uninstall/--manage`, startup sweep, UI notices and Ayarlar › Güncellemeler, installer without catalog,
+  `publish_release.py` (+ self-check), `remote_catalog_e2e.rs` (real curl/tar, tamper/rollback refusal). SecondBrain: standalone
+  Inno installer, Beyin migration, dashboard alias and release.yml removed; kod-orkestrasyon skill moved to Orchestrator (served as MCP
+  instructions); test debt cleared (991 OK). Orchestrator 332 OK.
+* Not done / next: nothing published (no tags pushed, no GitHub release, no catalog); clean-machine run of the new flow (install from the
+  catalog, Hub self-update with /RELAUNCH, Installed-apps uninstall/modify, kept-products path); the old local tags `v0.1.0-beta.1` point
+  at pre-launcher commits and must be deleted/recreated at publish time; the `releases/v0.1.0-beta.1` folder holds the OLD bundled-catalog
+  installers (do not publish them).
+* Open (2026-10-21, test deferred by the user): native desktop e2e `node tools/hub_native_e2e.mjs <dev exe> --remote-catalog` installs
+  runtime + Orchestrator through the download path, then the SecondBrain wizard falls back to Ana Sayfa before the Sources step
+  (`timeout-Sources...` in the report). Not yet known whether this is new (remote path / App.tsx changes) or older; a local-catalog
+  `--only-brain` run was started to tell them apart. Fix before publishing.

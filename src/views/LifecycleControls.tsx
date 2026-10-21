@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ACTION_DONE, ACTION_LABEL, STATE_LABEL, availableActions, canRollback, describeLifecycleError, lifecycleApply, lifecyclePlan, lifecyclePurgeBackups, lifecycleRollback,
 } from '../lifecycle.ts';
@@ -8,7 +8,8 @@ import { Icon } from '../ui.tsx';
 const ICON: Record<LifecycleAction, string> = { install: 'download', update: 'sync', repair: 'wrench', uninstall: 'trash', integrations: 'connections' };
 
 // Install / update / repair / uninstall for one Hub-managed product: plan first, confirm, apply, then offer undo.
-export default function LifecycleControls({ name, lc, onChanged, onWizard }: { name: string; lc: ProductLifecycle | null; onChanged: () => void; onWizard?: () => void }) {
+// `autoAction`: the person already chose this elsewhere (Windows Installed apps, an update notice), so its plan opens directly.
+export default function LifecycleControls({ name, lc, onChanged, onWizard, autoAction, onAutoDone }: { name: string; lc: ProductLifecycle | null; onChanged: () => void; onWizard?: () => void; autoAction?: LifecycleAction; onAutoDone?: () => void }) {
   const [pending, setPending] = useState<LifecyclePlan | null>(null);
   const [busy, setBusy] = useState(false);
   const [purgeAsk, setPurgeAsk] = useState(false);
@@ -16,8 +17,14 @@ export default function LifecycleControls({ name, lc, onChanged, onWizard }: { n
   const [done, setDone] = useState<JournalEntry | null>(null);
   const [note, setNote] = useState('');
 
+  const actions = lc ? availableActions(lc.install_state, lc.available !== null) : [];
+  useEffect(() => {
+    if (!autoAction || !lc) return;
+    onAutoDone?.();
+    if (actions.includes(autoAction)) void preview(autoAction);
+    else setNote(`${name}: bu işlem şu an yapılamaz (${STATE_LABEL[lc.install_state].toLowerCase()}).`);
+  }, [autoAction, lc?.install_state]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!lc) return <p className="muted">Yönetilen kurulum durumu okunamadı.</p>;
-  const actions = availableActions(lc.install_state, lc.available !== null);
 
   async function preview(action: LifecycleAction) {
     // SecondBrain's install needs a vault and integration choices: the setup wizard collects them and runs the plan.
@@ -58,9 +65,10 @@ export default function LifecycleControls({ name, lc, onChanged, onWizard }: { n
     <p className="meta"><span className={`badge-status ${lc.install_state === 'installed' ? 'ok' : lc.install_state === 'absent' ? 'unreachable' : 'warn'}`}>{STATE_LABEL[lc.install_state]}</span>
       {lc.version && <span className="ver">v{lc.version}</span>}
       {lc.signed === false && <span className="pill" title="Yerel olarak üretilmiş, imzasız paket">İmzasız yerel paket</span>}
-      {lc.available && lc.install_state !== 'installed' && <span className="ver">Kataloğta v{lc.available.version}</span>}</p>
+      {lc.available && lc.install_state !== 'installed' && <span className="ver">{lc.install_state === 'absent' ? 'Sürüm' : 'Yeni sürüm'}: v{lc.available.version}</span>}</p>
     {lc.problems.length > 0 && <ul className="checks compact" aria-label="Bütünlük sorunları">{lc.problems.slice(0, 4).map(problem => <li key={problem} className="bad"><span aria-hidden="true">✕</span>{problem}</li>)}</ul>}
-    {!lc.available && lc.install_state === 'absent' && <p className="muted">Katalogta kurulabilir paket yok{lc.catalog_skipped.length ? ` (${lc.catalog_skipped.length} geçersiz paket atlandı)` : ''}. Paket oluşturmak için <code>python tools/build_bundle.py</code> kullanın.</p>}
+    {!lc.available && lc.install_state === 'absent' && <p className="muted">Ürün kataloğu henüz alınamadı{lc.catalog_skipped.length ? ` (${lc.catalog_skipped.length} geçersiz paket atlandı)` : ''}. İnternete bağlıyken Ayarlar › Güncellemeleri denetle'yi kullanın.</p>}
+    {busy && !pending && <p className="muted" role="status">Hazırlanıyor… Gerekirse paket indirilip doğrulanır.</p>}
     {!pending && <div className="actions">{actions.map(action => <button key={action} className={action === 'install' || action === 'update' || action === 'repair' ? 'cta' : ''} disabled={busy} onClick={() => void preview(action)}><Icon name={ICON[action]} />{ACTION_LABEL[action]}</button>)}
       {!pending && lc.install_state === 'installed' && lc.available !== null && <button className="cta" disabled title="Dosyalar doğrulandı; onarım gerekmiyor. Bozulma olursa bu düğme etkinleşir."><Icon name={ICON.repair} />Onar</button>}
       {lc.removed_available && !purgeAsk && <button disabled={busy} onClick={() => setPurgeAsk(true)} title="Kaldırma ve güncelleme yedeklerini kalıcı siler">Yedekleri temizle</button>}

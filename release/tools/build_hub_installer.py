@@ -1,10 +1,10 @@
-"""Build the unsigned Windows installer for the Hub: dist/RespectedHub-Windows-Setup.exe.
+"""Build the Hub's Windows installers (not Authenticode-signed): dist/Respected{Hub,SecondBrain,Orchestrator}-Windows-Setup.exe.
 
-    python tools/build_hub_installer.py [--skip-app]
+    python respected-hub/release/tools/build_hub_installer.py [--release-key VAULT] [--skip-app]
 
-Stages the release executable plus a catalog (Orchestrator source bundle, Python runtime, frozen SecondBrain
-distribution), then compiles packaging/windows/hub_setup.iss with Inno Setup (the same compiler SecondBrain uses).
-Nothing is downloaded; the installer is local and unsigned.
+Stages the release executable and compiles packaging/windows/hub_setup.iss with Inno Setup. The installers carry only the
+Hub: products are downloaded by the Hub from the signed catalog on GitHub Releases (release/tools/publish_release.py builds
+and uploads those archives and the catalog).
 """
 import argparse, json, os, shutil, subprocess, sys
 from pathlib import Path
@@ -37,7 +37,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     py = [sys.executable, "-B"]
     release = args.release_key is not None
-    sign = ["--key", str(args.release_key)] if release else []
     print("PRODUCTION build (no development trust)" if release else "DEVELOPMENT build (trusts the local dev signing key; not for distribution)")
     if not release:
         run(py + [str(TOOLS / "bundle_signing.py"), "init"])
@@ -55,7 +54,7 @@ if __name__ == "__main__":
         sys.exit("release executable missing; run without --skip-app")
     if STAGE.exists():
         shutil.rmtree(STAGE)
-    (STAGE / "catalog").mkdir(parents=True)
+    STAGE.mkdir(parents=True)
     shutil.copyfile(exe, STAGE / "respected-hub.exe")
     if not release:  # public half only; production installers carry no development trust
         shutil.copyfile(ECO / ".build-cache" / "signing" / "dev-ed25519.pub", STAGE / "dev-trust.pub")
@@ -65,16 +64,9 @@ if __name__ == "__main__":
         leaked = [s for s in (b"RESPECTED_HUB_ALLOW_UNSIGNED", b"RESPECTED_HUB_DEV_TRUST", b"RESPECTED_HUB_TEST_HOME") if s in data]
         if leaked:
             sys.exit(f"production executable still contains development overrides: {leaked}")
-    brain = subprocess.run(py + [str(TOOLS / "build_brain_dist.py")], capture_output=True, text=True)
-    if brain.returncode:
-        sys.exit(brain.stderr)
-    brain_dist = brain.stdout.strip().splitlines()[-1]
-    run(py + [str(TOOLS / "build_bundle.py"), "orchestrator", "--out", str(STAGE / "catalog"), *sign])
-    run(py + [str(TOOLS / "build_bundle.py"), "secondbrain-dist", "--dist", brain_dist, "--out", str(STAGE / "catalog"), *sign])
-    run(py + [str(TOOLS / "build_runtime.py"), "--out", str(STAGE / "catalog")])
     version = json.loads((HUB / "src-tauri" / "tauri.conf.json").read_text("utf-8-sig"))["version"]
     (ECO / "dist").mkdir(exist_ok=True)
-    # One installer per download: the product installers are the same Hub + catalog; they only open Hub on that product's install page.
+    # One installer per download: the product installers are the same Hub; they only open the Hub on that product's install page.
     for product, name in (("", "RespectedHub"), ("--install=orchestrator", "RespectedOrchestrator"), ("--install=secondbrain", "RespectedSecondBrain")):
         run([inno(), f"/DAppVersion={version}", f"/DStageDir={STAGE}", f"/DOutputDir={ECO / 'dist'}", f"/DProduct={product}", f"/DOutputBase={name}-Windows-Setup", str(HUB / "packaging" / "windows" / "hub_setup.iss")])
     print(ECO / "dist" / "RespectedHub-Windows-Setup.exe")

@@ -151,7 +151,28 @@ pub fn read_bundle(dir: &Path) -> Result<Bundle, LifecycleError> {
     Ok(Bundle { dir: dir.to_path_buf(), product, version, files, digest, signed, trust: trust.as_str().to_string(), kind })
 }
 
-pub fn version_key(version: &str) -> Vec<u64> { version.split(|c: char| !c.is_ascii_digit()).filter_map(|p| p.parse().ok()).collect() }
+/// Release order key: SemVer 2 (`0.1.0-beta.2 < 0.1.0-rc.1 < 0.1.0 < 0.1.1-beta.1`) plus the PEP 440 spellings Python
+/// packages report (`0.1.0b2` = `0.1.0-beta.2`). Every Hub ever shipped compares versions with this, so it must stay stable.
+pub fn version_key(version: &str) -> (Vec<u64>, u8, Vec<(u8, u64, String)>) {
+    let text = version.trim().trim_start_matches(['v', 'V']);
+    let text = text.split('+').next().unwrap_or("");
+    let (core, mut pre) = match text.split_once('-') { Some((c, p)) => (c.to_string(), p.to_string()), None => (text.to_string(), String::new()) };
+    let mut core = core;
+    if pre.is_empty() {
+        // PEP 440: digits then a/b/rc/c and a number, e.g. 0.1.0b1
+        if let Some(at) = core.find(|c: char| c.is_ascii_alphabetic()) {
+            let (number, suffix) = core.split_at(at);
+            let tag = suffix.trim_end_matches(|c: char| c.is_ascii_digit());
+            let name = match tag.to_ascii_lowercase().as_str() { "a" | "alpha" => "alpha", "b" | "beta" => "beta", "c" | "rc" => "rc", other => other }.to_string();
+            pre = format!("{name}.{}", &suffix[tag.len()..]).trim_end_matches('.').to_string();
+            core = number.trim_end_matches('.').to_string();
+        }
+    }
+    let mut numbers: Vec<u64> = core.split('.').map(|p| p.parse().unwrap_or(0)).collect();
+    numbers.resize(numbers.len().max(3), 0);
+    let ids = pre.split('.').filter(|p| !p.is_empty()).map(|p| match p.parse::<u64>() { Ok(n) => (0, n, String::new()), Err(_) => (1, 0, p.to_ascii_lowercase()) }).collect::<Vec<_>>();
+    (numbers, if ids.is_empty() { 1 } else { 0 }, ids)
+}
 
 /// Valid catalog bundles for `product` (source/runtime copies), newest first, plus the reasons others were skipped.
 pub fn catalog(roots: &Roots, product: &str) -> (Vec<Bundle>, Vec<String>) { catalog_kind(roots, product, false) }
@@ -290,7 +311,7 @@ pub fn plan(roots: &Roots, product: &str, action: &str) -> Result<Value, Lifecyc
             if action == "update" && st["install_state"] != "update-available" { return fail("LIFECYCLE_CONFLICT", "Güncelleme yok; kurulu sürüm güncel.", "Sorun varsa onarımı kullanın."); }
             steps.push(step("stage", "Paket dosyalarını güvenli bir ara klasöre kopyala ve her dosyanın özetini doğrula", true, None));
             steps.push(step("verify", "Ürünün kendi RPP yanıtıyla (manifest + sağlık) yeni kopyayı doğrula", true, None));
-            steps.push(step("switch", if action == "install" { "Kurulumu etkinleştir" } else { "Yeni sürüme geç; önceki sürüm geri alma için saklanır" }, true, None));
+            steps.push(if action == "install" { step("switch", "Kurulumu etkinleştir", true, None) } else { step("switch", "Yeni sürüme geç ve eski sürümü sil; ayarlarınız ve verileriniz korunur", false, Some("Eski sürüme geri dönülmez")) });
         }
         "repair" => {
             if !installed { return fail("LIFECYCLE_CONFLICT", "Ürün kurulu değil.", "Önce kurun."); }
@@ -399,16 +420,18 @@ fn do_install_or_update(roots: &Roots, product: &str, action: &str, entry: &mut 
     entry["undo"] = json!({ "kind": action, "previous_version": previous });
     entry["to_version"] = json!(bundle.version);
     write_current(roots, product, &bundle.version, &bundle.digest)?;
-    prune_old_versions(roots, product, &bundle.version, previous.as_deref());
+    prune_old_versions(roots, product);
     Ok(())
 }
 
-/// Keep the current and the previous version; older ones are no longer needed for rollback.
-fn prune_old_versions(roots: &Roots, product: &str, current: &str, previous: Option<&str>) {
+/// Only the active version stays on disk (user decision 2026-10-21: no leftovers after an update). A folder still in use
+/// (an open MCP server's Python) fails to delete now and is removed by the next start's sweep.
+pub fn prune_old_versions(roots: &Roots, product: &str) {
+    let Some((current, _)) = read_current(roots, product) else { return };
     if let Ok(rd) = fs::read_dir(versions_dir(roots, product)) {
         for e in rd.flatten() {
             let name = e.file_name().to_string_lossy().to_string();
-            if name != current && Some(name.as_str()) != previous && !name.starts_with(".staging-") { let _ = fs::remove_dir_all(e.path()); }
+            if name != current && !name.starts_with(".staging-") { let _ = fs::remove_dir_all(e.path()); }
         }
     }
 }
@@ -576,6 +599,16 @@ mod tests {
     const FILES: [(&str, &str); 2] = [("src/respected_orchestrator/__main__.py", "print('a')"), ("src/respected_orchestrator/__init__.py", "")];
 
     #[test]
+    fn versions_follow_semver_release_order_and_accept_python_spellings() {
+        let ordered = ["0.0.1", "0.1.0-alpha.1", "0.1.0-beta.1", "0.1.0-beta.2", "0.1.0-beta.10", "0.1.0-rc.1", "0.1.0", "0.1.1-beta.1", "0.1.1", "0.2.0", "1.0.0"];
+        for pair in ordered.windows(2) { assert!(version_key(pair[0]) < version_key(pair[1]), "{} < {}", pair[0], pair[1]); }
+        assert_eq!(version_key("0.1.0b1"), version_key("0.1.0-beta.1"));
+        assert_eq!(version_key("0.1.0rc2"), version_key("0.1.0-rc.2"));
+        assert_eq!(version_key("v0.1"), version_key("0.1.0"));
+        assert_eq!(version_key("0.1.0+build.7"), version_key("0.1.0"));
+    }
+
+    #[test]
     fn path_rules_reject_traversal_and_foreign_roots() {
         for good in ["src/a.py", "src/pkg/b.py"] { assert!(valid_bundle_path(good, "source"), "{good}"); }
         for bad in ["", "a.py", "src/../x", "/src/a", "src\\a.py", "C:/x", "src//a", "src/./a", "../src/a"] { assert!(!valid_bundle_path(bad, "source"), "{bad}"); }
@@ -596,18 +629,17 @@ mod tests {
         assert_eq!(status(&r, "orchestrator").unwrap()["install_state"], "update-available");
         apply(&r, "orchestrator", "update", "update-0001", &ok_verify).unwrap();
         assert_eq!(read_current(&r, "orchestrator").unwrap().0, "0.2.0");
-        assert!(version_dir(&r, "orchestrator", "0.1.0").is_dir(), "previous version kept for rollback");
+        assert!(!version_dir(&r, "orchestrator", "0.1.0").exists(), "an update leaves no older version on disk");
         apply(&r, "orchestrator", "uninstall", "remove-0000", &ok_verify).unwrap();
         assert_eq!(rollback(&r, "update-0001").unwrap_err().code, "ROLLBACK_UNAVAILABLE", "only the newest applied operation can be undone");
         rollback(&r, "remove-0000").unwrap();
-        assert_eq!(rollback(&r, "update-0001").unwrap()["status"], "rolled_back");
-        assert_eq!(read_current(&r, "orchestrator").unwrap().0, "0.1.0");
-        assert_eq!(rollback(&r, "update-0001").unwrap()["status"], "rolled_back", "rollback is idempotent");
+        assert_eq!(rollback(&r, "update-0001").unwrap_err().code, "ROLLBACK_UNAVAILABLE", "the replaced version is gone, so an update cannot be undone");
+        assert_eq!(read_current(&r, "orchestrator").unwrap().0, "0.2.0");
 
         apply(&r, "orchestrator", "uninstall", "remove-0001", &ok_verify).unwrap();
         assert!(read_current(&r, "orchestrator").is_none());
         rollback(&r, "remove-0001").unwrap();
-        assert_eq!(status(&r, "orchestrator").unwrap()["install_state"], "update-available");
+        assert_eq!(status(&r, "orchestrator").unwrap()["install_state"], "installed");
         assert!(purge_backups(&r, "orchestrator").unwrap()["removed_entries"].as_u64().unwrap() >= 1);
     }
 

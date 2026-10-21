@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { loadSettings, native, saveSettings, type Settings } from '../api.ts';
-import { lifecycleStatus } from '../lifecycle.ts';
+import { catalogRefresh, catalogSetChannel, describeLifecycleError, hubUpdateStatus, lifecycleStatus, type Channel, type HubUpdate } from '../lifecycle.ts';
 
 type SaveState = 'idle' | 'saving' | 'applied' | 'verified' | 'failed';
 
@@ -13,7 +13,44 @@ const fields: { key: keyof Settings; label: string; help: string }[] = [
 
 const sameSettings = (left: Settings, right: Settings) => fields.every(field => left[field.key] === right[field.key]);
 
-export default function Settings() {
+// Where updates come from and which releases this Hub offers. Nothing is installed from here: updates are offered as notices.
+function Updates({ onCatalogChanged }: { onCatalogChanged?: () => void }) {
+  const [info, setInfo] = useState<HubUpdate | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  useEffect(() => { if (native) void hubUpdateStatus().then(reply => { if (reply.ok) setInfo(reply.result); }); }, []);
+  async function check() {
+    setBusy(true); setMessage('');
+    const reply = await catalogRefresh();
+    setBusy(false);
+    if (!reply.ok) { setMessage(describeLifecycleError(reply.error)); return; }
+    setInfo(reply.result);
+    setMessage(reply.result.available ? `Respected Hub ${reply.result.available.version} hazır; üstteki bildirimden güncelleyebilirsiniz.` : 'Katalog güncel; ürün güncellemeleri Uygulamalarım’da görünür.');
+    onCatalogChanged?.();
+  }
+  async function choose(channel: Channel) {
+    const reply = await catalogSetChannel(channel);
+    if (reply.ok) { setInfo(reply.result); onCatalogChanged?.(); } else setMessage(describeLifecycleError(reply.error));
+  }
+  return <section className="card settings-card" aria-labelledby="settings-updates">
+    <h2 id="settings-updates">Güncellemeler</h2>
+    <p>Hub ve ürünler GitHub'daki imzalı Respected kataloğundan gelir. Güncelleme olduğunda size sorulur; hiçbir şey kendiliğinden kurulmaz.</p>
+    {!native && <div className="empty-note">Yalnızca masaüstü uygulamasında kullanılabilir.</div>}
+    {native && info && <div className="settings-fields">
+      <label>Hub sürümü<input value={info.current} readOnly /></label>
+      <label>Sürüm kanalı
+        <select value={info.channel} onChange={event => void choose(event.target.value as Channel)}>
+          <option value="beta">Beta: beta ve kararlı sürümler</option>
+          <option value="stable">Kararlı: yalnızca kararlı sürümler</option>
+        </select>
+        <small>Kararlıya geçmek kurulu sürümü geri almaz; bir sonraki kararlı sürüm geldiğinde güncelleme önerilir.</small></label>
+    </div>}
+    {native && <div className="settings-actions"><button className="button primary" disabled={busy} onClick={() => void check()}>{busy ? 'Denetleniyor…' : 'Güncellemeleri denetle'}</button>
+      {message && <output className="toast" role="status">{message}</output>}</div>}
+  </section>;
+}
+
+export default function Settings({ onCatalogChanged }: { onCatalogChanged?: () => void }) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [state, setState] = useState<SaveState>('idle');
   const [managed, setManaged] = useState<string[]>([]);
@@ -43,6 +80,7 @@ export default function Settings() {
 
   return <div className="page">
     <div className="section-head"><div><span className="eyebrow">Ayarlar</span><h1>Hub ayarları</h1></div></div>
+    <Updates onCatalogChanged={onCatalogChanged} />
     <section className="card settings-card" aria-labelledby="settings-sources">
       <h2 id="settings-sources">Kaynak arama yolları</h2>
       <p>Bu ayarlar Hub’ın geliştirme sürümünde ürün kaynaklarını nerede arayacağını ve görev verilerini nerede saklayacağını belirler. Canlı AI yapılandırmalarına dokunmaz.</p>

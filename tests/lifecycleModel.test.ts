@@ -43,9 +43,10 @@ test('operation ids satisfy the 8..64 [A-Za-z0-9_-] rule; times format or stay e
 
 test('an older applied operation cannot be rolled back while a newer one exists for the product', () => {
   const older = entry({ operation_id: 'install-00000001', started_at: '1760000000000' });
-  const newer = entry({ operation_id: 'update-00000002', action: 'update', started_at: '1760000005000' });
+  const newer = entry({ operation_id: 'repair-00000002', action: 'repair', started_at: '1760000005000' });
   assert.equal(canRollback(older, [newer, older]), false);
   assert.equal(canRollback(newer, [newer, older]), true);
+  assert.equal(canRollback(entry({ action: 'update' })), false, 'an update deletes the old version, so it cannot be undone');
   assert.equal(canRollback(older, [entry({ product: 'secondbrain', started_at: '1760000005000' }), older]), true);
 });
 

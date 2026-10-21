@@ -36,9 +36,9 @@ fn an_install_completes_while_status_polls_and_wizard_plans_keep_running() {
     let dirs = BrainDirs { app: work.0.join("app"), data: work.0.join("data") };
     std::env::set_var("RESPECTED_HUB_BRAIN_APP_DIR", &dirs.app);
     std::env::set_var("RESPECTED_HUB_BRAIN_DATA_DIR", &dirs.data);
-    let built = Command::new("python").arg("-B").arg(eco.join("tools").join("build_brain_dist.py")).output().unwrap();
+    let built = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_brain_dist.py")).output().unwrap();
     let dist = PathBuf::from(String::from_utf8_lossy(&built.stdout).lines().last().unwrap().trim());
-    assert!(Command::new("python").arg("-B").arg(eco.join("tools").join("build_bundle.py")).args(["secondbrain-dist", "--dist"]).arg(&dist).arg("--out").arg(&catalog.0).status().unwrap().success());
+    assert!(Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_bundle.py")).args(["secondbrain-dist", "--dist"]).arg(&dist).arg("--out").arg(&catalog.0).status().unwrap().success());
     let roots = Roots { managed: managed.0.clone(), catalog: catalog.0.clone() };
     let settings = Settings { python: "none".into(), orchestrator_root: eco.join("respected-orchestrator"), brain_root: work.0.join("none"),
         data_root: work.0.join("orch"), brain_data_root: None, brain_exe: None, brain_app_dir: None };

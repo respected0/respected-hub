@@ -10,7 +10,9 @@ export async function engine<T>(action: string, runId?: string, request?: unknow
   return invoke<T>('engine_request', { action, runId: runId ?? null, request: request ?? null });
 }
 
-export const startupIntent = () => invoke<string | null>('startup_intent');
+/** Why the Hub was opened: a product installer (`install`) or Windows Installed apps (`uninstall` / `manage`). */
+export interface StartupIntent { action: 'install' | 'uninstall' | 'manage'; product: string }
+export const startupIntent = () => invoke<StartupIntent | null>('startup_intent');
 export const loadSettings = () => invoke<Settings>('get_settings');
 export const saveSettings = (settings: Settings) => invoke<void>('save_settings', { settings });
 export interface Products { development: boolean; brain_available: boolean; orchestrator_available: boolean;

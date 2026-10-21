@@ -15,6 +15,7 @@ use serde_json::{json, Value};
 /// only when they carry the product's own folder name.
 pub fn after_uninstall(roots: &Roots, dirs: &brain::BrainDirs, settings: &Settings, product: &str, id: &str) {
     let _ = std::fs::remove_dir_all(roots.managed.join(product));
+    crate::catalog::forget(roots, product);
     if !crate::trust::dev_enabled() {
         let own = |dir: &std::path::Path, name: &str| dir.file_name().map_or(false, |n| n == name);
         match product {
@@ -57,5 +58,5 @@ pub fn remove_products(roots: &Roots, dirs: &brain::BrainDirs, settings: &Settin
         // everything undone: the Hub's managed copies, staging and backups are no longer needed
         let _ = std::fs::remove_dir_all(&roots.managed);
     }
-    json!({ "ok": ok, "steps": steps, "kept": "notlar, kasalar ve Orchestrator çalışma kayıtları silinmedi" })
+    json!({ "ok": ok, "steps": steps, "kept": "not kasaları ve notlar silinmedi" })
 }

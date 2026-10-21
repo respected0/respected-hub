@@ -40,6 +40,30 @@ try:
     (out / "RespectedHub-Windows-Setup.exe").write_bytes(b"RespectedHub")
     (out / "SHA256SUMS.txt").write_text("0" * 64 + " *RespectedHub-Windows-Setup.exe\n")
     assert not rp.verify(out, trusted), "tampered list accepted"
+
+    # the catalog: merged over the published one, signed over the exact bytes, archives are bundle folders zipped at the root
+    import json, zipfile
+    import publish_release as pr
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+    bundle = work / "bundle"; (bundle / "payload" / "src").mkdir(parents=True)
+    (bundle / "bundle.json").write_text('{"version": "0.1.0-beta.2"}'); (bundle / "payload" / "src" / "a.py").write_text("x")
+    archive = work / "orchestrator-0.1.0-beta.2.zip"
+    pr.zip_bundle(bundle, archive)
+    assert sorted(zipfile.ZipFile(archive).namelist()) == ["bundle.json", "payload/src/a.py"]
+    base = {"schema": 1, "sequence": 99999999999999, "hub": {"stable": {"version": "0.1.0"}}, "products": {"secondbrain": {"beta": {"version": "0.1.0-beta.1"}}}}
+    entries = {"orchestrator": pr.entry(archive, "0.1.0-beta.2", "respected-orchestrator", "v0.1.0-beta.2")}
+    index = pr.merged_catalog(base, entries, "beta", "0.1.0-beta.1")
+    assert index["sequence"] == base["sequence"] + 1, "sequence always grows"
+    assert index["products"]["secondbrain"] == base["products"]["secondbrain"] and index["hub"] == base["hub"], "unreleased parts are kept"
+    release = index["products"]["orchestrator"]["beta"]
+    assert release["url"] == "https://github.com/respected0/respected-orchestrator/releases/download/v0.1.0-beta.2/orchestrator-0.1.0-beta.2.zip"
+    assert release["min_hub"] == "0.1.0-beta.1" and release["size"] == archive.stat().st_size
+    pr.sign_index(index, key, work)
+    body = (work / "catalog.json").read_bytes()
+    key_id, value = (work / "catalog.json.sig").read_text().split()
+    assert key_id == bs.key_id(bs.public_bytes(private))
+    Ed25519PublicKey.from_public_bytes(bs.public_bytes(private)).verify(base64.b64decode(value), pr.DOMAIN + body)
+    assert json.loads(body) == index
     print("release tools OK")
 finally:
     shutil.rmtree(work, ignore_errors=True)
