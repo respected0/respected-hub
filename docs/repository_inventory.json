@@ -6,6 +6,15 @@
   "sections": [],
   "files": [
     {
+      "path": ".gitattributes",
+      "role": "Satır sonu kuralı",
+      "purpose": "Depodaki metinleri LF olarak normalleştirir; .ps1/.bat/.cmd/.iss CRLF, görseller ve exe ikili kalır.",
+      "relationships": [
+        "Git tarafından okunur; çalışma zamanı etkisi yoktur."
+      ],
+      "review_sha256": "637b17a851a72b076f652b9dc9b34e9ae09e7a8e5b83398d0bbea94c75c13039"
+    },
+    {
       "path": ".gitignore",
       "role": "Kaynak kapsamı",
       "purpose": "Bağımlılık, cache, build ve yerel test artifacts kaynak envanteri dışında tutar.",
@@ -316,42 +325,6 @@
       "review_sha256": "f41ed053b003ccd3437d6a954ac7c80276484f4026b2bc8c7b0b1a70d1baeb8e"
     },
     {
-      "path": "release/tools/BRAIN_ACCEPT_REVIEW.md",
-      "role": "İnceleme kaydı",
-      "purpose": "brain_lane_accept.py kabul çalıştırıcısının bağımsız inceleme kaydı (sonuç: onaylandı). Tarihsel kanıt.",
-      "relationships": [
-        "release/tools/brain_lane_accept.py hakkındadır."
-      ],
-      "review_sha256": "75e01cb568a1519903d65227705a84de2fbc0fe59c2dd80a9bb2265c587cb7b2"
-    },
-    {
-      "path": "release/tools/BRAIN_ACCEPT_REVIEW2.md",
-      "role": "İnceleme kaydı",
-      "purpose": "brain_lane_accept.py kabul çalıştırıcısının bağımsız inceleme kaydı (sonuç: küçük düzeltmelerle onaylandı). Tarihsel kanıt.",
-      "relationships": [
-        "release/tools/brain_lane_accept.py hakkındadır."
-      ],
-      "review_sha256": "c418e6a5b271bed35b63aaf0e7780e07962fcbeef014af87290994d63e16d6d1"
-    },
-    {
-      "path": "release/tools/BRAIN_ACCEPT_REVIEW3.md",
-      "role": "İnceleme kaydı",
-      "purpose": "brain_lane_accept.py kabul çalıştırıcısının bağımsız inceleme kaydı (sonuç: küçük düzeltmelerle onaylandı). Tarihsel kanıt.",
-      "relationships": [
-        "release/tools/brain_lane_accept.py hakkındadır."
-      ],
-      "review_sha256": "33f12b98a581c3a8eabbb799abd24aa2ab17980146f27a110c9006d2dea5e873"
-    },
-    {
-      "path": "release/tools/BRAIN_REGRESSION_REVIEW.md",
-      "role": "İnceleme kaydı",
-      "purpose": "run_brain_regression.py regresyon betiğinin inceleme kaydı: PYTHONPATH, tam keşif, hata başına tek izole yeniden deneme, en az 900 test ve çıkış kodu kuralları. Tarihsel kanıt.",
-      "relationships": [
-        "release/tools/run_brain_regression.py hakkındadır."
-      ],
-      "review_sha256": "6b9338c052b8bf35498d024b8c57eafe9a01681456088843a0d3c2f7834a9aa5"
-    },
-    {
       "path": "release/tools/accept_hub.py",
       "role": "Yayın aracı",
       "purpose": "Hub kabul kapısı: kaynağın atılabilir bir kopyasında derler ve testleri çalıştırır, böylece derleme çıktısı çalışma alanını kirletmez.",
@@ -359,24 +332,6 @@
         "npm/cargo test komutlarını çalıştırır; BUILD_FROM_SCRATCH.md'de anılır."
       ],
       "review_sha256": "c825fab8bea3e71747305359f63bbf8fc680e3ba844ea0899be3bbc225eb9802"
-    },
-    {
-      "path": "release/tools/brain_lane_accept.py",
-      "role": "Yayın aracı",
-      "purpose": "Kopya çalışma ağaçları için SecondBrain kabulü: tam keşif yapar ama yalnızca brain_mirror_baseline.txt dışında kalan hataları sayar; gerçek kaynakta tam suite run_brain_regression.py ile ayrıca koşar.",
-      "relationships": [
-        "brain_mirror_baseline.txt'i okur; run_brain_regression.py ile tamamlanır."
-      ],
-      "review_sha256": "7cc02bc50fae42a90a83221602841594fc5eb936f3ff99f5fa80e9867fff9878"
-    },
-    {
-      "path": "release/tools/brain_mirror_baseline.txt",
-      "role": "Yayın aracı",
-      "purpose": "Kopya ortamda (dist/.local yok) ortam gereği hep başarısız olan SecondBrain test kimlikleri, satır başına bir tane. Silinen Inno/migration testleri 2026-10-21'de çıkarıldı.",
-      "relationships": [
-        "brain_lane_accept.py okur."
-      ],
-      "review_sha256": "6845126c97e89f9b4fa9fbd58ed2073dc4bf34c1d4092e08a4f9bd0aa45bb7ff"
     },
     {
       "path": "release/tools/build_brain_dist.py",
@@ -433,15 +388,6 @@
       "review_sha256": "8a90692cbd42b83b2f5ac3221152c4f625d6def2593378e6cd3cd51a5cb75a58"
     },
     {
-      "path": "release/tools/native_verify.py",
-      "role": "Yayın aracı",
-      "purpose": "Native Hub duman testi sürücüsü: atılabilir kopyada ön yüz ve release exe derler, Hub'ın duman testini çalıştırır ve her zaman rapor yazar.",
-      "relationships": [
-        "respected-hub kaynak klasöründen çalıştırılır."
-      ],
-      "review_sha256": "eec32c6777f91d2f76df41864718510511a367b209171c4cd527d4cc57db8cff"
-    },
-    {
       "path": "release/tools/publish_release.py",
       "role": "Yayın aracı",
       "purpose": "Yayını üretir, imzalar ve GitHub Releases'e yükler: build (kurulumlar + imzalı ürün arşivleri + entries.json), catalog (yayındaki kataloğa birleştirir, sequence büyütür, kanal ve min_hub uygular, respected-catalog-v1 alanıyla imzalar), upload (önce ürünler, en son katalog; --yes olmadan yalnızca gh komutlarını yazar), local-catalog (testler için file:// adresli geliştirme kataloğu).",
@@ -458,15 +404,6 @@
         "run_brain_regression.py ve hub_native_e2e.mjs kullanır."
       ],
       "review_sha256": "8a78047e963434b9602c4bff908acc8b881c469be2642f25f2f07017f122ccf0"
-    },
-    {
-      "path": "release/tools/real_env_report.py",
-      "role": "Yayın aracı",
-      "purpose": "Geliştirme testlerinin gerçek kullanıcı ortamında bırakmış olabileceği artıkları salt okunur raporlar (istemci yapılandırması, oturum klasörleri, zamanlanmış görevler, kısayollar, kaldırma kayıtları, uygulama ve geçici klasörler).",
-      "relationships": [
-        "Temizlik ayrı, onaylı bir adımdır."
-      ],
-      "review_sha256": "006821b2a645866f8e283c50f9396abd82aa1f2e2a2a5ca73f529779d23f98ba"
     },
     {
       "path": "release/tools/release_keys.py",

@@ -2,12 +2,13 @@
 
 > Bu belge `tools/repository_map.py` tarafından `docs/repository_inventory.json` içindeki gözden geçirilmiş açıklamalardan üretilir. Doğrudan bu Markdown dosyasını düzenlemeyin.
 
-**Kapsam:** 181 proje dosyası. Git çalıştırmadan dosya sistemi ve kök ignore kurallarıyla keşfedilen Tauri ürün kaynağıdır. Bağımlılık/üretim önbellekleri ayrı kategoriler olarak açıklanır.
+**Kapsam:** 174 proje dosyası. Git çalıştırmadan dosya sistemi ve kök ignore kurallarıyla keşfedilen Tauri ürün kaynağıdır. Bağımlılık/üretim önbellekleri ayrı kategoriler olarak açıklanır.
 
 ## Eksiksiz kaynak ağacı
 
 ```text
 respected-hub/
+├── .gitattributes
 ├── .gitignore
 ├── AGENTS.md
 ├── README.md
@@ -49,23 +50,15 @@ respected-hub/
 │   │   ├── RELEASE_PHASE_PLAN.md
 │   │   └── RESPECTED_MASTER_DIRECTIVE.md
 │   └── tools/
-│       ├── BRAIN_ACCEPT_REVIEW.md
-│       ├── BRAIN_ACCEPT_REVIEW2.md
-│       ├── BRAIN_ACCEPT_REVIEW3.md
-│       ├── BRAIN_REGRESSION_REVIEW.md
 │       ├── accept_hub.py
-│       ├── brain_lane_accept.py
-│       ├── brain_mirror_baseline.txt
 │       ├── build_brain_dist.py
 │       ├── build_bundle.py
 │       ├── build_hub_installer.py
 │       ├── build_runtime.py
 │       ├── bundle_signing.py
 │       ├── ecosystem_root.py
-│       ├── native_verify.py
 │       ├── publish_release.py
 │       ├── real_env_guard.py
-│       ├── real_env_report.py
 │       ├── release_keys.py
 │       ├── release_package.py
 │       ├── release_vault.py
@@ -221,6 +214,14 @@ respected-hub/
 Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyaları da dahildir. Aşağıdaki yollar depo köküne göredir. Tarihsel belgeler canlı davranışın yetkili kaynağı değildir.
 
 ### Depo kökü
+
+#### [`.gitattributes`](../.gitattributes)
+
+**Rol:** Satır sonu kuralı.
+
+**Amaç / sorumluluk:** Depodaki metinleri LF olarak normalleştirir; .ps1/.bat/.cmd/.iss CRLF, görseller ve exe ikili kalır.
+
+**İlişkiler ve sınır:** Git tarafından okunur; çalışma zamanı etkisi yoktur.
 
 #### [`.gitignore`](../.gitignore)
 
@@ -504,38 +505,6 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 ### release/tools
 
-#### [`release/tools/BRAIN_ACCEPT_REVIEW.md`](../release/tools/BRAIN_ACCEPT_REVIEW.md)
-
-**Rol:** İnceleme kaydı.
-
-**Amaç / sorumluluk:** brain_lane_accept.py kabul çalıştırıcısının bağımsız inceleme kaydı (sonuç: onaylandı). Tarihsel kanıt.
-
-**İlişkiler ve sınır:** release/tools/brain_lane_accept.py hakkındadır.
-
-#### [`release/tools/BRAIN_ACCEPT_REVIEW2.md`](../release/tools/BRAIN_ACCEPT_REVIEW2.md)
-
-**Rol:** İnceleme kaydı.
-
-**Amaç / sorumluluk:** brain_lane_accept.py kabul çalıştırıcısının bağımsız inceleme kaydı (sonuç: küçük düzeltmelerle onaylandı). Tarihsel kanıt.
-
-**İlişkiler ve sınır:** release/tools/brain_lane_accept.py hakkındadır.
-
-#### [`release/tools/BRAIN_ACCEPT_REVIEW3.md`](../release/tools/BRAIN_ACCEPT_REVIEW3.md)
-
-**Rol:** İnceleme kaydı.
-
-**Amaç / sorumluluk:** brain_lane_accept.py kabul çalıştırıcısının bağımsız inceleme kaydı (sonuç: küçük düzeltmelerle onaylandı). Tarihsel kanıt.
-
-**İlişkiler ve sınır:** release/tools/brain_lane_accept.py hakkındadır.
-
-#### [`release/tools/BRAIN_REGRESSION_REVIEW.md`](../release/tools/BRAIN_REGRESSION_REVIEW.md)
-
-**Rol:** İnceleme kaydı.
-
-**Amaç / sorumluluk:** run_brain_regression.py regresyon betiğinin inceleme kaydı: PYTHONPATH, tam keşif, hata başına tek izole yeniden deneme, en az 900 test ve çıkış kodu kuralları. Tarihsel kanıt.
-
-**İlişkiler ve sınır:** release/tools/run_brain_regression.py hakkındadır.
-
 #### [`release/tools/accept_hub.py`](../release/tools/accept_hub.py)
 
 **Rol:** Yayın aracı.
@@ -543,22 +512,6 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 **Amaç / sorumluluk:** Hub kabul kapısı: kaynağın atılabilir bir kopyasında derler ve testleri çalıştırır, böylece derleme çıktısı çalışma alanını kirletmez.
 
 **İlişkiler ve sınır:** npm/cargo test komutlarını çalıştırır; BUILD_FROM_SCRATCH.md'de anılır.
-
-#### [`release/tools/brain_lane_accept.py`](../release/tools/brain_lane_accept.py)
-
-**Rol:** Yayın aracı.
-
-**Amaç / sorumluluk:** Kopya çalışma ağaçları için SecondBrain kabulü: tam keşif yapar ama yalnızca brain_mirror_baseline.txt dışında kalan hataları sayar; gerçek kaynakta tam suite run_brain_regression.py ile ayrıca koşar.
-
-**İlişkiler ve sınır:** brain_mirror_baseline.txt'i okur; run_brain_regression.py ile tamamlanır.
-
-#### [`release/tools/brain_mirror_baseline.txt`](../release/tools/brain_mirror_baseline.txt)
-
-**Rol:** Yayın aracı.
-
-**Amaç / sorumluluk:** Kopya ortamda (dist/.local yok) ortam gereği hep başarısız olan SecondBrain test kimlikleri, satır başına bir tane. Silinen Inno/migration testleri 2026-10-21'de çıkarıldı.
-
-**İlişkiler ve sınır:** brain_lane_accept.py okur.
 
 #### [`release/tools/build_brain_dist.py`](../release/tools/build_brain_dist.py)
 
@@ -608,14 +561,6 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 
 **İlişkiler ve sınır:** release/tools altındaki tüm araçlar içe aktarır.
 
-#### [`release/tools/native_verify.py`](../release/tools/native_verify.py)
-
-**Rol:** Yayın aracı.
-
-**Amaç / sorumluluk:** Native Hub duman testi sürücüsü: atılabilir kopyada ön yüz ve release exe derler, Hub'ın duman testini çalıştırır ve her zaman rapor yazar.
-
-**İlişkiler ve sınır:** respected-hub kaynak klasöründen çalıştırılır.
-
 #### [`release/tools/publish_release.py`](../release/tools/publish_release.py)
 
 **Rol:** Yayın aracı.
@@ -631,14 +576,6 @@ Her kayıt bir dosyayı açıklar; boş `.gitkeep` ve paket `__init__.py` dosyal
 **Amaç / sorumluluk:** Test çalıştırmalarının kullanıcının GERÇEK AI istemci yapılandırmasını değiştirmediğini veya test oturumu bırakmadığını snapshot/verify ile kanıtlar; çalıştırma için geçici bir ev klasörü üretir.
 
 **İlişkiler ve sınır:** run_brain_regression.py ve hub_native_e2e.mjs kullanır.
-
-#### [`release/tools/real_env_report.py`](../release/tools/real_env_report.py)
-
-**Rol:** Yayın aracı.
-
-**Amaç / sorumluluk:** Geliştirme testlerinin gerçek kullanıcı ortamında bırakmış olabileceği artıkları salt okunur raporlar (istemci yapılandırması, oturum klasörleri, zamanlanmış görevler, kısayollar, kaldırma kayıtları, uygulama ve geçici klasörler).
-
-**İlişkiler ve sınır:** Temizlik ayrı, onaylı bir adımdır.
 
 #### [`release/tools/release_keys.py`](../release/tools/release_keys.py)
 
