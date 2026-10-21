@@ -4,7 +4,7 @@ Integrated from the isolated copy `respected-hub-ux` into `respected-hub/src` (f
 Rollback copies of every replaced file: `respected-hub-ux/backup-real-src/`. Screenshots (real Tauri window): `respected-hub-ux/shots/real/`.
 
 ## Done
-- Design system `src/design.css` (replaces `style.css` + `hub.css`), tokens, responsive rail (icon rail below 1040px).
+- Design system `src/shared/design.css` (replaces `style.css` + `hub.css`), tokens, responsive rail (icon rail below 1040px).
 - Shell: rail with icons/emblems, top bar with breadcrumb, real health pill, refresh (`App.tsx`, `ui.tsx`, `shellModel.ts`).
 - Home, My Apps, Discover, Activity rebuilt on real data only; workspace banner + tabs (`AppWorkspace.tsx`).
 - Orchestrator/SecondBrain/Connections/Settings keep their logic; restyled through shared classes.
@@ -17,5 +17,5 @@ Rollback copies of every replaced file: `respected-hub-ux/backup-real-src/`. Scr
 - Campaigns page still has its own page header under the workspace banner; Tasks/Campaigns/Products forms are restyled, not redesigned.
 - Product-supplied health text (checks) is English; comes from engines.
 - Skeleton loading states, light theme, keyboard shortcut layer, window-state persistence: not started.
-- `docs/repository_inventory.json` still lists `src/hub.css`/`src/style.css`; new files `src/design.css`, `src/ui.tsx`, `src/shellModel.ts`, `tests/shellModel.test.ts` are unlisted (Master inventory pass; `repository_map.py` needs git, repo has none).
+- `docs/repository_inventory.json` still lists `src/hub.css`/`src/style.css`; new files `src/shared/design.css`, `src/shared/ui.tsx`, `src/shell/shellModel.ts`, `tests/shellModel.test.ts` are unlisted (Master inventory pass; `repository_map.py` needs git, repo has none).
 - Known Rust failure (not touched): `rpp_e2e::manifest_health_and_schema_are_reachable_for_both_products` expects RPP "1.0", engine returns "1.1".

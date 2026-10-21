@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LATEST_LIMIT, latestRuns } from '../src/views/orchestrator/overviewModel.ts';
-import type { Run } from '../src/api.ts';
+import { LATEST_LIMIT, latestRuns } from '../src/products/orchestrator/views/overviewModel.ts';
+import type { Run } from '../src/shared/api.ts';
 
 test('LATEST_LIMIT is the exposed default window for the overview', () => {
   assert.equal(LATEST_LIMIT, 5);

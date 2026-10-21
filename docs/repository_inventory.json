@@ -65,20 +65,20 @@
       "role": "Mimari karar kaydı",
       "purpose": "Mevcut Campaigns görünümünün Orchestrator çalışma alanına 'Kampanyalar' sayfası olarak bağlanmasını kaydeder. Yeni engine eylemi, bağımlılık veya yönlendirme katmanı eklenmez; kampanya klasörü kullanıcının Hub veri kökünden okunur, salt okunur gösterilir ve oluşturma yalnızca açık buton basışıyla başlar.",
       "relationships": [
-        "src/apps.ts, src/views/AppWorkspace.tsx ve src/views/Campaigns.tsx değişikliğini anlatır; listCampaigns/campaignStatus/startCampaign sarmalayıcılarını yeniden kullanır.",
+        "src/shell/apps.ts, src/shell/views/AppWorkspace.tsx ve src/products/orchestrator/views/Campaigns.tsx değişikliğini anlatır; listCampaigns/campaignStatus/startCampaign sarmalayıcılarını yeniden kullanır.",
         "HUB_CAMPAIGN_TRACKING.md ve HUB_WORKSPACE_MOUNT.md ile birlikte okunur."
       ],
-      "review_sha256": "85323b508e9de3807c9f92750f2b1bdd4f0e7996db6fa69cbc4410d4800b0a1a"
+      "review_sha256": "4c1ace5a9e762f3e0b471dd1ef1840eeb5d619035cc5bbcdd5bdd10a637c1c65"
     },
     {
       "path": "docs/decisions/HUB_CAMPAIGN_TRACKING.md",
       "role": "Mimari karar kaydı",
       "purpose": "Orchestrator kampanyalarının Hub'dan izlenmesi ve açıkça başlatılması kararını kaydeder: engine_request izin listesine yalnızca campaign-start (64 KiB JSON gövde sınırı) ve campaign-status (camp- kimliği süreç başlamadan doğrulanır) eklenir. Salt okunur campaign_list komutu en yeni 30 kampanya adını döndürür, symlink/junction'ı yok sayar ve veri kökü dışına çıkmaz; genel shell açılmaz.",
       "relationships": [
-        "src-tauri/src/lib.rs (engine_request, campaign_list, valid_campaign_id) ve src/campaigns.ts sarmalayıcılarının tasarım gerekçesidir.",
+        "src-tauri/src/lib.rs (engine_request, campaign_list, valid_campaign_id) ve src/products/orchestrator/campaigns.ts sarmalayıcılarının tasarım gerekçesidir.",
         "tests/campaigns.test.ts ve src-tauri/tests/campaign_e2e.rs bu kararı doğrular."
       ],
-      "review_sha256": "47767f6bb04406c0ccc13371d896fd4c0d5b08bdf09c8fe0ccbdd18a08878d7b"
+      "review_sha256": "f4728377cb11daa9b5a8f069f38dbbe3b394626a891aa04bc61f124085618178"
     },
     {
       "path": "docs/decisions/HUB_NATIVE_RPP.md",
@@ -88,14 +88,14 @@
         "src-tauri/src/rpp.rs içindeki rpp_call/rpp_call_version tasarımını anlatır.",
         "src-tauri/tests/rpp_e2e.rs ve rpp.rs birim testleri ile doğrulanır."
       ],
-      "review_sha256": "9d78b26471ae02e22defc1ea026bca1fc8bb13c17016ada909ed2f78898c4af8"
+      "review_sha256": "67f7efd9b62a1a297543862973a82626a15f452ce1e322e4d2927db150235674"
     },
     {
       "path": "docs/decisions/HUB_PRODUCT_LIFECYCLE.md",
       "role": "Mimari karar kaydı",
       "purpose": "GUI ile ürün yaşam döngüsünü (kur/güncelle/onar/kaldır), Safe Integration Layer'ı ve Windows dağıtımını tanımlar: katalog paketleri hash'li ve imzasızdır, Hub-yönetimli kopyalar doğrulanmış staging, journal, atomik current.json ve rollback ile çalışır, SecondBrain kendi setup/update/repair/uninstall komutlarıyla kurulur. Yalnızca tek kullanımlık köklerde test edildi (2026-10-14); imzalı sürüm veya native kabul iddia edilmez.",
       "relationships": [
-        "tools/build_bundle.py, tools/build_runtime.py, packaging/windows/hub_setup.iss ve src/views/LifecycleControls.tsx ile ilişkili uygulamanın karar gerekçesidir.",
+        "tools/build_bundle.py, tools/build_runtime.py, packaging/windows/hub_setup.iss ve src/shell/views/LifecycleControls.tsx ile ilişkili uygulamanın karar gerekçesidir.",
         "HUB_V1_RELEASE_GATES.md kapı durumlarını bu karara göre değerlendirir."
       ],
       "review_sha256": "07fbfb17319e0914e59516a08f264d6ac117cfdd0c6f0c63bc5270166eab52c9"
@@ -105,10 +105,10 @@
       "role": "Hazırlık denetimi",
       "purpose": "Hub'ın V1 hazırlığını alan alan (kurulum, ilk kurulum, UX, ürün entegrasyonu, test, sürüm hazırlığı) REAL/PARTIAL/ABSENT olarak değerlendirir; her iddia bu çalışma ağacındaki koda dayanır ve README'de 'sonraki iş' denen alanlar yükseltilmez. Yalnızca geliştirme kanıtı kaydeder, OS düzeyi kabul iddia etmez.",
       "relationships": [
-        "src-tauri/src/rpp.rs, lib.rs, src/apps.ts, src/views/BrainSetup.tsx ve tests/ dosyalarına atıf yapar.",
+        "src-tauri/src/rpp.rs, lib.rs, src/shell/apps.ts, src/products/secondbrain/views/BrainSetup.tsx ve tests/ dosyalarına atıf yapar.",
         "HUB_V1_RELEASE_GATES.md ile birlikte okunur; doğrulama kapıları ve özellik hazırlığı olarak ayrılırlar."
       ],
-      "review_sha256": "687164b057101bc3ada54d94a3b95765457e6534b3ccaab77730a7f27e856efb"
+      "review_sha256": "f40e38ac968e2a438004627f3c42c65e2318aba2de59cbb051ba75dfdde96b47"
     },
     {
       "path": "docs/decisions/HUB_V1_RELEASE_GATES.md",
@@ -125,40 +125,40 @@
       "role": "Mimari karar kaydı",
       "purpose": "Orchestrator çalışma alanında ajan rolleri, worker CLI'lar ve model/provider profilleri kavramlarını ayıran salt okunur 'Ajanlar ve modeller' görünümünü tanımlar. Saf agentsModel.ts, engine status.workers ve RPP settings.readback verisini eşler; veri yoksa uydurma yerine dürüst boş durum gösterir.",
       "relationships": [
-        "src/views/orchestrator/agentsModel.ts ve AgentsPanel.tsx tasarım gerekçesidir.",
+        "src/products/orchestrator/views/agentsModel.ts ve AgentsPanel.tsx tasarım gerekçesidir.",
         "HUB_WORKSPACE_MOUNT.md sayfanın bağlanmasını, tests/ altındaki agents testi davranışı doğrular."
       ],
-      "review_sha256": "5cc27cde9dfadd366ac9f04be718cfa25dad51578920e926aa0a5d8542349954"
+      "review_sha256": "8bb1f4bcf5345fbc764bc7f32abdd62b6bb4274329e6ea86897a6a9aaa3a5a7b"
     },
     {
       "path": "docs/decisions/HUB_WORKSPACE_EVIDENCE.md",
       "role": "Mimari karar kaydı",
       "purpose": "Orchestrator için salt okunur inceleme, kanıt ve onay görünümünü tanımlar: inspect ve campaign-status verisi gösterilir, ancak apply ve maf-approve izin listesi dışında kalır; Hub hiçbir şeyi onaylıyor veya uyguluyor gibi davranmaz.",
       "relationships": [
-        "src/views/orchestrator/EvidencePanel.tsx ve ilgili saf model modülünün tasarım gerekçesidir.",
+        "src/products/orchestrator/views/EvidencePanel.tsx ve ilgili saf model modülünün tasarım gerekçesidir.",
         "HUB_CAMPAIGN_TRACKING.md engine_request izin listesine dayanır; HUB_WORKSPACE_MOUNT.md sayfayı bağlar."
       ],
-      "review_sha256": "3ae14c3bc13b2b04d41801e13b1fe5c6b80ab1d8c11a0414ed89eea478c1016b"
+      "review_sha256": "c5adf7dcda74e940a16c3c0e0f8eeb10f7fd58a7bc248be4da14d65a85d1bbd4"
     },
     {
       "path": "docs/decisions/HUB_WORKSPACE_MOUNT.md",
       "role": "Mimari karar kaydı",
       "purpose": "Orchestrator uygulama sekmelerinin sırasını (genel bakış, ajanlar, kanıtlar, kampanyalar, görevler, ayarlar) ve her sekmenin gerçek engine verisiyle nasıl beslendiğini kaydeder. SecondBrain sekmeleri değişmez; sayfa/bağlama mantığı saf bir modülde tutulur.",
       "relationships": [
-        "src/apps.ts, src/views/AppWorkspace.tsx ve src/views/orchestrator/ panellerini bağlayan kararı anlatır.",
+        "src/shell/apps.ts, src/shell/views/AppWorkspace.tsx ve src/views/orchestrator/ panellerini bağlayan kararı anlatır.",
         "HUB_WORKSPACE_OVERVIEW.md, HUB_WORKSPACE_AGENTS.md ve HUB_WORKSPACE_EVIDENCE.md ile birlikte okunur."
       ],
-      "review_sha256": "e07913e47cf848480e6880dfb28091d46ec65608f237154acf0a5de469bd6ede"
+      "review_sha256": "ac56226a8032f866b17d281f2859d28b314375b1cfd3b41e29cc95a1a5eddac2"
     },
     {
       "path": "docs/decisions/HUB_WORKSPACE_OVERVIEW.md",
       "role": "Mimari karar kaydı",
       "purpose": "Orchestrator genel bakış sayfasını tanımlar: saf overviewModel.ts engine status ve list yanıtını çalışma sayıları, son beş çalıştırma ve worker durumuna çevirir; bozuk kayıtları eler, eksik veriyi demo veri yerine uyarıya dönüştürür. Zaman damgası olmadığından 'en yeni' run_id önekiyle yaklaşıklanır.",
       "relationships": [
-        "src/views/orchestrator/overviewModel.ts ve OverviewPanel.tsx tasarım gerekçesidir; src/tasks.ts terminal() yardımcısını kullanır.",
+        "src/products/orchestrator/views/overviewModel.ts ve OverviewPanel.tsx tasarım gerekçesidir; src/products/orchestrator/tasks.ts terminal() yardımcısını kullanır.",
         "tests/ altındaki overview testi ve HUB_WORKSPACE_MOUNT.md ile ilişkilidir."
       ],
-      "review_sha256": "ee94844cab43a31b8c2db03274161e5f23eab6402150f023a9982da692a37043"
+      "review_sha256": "890e8e8beac19a8ba50bc1f45bbe82327e8d09febcc425966ec417762f7c0473"
     },
     {
       "path": "docs/decisions/REMOTE_CATALOG_AND_LIFECYCLE.md",
@@ -174,10 +174,10 @@
       "role": "Çalışma kaydı",
       "purpose": "2026-10-12 tarihli Track B premium arayüz entegrasyonunun durumunu kaydeder: tasarım sistemi, kabuk, Home/My Apps/Discover/Activity yeniden yapımı ve yapılmayan işler (yönetimli kurulum UI'ı, imzalı katalog, rol-model düzenleme). Bilinen Rust test hatasını (RPP 1.0/1.1 uyuşmazlığı) ve envanterdeki eski kayıtları not eder.",
       "relationships": [
-        "src/design.css, src/ui.tsx, src/shellModel.ts ve src/views/AppWorkspace.tsx değişikliklerini özetler.",
+        "src/shared/design.css, src/shared/ui.tsx, src/shell/shellModel.ts ve src/shell/views/AppWorkspace.tsx değişikliklerini özetler.",
         "docs/repository_inventory.json güncellemesi için bakım notu olarak kullanılır."
       ],
-      "review_sha256": "e06a849165af8574472b599e1e04eb401ce0094a7c32cb5dbb6a85675e297da3"
+      "review_sha256": "71d7b8566a48a059808b3c0908d71a3dd219d1c878789cb7d1ca745d106f16ff"
     },
     {
       "path": "docs/repository_inventory.json",
@@ -259,7 +259,7 @@
       "relationships": [
         "MASTER_HANDOFF.md §18 ve karar kayıtları bu rapora atıf yapar."
       ],
-      "review_sha256": "e7084090c898dc3d7a094a853f5baff8f6a2422e9f4d9795707416754032fd11"
+      "review_sha256": "b141773316da76b487afccb95e2810d690b384822f3150bd61c5858d497b6e6e"
     },
     {
       "path": "release/docs/CHATGPT_BRIEF.md",
@@ -286,7 +286,7 @@
       "relationships": [
         "Diğer release/docs belgelerine ve karar kayıtlarına yönlendirir."
       ],
-      "review_sha256": "1218690e0f77d1b3b8fb86ff1f9328ed3df98a0058311e30a5d2b9887e7e31bd"
+      "review_sha256": "3a03267170470104e0283af18f2f0ccbebedf87d03880bc953a83b180b2b019b"
     },
     {
       "path": "release/docs/RELEASE_NOTES_BETA.md",
@@ -723,16 +723,6 @@
       "review_sha256": "f37ec846bd05780ddb4cc3e7e7e5f1d8fa591f47b9fb0667a60f7d0fd0181194"
     },
     {
-      "path": "src-tauri/src/brain.rs",
-      "role": "SecondBrain yaşam döngüsü",
-      "purpose": "SecondBrain ürününün motor-yönetimli kurulum, güncelleme, onarım, kaldırma ve geri almasını yürütür: katalog önbelleğindeki doğrulanmış dağıtımı yerinde kullanır (stage, seri; ikinci kopya tutulmaz), ürünün kendi folderlarını (BrainDirs) kullanır, güvenli entegrasyon planını ürünün kendisinden salt-okunur alır ve istemci id'lerini doğrular. Çökme sonrası ürünün yarım işlemini tamamlatır/geri aldırır; ortam sırlardan arındırılmış çalışır, kullanıcı vault'una dokunmaz. Hub Ed25519 imzasını doğruladığı için SecondBrain çağrılarına --allow-unattested eklenir (SLSA CI gelene kadar). Kurulum/güncelleme motor kapısını en çok 120 sn bekler; uzun bir işlem sürüyorsa açık bir 'meşgul' hatası verir; dizin geçersiz kılmaları yalnızca geliştirme derlemelerinde okunur.",
-      "relationships": [
-        "lifecycle.rs journal/Roots/Bundle yapılarını kullanır; rpp.rs üzerinden ürün motorunu çağırır; main.rs komutları bunu çağırır.",
-        "src-tauri/tests/brain_e2e.rs ve brain_concurrency_e2e.rs ile test edilir."
-      ],
-      "review_sha256": "38152692ecf26d52f754af290275d2f0110025509a77e9012ced8a9db0cf195e"
-    },
-    {
       "path": "src-tauri/src/catalog.rs",
       "role": "Uzak katalog",
       "purpose": "GitHub Releases'teki imzalı katalog: indeksi curl.exe ile indirir, respected-catalog-v1 imzasını ve sequence'i doğrular, önbelleğe alır; beta/kararlı kanal seçimi; ürün arşivini yalnızca kur/güncelle/onar sırasında indirir, boyut ve SHA-256 ile denetler, tar.exe ile açar, paket imzası ve dosya özetleriyle yeniden doğrular ve yerel katalog önbelleğine koyar; bozuk önbelleği yeniler, eski sürümleri budar, durum çıktısına güncellemeyi ekler; Hub'ın kendi güncellemesini indirip /SILENT /RELAUNCH=1 ile başlatır.",
@@ -759,7 +749,7 @@
         "React api.ts ve lifecycle.ts invoke ile çağırır; brain, catalog, registration, lifecycle, rpp, mcp_access, memory_* modüllerini kullanır.",
         "Rust birim/e2e testleri ve src-tauri/src/main.rs (run çağrısı) kapsar; native IPC kabulü ayrı kapıdır."
       ],
-      "review_sha256": "bc8996983755d54dc0c40b788a5ecd09d933f31f833b9d6cd19b94edf6cf7b06"
+      "review_sha256": "a3851e201df6d59f2bed14138c9f65907f801bc7ba9f5ba9f1453dae0284ba89"
     },
     {
       "path": "src-tauri/src/lifecycle.rs",
@@ -781,9 +771,19 @@
       "review_sha256": "d616dda122d49b5d525004417b2a25a58ce7fc59abe3994fcd49fde427ab82a2"
     },
     {
-      "path": "src-tauri/src/mcp_access.rs",
+      "path": "src-tauri/src/products/brain.rs",
+      "role": "SecondBrain yaşam döngüsü",
+      "purpose": "SecondBrain ürününün motor-yönetimli kurulum, güncelleme, onarım, kaldırma ve geri almasını yürütür: katalog önbelleğindeki doğrulanmış dağıtımı yerinde kullanır (stage, seri; ikinci kopya tutulmaz), ürünün kendi folderlarını (BrainDirs) kullanır, güvenli entegrasyon planını ürünün kendisinden salt-okunur alır ve istemci id'lerini doğrular. Çökme sonrası ürünün yarım işlemini tamamlatır/geri aldırır; ortam sırlardan arındırılmış çalışır, kullanıcı vault'una dokunmaz. Hub Ed25519 imzasını doğruladığı için SecondBrain çağrılarına --allow-unattested eklenir (SLSA CI gelene kadar). Kurulum/güncelleme motor kapısını en çok 120 sn bekler; uzun bir işlem sürüyorsa açık bir 'meşgul' hatası verir; dizin geçersiz kılmaları yalnızca geliştirme derlemelerinde okunur. (2026-10-21: `src-tauri/src/products/brain.rs` yolundan taşındı.)",
+      "relationships": [
+        "lifecycle.rs journal/Roots/Bundle yapılarını kullanır; rpp.rs üzerinden ürün motorunu çağırır; main.rs komutları bunu çağırır.",
+        "src-tauri/tests/brain_e2e.rs ve brain_concurrency_e2e.rs ile test edilir."
+      ],
+      "review_sha256": "38152692ecf26d52f754af290275d2f0110025509a77e9012ced8a9db0cf195e"
+    },
+    {
+      "path": "src-tauri/src/products/mcp_access.rs",
       "role": "Orchestrator MCP erişimi",
-      "purpose": "Orchestrator MCP sunucusunun yapay zekâ istemcilerine kaydını planlar, onay özetine bağlı uygular ve geri alır; Orchestrator güncellense de değişmeyen kararlı bir launcher yazar ve Hub kapalıyken çalıştığını sınar (probe). Yalnızca Respected'e ait girdileri yönetir, yabancı girdilere dokunmaz. Launcher PYTHONSAFEPATH=1 ile ve kendi klasöründe çalışır (çalışma dizininden modül yükleme engellenir).",
+      "purpose": "Orchestrator MCP sunucusunun yapay zekâ istemcilerine kaydını planlar, onay özetine bağlı uygular ve geri alır; Orchestrator güncellense de değişmeyen kararlı bir launcher yazar ve Hub kapalıyken çalıştığını sınar (probe). Yalnızca Respected'e ait girdileri yönetir, yabancı girdilere dokunmaz. Launcher PYTHONSAFEPATH=1 ile ve kendi klasöründe çalışır (çalışma dizininden modül yükleme engellenir). (2026-10-21: `src-tauri/src/products/mcp_access.rs` yolundan taşındı.)",
       "relationships": [
         "lifecycle.rs journal'ını ve rpp.rs motor çağrılarını kullanır; main.rs komutları ve Orchestrator yaşam döngüsü kancaları çağırır.",
         "src-tauri/tests/mcp_access_e2e.rs ile test edilir."
@@ -791,9 +791,9 @@
       "review_sha256": "bcaca92ade0abf539db51e32a244586a4585709c43195ffa20c3dab0da0498a4"
     },
     {
-      "path": "src-tauri/src/memory_access.rs",
+      "path": "src-tauri/src/products/memory_access.rs",
       "role": "Bellek erişimi yönetimi",
-      "purpose": "Orchestrator'ın SecondBrain belleğine okuma (isteğe bağlı yazma) erişimini motorlar üzerinden açar/kapatır: grant oluşturur, belirteci yalnızca Orchestrator apply'ına verir, hata durumunda yeni grant'ı geri çeker. Yanıtlardaki sır ve belirteç metinden temizlenir; yazma izni ayrı onay gerektirir. refresh_command: SecondBrain yeni sürüm klasörüne taşınınca etkin Orchestrator bellek sağlayıcısının komutunu günceller.",
+      "purpose": "Orchestrator'ın SecondBrain belleğine okuma (isteğe bağlı yazma) erişimini motorlar üzerinden açar/kapatır: grant oluşturur, belirteci yalnızca Orchestrator apply'ına verir, hata durumunda yeni grant'ı geri çeker. Yanıtlardaki sır ve belirteç metinden temizlenir; yazma izni ayrı onay gerektirir. refresh_command: SecondBrain yeni sürüm klasörüne taşınınca etkin Orchestrator bellek sağlayıcısının komutunu günceller. (2026-10-21: `src-tauri/src/products/memory_access.rs` yolundan taşındı.)",
       "relationships": [
         "rpp.rs trusted çağrılarıyla motorlara konuşur (CallFn enjekte edilir); main.rs komutları çağırır.",
         "Birim testleri sahte motorla; src-tauri/tests/memory_access_e2e.rs gerçek motorlarla test eder."
@@ -801,9 +801,9 @@
       "review_sha256": "2a2197c79b8ebc2fd7c22b54adb5f6fb273edcbf0695145fd88c8520abd4dde1"
     },
     {
-      "path": "src-tauri/src/memory_index.rs",
+      "path": "src-tauri/src/products/memory_index.rs",
       "role": "Bellek arama indeksi",
-      "purpose": "SecondBrain bellek arama indeksinin durumunu okur ve yeniler; desteklemeyen eski ürünü 'desteklenmiyor' olarak bildirir, kasa yoksa hata değil durum döndürür. Yenileme yalnızca confirm ve force gönderir, hatalar koda göre Türkçe açıklanır.",
+      "purpose": "SecondBrain bellek arama indeksinin durumunu okur ve yeniler; desteklemeyen eski ürünü 'desteklenmiyor' olarak bildirir, kasa yoksa hata değil durum döndürür. Yenileme yalnızca confirm ve force gönderir, hatalar koda göre Türkçe açıklanır. (2026-10-21: `src-tauri/src/products/memory_index.rs` yolundan taşındı.)",
       "relationships": [
         "rpp.rs trusted (uzun zaman aşımlı) çağrıları kullanır; main.rs komutları çağırır.",
         "Birim testleri sahte motorla; src-tauri/tests/memory_index_e2e.rs gerçek motorla ve vault'un değişmediğini doğrular."
@@ -811,14 +811,23 @@
       "review_sha256": "24c2a4275dd1a65ade0fcb895fd5b42344f47ff63a0b62a7fee410d7f95cc054"
     },
     {
-      "path": "src-tauri/src/memory_semantic.rs",
+      "path": "src-tauri/src/products/memory_semantic.rs",
       "role": "Anlamsal arama yönetimi",
-      "purpose": "SecondBrain anlamsal aramasını açar/kapatır ve durumunu verir: yapılandır, modeli indir, vektör indeksini yenile adımlarını sırayla çalıştırır. İndirme başarısızsa vektör kurulumundan önce durur ve nedenini açıklar; eski SecondBrain'i desteklenmiyor diye bildirir.",
+      "purpose": "SecondBrain anlamsal aramasını açar/kapatır ve durumunu verir: yapılandır, modeli indir, vektör indeksini yenile adımlarını sırayla çalıştırır. İndirme başarısızsa vektör kurulumundan önce durur ve nedenini açıklar; eski SecondBrain'i desteklenmiyor diye bildirir. (2026-10-21: `src-tauri/src/products/memory_semantic.rs` yolundan taşındı.)",
       "relationships": [
         "rpp.rs trusted çağrılarıyla SecondBrain motoruna konuşur; main.rs komutları çağırır.",
         "Yalnızca dosya içi birim testleriyle (sahte motor) kapsanır."
       ],
       "review_sha256": "4f79545652f7ebcc95e15eadbdc26e173d5296c0900da14a5ca8b8217bdc7c29"
+    },
+    {
+      "path": "src-tauri/src/products/mod.rs",
+      "role": "Ürün modülleri",
+      "purpose": "Hub'ın ürüne özgü Rust parçalarını toplar: SecondBrain (kendi motoruyla yaşam döngüsü brain, hafıza erişimi/indeks/anlamsal arama) ve Orchestrator (AI istemcileri için MCP erişimi). Hub çekirdeği (lifecycle, catalog, registration, trust, rpp) crate kökünde kalır; lib.rs bu modülleri kısa adlarıyla yeniden dışa verir.",
+      "relationships": [
+        "lib.rs `pub use products::{brain, mcp_access, memory_access, memory_index, memory_semantic}`; e2e testleri respected_hub_lib::brain gibi kısa yolları kullanır."
+      ],
+      "review_sha256": "dd792bc4aed20bf05310988504f385eda5fbb2f82bcf1b52296db7ed0a5c3ff6"
     },
     {
       "path": "src-tauri/src/registration.rs",
@@ -967,85 +976,6 @@
       "review_sha256": "b8ffc811123d470e32a4a2eca72c92d27a54b55c8a24c3d236c8c00196378708"
     },
     {
-      "path": "src/App.tsx",
-      "role": "Görsel yönetim",
-      "purpose": "Hub kabuğunu çizer: global rail (Hub sayfaları ve uygulama çalışma alanları), üst çubuk, sağlık özeti ve yenileme; route'a göre Home, MyApps, Discover, Connections, Activity, Settings ve AppWorkspace görünümlerini gösterir. Tarayıcı önizlemesinde gerçek veri uydurmaz, uyarı gösterir. Seçili sayfa oturum boyunca sessionStorage'da tutulur; WebView yeniden yüklenirse (ör. kurulum sırasında) kullanıcı Ana Sayfa'ya atılmaz. Product kurulumcularından gelen --install niyeti oturum başına bir kez ilgili sayfayı açar (startupIntent). startup-intent olayı dinlenir: Hub açıkken başlatılan ürün kurucusunun seçimi ilgili sayfayı açar. Windows Yüklü uygulamalar ve ürün kurulumlarından gelen niyetleri (install/uninstall/manage) işler; Hub ve ürün güncellemelerini Güncelle/Sonra bildirimiyle önerir, Hub güncellemesini başlatır; Hub sürümünü gösterir.",
-      "relationships": [
-        "main.tsx çağırır; apps.ts, api.ts (native), useEcosystem.ts, shellModel.ts (globalHealth), ui.tsx ve views/* kullanır.",
-        "Kabuk modeli ve gezinme testleri sağlık/rota mantığını kapsar."
-      ],
-      "review_sha256": "f9a58025b217cbf84d0fafeb7f02ce9c28536b879cf18de622315b207fd09c3e"
-    },
-    {
-      "path": "src/api.ts",
-      "role": "Tipli native API",
-      "purpose": "Tauri invoke ile explicit engine/settings/product işlemleri ve runtime detection/types sağlar. startup_intent komutunu startupIntent olarak sunar. StartupIntent türü: { action: install|uninstall|manage, product }.",
-      "relationships": [
-        "Rust command handler tüketilir; generic shell plugin veya sahte sonuç yoktur."
-      ],
-      "review_sha256": "b70581ef5037e4dda18ac01af9ae5fba65dfc178c852a57e2be4394206b7ae3a"
-    },
-    {
-      "path": "src/apps.ts",
-      "role": "Uygulama kayıt defteri",
-      "purpose": "Hub'ın tanıdığı ekosistem uygulamalarını (SecondBrain, Orchestrator), üst gezinme öğelerini ve sayfa listelerini tanımlar. Yeni uygulama eklemek bu listeye kayıt eklemektir; `rpp` yalnızca RPP konuşan ürünlerde dolar. SecondBrain sayfalarına 'Hafıza' eklendi.",
-      "relationships": [
-        "useEcosystem.ts, Home/MyApps/Discover görünümleri ve shell tarafından okunur; orchestrator/workspaceModel.ts'ten ORCHESTRATOR_PAGES alır.",
-        "tests/appNav.test.ts kapsar."
-      ],
-      "review_sha256": "40c916cd7a2261f4e91b015ad63236064dc5fcb2467464c9d3dd43807548199d"
-    },
-    {
-      "path": "src/brainClients.ts",
-      "role": "AI istemci seçimi modeli",
-      "purpose": "SecondBrain'in bağlanabildiği AI istemcilerini (hooks/mcp yetenekleri) ve kullanıcı seçimini ürünün beklediği `desired` nesnesine çeviren saf mantığı içerir. Kayıtlı entegrasyonlardan seçimi geri üretir; ürün her id'yi yine doğrular.",
-      "relationships": [
-        "ClientPicker, BrainSetup/BrainInstall ve BrainIntegrations görünümleri kullanır.",
-        "tests/brainClients.test.ts kapsar."
-      ],
-      "review_sha256": "92ed65cde2bca909175fea0b1d91500b9475a12eb56218ba2cb4cf26ddfc9f95"
-    },
-    {
-      "path": "src/campaigns.ts",
-      "role": "Kampanya istemcisi",
-      "purpose": "Hub kampanya takibi için tipli, salt-okunur/başlatma native komut istemcisi ve kampanya durumunu sade özete (faz, şeritler, zaman çizelgesi) çeviren saf mantık. Tauri dışında çağrılar reddedilir, sahte başarı üretilmez.",
-      "relationships": [
-        "Campaigns.tsx, AppWorkspace.tsx ve EvidencePanel tarafından kullanılır; api.ts üzerinden native'e gider.",
-        "tests/campaigns.test.ts ve tests/coverageApi.test.ts kapsar."
-      ],
-      "review_sha256": "3a231d72d5ea0f3f99855159d63f42d931a2d06ab0bb1975aa33803c85a65cdf"
-    },
-    {
-      "path": "src/design.css",
-      "role": "Görsel yönetim",
-      "purpose": "Hub tasarım sistemi v2: renk/boşluk token'ları, kabuk, başlatıcı sayfalar, ortak bileşenler ve çalışma alanı panellerinin kullandığı eski sınıf adları. Tek stil kaynağıdır; dar ekranda ikon rayına düşer.",
-      "relationships": [
-        "Uygulama girişi ve tüm görünümler tarafından yüklenir; orchestrator/*.css bu sınıflara dayanır.",
-        "Eski hub.css ve style.css'in yerine geçer."
-      ],
-      "review_sha256": "c1f3a8a563a868e03a5f3e465c46d39d433d5d2b9c547e1217ec5208ce53cc2f"
-    },
-    {
-      "path": "src/homeModel.ts",
-      "role": "Ana sayfa karar modeli",
-      "purpose": "Gerçek ekosistem durumuna göre Ana Sayfa modunu (önizleme, yükleniyor, ilk açılış, dikkat, kurulum eksik, aktif) seçen saf karar fonksiyonu. React ve Tauri içermez.",
-      "relationships": [
-        "views/Home.tsx tarafından çağrılır; productsModel.ts'ten ProductStatusKind türünü kullanır.",
-        "tests/homeModel.test.ts kapsar."
-      ],
-      "review_sha256": "88c7ab743b0ec723c339833d5212973601f90bb627b568136f44d2f628858e8f"
-    },
-    {
-      "path": "src/lifecycle.ts",
-      "role": "Ürün yaşam döngüsü istemcisi",
-      "purpose": "Hub yönetimli ürünlerin kurulum/güncelleme/onarım/kaldırma/geri alma işlemleri için tipli native istemci, plan ve günlük türleri ve etiket/hata/geri alma yardımcıları. Native { ok, result, error } döner; hiçbir şey simüle edilmez. Güven düzeyi (trust) türü; SecondBrain kaldırması geri alınamaz olarak işaretlenir (canRollback). Uzak katalog ve Hub güncellemesi istemcileri (hubUpdateStatus, catalogRefresh, catalogSetChannel, hubUpdateInstall), kanal türü, yeni hata kodları; güncelleme geri alınamaz (eski sürüm silinir).",
-      "relationships": [
-        "LifecycleControls, BrainSetup/BrainInstall, Activity, Discover, useEcosystem ve mcpAccess kullanır.",
-        "tests/lifecycleModel.test.ts kapsar."
-      ],
-      "review_sha256": "c91f7cacb2b4fd19b6a7d3d29e65366a2d43923f7523438c273399be73655612"
-    },
-    {
       "path": "src/main.tsx",
       "role": "React başlangıcı",
       "purpose": "#root üzerinde React root oluşturur, App'i StrictMode içinde render eder ve design.css stilini yükler.",
@@ -1053,279 +983,71 @@
         "index.html tarafından yüklenir; App.tsx'i çağırır.",
         "StrictMode effect cleanup davranışı korunmalıdır."
       ],
-      "review_sha256": "ac9d746570f3d3c5670615be822be1a44e39696534fd259915627c375de2cf35"
+      "review_sha256": "2694cb179f9a28fb23486db96d69afb25ba28c8fc2af83006cae675f2a4329bf"
     },
     {
-      "path": "src/mcpAccess.ts",
+      "path": "src/products/orchestrator/campaigns.ts",
+      "role": "Kampanya istemcisi",
+      "purpose": "Hub kampanya takibi için tipli, salt-okunur/başlatma native komut istemcisi ve kampanya durumunu sade özete (faz, şeritler, zaman çizelgesi) çeviren saf mantık. Tauri dışında çağrılar reddedilir, sahte başarı üretilmez. (2026-10-21: `src/products/orchestrator/campaigns.ts` yolundan taşındı.)",
+      "relationships": [
+        "Campaigns.tsx, AppWorkspace.tsx ve EvidencePanel tarafından kullanılır; api.ts üzerinden native'e gider.",
+        "tests/campaigns.test.ts ve tests/coverageApi.test.ts kapsar."
+      ],
+      "review_sha256": "6bc297d4ef30578a0d9f0ba0e206e985da6a5c0c129b59c88efe57c48be4c679"
+    },
+    {
+      "path": "src/products/orchestrator/mcpAccess.ts",
       "role": "Orchestrator MCP erişim istemcisi",
-      "purpose": "Orchestrator'ın AI istemcilerine MCP sunucusu olarak bağlanması için plan/uygula native çağrıları ve anahtar durumu yardımcıları. Yapılandırmayı Orchestrator yazar; Hub planlar, onay ister ve günlüğe işler. Yalnızca farklı olan istemciler gönderilir.",
+      "purpose": "Orchestrator'ın AI istemcilerine MCP sunucusu olarak bağlanması için plan/uygula native çağrıları ve anahtar durumu yardımcıları. Yapılandırmayı Orchestrator yazar; Hub planlar, onay ister ve günlüğe işler. Yalnızca farklı olan istemciler gönderilir. (2026-10-21: `src/products/orchestrator/mcpAccess.ts` yolundan taşındı.)",
       "relationships": [
         "views/OrchestratorMcp.tsx kullanır; lifecycle.ts türlerine dayanır.",
         "tests/mcpAccess.test.ts kapsar."
       ],
-      "review_sha256": "9666e4edbfd255a9a89579c1e1e5f2df36ab1ac573d023b9ca4813491c68317e"
+      "review_sha256": "804258edd30f1511783d3f79d3370925367c3de9dd707393458d444801687736"
     },
     {
-      "path": "src/memoryAccess.ts",
-      "role": "Hafıza erişim istemcisi",
-      "purpose": "Orchestrator'ın SecondBrain hafızasına erişimini açma/kapama/durum native çağrıları ve durumu Türkçe açıklamaya çeviren mantık. Erişim token'ı yalnızca Rust tarafında kalır; burada alınmaz, saklanmaz, gösterilmez.",
-      "relationships": [
-        "views/MemoryAccess.tsx kullanır; lifecycle.ts hata türüne dayanır.",
-        "tests/memoryAccess.test.ts kapsar."
-      ],
-      "review_sha256": "af469408268939b39ff758f783210a7baa56350690e3ed8de046cbde09ce0923"
-    },
-    {
-      "path": "src/memoryIndex.ts",
-      "role": "Hafıza dizini istemcisi",
-      "purpose": "SecondBrain arama dizininin durumu, oturum yakalama ve kullanıcı onaylı yenileme için güvenilir Rust komutlarını saran tipli istemci ve durum/sonuç açıklayıcıları.",
-      "relationships": [
-        "views/MemoryIndex.tsx kullanır.",
-        "tests/memoryIndex.test.ts kapsar."
-      ],
-      "review_sha256": "50eb4aeb875fca6e800cc81b5330017fa09925cd5a54073f07d6aec2496cebd3"
-    },
-    {
-      "path": "src/memorySemantic.ts",
-      "role": "Anlamsal arama istemcisi",
-      "purpose": "SecondBrain'in isteğe bağlı yerel anlamsal aramasının durum/aç/kapat native çağrıları ve durumu başlık, ayrıntı ve ton olarak açıklayan mantık. Varsayılan kapalıdır; tam metin arama her durumda çalışır.",
-      "relationships": [
-        "views/MemoryIndex.tsx kullanır.",
-        "tests/memorySemantic.test.ts kapsar."
-      ],
-      "review_sha256": "3809042cbc8ae83df423ccc01747b22bb1af83a03636e77500df6cd93beced0f"
-    },
-    {
-      "path": "src/memoryWorkspace.ts",
-      "role": "Tauri IPC sarmalayıcı",
-      "purpose": "SecondBrain hafıza çalışma alanı için güvenilir Rust komutlarının (memory_search, memory_note_read, memory_capture_note, memory_briefing_run) tür tanımlı sarmalayıcıları, motorun bilinen notları (Son oturum, Açık konular, Kurallar, günlük, brifing) ve dürüst Türkçe hata/arama modu metinleri.",
-      "relationships": [
-        "views/MemoryWorkspace.tsx kullanır; masaüstü dışında UNAVAILABLE döner. Testi tests/memoryWorkspace.test.ts."
-      ],
-      "review_sha256": "9196108a2d39a8ab8db93ad09719f35a141b5f0324efe5e7ff066c107cbc6261"
-    },
-    {
-      "path": "src/productClient.ts",
-      "role": "RPP ürün istemcisi",
-      "purpose": "Özel 'rpp_request' komutu üzerine ince tipli sarmalayıcı. Tauri dışında net bir hatayla reddeder; taşıma katmanı birim testler için enjekte edilebilir.",
-      "relationships": [
-        "useEcosystem, Products, BrainSetup/BrainInstall ve AppWorkspace kullanır; rpp.ts ile istek/yanıt kurar.",
-        "tests/productClient.test.ts ve tests/coverageApi.test.ts kapsar."
-      ],
-      "review_sha256": "e2e6ee3f7386c7d2589a1707b3e565daeb9e3d1f95e3031e2fa57af6b0b3f75d"
-    },
-    {
-      "path": "src/rpp.ts",
-      "role": "RPP sözleşmesi",
-      "purpose": "Respected Product Protocol v1.0/v1.1 için paylaşılan TypeScript sözleşmesi: istek kurma, yanıt ayrıştırma, sürüm pazarlığı, ayar şeması türleri ve sır maskeleme. Bir JSON istek, bir JSON yanıt satırı; MCP veya daemon değildir.",
-      "relationships": [
-        "productClient.ts, productsModel.ts ve Products görünümü kullanır.",
-        "tests/rpp.test.ts kapsar."
-      ],
-      "review_sha256": "ef47d413c9270b740cf2da0d2d0124b34350c43a3d393c509d617d61613995bc"
-    },
-    {
-      "path": "src/shellModel.ts",
-      "role": "Kabuk modeli",
-      "purpose": "Global kabuk için üst çubuk sağlık hapı ve ekran metnini üreten saf model. Native yoksa 'Tarayıcı önizlemesi', yoksa ürün durumlarından sağlık tonu ve etiket verir.",
-      "relationships": [
-        "Uygulama kabuğu (App) tarafından çağrılır; productsModel.ts'ten durum türünü alır.",
-        "tests/shellModel.test.ts kapsar."
-      ],
-      "review_sha256": "44c51a0a97adf73ec368e287a7d848061b2f186d13b0758605030ce79f87c301"
-    },
-    {
-      "path": "src/tasks.ts",
+      "path": "src/products/orchestrator/tasks.ts",
       "role": "Form doğrulaması",
-      "purpose": "Project/task/scope, JSON argv acceptance/custom komut, deadline ve pending/terminal sınırlarını doğrular.",
+      "purpose": "Project/task/scope, JSON argv acceptance/custom komut, deadline ve pending/terminal sınırlarını doğrular. (2026-10-21: `src/products/orchestrator/tasks.ts` yolundan taşındı.)",
       "relationships": [
         "App submit ve 4 Node testi gerçek üretim fonksiyonlarını kullanır."
       ],
       "review_sha256": "a0ab57ca1cb1ae123b14d947e2f55e181522fa75237d9ff912a1bbcbae312e0d"
     },
     {
-      "path": "src/ui.tsx",
-      "role": "Ortak sunum bileşenleri",
-      "purpose": "Paylaşılan sunum parçaları: ikon seti, uygulama amblemleri, dekoratif Weave ve sade dilde durum etiketi/tonu yardımcıları. İş mantığı içermez.",
+      "path": "src/products/orchestrator/views/AgentsPanel.tsx",
+      "role": "Ajanlar ve modeller paneli",
+      "purpose": "Engine'den gelen gerçek worker CLI'larını ve RPP ayarlarındaki model/sağlayıcı profillerini gösterir. Uydurma sağlayıcı veya canlı metrik içermez. (2026-10-21: `src/products/orchestrator/views/AgentsPanel.tsx` yolundan taşındı.)",
       "relationships": [
-        "Home, MyApps, Discover, Activity, LifecycleControls ve kabuk kullanır.",
-        "tests/coverageViews.test.ts doğrudan kapsamaz; görünümler üzerinden kullanılır."
+        "AppWorkspace tarafından açılır; agentsModel.ts ve agents.css kullanır.",
+        "Kapsam: tests/orchestratorAgents.test.ts."
       ],
-      "review_sha256": "4ecd53513b74519a7749cc32460c8ea5bff584e8d1fd14b72e33e316ae5dcdb0"
+      "review_sha256": "47014a0202575cc39820e96d4feb2401a12426bc7369782eb666a1bc38319c67"
     },
     {
-      "path": "src/useEcosystem.ts",
-      "role": "Ekosistem durum kancası",
-      "purpose": "Kabuk için canlı ekosistem durumunu toplayan React kancası: her uygulamanın RPP manifest/sağlık/ayar özeti, yapılandırma kaynağı, engine koşuları, yaşam döngüsü genel bakışı ve günlük. Native yoksa dürüstçe boş durum döner. Yenileme tek seferde bir tane çalışır; arada gelen istek bir kez daha çalıştırılır.",
-      "relationships": [
-        "Kabuk ve tüm üst düzey görünümler tarafından kullanılır; apps.ts, productClient.ts, lifecycle.ts ve productsModel.ts'e dayanır.",
-        "Doğrudan test yok; modelleri homeModel/shellModel/productsModel testleriyle kapsanır."
-      ],
-      "review_sha256": "63a926981cc6cd7f4086b13f24ebf4b3a8a57b6c219868a6ee6f0b6a37d8f44c"
-    },
-    {
-      "path": "src/views/Activity.tsx",
-      "role": "Etkinlik görünümü",
-      "purpose": "Engine koşularını ve ürün yaşam döngüsü günlüğünü listeler; uygun girdiler için geri alma sunar. Hata mesajlarını kullanıcıya gösterir.",
-      "relationships": [
-        "Kabuk tarafından Etkinlik rotasında açılır; useEcosystem, lifecycle.ts ve tasks.ts kullanır.",
-        "Kapsam: tests/lifecycleModel.test.ts (günlük cümleleri)."
-      ],
-      "review_sha256": "276e45f7ea5bfd3eff6d53a9b9af21501c20de2abd3376f8783eab2360e5a837"
-    },
-    {
-      "path": "src/views/AppWorkspace.tsx",
-      "role": "Uygulama çalışma alanı",
-      "purpose": "Seçilen uygulamanın sayfalarını (SecondBrain kurulum/ayarlar, Orchestrator genel bakış, ajanlar, kanıtlar, kampanyalar, görevler, MCP, hafıza) uygun panele bağlayan bağlayıcı görünüm. 'memory' sayfası MemoryWorkspace'i bağlar.",
-      "relationships": [
-        "Kabuk tarafından açılır; BrainSetup, BrainInstall, Tasks, Products, Campaigns, MemoryAccess, MemoryIndex, OrchestratorMcp ve orchestrator panellerini bağlar.",
-        "workspaceModel.ts karar mantığı tests/orchestratorWorkspace.test.ts ile kapsanır."
-      ],
-      "review_sha256": "fb5cfabaeafa56db0ca0e155ab06b46a5e2c9fb0e3e14986ed2ccf465bcd9e81"
-    },
-    {
-      "path": "src/views/BrainInstall.tsx",
-      "role": "SecondBrain kurulum sihirbazı",
-      "purpose": "SecondBrain'in kendi kurucusu üzerinden ilk kurulum: Kimlik → Hafıza → Kaynaklar → İzinler → Onay adımları. Önce salt-okunur plan gösterir, onayla uygular. Kısayol açıklaması kasa klasörünü açan kısayol olarak düzeltildi.",
-      "relationships": [
-        "AppWorkspace kurulum sayfasında açar; lifecycle.ts, productClient.ts, brainClients.ts, ClientPicker ve IntegrationPreview kullanır.",
-        "Kapsam: tests/brainClients.test.ts, tests/lifecycleModel.test.ts."
-      ],
-      "review_sha256": "096d2e4ff5c78a5bcb6d6e990f9117ee17817ac60a25a0968197f40b097ee0b2"
-    },
-    {
-      "path": "src/views/BrainIntegrations.tsx",
-      "role": "SecondBrain entegrasyon seçimi",
-      "purpose": "Kurulu SecondBrain için hangi AI istemcisinde hafıza yakalanacağını (Kaynaklar) ve kimin MCP ile kullanacağını (İzinler) seçtirir; önce açık, salt-okunur önizleme verir ve onayla uygular. Kısayol açıklaması kasa klasörünü açan kısayol olarak düzeltildi.",
-      "relationships": [
-        "BrainSetup içinden kullanılır; ClientPicker, IntegrationPreview, brainClients.ts ve lifecycle.ts'e dayanır.",
-        "Kapsam: tests/brainClients.test.ts."
-      ],
-      "review_sha256": "6029fddc45b86ed3985b548d6931b45394815b52eef7456a33637c7753ef7461"
-    },
-    {
-      "path": "src/views/BrainSetup.tsx",
-      "role": "SecondBrain ayar görünümü",
-      "purpose": "SecondBrain'in gerçek ayarlarını ürün şemasından forma çevirir, değişenleri uygular ve geri okuma ile doğrular; asistan adı kişiselleştirmesini localStorage'da saklar. Entegrasyon seçimini içerir.",
-      "relationships": [
-        "AppWorkspace ve Home tarafından kullanılır; productClient.ts, rpp.ts, productsModel.ts ve BrainIntegrations'a dayanır.",
-        "Kapsam: tests/productsModel.test.ts."
-      ],
-      "review_sha256": "040a28a4a377c006adbe7d046f770b7295214e01a7d5a35fb43130aecbe50aed"
-    },
-    {
-      "path": "src/views/Campaigns.tsx",
+      "path": "src/products/orchestrator/views/Campaigns.tsx",
       "role": "Kampanyalar görünümü",
-      "purpose": "Hub kampanya takibi: kampanya listesi, başlatma ve durum özeti. Gerçek veri gösterir; Tauri dışında dürüst bir uyarı verir. Zamanı tr-TR biçimler.",
+      "purpose": "Hub kampanya takibi: kampanya listesi, başlatma ve durum özeti. Gerçek veri gösterir; Tauri dışında dürüst bir uyarı verir. Zamanı tr-TR biçimler. (2026-10-21: `src/products/orchestrator/views/Campaigns.tsx` yolundan taşındı.)",
       "relationships": [
         "AppWorkspace Kampanyalar sayfasında açar; campaigns.ts ve api.ts kullanır.",
         "Kapsam: tests/campaigns.test.ts."
       ],
-      "review_sha256": "cee36dcbe71cf86dff2883ba774146b2b229e2e8e7762e857e165002c709b4b1"
+      "review_sha256": "a6fae84f6b8cab4e307bea8874a214070b9532894af8097999dbedf01723a031"
     },
     {
-      "path": "src/views/ClientPicker.tsx",
-      "role": "AI istemci seçici",
-      "purpose": "Desteklenen her AI istemcisi için bir anahtar sunar. Bu bilgisayarda bulunmayan istemciler yeni seçilemez (klasörleri oluşturulmasın diye).",
+      "path": "src/products/orchestrator/views/EvidencePanel.tsx",
+      "role": "Kanıt ve inceleme paneli",
+      "purpose": "Seçilen koşu veya kampanya için engine 'inspect' ve kampanya durumu yanıtlarını sade Türkçe kanıt, karar ve yama özeti olarak gösterir. (2026-10-21: `src/products/orchestrator/views/EvidencePanel.tsx` yolundan taşındı.)",
       "relationships": [
-        "BrainInstall ve BrainIntegrations tarafından kullanılır; brainClients.ts'ten CLIENTS ve toggle alır.",
-        "Kapsam: tests/brainClients.test.ts."
+        "AppWorkspace tarafından açılır; evidenceModel.ts, campaigns.ts ve api.ts kullanır.",
+        "Kapsam: tests/orchestratorEvidence.test.ts."
       ],
-      "review_sha256": "7129d7e614f79ac0ade87ed2a763f73e91219eebe3d9a7da5fcdd660962371ea"
+      "review_sha256": "39b533921c82cad09297abc23f531acefa2c39f1474c44f756621afa07906835"
     },
     {
-      "path": "src/views/Connections.tsx",
-      "role": "Bağlantılar görünümü",
-      "purpose": "Geliştirme kaynak bağlantılarını (python/ürün kökleri) ve her ürünün RPP ayarlarını gösterir. Ayar kaydı sonucu doğrular ve hataları kullanıcıya iletir. Form yalnızca dört bilinen kaynak alanını gösterir. Kaynak bağlantıları paneli yalnızca geliştirme derlemelerinde gösterilir.",
-      "relationships": [
-        "Kabuk Bağlantılar rotasında açılır; api.ts ve Products.tsx kullanır.",
-        "Doğrudan test yok; ayar modeli tests/productsModel.test.ts ile kapsanır."
-      ],
-      "review_sha256": "aef77d8eae9d311832ed82c3e91857463daa0b18592b2c48f2c12c51a414c55b"
-    },
-    {
-      "path": "src/views/Discover.tsx",
-      "role": "Keşfet görünümü",
-      "purpose": "Yerel katalogdaki doğrulanmış paketleri ve her ürünün kurulum durumunu listeler. Kurulum/güncelleme/onarım Uygulamalarım sayfasına yönlendirilir. Paket güveni etiketi: üretim imzalı, geliştirme imzası (yerel) veya imzasız yerel.",
-      "relationships": [
-        "Kabuk Keşfet rotasında açılır; APPS, useEcosystem ve lifecycle.ts kullanır.",
-        "Doğrudan test yok."
-      ],
-      "review_sha256": "d45d12b3ef277f74510bfb7e88a892efc2a84f62ed027522e467737f8d05d534"
-    },
-    {
-      "path": "src/views/Home.tsx",
-      "role": "Ana sayfa görünümü",
-      "purpose": "Ekosistemin gerçek durumuna göre (homeMode) karşılama, dikkat gerektirenler, kurulum eksikleri ve çalışan görevleri gösteren ana sayfa. Go yönlendirme türünü tanımlar.",
-      "relationships": [
-        "Kabuk tarafından açılır; homeModel.ts, useEcosystem ve ui.tsx kullanır.",
-        "Kapsam: tests/homeModel.test.ts."
-      ],
-      "review_sha256": "6062a05ba49d9fccb395ceb78a0502f99359636b802bd2076bde04a917fdfe08"
-    },
-    {
-      "path": "src/views/IntegrationPreview.tsx",
-      "role": "Entegrasyon önizlemesi",
-      "purpose": "Ürünün salt-okunur planını gösterir: nelerin bulunduğu, tam olarak neyin değişeceği ve dokunulmayanlar. Değişiklik yoksa bunu açıkça söyler.",
-      "relationships": [
-        "BrainInstall ve BrainIntegrations kullanır; lifecycle.ts IntegrationPlan türüne dayanır.",
-        "Doğrudan test yok."
-      ],
-      "review_sha256": "730eb59b1745c04b99eede4363f4c79c0e15e070b6f576ff45ffa3c7f553df14"
-    },
-    {
-      "path": "src/views/LifecycleControls.tsx",
-      "role": "Yaşam döngüsü kontrolleri",
-      "purpose": "Tek bir Hub yönetimli ürün için kur/güncelle/onar/kaldır: önce plan, onay, uygulama, sonra geri alma ve yedek temizleme sunar. Geri döndürülemez adımlar açıkça belirtilir. Yedekleri temizleme ve SecondBrain kaldırma metni iki adımlı onay ve doğru kapsam açıklamasıyla gösterilir. autoAction ile başka yerde seçilmiş işlemin (Yüklü uygulamalar, güncelleme bildirimi) planını doğrudan açar; paket indirilirken durum metni gösterir; katalog alınamadıysa Ayarlar'a yönlendirir.",
-      "relationships": [
-        "MyApps tarafından kullanılır; lifecycle.ts işlemlerini çağırır.",
-        "Kapsam: tests/lifecycleModel.test.ts."
-      ],
-      "review_sha256": "8afba7b12b31fcbaf5ceae3fa31a325202dbbd1acb2c7f3012e2f02c1ac3e52b"
-    },
-    {
-      "path": "src/views/MemoryAccess.tsx",
-      "role": "Hafıza erişimi görünümü",
-      "purpose": "SecondBrain hafıza erişimini (salt okunur veya yazma dahil) onayla açar/kapatır ve durumu gösterir. Erişim token'ı bileşene hiç ulaşmaz.",
-      "relationships": [
-        "AppWorkspace tarafından açılır; memoryAccess.ts kullanır.",
-        "Kapsam: tests/memoryAccess.test.ts."
-      ],
-      "review_sha256": "5af56595954c74567d0ebb2afe79c57113ea141ae9f9539c646a65a9f9a38faa"
-    },
-    {
-      "path": "src/views/MemoryIndex.tsx",
-      "role": "Hafıza dizini görünümü",
-      "purpose": "SecondBrain arama dizininin durumunu, oturum yakalamayı ve anlamsal aramayı gösterir; dizin yenilemeyi açık onaydan sonra çalıştırır. Bekleyen oturumları yakalama iki adımlı onay ister (oturumlar yapay zeka sağlayıcısına gönderilir).",
-      "relationships": [
-        "AppWorkspace tarafından açılır; memoryIndex.ts ve memorySemantic.ts kullanır.",
-        "Kapsam: tests/memoryIndex.test.ts, tests/memorySemantic.test.ts."
-      ],
-      "review_sha256": "e5cadd34d5d5ccad4cad06849e3ee986f76c2a44cf1e1375c20e72db0d00fb22"
-    },
-    {
-      "path": "src/views/MemoryWorkspace.tsx",
-      "role": "Kullanıcı arayüzü",
-      "purpose": "SecondBrain 'Hafıza' sayfası: not arama (tam metin, hazırsa anlamsal; vurgu işaretleri temizlenir), not okuyucu ve bilinen not düğmeleri, hızlı not yakalama ve 'brifingi şimdi çalıştır'. Eski yerel panelin işlevlerini Hub'a taşır; hiçbir HTML enjekte etmez.",
-      "relationships": [
-        "AppWorkspace.tsx 'memory' sayfasında bağlar; yalnız memoryWorkspace.ts ve react kullanır. Bu görünüm Orchestrator şeridinde yazıldı, native E2E ile doğrulandı."
-      ],
-      "review_sha256": "5185f963b251633cd1de4d1fd9f9dcb360eabdcf58e22f607f26e2ccebf3ed14"
-    },
-    {
-      "path": "src/views/MyApps.tsx",
-      "role": "Uygulamalarım görünümü",
-      "purpose": "Hub'a bağlı ürünleri durum, sürüm ve yetenekleriyle listeler (ürünün kendi sağlık yanıtından); kurulum eksikse sihirbaza yönlendirir ve yaşam döngüsü kontrollerini barındırır. App'ten gelen istenen işlemi (ask) ilgili ürünün kontrollerine iletir; ürünlerin imzalı katalogdan indirildiğini ve Windows Uygulamalar listesinde göründüğünü açıklar.",
-      "relationships": [
-        "Kabuk tarafından açılır; useEcosystem, LifecycleControls ve ui.tsx kullanır.",
-        "Doğrudan test yok."
-      ],
-      "review_sha256": "ec3321d9268e28e12b1c35a8b39d3b1082f40f3a8f6463352652aa92dbbf4e58"
-    },
-    {
-      "path": "src/views/OrchestratorMcp.tsx",
+      "path": "src/products/orchestrator/views/OrchestratorMcp.tsx",
       "role": "Orchestrator MCP görünümü",
-      "purpose": "Orchestrator'ı AI istemcilerine MCP sunucusu olarak bağlar. Kullanıcı tam planı onaylamadan hiçbir şey yazılmaz.",
+      "purpose": "Orchestrator'ı AI istemcilerine MCP sunucusu olarak bağlar. Kullanıcı tam planı onaylamadan hiçbir şey yazılmaz. (2026-10-21: `src/products/orchestrator/views/OrchestratorMcp.tsx` yolundan taşındı.)",
       "relationships": [
         "AppWorkspace tarafından açılır; mcpAccess.ts kullanır.",
         "Kapsam: tests/mcpAccess.test.ts."
@@ -1333,69 +1055,29 @@
       "review_sha256": "579d2b0af409dbf447d793721464a4cec7a9d6f177d7ade8f4ef9ca946bed921"
     },
     {
-      "path": "src/views/Products.tsx",
-      "role": "Ürün ayarları görünümü",
-      "purpose": "Orchestrator ve SecondBrain için RPP ayar şemasından form üretir, doğrular, uygular ve geri okumayla doğrular. Sır alanları maskeli kalır. Mevcut ayarlar okunamadıysa Uygula kapalıdır (varsayılanlar gerçek ayarların üzerine yazılmaz).",
-      "relationships": [
-        "Connections ve AppWorkspace (ProductPanel) kullanır; productClient.ts, rpp.ts, productsModel.ts'e dayanır.",
-        "Kapsam: tests/productsModel.test.ts."
-      ],
-      "review_sha256": "0269e83e6036943dea6409f26213e55d355b4e0eaf5aa010ac4e1815d67d3306"
-    },
-    {
-      "path": "src/views/Settings.tsx",
-      "role": "Hub ayarları görünümü",
-      "purpose": "Python yolu, ürün kaynak klasörleri ve görev verisi klasörü gibi geliştirme ayarlarını düzenletir; kayıt sonrası durumu (kaydediliyor/uygulandı/doğrulandı/başarısız) bildirir. Güncellemeler bölümü: Hub sürümü, beta/kararlı kanal seçimi ve Güncellemeleri denetle.",
-      "relationships": [
-        "Kabuk Ayarlar rotasında açılır; api.ts ve lifecycle.ts kullanır.",
-        "Doğrudan test yok."
-      ],
-      "review_sha256": "0e7dd484b42ef72a522c62a87ab267158dde732538abec5137a5a0007f948d48"
-    },
-    {
-      "path": "src/views/Tasks.tsx",
-      "role": "Görevler görünümü",
-      "purpose": "Orchestrator görevi oluşturma ve koşu inceleme. Görev durumunu engine tutar; görünüm yalnızca izinli engine işlemlerini çağırır.",
-      "relationships": [
-        "AppWorkspace Görevler sayfasında açar; api.ts ve tasks.ts kullanır.",
-        "Kapsam: tests/coverageApi.test.ts (native reddi)."
-      ],
-      "review_sha256": "d2c8e78b4ffeb51594a2263d5c4fd166d4b95e6e08eee73c4dd2292e14c42a4d"
-    },
-    {
-      "path": "src/views/orchestrator/AgentsPanel.tsx",
-      "role": "Ajanlar ve modeller paneli",
-      "purpose": "Engine'den gelen gerçek worker CLI'larını ve RPP ayarlarındaki model/sağlayıcı profillerini gösterir. Uydurma sağlayıcı veya canlı metrik içermez.",
-      "relationships": [
-        "AppWorkspace tarafından açılır; agentsModel.ts ve agents.css kullanır.",
-        "Kapsam: tests/orchestratorAgents.test.ts."
-      ],
-      "review_sha256": "06e3a08ae1492c87a3e68ba7b928f5b514db2d53e222efd9ef2a3341bd561651"
-    },
-    {
-      "path": "src/views/orchestrator/EvidencePanel.tsx",
-      "role": "Kanıt ve inceleme paneli",
-      "purpose": "Seçilen koşu veya kampanya için engine 'inspect' ve kampanya durumu yanıtlarını sade Türkçe kanıt, karar ve yama özeti olarak gösterir.",
-      "relationships": [
-        "AppWorkspace tarafından açılır; evidenceModel.ts, campaigns.ts ve api.ts kullanır.",
-        "Kapsam: tests/orchestratorEvidence.test.ts."
-      ],
-      "review_sha256": "5be11c2bb7eb74de1924391ca2d4565e82813ed5c4b4b805cf40ee1914237423"
-    },
-    {
-      "path": "src/views/orchestrator/OverviewPanel.tsx",
+      "path": "src/products/orchestrator/views/OverviewPanel.tsx",
       "role": "Orchestrator genel bakış paneli",
-      "purpose": "Engine koşu sayılarını, son koşuları ve worker CLI durumunu gösterir; eksik engine verisi dürüst uyarıya dönüşür. Görevler ve koşu ayrıntısına geçiş sunar.",
+      "purpose": "Engine koşu sayılarını, son koşuları ve worker CLI durumunu gösterir; eksik engine verisi dürüst uyarıya dönüşür. Görevler ve koşu ayrıntısına geçiş sunar. (2026-10-21: `src/products/orchestrator/views/OverviewPanel.tsx` yolundan taşındı.)",
       "relationships": [
         "AppWorkspace tarafından açılır; overviewModel.ts ve overview.css kullanır.",
         "Kapsam: tests/orchestratorOverview.test.ts, tests/coverageViews.test.ts."
       ],
-      "review_sha256": "03b0a7751e07e331f87b9d626d80e3108c42120247cddd4df28ae5738573bc6d"
+      "review_sha256": "c9d07ff9c25ef93b3fe9ce18e666e0ee8dd31b0e31068c4959e659f1f918633e"
     },
     {
-      "path": "src/views/orchestrator/agents.css",
+      "path": "src/products/orchestrator/views/Tasks.tsx",
+      "role": "Görevler görünümü",
+      "purpose": "Orchestrator görevi oluşturma ve koşu inceleme. Görev durumunu engine tutar; görünüm yalnızca izinli engine işlemlerini çağırır. (2026-10-21: `src/products/orchestrator/views/Tasks.tsx` yolundan taşındı.)",
+      "relationships": [
+        "AppWorkspace Görevler sayfasında açar; api.ts ve tasks.ts kullanır.",
+        "Kapsam: tests/coverageApi.test.ts (native reddi)."
+      ],
+      "review_sha256": "c37643703b50ac14e092fda0bb56d6a57d15553af9cd3570fcb9faedbebb6d09"
+    },
+    {
+      "path": "src/products/orchestrator/views/agents.css",
       "role": "Panel stili",
-      "purpose": "Ajanlar ve modeller panelinin yerleşimi; genel .panel-glass, .muted, .capabilities ve .notice sınıflarını yeniden kullanır.",
+      "purpose": "Ajanlar ve modeller panelinin yerleşimi; genel .panel-glass, .muted, .capabilities ve .notice sınıflarını yeniden kullanır. (2026-10-21: `src/products/orchestrator/views/agents.css` yolundan taşındı.)",
       "relationships": [
         "AgentsPanel.tsx içe aktarır.",
         "design.css sınıflarına dayanır."
@@ -1403,9 +1085,9 @@
       "review_sha256": "6db5d6f2b37e0487dfe6b3edd3973ac3608b233b19bf7f5fe0271a8eb05d2d16"
     },
     {
-      "path": "src/views/orchestrator/agentsModel.ts",
+      "path": "src/products/orchestrator/views/agentsModel.ts",
       "role": "Ajanlar paneli modeli",
-      "purpose": "Ajanlar/modeller paneli için saf model: engine status.workers'tan worker CLI'ları ve RPP settings.readback'ten gerçekte var olan model/sağlayıcı profillerini türetir. React/Tauri içermez, veri uydurmaz.",
+      "purpose": "Ajanlar/modeller paneli için saf model: engine status.workers'tan worker CLI'ları ve RPP settings.readback'ten gerçekte var olan model/sağlayıcı profillerini türetir. React/Tauri içermez, veri uydurmaz. (2026-10-21: `src/products/orchestrator/views/agentsModel.ts` yolundan taşındı.)",
       "relationships": [
         "AgentsPanel.tsx çağırır.",
         "tests/orchestratorAgents.test.ts kapsar."
@@ -1413,9 +1095,9 @@
       "review_sha256": "8c760625e1d7f84a57572ea6fc7e37090f7311d726c93694c0dc4441b1d9ce01"
     },
     {
-      "path": "src/views/orchestrator/evidence.css",
+      "path": "src/products/orchestrator/views/evidence.css",
       "role": "Panel stili",
-      "purpose": "Kanıt/inceleme panelinin yerleşimi ve seçim alanları; Hub tasarım token'larını güvenli yedek değerlerle kullanır.",
+      "purpose": "Kanıt/inceleme panelinin yerleşimi ve seçim alanları; Hub tasarım token'larını güvenli yedek değerlerle kullanır. (2026-10-21: `src/products/orchestrator/views/evidence.css` yolundan taşındı.)",
       "relationships": [
         "EvidencePanel.tsx içe aktarır.",
         "design.css token'larına dayanır."
@@ -1423,9 +1105,9 @@
       "review_sha256": "9250cf2cf588bc3240568323b20cf94343faed910eb209fa3dcb9c382bf38988"
     },
     {
-      "path": "src/views/orchestrator/evidenceModel.ts",
+      "path": "src/products/orchestrator/views/evidenceModel.ts",
       "role": "Kanıt paneli modeli",
-      "purpose": "Ham engine 'inspect' ve campaign-status yanıtlarını sade Türkçe kanıt, karar (verdict), inceleme ve yama bilgisine çeviren saf model. Durum ifadeleri campaigns.ts ile uyumludur ama Tauri'ye bağlı istemci içe aktarılmaz.",
+      "purpose": "Ham engine 'inspect' ve campaign-status yanıtlarını sade Türkçe kanıt, karar (verdict), inceleme ve yama bilgisine çeviren saf model. Durum ifadeleri campaigns.ts ile uyumludur ama Tauri'ye bağlı istemci içe aktarılmaz. (2026-10-21: `src/products/orchestrator/views/evidenceModel.ts` yolundan taşındı.)",
       "relationships": [
         "EvidencePanel.tsx çağırır.",
         "tests/orchestratorEvidence.test.ts kapsar."
@@ -1433,9 +1115,9 @@
       "review_sha256": "bb3161c7fe75d6800a26f32d05d7b731473e15f96baf4d7b537c5b299d6fa7ed"
     },
     {
-      "path": "src/views/orchestrator/overview.css",
+      "path": "src/products/orchestrator/views/overview.css",
       "role": "Panel stili",
-      "purpose": "Orchestrator genel bakış panelinin yerleşimi; genel .panel-glass, .status ve .notice sınıflarını yeniden kullanır.",
+      "purpose": "Orchestrator genel bakış panelinin yerleşimi; genel .panel-glass, .status ve .notice sınıflarını yeniden kullanır. (2026-10-21: `src/products/orchestrator/views/overview.css` yolundan taşındı.)",
       "relationships": [
         "OverviewPanel.tsx içe aktarır.",
         "design.css sınıflarına dayanır."
@@ -1443,19 +1125,19 @@
       "review_sha256": "7a1e57dbf3ea68edf9bb6f99a44ddbbe0ae2f7664aa09e5e878be6df55bd57e4"
     },
     {
-      "path": "src/views/orchestrator/overviewModel.ts",
+      "path": "src/products/orchestrator/views/overviewModel.ts",
       "role": "Genel bakış modeli",
-      "purpose": "Koşuları etkin/başarılı/başarısız/diğer olarak sayan, son koşuları (LATEST_LIMIT) seçen ve eksik engine verisini dürüst uyarıya çeviren saf model.",
+      "purpose": "Koşuları etkin/başarılı/başarısız/diğer olarak sayan, son koşuları (LATEST_LIMIT) seçen ve eksik engine verisini dürüst uyarıya çeviren saf model. (2026-10-21: `src/products/orchestrator/views/overviewModel.ts` yolundan taşındı.)",
       "relationships": [
         "OverviewPanel.tsx çağırır; tasks.ts terminal durumunu kullanır.",
         "tests/orchestratorOverview.test.ts ve tests/coverageViews.test.ts kapsar."
       ],
-      "review_sha256": "03067ba3be2e467db9095c28fc7b4d0da3b3d281f246741af0b3ca7e2b1c2e1f"
+      "review_sha256": "3362d8e54d1a7e12e100b4041397ce998cf9a379484091ad3d6022c0acafc0c5"
     },
     {
-      "path": "src/views/orchestrator/settings.css",
+      "path": "src/products/orchestrator/views/settings.css",
       "role": "Panel stili",
-      "purpose": "Orchestrator çalışma alanı ayarlarındaki veri kökü özet bloğunun küçük boşluk stili.",
+      "purpose": "Orchestrator çalışma alanı ayarlarındaki veri kökü özet bloğunun küçük boşluk stili. (2026-10-21: `src/products/orchestrator/views/settings.css` yolundan taşındı.)",
       "relationships": [
         "Orchestrator ayar/çalışma alanı görünümleri tarafından kullanılır.",
         "design.css ile birlikte yüklenir."
@@ -1463,9 +1145,9 @@
       "review_sha256": "27f582db28e7fb1159e07440f1ec9500c989cd808820d9effd8b2ebb7c88c914"
     },
     {
-      "path": "src/views/orchestrator/workspaceModel.ts",
+      "path": "src/products/orchestrator/views/workspaceModel.ts",
       "role": "Çalışma alanı modeli",
-      "purpose": "Orchestrator çalışma alanı sekmelerini (ORCHESTRATOR_PAGES) ve bağlama kararlarını tutan saf mantık; kayıt defteri ile bağlama mantığının ayrışmaması için tek kaynaktır. Tarayıcı önizlemesi dürüstçe etiketlenir. SecondBrain için 'memory' bağlama noktası eklendi.",
+      "purpose": "Orchestrator çalışma alanı sekmelerini (ORCHESTRATOR_PAGES) ve bağlama kararlarını tutan saf mantık; kayıt defteri ile bağlama mantığının ayrışmaması için tek kaynaktır. Tarayıcı önizlemesi dürüstçe etiketlenir. SecondBrain için 'memory' bağlama noktası eklendi. (2026-10-21: `src/products/orchestrator/views/workspaceModel.ts` yolundan taşındı.)",
       "relationships": [
         "apps.ts ve AppWorkspace.tsx kullanır.",
         "tests/orchestratorWorkspace.test.ts ve tests/appNav.test.ts kapsar."
@@ -1473,213 +1155,540 @@
       "review_sha256": "63cc2b00d19cea2da4d36bd8182daaffe3759a49ea9b9c6fd3db20d9277250a9"
     },
     {
-      "path": "src/views/productsModel.ts",
+      "path": "src/products/secondbrain/brainClients.ts",
+      "role": "AI istemci seçimi modeli",
+      "purpose": "SecondBrain'in bağlanabildiği AI istemcilerini (hooks/mcp yetenekleri) ve kullanıcı seçimini ürünün beklediği `desired` nesnesine çeviren saf mantığı içerir. Kayıtlı entegrasyonlardan seçimi geri üretir; ürün her id'yi yine doğrular. (2026-10-21: `src/products/secondbrain/brainClients.ts` yolundan taşındı.)",
+      "relationships": [
+        "ClientPicker, BrainSetup/BrainInstall ve BrainIntegrations görünümleri kullanır.",
+        "tests/brainClients.test.ts kapsar."
+      ],
+      "review_sha256": "92ed65cde2bca909175fea0b1d91500b9475a12eb56218ba2cb4cf26ddfc9f95"
+    },
+    {
+      "path": "src/products/secondbrain/memoryAccess.ts",
+      "role": "Hafıza erişim istemcisi",
+      "purpose": "Orchestrator'ın SecondBrain hafızasına erişimini açma/kapama/durum native çağrıları ve durumu Türkçe açıklamaya çeviren mantık. Erişim token'ı yalnızca Rust tarafında kalır; burada alınmaz, saklanmaz, gösterilmez. (2026-10-21: `src/products/secondbrain/memoryAccess.ts` yolundan taşındı.)",
+      "relationships": [
+        "views/MemoryAccess.tsx kullanır; lifecycle.ts hata türüne dayanır.",
+        "tests/memoryAccess.test.ts kapsar."
+      ],
+      "review_sha256": "195f9bbfd98c6c253ee897e059db2eb6138dabc24ead7bfc2dff91efe19c304b"
+    },
+    {
+      "path": "src/products/secondbrain/memoryIndex.ts",
+      "role": "Hafıza dizini istemcisi",
+      "purpose": "SecondBrain arama dizininin durumu, oturum yakalama ve kullanıcı onaylı yenileme için güvenilir Rust komutlarını saran tipli istemci ve durum/sonuç açıklayıcıları. (2026-10-21: `src/products/secondbrain/memoryIndex.ts` yolundan taşındı.)",
+      "relationships": [
+        "views/MemoryIndex.tsx kullanır.",
+        "tests/memoryIndex.test.ts kapsar."
+      ],
+      "review_sha256": "3f0c58b092e935dbc6e50055867d212756526aed8a38d5beb2dcb36e85cfe5da"
+    },
+    {
+      "path": "src/products/secondbrain/memorySemantic.ts",
+      "role": "Anlamsal arama istemcisi",
+      "purpose": "SecondBrain'in isteğe bağlı yerel anlamsal aramasının durum/aç/kapat native çağrıları ve durumu başlık, ayrıntı ve ton olarak açıklayan mantık. Varsayılan kapalıdır; tam metin arama her durumda çalışır. (2026-10-21: `src/products/secondbrain/memorySemantic.ts` yolundan taşındı.)",
+      "relationships": [
+        "views/MemoryIndex.tsx kullanır.",
+        "tests/memorySemantic.test.ts kapsar."
+      ],
+      "review_sha256": "cf098289695bb6b829542f1aed7eb7653c172262f2be02af9b977bd4177fd8c0"
+    },
+    {
+      "path": "src/products/secondbrain/memoryWorkspace.ts",
+      "role": "Tauri IPC sarmalayıcı",
+      "purpose": "SecondBrain hafıza çalışma alanı için güvenilir Rust komutlarının (memory_search, memory_note_read, memory_capture_note, memory_briefing_run) tür tanımlı sarmalayıcıları, motorun bilinen notları (Son oturum, Açık konular, Kurallar, günlük, brifing) ve dürüst Türkçe hata/arama modu metinleri. (2026-10-21: `src/products/secondbrain/memoryWorkspace.ts` yolundan taşındı.)",
+      "relationships": [
+        "views/MemoryWorkspace.tsx kullanır; masaüstü dışında UNAVAILABLE döner. Testi tests/memoryWorkspace.test.ts."
+      ],
+      "review_sha256": "2333792a8078ec649adbc047ae4df0c67f8aef0b92d70c6857281f28132970be"
+    },
+    {
+      "path": "src/products/secondbrain/views/BrainInstall.tsx",
+      "role": "SecondBrain kurulum sihirbazı",
+      "purpose": "SecondBrain'in kendi kurucusu üzerinden ilk kurulum: Kimlik → Hafıza → Kaynaklar → İzinler → Onay adımları. Önce salt-okunur plan gösterir, onayla uygular. Kısayol açıklaması kasa klasörünü açan kısayol olarak düzeltildi. (2026-10-21: `src/products/secondbrain/views/BrainInstall.tsx` yolundan taşındı.)",
+      "relationships": [
+        "AppWorkspace kurulum sayfasında açar; lifecycle.ts, productClient.ts, brainClients.ts, ClientPicker ve IntegrationPreview kullanır.",
+        "Kapsam: tests/brainClients.test.ts, tests/lifecycleModel.test.ts."
+      ],
+      "review_sha256": "4a3027d8e76eb2264b3e67e145db69fea0b85532bdb85ef8bad2a64afcd5a169"
+    },
+    {
+      "path": "src/products/secondbrain/views/BrainIntegrations.tsx",
+      "role": "SecondBrain entegrasyon seçimi",
+      "purpose": "Kurulu SecondBrain için hangi AI istemcisinde hafıza yakalanacağını (Kaynaklar) ve kimin MCP ile kullanacağını (İzinler) seçtirir; önce açık, salt-okunur önizleme verir ve onayla uygular. Kısayol açıklaması kasa klasörünü açan kısayol olarak düzeltildi. (2026-10-21: `src/products/secondbrain/views/BrainIntegrations.tsx` yolundan taşındı.)",
+      "relationships": [
+        "BrainSetup içinden kullanılır; ClientPicker, IntegrationPreview, brainClients.ts ve lifecycle.ts'e dayanır.",
+        "Kapsam: tests/brainClients.test.ts."
+      ],
+      "review_sha256": "c6167b84f303dcbafc6f48c12753c61891663d802af70f1e78fd6bf383958f09"
+    },
+    {
+      "path": "src/products/secondbrain/views/BrainSetup.tsx",
+      "role": "SecondBrain ayar görünümü",
+      "purpose": "SecondBrain'in gerçek ayarlarını ürün şemasından forma çevirir, değişenleri uygular ve geri okuma ile doğrular; asistan adı kişiselleştirmesini localStorage'da saklar. Entegrasyon seçimini içerir. (2026-10-21: `src/products/secondbrain/views/BrainSetup.tsx` yolundan taşındı.)",
+      "relationships": [
+        "AppWorkspace ve Home tarafından kullanılır; productClient.ts, rpp.ts, productsModel.ts ve BrainIntegrations'a dayanır.",
+        "Kapsam: tests/productsModel.test.ts."
+      ],
+      "review_sha256": "c62a199baa04ab742468638d15ae9eb90f8fc0efde296a2c5229fb67d06dc77e"
+    },
+    {
+      "path": "src/products/secondbrain/views/ClientPicker.tsx",
+      "role": "AI istemci seçici",
+      "purpose": "Desteklenen her AI istemcisi için bir anahtar sunar. Bu bilgisayarda bulunmayan istemciler yeni seçilemez (klasörleri oluşturulmasın diye). (2026-10-21: `src/products/secondbrain/views/ClientPicker.tsx` yolundan taşındı.)",
+      "relationships": [
+        "BrainInstall ve BrainIntegrations tarafından kullanılır; brainClients.ts'ten CLIENTS ve toggle alır.",
+        "Kapsam: tests/brainClients.test.ts."
+      ],
+      "review_sha256": "7129d7e614f79ac0ade87ed2a763f73e91219eebe3d9a7da5fcdd660962371ea"
+    },
+    {
+      "path": "src/products/secondbrain/views/IntegrationPreview.tsx",
+      "role": "Entegrasyon önizlemesi",
+      "purpose": "Ürünün salt-okunur planını gösterir: nelerin bulunduğu, tam olarak neyin değişeceği ve dokunulmayanlar. Değişiklik yoksa bunu açıkça söyler. (2026-10-21: `src/products/secondbrain/views/IntegrationPreview.tsx` yolundan taşındı.)",
+      "relationships": [
+        "BrainInstall ve BrainIntegrations kullanır; lifecycle.ts IntegrationPlan türüne dayanır.",
+        "Doğrudan test yok."
+      ],
+      "review_sha256": "fa1c4849aced60e2ec1fbb63f3f730c02843ddd3b3c1e8910ce44898c1a85b50"
+    },
+    {
+      "path": "src/products/secondbrain/views/MemoryAccess.tsx",
+      "role": "Hafıza erişimi görünümü",
+      "purpose": "SecondBrain hafıza erişimini (salt okunur veya yazma dahil) onayla açar/kapatır ve durumu gösterir. Erişim token'ı bileşene hiç ulaşmaz. (2026-10-21: `src/products/secondbrain/views/MemoryAccess.tsx` yolundan taşındı.)",
+      "relationships": [
+        "AppWorkspace tarafından açılır; memoryAccess.ts kullanır.",
+        "Kapsam: tests/memoryAccess.test.ts."
+      ],
+      "review_sha256": "5af56595954c74567d0ebb2afe79c57113ea141ae9f9539c646a65a9f9a38faa"
+    },
+    {
+      "path": "src/products/secondbrain/views/MemoryIndex.tsx",
+      "role": "Hafıza dizini görünümü",
+      "purpose": "SecondBrain arama dizininin durumunu, oturum yakalamayı ve anlamsal aramayı gösterir; dizin yenilemeyi açık onaydan sonra çalıştırır. Bekleyen oturumları yakalama iki adımlı onay ister (oturumlar yapay zeka sağlayıcısına gönderilir). (2026-10-21: `src/products/secondbrain/views/MemoryIndex.tsx` yolundan taşındı.)",
+      "relationships": [
+        "AppWorkspace tarafından açılır; memoryIndex.ts ve memorySemantic.ts kullanır.",
+        "Kapsam: tests/memoryIndex.test.ts, tests/memorySemantic.test.ts."
+      ],
+      "review_sha256": "e5cadd34d5d5ccad4cad06849e3ee986f76c2a44cf1e1375c20e72db0d00fb22"
+    },
+    {
+      "path": "src/products/secondbrain/views/MemoryWorkspace.tsx",
+      "role": "Kullanıcı arayüzü",
+      "purpose": "SecondBrain 'Hafıza' sayfası: not arama (tam metin, hazırsa anlamsal; vurgu işaretleri temizlenir), not okuyucu ve bilinen not düğmeleri, hızlı not yakalama ve 'brifingi şimdi çalıştır'. Eski yerel panelin işlevlerini Hub'a taşır; hiçbir HTML enjekte etmez. (2026-10-21: `src/products/secondbrain/views/MemoryWorkspace.tsx` yolundan taşındı.)",
+      "relationships": [
+        "AppWorkspace.tsx 'memory' sayfasında bağlar; yalnız memoryWorkspace.ts ve react kullanır. Bu görünüm Orchestrator şeridinde yazıldı, native E2E ile doğrulandı."
+      ],
+      "review_sha256": "5185f963b251633cd1de4d1fd9f9dcb360eabdcf58e22f607f26e2ccebf3ed14"
+    },
+    {
+      "path": "src/shared/api.ts",
+      "role": "Tipli native API",
+      "purpose": "Tauri invoke ile explicit engine/settings/product işlemleri ve runtime detection/types sağlar. startup_intent komutunu startupIntent olarak sunar. StartupIntent türü: { action: install|uninstall|manage, product }. (2026-10-21: `src/shared/api.ts` yolundan taşındı.)",
+      "relationships": [
+        "Rust command handler tüketilir; generic shell plugin veya sahte sonuç yoktur."
+      ],
+      "review_sha256": "b70581ef5037e4dda18ac01af9ae5fba65dfc178c852a57e2be4394206b7ae3a"
+    },
+    {
+      "path": "src/shared/design.css",
+      "role": "Görsel yönetim",
+      "purpose": "Hub tasarım sistemi v2: renk/boşluk token'ları, kabuk, başlatıcı sayfalar, ortak bileşenler ve çalışma alanı panellerinin kullandığı eski sınıf adları. Tek stil kaynağıdır; dar ekranda ikon rayına düşer. (2026-10-21: `src/shared/design.css` yolundan taşındı.)",
+      "relationships": [
+        "Uygulama girişi ve tüm görünümler tarafından yüklenir; orchestrator/*.css bu sınıflara dayanır.",
+        "Eski hub.css ve style.css'in yerine geçer."
+      ],
+      "review_sha256": "c1f3a8a563a868e03a5f3e465c46d39d433d5d2b9c547e1217ec5208ce53cc2f"
+    },
+    {
+      "path": "src/shared/productClient.ts",
+      "role": "RPP ürün istemcisi",
+      "purpose": "Özel 'rpp_request' komutu üzerine ince tipli sarmalayıcı. Tauri dışında net bir hatayla reddeder; taşıma katmanı birim testler için enjekte edilebilir. (2026-10-21: `src/shared/productClient.ts` yolundan taşındı.)",
+      "relationships": [
+        "useEcosystem, Products, BrainSetup/BrainInstall ve AppWorkspace kullanır; rpp.ts ile istek/yanıt kurar.",
+        "tests/productClient.test.ts ve tests/coverageApi.test.ts kapsar."
+      ],
+      "review_sha256": "e2e6ee3f7386c7d2589a1707b3e565daeb9e3d1f95e3031e2fa57af6b0b3f75d"
+    },
+    {
+      "path": "src/shared/productsModel.ts",
       "role": "Ürün ayarları modeli",
-      "purpose": "Ürünler görünümü için saf model: manifest/sağlıktan ürün özeti ve durum türü, ayar şemasından form alanları, değişen ayarlar, değer ayrıştırma ve geri okuma doğrulaması. Sır değerleri maskeli kalır.",
+      "purpose": "Ürünler görünümü için saf model: manifest/sağlıktan ürün özeti ve durum türü, ayar şemasından form alanları, değişen ayarlar, değer ayrıştırma ve geri okuma doğrulaması. Sır değerleri maskeli kalır. (2026-10-21: `src/shared/productsModel.ts` yolundan taşındı.)",
       "relationships": [
         "Products, BrainSetup, homeModel, shellModel ve useEcosystem kullanır; rpp.ts'e dayanır.",
         "tests/productsModel.test.ts kapsar."
       ],
-      "review_sha256": "0b053fbcf0aec3bab73bcef8e5f598e5a74c2d476ecb7681a9aae53509c0f60a"
+      "review_sha256": "601d312891fec046e8b54e31201dc105fe69742252ccc65c2b28f3be92242009"
+    },
+    {
+      "path": "src/shared/rpp.ts",
+      "role": "RPP sözleşmesi",
+      "purpose": "Respected Product Protocol v1.0/v1.1 için paylaşılan TypeScript sözleşmesi: istek kurma, yanıt ayrıştırma, sürüm pazarlığı, ayar şeması türleri ve sır maskeleme. Bir JSON istek, bir JSON yanıt satırı; MCP veya daemon değildir. (2026-10-21: `src/shared/rpp.ts` yolundan taşındı.)",
+      "relationships": [
+        "productClient.ts, productsModel.ts ve Products görünümü kullanır.",
+        "tests/rpp.test.ts kapsar."
+      ],
+      "review_sha256": "ef47d413c9270b740cf2da0d2d0124b34350c43a3d393c509d617d61613995bc"
+    },
+    {
+      "path": "src/shared/ui.tsx",
+      "role": "Ortak sunum bileşenleri",
+      "purpose": "Paylaşılan sunum parçaları: ikon seti, uygulama amblemleri, dekoratif Weave ve sade dilde durum etiketi/tonu yardımcıları. İş mantığı içermez. (2026-10-21: `src/shared/ui.tsx` yolundan taşındı.)",
+      "relationships": [
+        "Home, MyApps, Discover, Activity, LifecycleControls ve kabuk kullanır.",
+        "tests/coverageViews.test.ts doğrudan kapsamaz; görünümler üzerinden kullanılır."
+      ],
+      "review_sha256": "4ecd53513b74519a7749cc32460c8ea5bff584e8d1fd14b72e33e316ae5dcdb0"
+    },
+    {
+      "path": "src/shell/App.tsx",
+      "role": "Görsel yönetim",
+      "purpose": "Hub kabuğunu çizer: global rail (Hub sayfaları ve uygulama çalışma alanları), üst çubuk, sağlık özeti ve yenileme; route'a göre Home, MyApps, Discover, Connections, Activity, Settings ve AppWorkspace görünümlerini gösterir. Tarayıcı önizlemesinde gerçek veri uydurmaz, uyarı gösterir. Seçili sayfa oturum boyunca sessionStorage'da tutulur; WebView yeniden yüklenirse (ör. kurulum sırasında) kullanıcı Ana Sayfa'ya atılmaz. Product kurulumcularından gelen --install niyeti oturum başına bir kez ilgili sayfayı açar (startupIntent). startup-intent olayı dinlenir: Hub açıkken başlatılan ürün kurucusunun seçimi ilgili sayfayı açar. Windows Yüklü uygulamalar ve ürün kurulumlarından gelen niyetleri (install/uninstall/manage) işler; Hub ve ürün güncellemelerini Güncelle/Sonra bildirimiyle önerir, Hub güncellemesini başlatır; Hub sürümünü gösterir. (2026-10-21: `src/shell/App.tsx` yolundan taşındı.)",
+      "relationships": [
+        "main.tsx çağırır; apps.ts, api.ts (native), useEcosystem.ts, shellModel.ts (globalHealth), ui.tsx ve views/* kullanır.",
+        "Kabuk modeli ve gezinme testleri sağlık/rota mantığını kapsar."
+      ],
+      "review_sha256": "a4e6c171901fb716a06f0e817c17845b09384cfbd657430b0cb29b07f57a665f"
+    },
+    {
+      "path": "src/shell/apps.ts",
+      "role": "Uygulama kayıt defteri",
+      "purpose": "Hub'ın tanıdığı ekosistem uygulamalarını (SecondBrain, Orchestrator), üst gezinme öğelerini ve sayfa listelerini tanımlar. Yeni uygulama eklemek bu listeye kayıt eklemektir; `rpp` yalnızca RPP konuşan ürünlerde dolar. SecondBrain sayfalarına 'Hafıza' eklendi. (2026-10-21: `src/shell/apps.ts` yolundan taşındı.)",
+      "relationships": [
+        "useEcosystem.ts, Home/MyApps/Discover görünümleri ve shell tarafından okunur; orchestrator/workspaceModel.ts'ten ORCHESTRATOR_PAGES alır.",
+        "tests/appNav.test.ts kapsar."
+      ],
+      "review_sha256": "a7250c2581ce430fee4266fc5d68203d6011f57cc822304530239c0d1e49a45d"
+    },
+    {
+      "path": "src/shell/homeModel.ts",
+      "role": "Ana sayfa karar modeli",
+      "purpose": "Gerçek ekosistem durumuna göre Ana Sayfa modunu (önizleme, yükleniyor, ilk açılış, dikkat, kurulum eksik, aktif) seçen saf karar fonksiyonu. React ve Tauri içermez. (2026-10-21: `src/shell/homeModel.ts` yolundan taşındı.)",
+      "relationships": [
+        "views/Home.tsx tarafından çağrılır; productsModel.ts'ten ProductStatusKind türünü kullanır.",
+        "tests/homeModel.test.ts kapsar."
+      ],
+      "review_sha256": "62eec67927fb98819c0fc494ab0a87954426a616b7df8e9be09c07534c697595"
+    },
+    {
+      "path": "src/shell/lifecycle.ts",
+      "role": "Ürün yaşam döngüsü istemcisi",
+      "purpose": "Hub yönetimli ürünlerin kurulum/güncelleme/onarım/kaldırma/geri alma işlemleri için tipli native istemci, plan ve günlük türleri ve etiket/hata/geri alma yardımcıları. Native { ok, result, error } döner; hiçbir şey simüle edilmez. Güven düzeyi (trust) türü; SecondBrain kaldırması geri alınamaz olarak işaretlenir (canRollback). Uzak katalog ve Hub güncellemesi istemcileri (hubUpdateStatus, catalogRefresh, catalogSetChannel, hubUpdateInstall), kanal türü, yeni hata kodları; güncelleme geri alınamaz (eski sürüm silinir). (2026-10-21: `src/shell/lifecycle.ts` yolundan taşındı.)",
+      "relationships": [
+        "LifecycleControls, BrainSetup/BrainInstall, Activity, Discover, useEcosystem ve mcpAccess kullanır.",
+        "tests/lifecycleModel.test.ts kapsar."
+      ],
+      "review_sha256": "cf9bc2b8263005036865c1dff5f95d17ade7939f5ff8566464d03b4046d2f4d3"
+    },
+    {
+      "path": "src/shell/shellModel.ts",
+      "role": "Kabuk modeli",
+      "purpose": "Global kabuk için üst çubuk sağlık hapı ve ekran metnini üreten saf model. Native yoksa 'Tarayıcı önizlemesi', yoksa ürün durumlarından sağlık tonu ve etiket verir. (2026-10-21: `src/shell/shellModel.ts` yolundan taşındı.)",
+      "relationships": [
+        "Uygulama kabuğu (App) tarafından çağrılır; productsModel.ts'ten durum türünü alır.",
+        "tests/shellModel.test.ts kapsar."
+      ],
+      "review_sha256": "95666afa9ea24b436faa4c52d4bb9203a78600a5401b0bce74377d05493482f5"
+    },
+    {
+      "path": "src/shell/useEcosystem.ts",
+      "role": "Ekosistem durum kancası",
+      "purpose": "Kabuk için canlı ekosistem durumunu toplayan React kancası: her uygulamanın RPP manifest/sağlık/ayar özeti, yapılandırma kaynağı, engine koşuları, yaşam döngüsü genel bakışı ve günlük. Native yoksa dürüstçe boş durum döner. Yenileme tek seferde bir tane çalışır; arada gelen istek bir kez daha çalıştırılır. (2026-10-21: `src/shell/useEcosystem.ts` yolundan taşındı.)",
+      "relationships": [
+        "Kabuk ve tüm üst düzey görünümler tarafından kullanılır; apps.ts, productClient.ts, lifecycle.ts ve productsModel.ts'e dayanır.",
+        "Doğrudan test yok; modelleri homeModel/shellModel/productsModel testleriyle kapsanır."
+      ],
+      "review_sha256": "d4a9233856a94f046eb7efe141263d665e4126145ff6f7a4b73b82eabd42dd04"
+    },
+    {
+      "path": "src/shell/views/Activity.tsx",
+      "role": "Etkinlik görünümü",
+      "purpose": "Engine koşularını ve ürün yaşam döngüsü günlüğünü listeler; uygun girdiler için geri alma sunar. Hata mesajlarını kullanıcıya gösterir. (2026-10-21: `src/shell/views/Activity.tsx` yolundan taşındı.)",
+      "relationships": [
+        "Kabuk tarafından Etkinlik rotasında açılır; useEcosystem, lifecycle.ts ve tasks.ts kullanır.",
+        "Kapsam: tests/lifecycleModel.test.ts (günlük cümleleri)."
+      ],
+      "review_sha256": "073f747fd9fd8ce59832b11c4995cf2341ea68343e9655bde7cae6e5b0de6c05"
+    },
+    {
+      "path": "src/shell/views/AppWorkspace.tsx",
+      "role": "Uygulama çalışma alanı",
+      "purpose": "Seçilen uygulamanın sayfalarını (SecondBrain kurulum/ayarlar, Orchestrator genel bakış, ajanlar, kanıtlar, kampanyalar, görevler, MCP, hafıza) uygun panele bağlayan bağlayıcı görünüm. 'memory' sayfası MemoryWorkspace'i bağlar. (2026-10-21: `src/shell/views/AppWorkspace.tsx` yolundan taşındı.)",
+      "relationships": [
+        "Kabuk tarafından açılır; BrainSetup, BrainInstall, Tasks, Products, Campaigns, MemoryAccess, MemoryIndex, OrchestratorMcp ve orchestrator panellerini bağlar.",
+        "workspaceModel.ts karar mantığı tests/orchestratorWorkspace.test.ts ile kapsanır."
+      ],
+      "review_sha256": "15d8b8928d8dfceb219285c5c0924d9f7ad9680c1bf9a546b285ff92efb710fd"
+    },
+    {
+      "path": "src/shell/views/Connections.tsx",
+      "role": "Bağlantılar görünümü",
+      "purpose": "Geliştirme kaynak bağlantılarını (python/ürün kökleri) ve her ürünün RPP ayarlarını gösterir. Ayar kaydı sonucu doğrular ve hataları kullanıcıya iletir. Form yalnızca dört bilinen kaynak alanını gösterir. Kaynak bağlantıları paneli yalnızca geliştirme derlemelerinde gösterilir. (2026-10-21: `src/shell/views/Connections.tsx` yolundan taşındı.)",
+      "relationships": [
+        "Kabuk Bağlantılar rotasında açılır; api.ts ve Products.tsx kullanır.",
+        "Doğrudan test yok; ayar modeli tests/productsModel.test.ts ile kapsanır."
+      ],
+      "review_sha256": "84c16357c8bd1ec913d69242858aad5bd6b9044d1b1d04db196d979cc5ff2f22"
+    },
+    {
+      "path": "src/shell/views/Discover.tsx",
+      "role": "Keşfet görünümü",
+      "purpose": "Yerel katalogdaki doğrulanmış paketleri ve her ürünün kurulum durumunu listeler. Kurulum/güncelleme/onarım Uygulamalarım sayfasına yönlendirilir. Paket güveni etiketi: üretim imzalı, geliştirme imzası (yerel) veya imzasız yerel. (2026-10-21: `src/shell/views/Discover.tsx` yolundan taşındı.)",
+      "relationships": [
+        "Kabuk Keşfet rotasında açılır; APPS, useEcosystem ve lifecycle.ts kullanır.",
+        "Doğrudan test yok."
+      ],
+      "review_sha256": "dee3553803db5e0c3e5e1b4ad3124d2705bd9f500acb61acc65a25a84f92596b"
+    },
+    {
+      "path": "src/shell/views/Home.tsx",
+      "role": "Ana sayfa görünümü",
+      "purpose": "Ekosistemin gerçek durumuna göre (homeMode) karşılama, dikkat gerektirenler, kurulum eksikleri ve çalışan görevleri gösteren ana sayfa. Go yönlendirme türünü tanımlar. (2026-10-21: `src/shell/views/Home.tsx` yolundan taşındı.)",
+      "relationships": [
+        "Kabuk tarafından açılır; homeModel.ts, useEcosystem ve ui.tsx kullanır.",
+        "Kapsam: tests/homeModel.test.ts."
+      ],
+      "review_sha256": "f917b2d7c9e6b63b2ff602dff4badb26a155625dc448022f4cf5b00acfe8336e"
+    },
+    {
+      "path": "src/shell/views/LifecycleControls.tsx",
+      "role": "Yaşam döngüsü kontrolleri",
+      "purpose": "Tek bir Hub yönetimli ürün için kur/güncelle/onar/kaldır: önce plan, onay, uygulama, sonra geri alma ve yedek temizleme sunar. Geri döndürülemez adımlar açıkça belirtilir. Yedekleri temizleme ve SecondBrain kaldırma metni iki adımlı onay ve doğru kapsam açıklamasıyla gösterilir. autoAction ile başka yerde seçilmiş işlemin (Yüklü uygulamalar, güncelleme bildirimi) planını doğrudan açar; paket indirilirken durum metni gösterir; katalog alınamadıysa Ayarlar'a yönlendirir. (2026-10-21: `src/shell/views/LifecycleControls.tsx` yolundan taşındı.)",
+      "relationships": [
+        "MyApps tarafından kullanılır; lifecycle.ts işlemlerini çağırır.",
+        "Kapsam: tests/lifecycleModel.test.ts."
+      ],
+      "review_sha256": "6879419682545dee4858c6ec5dec2eaa6938da512a1702cb33193d5c66aba804"
+    },
+    {
+      "path": "src/shell/views/MyApps.tsx",
+      "role": "Uygulamalarım görünümü",
+      "purpose": "Hub'a bağlı ürünleri durum, sürüm ve yetenekleriyle listeler (ürünün kendi sağlık yanıtından); kurulum eksikse sihirbaza yönlendirir ve yaşam döngüsü kontrollerini barındırır. App'ten gelen istenen işlemi (ask) ilgili ürünün kontrollerine iletir; ürünlerin imzalı katalogdan indirildiğini ve Windows Uygulamalar listesinde göründüğünü açıklar. (2026-10-21: `src/shell/views/MyApps.tsx` yolundan taşındı.)",
+      "relationships": [
+        "Kabuk tarafından açılır; useEcosystem, LifecycleControls ve ui.tsx kullanır.",
+        "Doğrudan test yok."
+      ],
+      "review_sha256": "523145bd622cd33be55c3ff078f65b5568b0c71b5a7f302b266c19264dc319ba"
+    },
+    {
+      "path": "src/shell/views/Products.tsx",
+      "role": "Ürün ayarları görünümü",
+      "purpose": "Orchestrator ve SecondBrain için RPP ayar şemasından form üretir, doğrular, uygular ve geri okumayla doğrular. Sır alanları maskeli kalır. Mevcut ayarlar okunamadıysa Uygula kapalıdır (varsayılanlar gerçek ayarların üzerine yazılmaz). (2026-10-21: `src/shell/views/Products.tsx` yolundan taşındı.)",
+      "relationships": [
+        "Connections ve AppWorkspace (ProductPanel) kullanır; productClient.ts, rpp.ts, productsModel.ts'e dayanır.",
+        "Kapsam: tests/productsModel.test.ts."
+      ],
+      "review_sha256": "697831aecabbc59e3cc438627b032efb8e034f84fc5b8a21a8ce2ce768e36cc2"
+    },
+    {
+      "path": "src/shell/views/Settings.tsx",
+      "role": "Hub ayarları görünümü",
+      "purpose": "Python yolu, ürün kaynak klasörleri ve görev verisi klasörü gibi geliştirme ayarlarını düzenletir; kayıt sonrası durumu (kaydediliyor/uygulandı/doğrulandı/başarısız) bildirir. Güncellemeler bölümü: Hub sürümü, beta/kararlı kanal seçimi ve Güncellemeleri denetle. (2026-10-21: `src/shell/views/Settings.tsx` yolundan taşındı.)",
+      "relationships": [
+        "Kabuk Ayarlar rotasında açılır; api.ts ve lifecycle.ts kullanır.",
+        "Doğrudan test yok."
+      ],
+      "review_sha256": "cf8059b63114b2b3f2199682c2ec8a7ce061bc5ef2f9c26a28c1d096e35ed87b"
     },
     {
       "path": "tests/appNav.test.ts",
       "role": "Gezinme testleri",
       "purpose": "Hub gezinmesinin altı sayfayı doğru sırada ve etiketle sunduğunu ve Orchestrator çalışma alanı sayfalarının sırasını doğrular. SecondBrain sayfa listesine memory eklendi.",
       "relationships": [
-        "src/apps.ts ve workspaceModel.ts'i sınar.",
+        "src/shell/apps.ts ve workspaceModel.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "e8788c052d20f1a2aa57b51c9a54a5b310492dadc583c68c7fe14d38222a93e0"
+      "review_sha256": "2c3c7ddb0e7869a7ab79e4905cda9496186efd32a7083caf570b830731ef8b8d"
     },
     {
       "path": "tests/brainClients.test.ts",
       "role": "İstemci seçimi testleri",
       "purpose": "AI istemci listesi, seçimden desired nesnesine dönüşüm ve kayıtlı entegrasyonlardan seçim geri üretimini doğrular.",
       "relationships": [
-        "src/brainClients.ts'i sınar.",
+        "src/products/secondbrain/brainClients.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "3698c8d3941be373265cede01f1c4894e3445699d8af1a0d072a74ac1d78d5eb"
+      "review_sha256": "f85fa682e275cbca4a805b39e32c7c4af5c5197d4d5b0e5df9142922be8855b9"
     },
     {
       "path": "tests/campaigns.test.ts",
       "role": "Kampanya testleri",
       "purpose": "Kampanya durumu özetinin (faz, şeritler, zaman çizelgesi, zincir) gerçek yanıtlardan doğru üretildiğini doğrular.",
       "relationships": [
-        "src/campaigns.ts'i sınar.",
+        "src/products/orchestrator/campaigns.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "fc403ac478762dc658ca11d181d4d72574102421ec506ccb4317ff996ed1ad36"
+      "review_sha256": "a602be773ac5601961f72974d05693d33280a52b2789dc13bd06ccb8203ae7d1"
     },
     {
       "path": "tests/coverageApi.test.ts",
       "role": "Native sınır testleri",
       "purpose": "Tauri dışında engine, rppCall ve kampanya çağrılarının sahte başarı yerine reddedildiğini; SECRET_REDACTED gibi sabitlerin korunduğunu doğrular.",
       "relationships": [
-        "src/api.ts, productClient.ts, campaigns.ts ve rpp.ts'i sınar.",
+        "src/shared/api.ts, productClient.ts, campaigns.ts ve rpp.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "509a0beaa40217054311a00b5129f21932e4952176dd9a14571201f413c987a1"
+      "review_sha256": "5505f0a528a8fc645c586967bf1686c887eff87dc973f83b4dedf590a70b3dd0"
     },
     {
       "path": "tests/coverageViews.test.ts",
       "role": "Görünüm modeli kapsam testleri",
       "purpose": "Görünüm modellerinin dışa açık sabit ve yardımcılarını (ör. LATEST_LIMIT ve latestRuns) doğrulayan kapsam testleri.",
       "relationships": [
-        "src/views/orchestrator/overviewModel.ts'i sınar.",
+        "src/products/orchestrator/views/overviewModel.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "47b6df62d4804f83d8eb5dbdfdb98ac1ccee99543ea868e572218488e3a7c4b8"
+      "review_sha256": "65822ba574cd71f643f1f710c4a4220f1d8c0164957ff198c42659b151ffad60"
     },
     {
       "path": "tests/homeModel.test.ts",
       "role": "Ana sayfa modeli testleri",
       "purpose": "homeMode karar sırasını (önizleme, yükleniyor, ilk açılış, dikkat, kurulum eksik, aktif) doğrular.",
       "relationships": [
-        "src/homeModel.ts'i sınar.",
+        "src/shell/homeModel.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "0fd71d11d232744faaded3e45ebd63fc696147015c1dc10d7af3144f70e3218e"
+      "review_sha256": "1924f8e599fb04795a3ac602eb2a48d10e9a2b7eac69a102b685e2abf6b6fdf2"
     },
     {
       "path": "tests/lifecycleModel.test.ts",
       "role": "Yaşam döngüsü testleri",
       "purpose": "Yaşam döngüsü etiketleri, kullanılabilir eylemler, geri alma uygunluğu, hata ve günlük cümleleri ile operasyon kimliği üretimini doğrular. Güncellemenin geri alınamadığını sınar.",
       "relationships": [
-        "src/lifecycle.ts'i sınar.",
+        "src/shell/lifecycle.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "d20a91c909d1409ba80b41cb2d24cf96cfbd228e537612769e2dd6f003b5d622"
+      "review_sha256": "ea90de0c52fdf714303d2a95554f46c536f54100edf72aa585f53f04ea6467e7"
     },
     {
       "path": "tests/mcpAccess.test.ts",
       "role": "MCP erişim testleri",
       "purpose": "MCP planından başlangıç anahtar durumu, yalnızca değişenlerin gönderilmesi, istemci etiketleri ve hata açıklamasını doğrular.",
       "relationships": [
-        "src/mcpAccess.ts'i sınar.",
+        "src/products/orchestrator/mcpAccess.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "141c4a7f1e552f4a34b5063cc059e2093bd2fadaa9a4b20c002fb3d0a1620e55"
+      "review_sha256": "bae4d73a451cbbf74c9139755f7b3bd0f3d036ad4cd0584e0b925395f9331707"
     },
     {
       "path": "tests/memoryAccess.test.ts",
       "role": "Hafıza erişim testleri",
       "purpose": "Hafıza erişim durumunun (desteklenmiyor, kapalı, açık, iptal bekliyor) açıklamalarını ve hata eşlemesini doğrular.",
       "relationships": [
-        "src/memoryAccess.ts'i sınar.",
+        "src/products/secondbrain/memoryAccess.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "349da950d1dd985eb6654cfe61559267055e77b655d5ef1abd1bb3db131ae4e1"
+      "review_sha256": "2005312b2745fcc5eb37f36af7b51b90969ea3df121c75b5b1b580f6c151ae73"
     },
     {
       "path": "tests/memoryIndex.test.ts",
       "role": "Hafıza dizini testleri",
       "purpose": "Dizin durumu ve yenileme sonucu açıklayıcılarını ve hata eşlemesini doğrular.",
       "relationships": [
-        "src/memoryIndex.ts'i sınar.",
+        "src/products/secondbrain/memoryIndex.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "8ba1ab533c83a08748b5f8fd4b55efe062a4f92c7948cf268291d8f879c13939"
+      "review_sha256": "5e65f3ef9aafc84b53511d90906baf0fb0bee61d801b79c64cfa8020316c0fcb"
     },
     {
       "path": "tests/memorySemantic.test.ts",
       "role": "Anlamsal arama testleri",
       "purpose": "Anlamsal arama durumlarının başlık, ayrıntı ve ton açıklamalarını doğrular.",
       "relationships": [
-        "src/memorySemantic.ts'i sınar.",
+        "src/products/secondbrain/memorySemantic.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "ad157a8fb6f56f156a3142f4f5ada4f13c55d81caf152c729e3be64d8b079016"
+      "review_sha256": "8221fb8dee2aafc3532edef4a95ba6c7fb53ab5851da7066b5d47a85ed9498b4"
     },
     {
       "path": "tests/memoryWorkspace.test.ts",
       "role": "Davranış/regresyon testi",
       "purpose": "Bilinen not yolları, arama modu metninin anlamsal aramanın kullanılamadığını dürüstçe söylemesi ve hata metni biçimi.",
       "relationships": [
-        "src/memoryWorkspace.ts sınanır."
+        "src/products/secondbrain/memoryWorkspace.ts sınanır."
       ],
-      "review_sha256": "740cb3346fbaaf45fec2988d56fadb9ae2bef85b9af14ea6c74cbce89faa2150"
+      "review_sha256": "6e8dde8f4361cbe0600aa6fce90b5e0c7e11c25db977f0da30d9fbc5e0861377"
     },
     {
       "path": "tests/orchestratorAgents.test.ts",
       "role": "Ajanlar paneli testleri",
       "purpose": "Ajanlar/modeller modelinin yalnızca gerçek worker ve ayar verisinden türetildiğini, eksik veriyle dürüstçe bozulduğunu doğrular.",
       "relationships": [
-        "src/views/orchestrator/agentsModel.ts'i sınar.",
+        "src/products/orchestrator/views/agentsModel.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "820710f3afee0836a65587ec9ffb4df3dce548b8b33f3eee1dc1747e156f0b11"
+      "review_sha256": "4f2dde71c431a063253742b9b42a0a8b80f1cea24023a8d7a60efacf187f218d"
     },
     {
       "path": "tests/orchestratorEvidence.test.ts",
       "role": "Kanıt paneli testleri",
       "purpose": "Engine inspect ve kampanya yanıtlarının sade kanıt, karar ve yama bilgisine doğru çevrildiğini doğrular.",
       "relationships": [
-        "src/views/orchestrator/evidenceModel.ts'i sınar.",
+        "src/products/orchestrator/views/evidenceModel.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "84de01a2955d901da7294c7f0f6795701b2d86f48f472289989c63404db35325"
+      "review_sha256": "cc50adc085b4fc81aed5ddc08ef264117e764d20bcba1de6b5abb791afdfe3fc"
     },
     {
       "path": "tests/orchestratorOverview.test.ts",
       "role": "Genel bakış testleri",
       "purpose": "Koşu gruplama, sayımlar, son koşu seçimi ve eksik veri uyarılarını doğrular.",
       "relationships": [
-        "src/views/orchestrator/overviewModel.ts'i sınar.",
+        "src/products/orchestrator/views/overviewModel.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "07eac143f918741544bb1ba853551123c29d61b02ba74863b797809f7b3ff255"
+      "review_sha256": "a85840bcc6b9c15419725372648c39c05a43cc12dce3154be32aa61ecfd8e2fc"
     },
     {
       "path": "tests/orchestratorWorkspace.test.ts",
       "role": "Çalışma alanı testleri",
       "purpose": "Orchestrator çalışma alanı sekme sırası ve bağlama kararlarının gerçek veriye dayandığını doğrular. secondbrain/memory bağlama beklentisi eklendi.",
       "relationships": [
-        "src/views/orchestrator/workspaceModel.ts'i sınar.",
+        "src/products/orchestrator/views/workspaceModel.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "34c97b3389b8b0f5094a463f475781584b8a124db7c1d156b1a031f86f26a2cc"
+      "review_sha256": "ece455db11da13084173bb60b79a43186b7a98aff0e3cd026fe737acac9857fe"
     },
     {
       "path": "tests/productClient.test.ts",
       "role": "RPP istemci testleri",
       "purpose": "Enjekte edilen taşıma ile rppCallVia'nın istek kurma ve yanıt ayrıştırmasını doğrular.",
       "relationships": [
-        "src/productClient.ts ve rpp.ts'i sınar.",
+        "src/shared/productClient.ts ve rpp.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "d5aa6d181de8234fdf7ea4847b4cf74306d29a6ff346799db73a9449cfc34359"
+      "review_sha256": "88cec211529488bd0688faa576b4a826cc1a85897b65bd3ba0701b4fdffaaee2"
     },
     {
       "path": "tests/productsModel.test.ts",
       "role": "Ürün modeli testleri",
       "purpose": "Ürün özeti, ayar formu, değişen ayarlar, değer ayrıştırma ve geri okuma doğrulamasını (sır maskeleme dahil) sınar.",
       "relationships": [
-        "src/views/productsModel.ts'i sınar.",
+        "src/shared/productsModel.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "7d7c1530c9470da0e207d22f5b86a48c527869afad1f87fb55a7243251e5fdff"
+      "review_sha256": "e7be28468c35ee2013708a2536b32d10034045585d6e3a846cb8e75cf7c08e24"
     },
     {
       "path": "tests/rpp.test.ts",
       "role": "RPP sözleşme testleri",
       "purpose": "RPP istek/yanıt kurma ve ayrıştırma, sürüm pazarlığı, operasyon kimliği zorunluluğu ve hata açıklamasını doğrular.",
       "relationships": [
-        "src/rpp.ts'i sınar.",
+        "src/shared/rpp.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "050d5794db522edd1d5ba53237744546a06f8a3101543032e70ef22004932c01"
+      "review_sha256": "e68c4e6a7b89f5d83e115f9e63ec39fb1d2c0d33e45c68c14306c2f8dc205ed0"
     },
     {
       "path": "tests/shellModel.test.ts",
       "role": "Kabuk modeli testleri",
       "purpose": "Üst çubuk sağlık hapının native yok, yükleniyor, hepsi hazır, bağlı değil ve karışık durumlardaki ton ve etiketini doğrular.",
       "relationships": [
-        "src/shellModel.ts'i sınar.",
+        "src/shell/shellModel.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "e2bc1fe2a1026ea6d94938fdc44e998551c8321d019997027b8b06aad3315b1d"
+      "review_sha256": "eb3d9165a45f2794d93368d56cf110af5515c92c92f45794fef38e9f603febfd"
     },
     {
       "path": "tests/tasks.test.ts",
@@ -1688,7 +1697,7 @@
       "relationships": [
         "Node test runner tasks.ts kullanır; native IPC kabulü yerine geçmez."
       ],
-      "review_sha256": "111339e5cef11e48cb66b25a8937ea9f9a33d6ffa3cb6abbb5502f7f058a15f2"
+      "review_sha256": "4d43f75d9312f29c580c04c903a52ce4d665facc7172d08ef66612daa05b8089"
     },
     {
       "path": "tools/hub_native_e2e.mjs",

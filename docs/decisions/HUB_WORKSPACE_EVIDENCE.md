@@ -24,7 +24,7 @@ The Hub must not pretend to approve or to apply anything.
 
 ## Decision
 
-- `src/views/orchestrator/evidenceModel.ts` is a pure, testable mapper (no
+- `src/products/orchestrator/views/evidenceModel.ts` is a pure, testable mapper (no
   React, no Tauri imports). `evidenceFor(inspect, campaign, fallbackRunId)`
   turns an `inspect` payload and/or a `campaign-status` reply into
   `{headline, verdict, evidence[], reviews[], hasPatch, nextStepText}`. It is
@@ -39,11 +39,11 @@ The Hub must not pretend to approve or to apply anything.
   - `nextStepText` is shown as copyable text. For `MASTER_APPROVED` it gives the
     exact manual apply command; for `HUMAN_APPROVAL_REQUIRED` the interactive
     approve command. Both state that the Hub does not run the command.
-- `src/views/orchestrator/EvidencePanel.tsx` (default export, props
+- `src/products/orchestrator/views/EvidencePanel.tsx` (default export, props
   `{runs: Run[]; campaignIds: string[]}`) lets the user pick a run (calls engine
   `inspect`) or a campaign (calls `campaign-status`) and renders the evidence.
   Outside Tauri it shows an honest notice and never fabricates data.
-- `src/views/orchestrator/evidence.css` carries the panel's styles; no change to
+- `src/products/orchestrator/views/evidence.css` carries the panel's styles; no change to
   `src/hub.css` and no new dependency.
 - `tests/orchestratorEvidence.test.ts` covers the pure model with `node --test`.
 

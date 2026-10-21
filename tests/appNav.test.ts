@@ -1,6 +1,6 @@
 ﻿import test from 'node:test';
 import assert from 'node:assert/strict';
-import { APPS, HUB_NAV } from '../src/apps.ts';
+import { APPS, HUB_NAV } from '../src/shell/apps.ts';
 
 test('hub navigation exposes exactly the six product pages in order', () => {
   assert.deepEqual(HUB_NAV.map(item => item.id), ['home', 'apps', 'discover', 'connections', 'activity', 'settings']);

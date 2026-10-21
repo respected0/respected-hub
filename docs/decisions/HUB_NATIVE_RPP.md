@@ -38,9 +38,9 @@ without opening HTTP ports, without a public CLI and without adding dependencies
 - The SecondBrain data root is passed with `--data-root` only when `brain_data_root`
   is set. Each call is request/response with a child process that ends by itself,
   so nothing is tied to the Hub window lifetime.
-- `src/productClient.ts` invokes `rpp_request` with `{product, op, payload,
+- `src/shared/productClient.ts` invokes `rpp_request` with `{product, op, payload,
   operationId}` and passes the reply through the strict `parseResponse` from
-  `src/rpp.ts`. `rppCallVia(transport, ...)` is the injectable seam used by the
+  `src/shared/rpp.ts`. `rppCallVia(transport, ...)` is the injectable seam used by the
   TypeScript unit test; `rppCall` is the production entry point. Outside Tauri the
   call still rejects with a clear message.
 

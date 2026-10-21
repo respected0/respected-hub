@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rppCallVia } from '../src/productClient.ts';
+import { rppCallVia } from '../src/shared/productClient.ts';
 
 const okEnvelope = JSON.stringify({
   rpp: '1.0', ok: true, operation_id: 'op-1', result: { status: 'healthy' }, error: null,

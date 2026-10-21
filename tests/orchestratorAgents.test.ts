@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { AGENT_ROLES, ROLE_NOTE, deriveAgentsModel, deriveProfiles, deriveWorkers } from '../src/views/orchestrator/agentsModel.ts';
+import { AGENT_ROLES, ROLE_NOTE, deriveAgentsModel, deriveProfiles, deriveWorkers } from '../src/products/orchestrator/views/agentsModel.ts';
 
 test('deriveWorkers: marks present CLIs available and null as missing', () => {
   const workers = deriveWorkers({ codex: 'C:/bin/codex.exe', claude: null, antigravity: '' });

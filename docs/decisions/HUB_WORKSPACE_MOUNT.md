@@ -2,7 +2,7 @@
 
 ## What is mounted
 
-The Orchestrator app tabs in `src/apps.ts` are now, in order:
+The Orchestrator app tabs in `src/shell/apps.ts` are now, in order:
 
 1. `overview` - "Genel bakis" - the generic Durum/status section plus the
    standalone `OverviewPanel` (run counts and latest runs from `eco.runs`,
@@ -23,8 +23,8 @@ The Orchestrator app tabs in `src/apps.ts` are now, in order:
 The SecondBrain tabs (`overview`, `setup`, `settings`) are unchanged.
 
 All page/mount decision logic lives in the pure module
-`src/views/orchestrator/workspaceModel.ts` (`ORCHESTRATOR_PAGES`, `mountFor`,
-`dataRootSummary`) so it is unit-testable with `node --test`. `src/apps.ts`
+`src/products/orchestrator/views/workspaceModel.ts` (`ORCHESTRATOR_PAGES`, `mountFor`,
+`dataRootSummary`) so it is unit-testable with `node --test`. `src/shell/apps.ts`
 imports `ORCHESTRATOR_PAGES` so the registry and the mount logic cannot drift.
 
 ## Data root behaviour

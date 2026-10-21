@@ -3,13 +3,11 @@ use serde_json::{json, Value};
 use std::{fs, io::{Read, Write}, path::{Path, PathBuf}, process::{Command, Stdio}, time::{Duration, Instant}};
 use tauri::Manager;
 
-pub mod brain;
 pub mod catalog;
 pub mod registration;
-pub mod mcp_access;
-pub mod memory_access;
-pub mod memory_index;
-pub mod memory_semantic;
+pub mod products;
+// product modules keep their short paths (crate::brain, respected_hub_lib::mcp_access, ...)
+pub use products::{brain, mcp_access, memory_access, memory_index, memory_semantic};
 pub mod lifecycle;
 pub mod trust;
 pub mod cleanup;

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { globalHealth } from '../src/shellModel.ts';
+import { globalHealth } from '../src/shell/shellModel.ts';
 
 test('preview and loading never claim product state', () => {
   assert.equal(globalHealth(false, false, ['ok']).tone, 'idle');
