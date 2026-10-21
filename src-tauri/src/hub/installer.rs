@@ -7,12 +7,11 @@
 use super::standalone::{self, Standalone};
 use crate::lifecycle::{self, Bundle, LifecycleError, Roots};
 use crate::orchestrator::mcp;
-use crate::process::pump;
 use crate::{engine_verifier, Settings};
 use serde_json::{json, Value};
 use std::path::Path;
-use std::process::Command;
-use std::time::Duration;
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 const PRODUCT: &str = "orchestrator";
 const TIMEOUT: Duration = Duration::from_secs(600);
@@ -26,18 +25,27 @@ fn err(code: &'static str, message: impl Into<String>, hint: impl Into<String>) 
 /// The newest installer bundle in the catalog cache.
 fn newest(roots: &Roots) -> Option<Bundle> { lifecycle::catalog_of(roots, PRODUCT, "installer").0.into_iter().next() }
 
-/// Whether the installer route handles `action` for `product`: no Hub-managed copy exists, and either the product was installed
-/// by an installer already (removal needs no catalog) or the catalog carries an installer bundle to run.
+/// Whether the installer route handles `action` for `product`. A product the installer put there is removed by its uninstaller (no
+/// catalog needed); install, update and repair run the catalog's installer bundle, which also moves a Hub-managed copy of an older
+/// Hub over to the installer-owned layout. Removing a Hub-managed copy stays with the Hub's own lifecycle.
 pub fn applies(roots: &Roots, product: &str, action: &str) -> bool {
-    if product != PRODUCT || lifecycle::read_current(roots, product).is_some() { return false; }
-    if standalone::orchestrator().is_some() && action == "uninstall" { return true; }
-    newest(roots).is_some()
+    if product != PRODUCT { return false; }
+    let managed = lifecycle::read_current(roots, product).is_some();
+    if action == "uninstall" { return !managed && standalone::orchestrator().is_some(); }
+    newest(roots).is_some() && (!managed || action != "install")
+}
+
+/// The Hub-managed copy of an older Hub, once the installer has put the product in its own place: its files go, its MCP launcher stays.
+fn retire_managed_copy(roots: &Roots) {
+    let dir = roots.managed.join(PRODUCT);
+    for name in ["versions", "removed"] { let _ = std::fs::remove_dir_all(dir.join(name)); }
+    let _ = std::fs::remove_file(dir.join("current.json"));
 }
 
 pub fn plan(roots: &Roots, action: &str) -> Result<Value, LifecycleError> { plan_at(roots, action, &standalone::orchestrator_dir()) }
 
 fn plan_at(roots: &Roots, action: &str, app_dir: &Path) -> Result<Value, LifecycleError> {
-    let installed = standalone::at(app_dir);
+    let installed = standalone::at(app_dir).map(|s| s.version).or_else(|| lifecycle::read_current(roots, PRODUCT).map(|c| c.0));
     let available = newest(roots);
     let mut steps = Vec::new();
     let step = |id: &str, summary: &str, reversible: bool, reason: Option<&str>| json!({ "id": id, "summary": summary, "reversible": reversible, "irreversible_reason": reason });
@@ -47,7 +55,7 @@ fn plan_at(roots: &Roots, action: &str, app_dir: &Path) -> Result<Value, Lifecyc
             match (action, &installed) {
                 ("install", Some(_)) => return Err(err("LIFECYCLE_CONFLICT", "Ürün zaten kurulu.", "Güncelleme veya onarım kullanın.")),
                 ("update" | "repair", None) => return Err(err("LIFECYCLE_CONFLICT", "Ürün kurulu değil.", "Önce kurun.")),
-                ("update", Some(current)) if lifecycle::version_key(&bundle.version) <= lifecycle::version_key(&current.version) => return Err(err("LIFECYCLE_CONFLICT", "Güncelleme yok; kurulu sürüm güncel.", "Sorun varsa onarımı kullanın.")),
+                ("update", Some(current)) if lifecycle::version_key(&bundle.version) <= lifecycle::version_key(current) => return Err(err("LIFECYCLE_CONFLICT", "Güncelleme yok; kurulu sürüm güncel.", "Sorun varsa onarımı kullanın.")),
                 _ => {}
             }
             steps.push(step("stage", "Ürünün kurucusunu güvenli bir ara klasöre kopyala ve imzalı paket özetiyle doğrula", true, None));
@@ -61,7 +69,7 @@ fn plan_at(roots: &Roots, action: &str, app_dir: &Path) -> Result<Value, Lifecyc
         }
         _ => return Err(err("BAD_REQUEST", format!("Bilinmeyen eylem: {action}."), "install, update, repair veya uninstall kullanın.")),
     }
-    Ok(json!({ "product": PRODUCT, "action": action, "dry_run": true, "from_version": installed.as_ref().map(|s| s.version.clone()),
+    Ok(json!({ "product": PRODUCT, "action": action, "dry_run": true, "from_version": installed,
         "to_version": available.map(|b| b.version), "plan": { "steps": steps } }))
 }
 
@@ -93,7 +101,12 @@ fn run_action(roots: &Roots, settings: &Settings, action: &str, id: &str, app_di
         if !uninstaller.is_file() { return Err(err("VERIFY_FAILED", "Ürünün kaldırıcısı bulunamadı.", "Windows'taki Yüklü uygulamalar listesinden kaldırın.")); }
         lifecycle::set_status(roots, entry, "switching")?;
         run(&uninstaller, &SILENT).map_err(|m| err("LIFECYCLE_PARTIAL", format!("Kaldırıcı tamamlanamadı: {m}"), "Ürün çalışıyorsa kapatıp yeniden deneyin."))?;
-        return if standalone::at(app_dir).is_some() { Err(err("VERIFY_FAILED", "Kaldırma sonrası ürün hâlâ kurulu görünüyor.", "Kaldırıcı günlüğüne bakın.")) } else { Ok(()) };
+        // the uninstaller's second stage may still be deleting files when the first returns
+        for _ in 0..60 {
+            if standalone::at(app_dir).is_none() { return Ok(()); }
+            std::thread::sleep(Duration::from_secs(1));
+        }
+        return Err(err("VERIFY_FAILED", "Kaldırma sonrası ürün hâlâ kurulu görünüyor.", "Kaldırıcı günlüğüne bakın."));
     }
     let Some(bundle) = newest(roots) else { return Err(err("BAD_REQUEST", "Katalogda bu ürünün kurucusu yok.", "Ürün kataloğunu yenileyin.")) };
     let staging = roots.managed.join("installer-staging").join(lifecycle::stamp().to_string());
@@ -110,6 +123,7 @@ fn run_action(roots: &Roots, settings: &Settings, action: &str, id: &str, app_di
     })();
     let _ = std::fs::remove_dir_all(&staging);
     outcome?;
+    retire_managed_copy(roots);
     mcp::refresh_launcher(roots, settings);
     entry["to_version"] = json!(bundle.version);
     Ok(())
@@ -145,12 +159,20 @@ fn remove_brain_with(roots: &Roots, id: &str, uninstaller: &Path, run: Runner, g
     match outcome { Ok(()) => lifecycle::finish(roots, entry, "applied", None), Err(e) => { let _ = lifecycle::finish(roots, entry, "failed", Some(&e)); Err(e) } }
 }
 
+/// Run an installer or uninstaller to its end. No pipes: Inno's second-stage processes outlive the first and would hold them.
 fn run_silently(exe: &Path, args: &[&str]) -> Result<(), String> {
     let mut command = Command::new(exe);
-    command.args(args);
+    command.args(args).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
     #[cfg(windows)] { use std::os::windows::process::CommandExt; command.creation_flags(0x08000000); } // CREATE_NO_WINDOW
-    let output = pump(command, None, TIMEOUT, 1 << 16).map_err(|e| e.message())?;
-    if output.success { Ok(()) } else { Err(String::from_utf8_lossy(&output.stderr).trim().chars().take(300).collect::<String>()) }
+    let mut child = command.spawn().map_err(|e| e.to_string())?;
+    let deadline = Instant::now() + TIMEOUT;
+    loop {
+        if let Some(status) = child.try_wait().map_err(|e| e.to_string())? {
+            return if status.success() { Ok(()) } else { Err(format!("çıkış kodu {}", status.code().map_or("?".to_string(), |c| c.to_string()))) };
+        }
+        if Instant::now() >= deadline { let _ = child.kill(); let _ = child.wait(); return Err("zaman aşımı".into()); }
+        std::thread::sleep(Duration::from_millis(100));
+    }
 }
 
 #[cfg(test)]
@@ -230,6 +252,23 @@ mod tests {
         assert_eq!(removed["status"], "applied");
         assert!(standalone::at(&app).is_none());
         assert_eq!(calls.borrow().last().unwrap(), "unins000.exe");
+    }
+
+    #[test]
+    fn an_update_moves_a_hub_managed_copy_of_an_older_hub_to_the_installer_layout() {
+        let (roots, app) = fixture("0.2.0");
+        let product = roots.managed.join("orchestrator");
+        fs::create_dir_all(product.join("versions").join("0.1.0")).unwrap();
+        fs::create_dir_all(product.join("mcp")).unwrap();
+        fs::write(product.join("current.json"), br#"{"version":"0.1.0","bundle_digest":""}"#).unwrap();
+        assert!(applies(&roots, "orchestrator", "update") && !applies(&roots, "orchestrator", "install") && !applies(&roots, "orchestrator", "uninstall"));
+        let calls = Rc::new(RefCell::new(Vec::new()));
+        let run = fake_run(&app, "0.2.0", &calls);
+        let applied = apply_with(&roots, &settings(), "update", "op-migrate-1", &app, &run, &ok).unwrap();
+        assert_eq!((applied["status"].as_str(), applied["from_version"].as_str()), (Some("applied"), Some("0.1.0")));
+        assert_eq!(standalone::at(&app).unwrap().version, "0.2.0");
+        assert!(lifecycle::read_current(&roots, "orchestrator").is_none() && !product.join("versions").exists());
+        assert!(product.join("mcp").is_dir(), "the MCP launcher folder stays: AI clients point at it");
     }
 
     #[test]

@@ -30,6 +30,10 @@ name = "lifecycle_e2e"
 path = "tests/lifecycle/lifecycle_e2e.rs"
 
 [[test]]
+name = "installer_e2e"
+path = "tests/lifecycle/installer_e2e.rs"
+
+[[test]]
 name = "cleanup_e2e"
 path = "tests/lifecycle/cleanup_e2e.rs"
 
