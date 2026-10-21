@@ -67,7 +67,7 @@ fn integrity_problems(d: &BrainDirs) -> Vec<String> {
 }
 
 pub fn status(roots: &Roots, d: &BrainDirs) -> Value {
-    let (bundles, skipped) = lifecycle::catalog_kind(roots, PRODUCT, true);
+    let (bundles, skipped) = lifecycle::catalog(roots, PRODUCT);
     let newest = bundles.first();
     let installed = is_installed(d);
     let version = if installed { installed_version(d) } else { None };
@@ -89,7 +89,7 @@ static STAGE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 /// Serialised: the wizard asks for plans on every toggle.
 pub fn stage(roots: &Roots) -> Result<(PathBuf, lifecycle::Bundle), LifecycleError> {
     let _guard = STAGE_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
-    let (bundles, _) = lifecycle::catalog_kind(roots, PRODUCT, true);
+    let (bundles, _) = lifecycle::catalog(roots, PRODUCT);
     let Some(bundle) = bundles.into_iter().next() else {
         return Err(err("CATALOG_UNAVAILABLE", "SecondBrain paketi henüz indirilmedi.", "İnternet bağlantınızı kontrol edip yeniden deneyin."));
     };
@@ -103,7 +103,7 @@ pub fn stage(roots: &Roots) -> Result<(PathBuf, lifecycle::Bundle), LifecycleErr
 pub fn engine_exe(roots: &Roots, d: &BrainDirs) -> Option<PathBuf> {
     // The cached, verified package serves read-only RPP calls (RESPECTED_APP_DIR points it at the real install), so no
     // Hub process ever runs from - and locks - the installed program folder.
-    let (bundles, _) = lifecycle::catalog_kind(roots, PRODUCT, true);
+    let (bundles, _) = lifecycle::catalog(roots, PRODUCT);
     let staged = bundles.first().map(|b| b.dir.join("payload").join("respectedbrain.exe")).filter(|p| p.is_file());
     if staged.is_some() { return staged; }
     if is_installed(d) { return Some(installed_exe(d)); }
@@ -285,7 +285,7 @@ fn run_action(roots: &Roots, d: &BrainDirs, settings: &Settings, action: &str, p
     let exe = if action == "uninstall" || action == "integrations" { stage(roots).map(|(dir, _)| dir.join("respectedbrain.exe")).unwrap_or_else(|_| installed_exe(d)) } else {
         let (dir, bundle) = stage(roots)?;
         args.extend(["--package".to_string(), dir.to_string_lossy().to_string()]);
-        // Beta: authenticity is the Hub's Ed25519 check (catalog_kind already refused anything not signed by a trusted key); the engine's own
+        // Beta: authenticity is the Hub's Ed25519 check (lifecycle::catalog already refused anything not signed by a trusted key); the engine's own
         // SLSA attestation needs a GitHub Actions/Sigstore pipeline we do not have, so requiring it makes a production install impossible.
         // shortcut: SLSA skipped, re-require it (restore `bundle.trust != "production"`) once releases are built by CI.
         let _ = &bundle;

@@ -103,7 +103,7 @@ fn parse_entry(node: &Value) -> Option<Entry> {
     valid.then(|| Entry { version, url, sha256, size, min_hub: node["min_hub"].as_str().map(str::to_string) })
 }
 
-/// Newest release of `name` (a product, "runtime" or "hub") this channel may install.
+/// Newest release of `name` (a product or "hub") this channel may install.
 pub fn entry(index: &Value, name: &str, channel: &str) -> Option<Entry> {
     let node = if name == "hub" { &index["hub"] } else { &index["products"][name] };
     let wanted: &[&str] = if channel == "beta" { &["stable", "beta"] } else { &["stable"] };
@@ -115,9 +115,7 @@ fn newer(candidate: &str, than: &str) -> bool { lifecycle::version_key(candidate
 /// Same release whatever the spelling (`0.1.0b1` from Python metadata, `0.1.0-beta.1` in the catalog).
 fn same(a: &str, b: &str) -> bool { lifecycle::version_key(a) == lifecycle::version_key(b) }
 
-fn kind_of(product: &str) -> bool { product == "secondbrain" } // SecondBrain ships as a whole distribution bundle
-
-fn cached_versions(roots: &Roots, product: &str) -> Vec<lifecycle::Bundle> { lifecycle::catalog_kind(roots, product, kind_of(product)).0 }
+fn cached_versions(roots: &Roots, product: &str) -> Vec<lifecycle::Bundle> { lifecycle::catalog(roots, product).0 }
 
 /// Make sure the catalog cache holds `product` at `want` (repair: the installed version) or else at the newest index release.
 /// Network is used only when that bundle is not cached yet.
@@ -167,7 +165,7 @@ fn unpack(roots: &Roots, product: &str, target: &Entry, archive: &Path) -> Resul
         let out = command.output().map_err(|e| bad(e.to_string()))?;
         if !out.status.success() { return Err(bad(String::from_utf8_lossy(&out.stderr).trim().chars().take(300).collect())); }
         let bundle = lifecycle::read_bundle(&scratch)?;
-        if bundle.product != product || !same(&bundle.version, &target.version) || (bundle.kind == "distribution") != kind_of(product) {
+        if bundle.product != product || !same(&bundle.version, &target.version) {
             return Err(bad("katalogdaki ürün/sürüm ile uyuşmuyor".into()));
         }
         let problems = lifecycle::tree_problems(&scratch.join("payload"), &bundle);

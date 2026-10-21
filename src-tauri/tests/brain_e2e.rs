@@ -46,12 +46,6 @@ fn holds(bytes: &[u8], secret: &str) -> bool {
         .any(|token| STANDARD.decode(token).map_or(false, |decoded| String::from_utf8_lossy(&decoded).contains(secret)))
 }
 
-fn dist(eco: &Path) -> PathBuf {
-    let built = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_brain_dist.py")).output().expect("python");
-    assert!(built.status.success(), "frozen SecondBrain build failed: {}", String::from_utf8_lossy(&built.stderr));
-    PathBuf::from(String::from_utf8_lossy(&built.stdout).lines().last().unwrap().trim())
-}
-
 #[test]
 fn secondbrain_lifecycle_runs_through_its_own_engine_with_safe_integrations() {
     let eco = ecosystem();
@@ -66,12 +60,11 @@ fn secondbrain_lifecycle_runs_through_its_own_engine_with_safe_integrations() {
     std::env::set_var("RESPECTED_HUB_BRAIN_APP_DIR", &dirs.app);
     std::env::set_var("RESPECTED_HUB_BRAIN_DATA_DIR", &dirs.data);
 
-    let source = dist(&eco);
-    let built = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_bundle.py")).args(["secondbrain-dist", "--dist"]).arg(&source).arg("--out").arg(&catalog.0).status().unwrap();
+    let built = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_bundle.py")).args(["secondbrain", "--out"]).arg(&catalog.0).status().unwrap();
     assert!(built.success());
     let roots = Roots { managed: managed.0.clone(), catalog: catalog.0.clone() };
     let settings = Settings { python: "no-python-needed".into(), orchestrator_root: eco.join("respected-orchestrator"), brain_root: work.0.join("none"),
-        data_root: work.0.join("orch"), brain_data_root: None, brain_exe: None, brain_app_dir: None };
+        data_root: work.0.join("orch"), brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None };
     let vault = work.0.join("Vault");
     let params = json!({ "vault_path": vault, "profile": { "USER_NAME": "Test" }, "desired": { "global": true, "mcp": true } });
 

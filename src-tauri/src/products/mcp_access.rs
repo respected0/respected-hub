@@ -1,7 +1,7 @@
 // Orchestrator MCP access in AI clients (Claude Code, Codex, ...): a stable launcher plus a journaled, approval-bound registration.
 // The Orchestrator itself edits the client configs (its `integrations.*` ops: ownership, foreign entries preserved, entry-level
 // rollback). The Hub only supplies the launcher, shows the plan, binds the apply to the approved plan digest and journals it.
-// Nothing here keeps the Hub running: the client starts the launcher (managed Python + Orchestrator) on its own.
+// Nothing here keeps the Hub running: the client starts the launcher (the packaged Orchestrator) on its own.
 use crate::lifecycle::{self, LifecycleError, Roots};
 use crate::{pump, rpp, Settings};
 use serde_json::{json, Value};
@@ -22,17 +22,28 @@ pub fn launcher_json(roots: &Roots) -> Value {
     if cfg!(windows) { json!({ "command": "cmd", "args": ["/c", path] }) } else { json!({ "command": path, "args": [] }) }
 }
 
+/// The program and leading arguments of the launcher: the packaged executable, or (development builds) the source on Python.
+fn engine_program(settings: &Settings) -> Option<(String, Vec<String>, Option<PathBuf>)> {
+    if let Some(exe) = settings.orchestrator_exe.as_ref().filter(|exe| exe.is_file()) { return Some((exe.to_string_lossy().to_string(), Vec::new(), None)); }
+    let source = settings.orchestrator_root.join("src");
+    if !source.join("respected_orchestrator").is_dir() { return None; }
+    Some((rpp::resolve_program(&settings.python), vec!["-m".into(), "respected_orchestrator".into()], Some(source)))
+}
+
 pub fn write_launcher(roots: &Roots, settings: &Settings) -> Result<PathBuf, LifecycleError> {
     let path = launcher_path(roots);
-    let python = rpp::resolve_program(&settings.python);
-    let source = settings.orchestrator_root.join("src");
-    if !source.join("respected_orchestrator").is_dir() { return Err(err("VERIFY_FAILED", "Orchestrator kurulu değil.", "Önce Orchestrator'ı Hub'dan kurun.")); }
+    let Some((program, lead, source)) = engine_program(settings) else { return Err(err("VERIFY_FAILED", "Orchestrator kurulu değil.", "Önce Orchestrator'ı Hub'dan kurun.")) };
+    let lead = lead.join(" ");
+    // the working folder is the launcher's own (never the program folder, which an update replaces); a source run must not
+    // import from it either (PYTHONSAFEPATH), so only the named source tree is on the path
     let text = if cfg!(windows) {
-        format!("@echo off\r\nrem Written by Respected Hub; rewritten when Orchestrator is installed, updated or repaired.\r\ncd /d \"%~dp0\"\r\nset \"PYTHONSAFEPATH=1\"\r\nset \"PYTHONPATH={}\"\r\nset \"PYTHONDONTWRITEBYTECODE=1\"\r\n\"{}\" -m respected_orchestrator --data-root \"{}\" mcp\r\n",
-            source.display(), python, settings.data_root.display())
+        let python = source.map(|s| format!("set \"PYTHONSAFEPATH=1\"\r\nset \"PYTHONPATH={}\"\r\nset \"PYTHONDONTWRITEBYTECODE=1\"\r\n", s.display())).unwrap_or_default();
+        format!("@echo off\r\nrem Written by Respected Hub; rewritten when Orchestrator is installed, updated or repaired.\r\ncd /d \"%~dp0\"\r\n{python}\"{program}\" {lead} --data-root \"{}\" mcp\r\n",
+            settings.data_root.display())
     } else {
-        format!("#!/bin/sh\n# Written by Respected Hub; rewritten when Orchestrator is installed, updated or repaired.\ncd \"$(dirname \"$0\")\" || exit 1\nPYTHONSAFEPATH=1 PYTHONPATH='{}' PYTHONDONTWRITEBYTECODE=1 exec '{}' -m respected_orchestrator --data-root '{}' mcp\n",
-            source.display(), python, settings.data_root.display())
+        let python = source.map(|s| format!("PYTHONSAFEPATH=1 PYTHONPATH='{}' PYTHONDONTWRITEBYTECODE=1 ", s.display())).unwrap_or_default();
+        format!("#!/bin/sh\n# Written by Respected Hub; rewritten when Orchestrator is installed, updated or repaired.\ncd \"$(dirname \"$0\")\" || exit 1\n{python}exec '{program}' {lead} --data-root '{}' mcp\n",
+            settings.data_root.display())
     };
     let io = |e: std::io::Error| err("INTERNAL", format!("Başlatıcı yazılamadı: {e}"), "Hub veri klasörüne yazma iznini denetleyin.");
     fs::create_dir_all(path.parent().unwrap()).map_err(io)?;
@@ -121,8 +132,7 @@ pub fn rollback(roots: &Roots, settings: &Settings, id: &str) -> Result<Value, L
 pub fn refresh_launcher(roots: &Roots, settings: &Settings) {
     if !launcher_path(roots).is_file() { return; }
     let mut fresh = settings.clone();
-    let mut brain = fresh.brain_root.clone();
-    lifecycle::overlay_roots(roots, &mut fresh.orchestrator_root, &mut brain);
+    if let Some(exe) = lifecycle::installed_launcher(roots, PRODUCT, crate::ORCHESTRATOR_EXE) { fresh.orchestrator_exe = Some(exe); }
     let _ = write_launcher(roots, &fresh);
 }
 

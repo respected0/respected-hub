@@ -22,7 +22,7 @@ download; it installs, updates, repairs and removes the products, which then run
 |---|---|
 | Catalog URL | `https://github.com/respected0/respected-hub/releases/download/catalog/catalog.json` (+ `.sig`) |
 | Catalog signature | Ed25519 release key over `b"respected-catalog-v1\n"` + exact file bytes; `.sig` = `<key_id> <base64>` |
-| Catalog schema 1 | `{schema, sequence, published, hub:{stable,beta}, products:{secondbrain,orchestrator,runtime:{stable,beta}}}`; a release = `{version,url,sha256,size,min_hub?}`; a lower `sequence` than the cached one is refused |
+| Catalog schema 1 | `{schema, sequence, published, hub:{stable,beta}, products:{secondbrain,orchestrator:{stable,beta}}}`; a release = `{version,url,sha256,size,min_hub?}`; a lower `sequence` than the cached one is refused |
 | Archive | zip of one signed bundle folder (`bundle.json` + `payload/`) at its root; bundle signature as before (`respected-bundle-v1`) |
 | Versions | SemVer order (`0.1.0-beta.1 < 0.1.0-rc.1 < 0.1.0 < 0.1.1-beta.1`), PEP 440 spellings equal (`0.1.0b1`); `lifecycle::version_key` |
 | Channels | `beta` (default; sees beta and stable) and `stable`; stored in `managed\hub-preferences.json` |
@@ -39,7 +39,7 @@ download; it installs, updates, repairs and removes the products, which then run
 * **A newer Hub does the update work**, so a bug in an old Hub's update code is fixed by the next release; `min_hub` makes
   an old Hub update itself before a product that needs it.
 * **Orchestrator stays under `RespectedHub\managed`** for the beta: it runs without the Hub (the MCP launcher calls the
-  managed Python directly) and can be moved later by a newer Hub that rewrites the launcher and the MCP entries it owns.
+  managed `respected-orchestrator.exe` directly) and can be moved later by a newer Hub that rewrites the launcher and the MCP entries it owns.
 
 ## Code
 `src-tauri/src/catalog.rs` (index, channels, download, cache, Hub self-update), `registration.rs` (Installed apps,

@@ -26,9 +26,6 @@ export default function MyApps({ eco, go, ask, onAsked }: { eco: Ecosystem; go: 
           <button className={needsSetup ? '' : 'cta'} onClick={() => go({ app: app.id, page: 'overview' })}>Çalışma alanını aç</button>
           <button onClick={() => go({ app: app.id, page: 'settings' })}>Ayarlar</button>
         </div>}</article>; })}</div>
-    <section className="lib-item sys-component" aria-label="Sistem bileşenleri"><div className="lib-body"><h2>Python çalışma ortamı</h2><p>Ürünler Hub'ın kendi Python'unu kullanır; bilgisayarında Python kurulu olması gerekmez. İlk ürün kurulumunda otomatik kurulur.</p>
-      <LifecycleControls name="Python çalışma ortamı" lc={eco.lifecycle?.products.find(item => item?.product === 'runtime') ?? null} onChanged={eco.refresh}
-        autoAction={ask?.product === 'runtime' ? ask.action : undefined} onAutoDone={onAsked} /></div></section>
     <div className="truth-bar"><Icon name="info" /><span>Uygulamalar GitHub'daki imzalı Respected kataloğundan indirilir, doğrulanır ve Hub'ın yönettiği klasöre kurulur; verileriniz ve notlarınız ayrı kalır. Her uygulama Windows Ayarlar › Uygulamalar listesinde de ayrı görünür; oradan kaldırabilir veya değiştirebilirsiniz.{eco.lifecycle && <> Yönetilen klasör: <code>{eco.lifecycle.managed_root}</code></>}</span></div>
   </div>;
 }

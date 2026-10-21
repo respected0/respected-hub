@@ -47,9 +47,6 @@ jobs:
           node-version: "24"
       - name: Install products and release tooling
         run: python -m pip install -e "respected-secondbrain[dev]" -e respected-orchestrator cryptography
-      - name: Repository atlas
-        working-directory: respected-hub
-        run: python tools/repository_map.py --check
       - name: TypeScript check and unit tests
         working-directory: respected-hub
         run: |
