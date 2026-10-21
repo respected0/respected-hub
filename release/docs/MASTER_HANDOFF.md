@@ -7,9 +7,9 @@ Kurulum düzeni: `INSTALL_LAYOUT.md`. Sıfırdan derleme: `../BUILD_FROM_SCRATCH
 
 | Ürün | Dağıtım | Testler |
 |---|---|---|
-| Orchestrator | `tools/build_dist.py` ile PyInstaller onedir (`respected-orchestrator.exe`, Python gerekmez) | `python -m unittest discover -s tests -t .` |
-| SecondBrain | `tools/build_dist.py` ile dondurulmuş dağıtım klasörü (`respectedbrain.exe`) | `python -m unittest discover -s tests -t .` |
-| Hub | Tauri uygulaması; iki ürünü imzalı katalogdan kurar (yalnızca "distribution" paketleri) | `npm run check`, `cargo test --manifest-path src-tauri/Cargo.toml`, `python release/tools/accept_hub.py` |
+| Orchestrator | `packaging/build_dist.py` ile PyInstaller onedir (`respected-orchestrator.exe`, Python gerekmez) | `python -m unittest discover -s tests -t .` |
+| SecondBrain | `packaging/build_dist.py` ile dondurulmuş dağıtım klasörü (`respectedbrain.exe`) | `python -m unittest discover -s tests -t .` |
+| Hub | Tauri uygulaması; iki ürünü imzalı katalogdan kurar (yalnızca "distribution" paketleri) | `npm run check`, `cargo test --manifest-path src-tauri/Cargo.toml`, `python release/tools/acceptance/accept_hub.py` |
 
 Üç depoda GitHub Actions CI vardır (windows-latest). Hub CI'ı kardeş depoları yan yana çeker.
 
@@ -25,7 +25,7 @@ Kurulum düzeni: `INSTALL_LAYOUT.md`. Sıfırdan derleme: `../BUILD_FROM_SCRATCH
 * Üretim anahtarı ile imzalama, temiz Windows makinesinde ilk kurulum, Hub kendi kendine güncelleme, Installed-apps
   kaldır/değiştir. Anahtar kasası ve parola kullanıcıdadır; depoda anahtar malzemesi yoktur.
 * macOS/Linux doğrulanmadı.
-* Yerel yayın sırası: `release/tools/publish_release.py build|catalog|upload` (yükleme yalnızca kullanıcı onayıyla).
+* Yerel yayın sırası: `release/tools/build/publish_release.py build|catalog|upload` (yükleme yalnızca kullanıcı onayıyla).
 
 ## Çalışma kuralları
 

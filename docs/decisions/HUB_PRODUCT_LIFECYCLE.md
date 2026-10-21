@@ -6,7 +6,7 @@ Status: implemented; Windows only. Bundle signing: `BUNDLE_TRUST.md`; download a
 
 1. **One kind of package.** Every product ships as its packaged (frozen) distribution: `bundle.json` + `payload/` (the
    whole program folder). `bundle.json` lists every file with size and sha256 and a digest over that list and carries an
-   Ed25519 signature (`release/tools/build_bundle.py <product>` freezes the product with its own build tool and wraps
+   Ed25519 signature (`release/tools/build/build_bundle.py <product>` freezes the product with its own build tool and wraps
    it). No product needs Python on the machine.
 2. **Orchestrator: a Hub-managed copy.** Verified staging copy -> per-file hashes -> the product's own RPP
    `manifest`/`health` from `respected-orchestrator.exe` on a scratch data root -> the product records the install from
@@ -24,7 +24,7 @@ Status: implemented; Windows only. Bundle signing: `BUNDLE_TRUST.md`; download a
    `repair-needed` in both.
 6. **Bridge hardening.** The webview reaches only read-only lifecycle ops through `rpp_request`
    (`forbidden_lifecycle_call`); everything that writes goes through journaled `lifecycle_*` commands.
-7. **Distribution of the Hub.** `release/tools/build_hub_installer.py` compiles `packaging/windows/hub_setup.iss` with
+7. **Distribution of the Hub.** `release/tools/build/build_hub_installer.py` compiles `packaging/windows/hub_setup.iss` with
    Inno Setup (per-user, no admin). The installer carries no products; they come from the signed catalog.
 
 ## Known limits

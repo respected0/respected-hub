@@ -34,5 +34,5 @@ export function fromCurrent(current: Record<string, unknown>): Selection {
 }
 
 export const toggle = (list: string[], id: string, on: boolean) => on ? [...new Set([...list, id])] : list.filter(item => item !== id);
-export const clientLabel = (id: string) => CLIENTS.find(client => client.id === id)?.label ?? id;
+const clientLabel = (id: string) => CLIENTS.find(client => client.id === id)?.label ?? id;
 export const summarize = (list: string[]) => list.length ? list.map(clientLabel).join(', ') : 'Hiçbiri';

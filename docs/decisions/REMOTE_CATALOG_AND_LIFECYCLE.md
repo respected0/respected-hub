@@ -42,7 +42,7 @@ download; it installs, updates, repairs and removes the products, which then run
   managed `respected-orchestrator.exe` directly) and can be moved later by a newer Hub that rewrites the launcher and the MCP entries it owns.
 
 ## Code
-`src-tauri/src/catalog.rs` (index, channels, download, cache, Hub self-update), `registration.rs` (Installed apps,
-maintenance copy), `lifecycle.rs` (`version_key`, no previous version kept), `lib.rs` (wiring, intents, startup sweep),
-`packaging/windows/hub_setup.iss` (no catalog inside, kept-products path, relaunch), `release/tools/publish_release.py`
-(archives, catalog, signature, `gh` upload). Proof: `tests/remote_catalog_e2e.rs`, unit tests in `catalog.rs`/`lifecycle.rs`.
+`src-tauri/src/lifecycle/catalog.rs` (index, channels, download, cache, Hub self-update), `hub/registration.rs` (Installed apps,
+maintenance copy), `lifecycle/mod.rs` (`version_key`, no previous version kept), `hub/` (orchestration, intents, startup) and `commands/` (Tauri handlers),
+`packaging/windows/hub_setup.iss` (no catalog inside, kept-products path, relaunch), `release/tools/build/publish_release.py`
+(archives, catalog, signature, `gh` upload). Proof: `src-tauri/tests/lifecycle/remote_catalog_e2e.rs`, unit tests in `lifecycle/catalog.rs` and `lifecycle/mod.rs`.

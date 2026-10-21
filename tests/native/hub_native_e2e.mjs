@@ -1,6 +1,6 @@
 // Real desktop end-to-end drive of a built Hub (dev build or the installed one) through WebView2's DevTools port.
 //   node tests/native/hub_native_e2e.mjs <hub.exe> [--remote-catalog] [--report DIR]
-// --remote-catalog: products come through the download path (a signed file:// catalog made by release/tools/publish_release.py).
+// --remote-catalog: products come through the download path (a signed file:// catalog made by release/tools/build/publish_release.py).
 // Everything runs on disposable roots and a FAKE user home (a foreign ~/.claude.json to be preserved). The
 // Hub is started with Python removed from PATH, so passing proves products run without a system Python.
 import { spawn, spawnSync } from 'node:child_process';
@@ -28,15 +28,15 @@ mkdirSync(join(dirs.home, '.gemini'), { recursive: true });
 const foreign = '{"mcpServers":{"someone-elses":{"command":"x","args":[]}},"theme":"dark"}';
 writeFileSync(join(dirs.home, '.claude.json'), foreign);
 
-// Guard: the run must not change the REAL AI-client configuration (tools/real_env_guard.py compares before and after).
+// Guard: the run must not change the REAL AI-client configuration (release/tools/acceptance/real_env_guard.py compares before and after).
 const guardFile = join(work, 'real-env-before.json');
-spawnSync('python', ['-B', join(tools, 'real_env_guard.py'), 'snapshot', guardFile], { encoding: 'utf8' });
+spawnSync('python', ['-B', join(tools, 'acceptance', 'real_env_guard.py'), 'snapshot', guardFile], { encoding: 'utf8' });
 const py = (...a) => { const r = spawnSync('python', ['-B', ...a], { encoding: 'utf8' }); if (r.status !== 0) { console.error(r.stderr); process.exit(2); } return r.stdout.trim(); };
 // both products as their packaged (frozen) builds, exactly as a release ships them
-py(join(tools, 'build_bundle.py'), 'orchestrator', '--out', dirs.catalog);
-py(join(tools, 'build_bundle.py'), 'secondbrain', '--out', dirs.catalog);
+py(join(tools, 'build', 'build_bundle.py'), 'orchestrator', '--out', dirs.catalog);
+py(join(tools, 'build', 'build_bundle.py'), 'secondbrain', '--out', dirs.catalog);
 const served = join(work, 'served');
-if (remote) py(join(tools, 'publish_release.py'), 'local-catalog', ...readdirSync(dirs.catalog).flatMap(name => ['--bundle', join(dirs.catalog, name)]), '--out', served);
+if (remote) py(join(tools, 'build', 'publish_release.py'), 'local-catalog', ...readdirSync(dirs.catalog).flatMap(name => ['--bundle', join(dirs.catalog, name)]), '--out', served);
 
 const port = 9333;
 const pathWithoutPython = process.env.PATH.split(delimiter).filter(p => !/python|WindowsApps/i.test(p)).join(delimiter);
@@ -311,7 +311,7 @@ try {
 } finally {
   try { ws?.close(); } catch { /* ignore */ }
   child.kill();
-  const guard = spawnSync('python', ['-B', join(tools, 'real_env_guard.py'), 'verify', guardFile], { encoding: 'utf8' });
+  const guard = spawnSync('python', ['-B', join(tools, 'acceptance', 'real_env_guard.py'), 'verify', guardFile], { encoding: 'utf8' });
   check('real AI client configuration untouched by this run', guard.status === 0, (guard.stdout ?? '').trim().slice(0, 300));
   spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
   await sleep(2000);

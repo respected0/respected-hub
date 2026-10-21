@@ -80,3 +80,41 @@ pub fn save_settings(app: tauri::AppHandle, settings: Settings) -> Result<(), St
     fs::write(&temporary, serde_json::to_vec_pretty(&settings).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
     fs::rename(temporary, file).map_err(|e| e.to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn settings(python: &str, orchestrator_root: PathBuf, data_root: PathBuf) -> Settings {
+        Settings { python: python.into(), orchestrator_root, brain_root: PathBuf::new(), data_root, brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None }
+    }
+
+    #[test]
+    fn default_data_root_prefers_absolute_env() {
+        let fallback = std::env::temp_dir().join("hub-fallback");
+        let custom = std::env::temp_dir().join("hub-custom");
+        assert_eq!(default_data_root(Some(custom.to_str().unwrap()), fallback.clone()), custom);
+    }
+
+    #[test]
+    fn default_data_root_ignores_relative_or_empty_or_missing() {
+        let fallback = std::env::temp_dir().join("hub-fallback");
+        assert_eq!(default_data_root(Some("relative/data"), fallback.clone()), fallback);
+        assert_eq!(default_data_root(Some("   "), fallback.clone()), fallback);
+        assert_eq!(default_data_root(None, fallback.clone()), fallback);
+    }
+
+    #[test]
+    fn validate_refuses_relative_paths_blank_python_and_a_missing_source() {
+        let root = std::env::temp_dir().join(format!("hub-settings-{}", std::process::id()));
+        let entry = root.join("src/respected_orchestrator");
+        fs::create_dir_all(&entry).unwrap();
+        assert!(validate(&settings("python", root.clone(), root.clone())).is_err(), "no __main__.py yet");
+        fs::write(entry.join("__main__.py"), "").unwrap();
+        assert!(validate(&settings("python", root.clone(), root.clone())).is_ok());
+        assert!(validate(&settings("  ", root.clone(), root.clone())).is_err());
+        assert!(validate(&settings("python", PathBuf::from("relative"), root.clone())).is_err());
+        assert!(validate(&settings("python", root.clone(), PathBuf::from("relative"))).is_err());
+        fs::remove_dir_all(&root).unwrap();
+    }
+}

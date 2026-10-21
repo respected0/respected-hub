@@ -17,6 +17,8 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [assistant, setAssistant] = useState('');
+  const [bio, setBio] = useState('');
+  const [osName, setOsName] = useState('');
   const [parent, setParent] = useState('');
   const [vaultName, setVaultName] = useState('SecondBrain');
   const [captureMode, setCaptureMode] = useState<'auto' | 'manual'>('auto');
@@ -30,9 +32,7 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
 
   const separator = parent.includes('\\') ? '\\' : '/';
   const vaultPath = parent && vaultName.trim() ? `${parent.replace(/[\\/]+$/, '')}${separator}${vaultName.trim()}` : '';
-  const profile: Record<string, string> = {};
-  if (name.trim()) profile.USER_NAME = name.trim();
-  if (assistant.trim()) profile.COMPANION = assistant.trim();
+  const profile = Object.fromEntries(Object.entries({ USER_NAME: name, COMPANION: assistant, USER_BIO: bio, OS_NAME: osName }).map(([key, value]) => [key, value.trim()]).filter(([, value]) => value));
   const desired = toDesired(selection);
   const params = { vault_path: vaultPath, profile, desired };
   const detected = plan?.integrations?.clients ? Object.fromEntries(plan.integrations.clients.map(item => [item.id, item.detected])) : null;
@@ -49,7 +49,7 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
     });
     return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step >= 2, vaultPath, JSON.stringify(desired), name, assistant]);
+  }, [step >= 2, vaultPath, JSON.stringify(desired), JSON.stringify(profile)]);
 
   async function choose() {
     try { const picked = await open({ directory: true, multiple: false, title: 'Kasanın oluşturulacağı klasörü seç' }); if (typeof picked === 'string') setParent(picked); }
@@ -81,7 +81,9 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
     {step === 0 && <div className="step-body"><h2>SecondBrain'i kuralım</h2>
       <p>Hub, SecondBrain'in kendi kurucusunu doğrulanmış pakette çalıştırır: program, not kasan ve istediğin AI araç bağlantıları kurulur. Hiçbir adım senin onayın olmadan uygulanmaz.</p>
       <label>Adın <small>İsteğe bağlı. Kasa şablonundaki kişiselleştirme için kullanılır.</small><input value={name} maxLength={40} placeholder="ör. Ayşe" onChange={event => setName(event.target.value)} /></label>
-      <label>Asistanının adı <small>İsteğe bağlı. Kasadaki asistan kimliği notlarına yazılır (ör. Jarvis); sonradan o notlardan değiştirilebilir.</small><input value={assistant} maxLength={40} placeholder="ör. Jarvis" onChange={event => setAssistant(event.target.value)} /></label></div>}
+      <label>Asistanının adı <small>İsteğe bağlı. Kasadaki asistan kimliği notlarına yazılır (ör. Jarvis); sonradan o notlardan değiştirilebilir.</small><input value={assistant} maxLength={40} placeholder="ör. Jarvis" onChange={event => setAssistant(event.target.value)} /></label>
+      <label>Kısa tanıtım <small>İsteğe bağlı. Kasa şablonunda seni tanıtan satıra yazılır.</small><input value={bio} maxLength={200} placeholder="ör. Yazılım geliştirici" onChange={event => setBio(event.target.value)} /></label>
+      <label>Hafıza sisteminin adı <small>İsteğe bağlı. Boşsa kasa klasörünün adı kullanılır.</small><input value={osName} maxLength={60} placeholder="ör. SecondBrain" onChange={event => setOsName(event.target.value)} /></label></div>}
     {step === 1 && <div className="step-body vault-create"><h2>Hafıza</h2><p className="muted">Boş veya yeni bir klasör seç; var olan notların üzerine yazılmaz.</p>
       <label>Klasör<input value={parent} placeholder="ör. C:\Kullanıcı\Belgeler" onChange={event => setParent(event.target.value)} /></label>
       <div className="actions"><button type="button" onClick={() => void choose()}>Gözat…</button></div>

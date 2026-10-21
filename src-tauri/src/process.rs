@@ -62,3 +62,31 @@ pub(crate) fn pump(mut command: Command, request: Option<Vec<u8>>, timeout: Dura
     if bytes.len() > max_output { return Err(PumpError::TooLarge); }
     Ok(PumpOutput { stdout: bytes, stderr: error_bytes, success: status.success() })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::process::Stdio;
+
+    fn python(code: &str) -> Command { let mut command = Command::new("python"); command.args(["-c", code]).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()); command }
+
+    #[test]
+    fn stdin_round_trips_and_exit_status_is_reported() {
+        let out = pump(python("import sys; sys.stdout.write(sys.stdin.read().upper())"), Some(b"abc".to_vec()), Duration::from_secs(20), 1024).ok().unwrap();
+        assert!(out.success && out.stdout == b"ABC");
+    }
+
+    #[test]
+    fn a_child_that_never_reads_a_large_request_is_stopped_by_the_time_limit() {
+        let started = Instant::now();
+        let result = pump(python("import time; time.sleep(60)"), Some(vec![b'x'; 4 * 1024 * 1024]), Duration::from_secs(2), 1024);
+        assert!(matches!(result, Err(PumpError::Timeout)));
+        assert!(started.elapsed() < Duration::from_secs(15), "the time limit started late");
+    }
+
+    #[test]
+    fn output_over_the_limit_is_refused() {
+        let result = pump(python("print('x' * 5000)"), None, Duration::from_secs(20), 100);
+        assert!(matches!(result, Err(PumpError::TooLarge)));
+    }
+}

@@ -18,6 +18,6 @@ export default function Discover({ eco, go }: { eco: Ecosystem; go: Go }) {
               <span className="pill">{lc ? STATE_LABEL[lc.install_state] : 'Durum okunamadı'}</span>
               {lc?.available ? <span className="pill">Paket v{lc.available.version}{lc.available.trust === 'production' ? ' · imzalı' : lc.available.signed ? ' · geliştirme imzası (yerel)' : ' · imzasız yerel'}</span> : <span className="pill">Pakette yok</span>}
             </span></span></button>; })}</div></section>
-    <div className="truth-bar"><Icon name="shield" /><span>Uzak, imzalı ürün kataloğu henüz yok: bu yüzden internetten ürün önerilmez veya indirilmez. Paketler yerel olarak üretilir (<code>tools/build_bundle.py</code>), her dosyanın özeti kurulumdan önce ve sonra doğrulanır.</span></div>
+    <div className="truth-bar"><Icon name="shield" /><span>Uzak, imzalı ürün kataloğu henüz yok: bu yüzden internetten ürün önerilmez veya indirilmez. Paketler yerel olarak üretilir (<code>release/tools/build/build_bundle.py</code>), her dosyanın özeti kurulumdan önce ve sonra doğrulanır.</span></div>
   </div>;
 }

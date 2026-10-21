@@ -22,7 +22,7 @@ impl Trust {
 }
 
 /// Public release keys, one `key_id base64-public-key` per line, compiled in from release-keys.txt (empty until the release
-/// owner runs tools/release_keys.py). Never put a private key there.
+/// owner runs release/tools/signing/release_keys.py). Never put a private key there.
 const PRODUCTION_KEYS: &str = include_str!("../release-keys.txt");
 
 const DOMAIN: &str = "respected-bundle-v1\n";
@@ -55,7 +55,7 @@ fn dev_keys() -> Vec<(String, Vec<u8>)> {
     candidates.iter().find_map(|p| std::fs::read_to_string(p).ok()).map(|t| parse_key_lines(&t)).unwrap_or_default()
 }
 
-/// The exact bytes that are signed; must match tools/bundle_signing.py `statement`.
+/// The exact bytes that are signed; must match release/tools/signing/bundle_signing.py `statement`.
 pub fn statement(doc: &Value, product: &str, kind: &str, version: &str, digest: &str) -> Vec<u8> {
     let mut body = Map::new(); // sorted keys, compact: identical to json.dumps(sort_keys=True, separators=(",", ":"))
     body.insert("schema".into(), doc["schema"].clone());
@@ -105,7 +105,7 @@ pub fn verify_detached(message: &[u8], signature_line: &str) -> Result<Trust, St
 mod tests {
     use super::*;
 
-    // Produced by tools/bundle_signing.py with the private key [7; 32]: proves both implementations sign the same bytes.
+    // Produced by release/tools/signing/bundle_signing.py with the private key [7; 32]: proves both implementations sign the same bytes.
     const PUB: &str = "6kpsY+KcUgq+9VB7Ey7F+ZVHdq6+vnuSQh7qaRRG0iw=";
     const SIG: &str = "winWeIImDdUOidM9i2+2OBsy1StDQfbA60AT+CkMESP7YC6Q9RT39bVRRrrLCDac1K+v/dYyqY67zesIVqB+Cw==";
     const DIGEST: &str = "abababababababababababababababababababababababababababababababab";
