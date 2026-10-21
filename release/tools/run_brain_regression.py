@@ -6,9 +6,6 @@ import real_env_guard  # noqa: E402
 # The whole suite runs with an empty sandbox profile (USERPROFILE/HOME/APPDATA), so no test can reach the real AI-client
 # configuration by accident; the guard additionally proves the real files are unchanged afterwards.
 _before = real_env_guard.snapshot()
-_inno = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "Inno Setup 6")  # installer tests find ISCC.exe through the real profile
-if os.path.isdir(_inno):
-    os.environ["PATH"] = os.environ["PATH"] + os.pathsep + _inno
 _sandbox = real_env_guard.sandbox_home()
 os.environ.update(real_env_guard.sandbox_env(_sandbox))
 

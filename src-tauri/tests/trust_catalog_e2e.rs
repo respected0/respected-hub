@@ -27,7 +27,7 @@ fn python(args: &[&str]) {
 /// Fresh signed orchestrator bundle in its own catalog; returns (catalog, bundle dir).
 fn fresh() -> (Temp, PathBuf) {
     let catalog = Temp::new("catalog");
-    python(&[eco().join("tools/build_bundle.py").to_str().unwrap(), "orchestrator", "--out", catalog.0.to_str().unwrap()]);
+    python(&[eco().join("respected-hub/release/tools/build_bundle.py").to_str().unwrap(), "orchestrator", "--out", catalog.0.to_str().unwrap()]);
     let bundle = catalog.0.read_dir().unwrap().flatten().next().unwrap().path();
     (catalog, bundle)
 }
@@ -92,9 +92,9 @@ fn only_a_bundle_signed_by_a_trusted_key_is_offered() {
     python(&["-c", &format!("import base64,sys; sys.path.insert(0, r'{}'); \
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey as K; from cryptography.hazmat.primitives import serialization as s; \
         open(r'{}','w').write(base64.b64encode(K.generate().private_bytes(s.Encoding.Raw, s.PrivateFormat.Raw, s.NoEncryption())).decode())",
-        eco().join("tools").display(), key.display())]);
+        eco().join("respected-hub").join("release").join("tools").display(), key.display())]);
     std::fs::write(bundle.join("bundle.json"), serde_json::to_vec(&original).unwrap()).unwrap();
-    python(&[eco().join("tools/bundle_signing.py").to_str().unwrap(), "sign", bundle.to_str().unwrap(), "--key", key.to_str().unwrap()]);
+    python(&[eco().join("respected-hub/release/tools/bundle_signing.py").to_str().unwrap(), "sign", bundle.to_str().unwrap(), "--key", key.to_str().unwrap()]);
     let (count, skipped) = offered(&catalog);
     assert_eq!(count, 0, "attacker-signed bundle must not be offered");
     assert!(skipped[0].contains("güvenilir değil"), "{skipped:?}");

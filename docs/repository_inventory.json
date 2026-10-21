@@ -12,7 +12,7 @@
       "relationships": [
         "Yeni kaynak dosyaları atlas kapısından kaçırılmaz."
       ],
-      "review_sha256": "c83d609a292d0d3faf7d167bfa453a93d132de476e720ed73c48ce8fb52dea9a"
+      "review_sha256": "9d66fae9d95c87402a927d70c3a62c42150c78b6c7eec947ebc89469abbc1f1e"
     },
     {
       "path": "AGENTS.md",
@@ -161,6 +161,15 @@
       "review_sha256": "ee94844cab43a31b8c2db03274161e5f23eab6402150f023a9982da692a37043"
     },
     {
+      "path": "docs/decisions/REMOTE_CATALOG_AND_LIFECYCLE.md",
+      "role": "Karar kaydı",
+      "purpose": "Başlatıcı modeli (2026-10-21): ürünler GitHub Releases'teki imzalı katalogdan indirilir, güncellemeler sorularak önerilir, beta/kararlı kanallar, Windows Yüklü uygulamalar kayıtları (Kaldır/Değiştir), Hub kaldırılınca ürünlerin bakım kopyasıyla çalışmaya devam etmesi; ilk sürümle donan sözleşmeler (katalog URL'si, imza alanı, şema, sürüm sırası, kayıt defteri anahtarları, Hub argümanları, klasörler).",
+      "relationships": [
+        "src-tauri/src/catalog.rs, registration.rs, lifecycle.rs ve packaging/windows/hub_setup.iss bu kararı uygular; release/tools/publish_release.py yayın tarafıdır."
+      ],
+      "review_sha256": "c6de8b021a2eb3c4bb9f0965b5a7548b591f6c66e65f083a3ca6e1a6491d048b"
+    },
+    {
       "path": "docs/records/2026-10-ux-track-b.md",
       "role": "Çalışma kaydı",
       "purpose": "2026-10-12 tarihli Track B premium arayüz entegrasyonunun durumunu kaydeder: tasarım sistemi, kabuk, Home/My Apps/Discover/Activity yeniden yapımı ve yapılmayan işler (yönetimli kurulum UI'ı, imzalı katalog, rol-model düzenleme). Bilinen Rust test hatasını (RPP 1.0/1.1 uyuşmazlığı) ve envanterdeki eski kayıtları not eder.",
@@ -195,26 +204,323 @@
       "relationships": [
         "npm ci bu kilidi kullanır; global araç kurulumu değildir."
       ],
-      "review_sha256": "11e5e4c3abfdbf364a3a19e0fca92714728792c7c567cb342838bb462f708759"
+      "review_sha256": "b107f3d50a3483785b675905aa1fe33e919c5b55adbc68f313b3762f57ecc7aa"
     },
     {
       "path": "package.json",
       "role": "Frontend paket tarifi",
-      "purpose": "Respected Hub kimliği ve local dev/build/test/Tauri bağımlılıklarını tanımlar.",
+      "purpose": "Respected Hub kimliği ve local dev/build/test/Tauri bağımlılıklarını tanımlar. Sürüm 0.1.0-beta.1.",
       "relationships": [
         "npm local node_modules ile çalışır; ürün public CLI eklemez."
       ],
-      "review_sha256": "713c276ca3506a8222f2741548479fc12bb3ed209ac4f3b4deb21549e11aacba"
+      "review_sha256": "2a243e4a7be6a2a8a3eccaca0488246b5db3cdbba77ccd3d8aaaeee2eeb3aacd"
     },
     {
       "path": "packaging/windows/hub_setup.iss",
       "role": "Windows paket tarifi",
-      "purpose": "Inno Setup betiği: yönetici hakkı gerektirmeyen, kullanıcı başına Windows kurulum paketi (RespectedHub-Windows-Setup) üretir; respected-hub.exe ve catalog klasörünü kurar, Başlat menüsü kısayolu ekler. Kaldırma yalnızca kendi koyduğu dosyaları siler; Hub ile kurulan ürünlere, verilerine ve notlara dokunmaz. Kurulumda önce {app}/catalog silinir (eski/yeni derleme paketleri güncelleme gibi görünmesin); varsa dev-trust.pub (yalnızca geliştirme kurulumları) exe yanına kopyalanır. Kaldırma sırasında 'ürünler de kaldırılsın mı' sorulur (varsayılan hayır; sessiz kaldırmada /REMOVEPRODUCTS=1); evet ise CurUninstallStepChanged ile respected-hub.exe --uninstall-products çalıştırır. Dosya UTF-8 BOM ile kaydedilir. Kurulum öncesi beta/SmartScreen bildirimi gösterir ve WebView2 varlığını denetler (indirme yapmaz, uyarır).",
+      "purpose": "Inno Setup betiği: yönetici hakkı gerektirmeyen, kullanıcı başına Windows kurulum paketi (RespectedHub-Windows-Setup) üretir; respected-hub.exe'yi kurar, Başlat menüsü kısayolu ekler. Kaldırma yalnızca kendi koyduğu dosyaları siler; Hub ile kurulan ürünlere, verilerine ve notlara dokunmaz. varsa dev-trust.pub (yalnızca geliştirme kurulumları) exe yanına kopyalanır. Kaldırma sırasında 'ürünler de kaldırılsın mı' sorulur (varsayılan hayır; sessiz kaldırmada /REMOVEPRODUCTS=1); evet ise CurUninstallStepChanged ile respected-hub.exe --uninstall-products çalıştırır. Dosya UTF-8 BOM ile kaydedilir. Kurulum öncesi beta/SmartScreen bildirimi gösterir ve WebView2 varlığını denetler (indirme yapmaz, uyarır). 2026-10-21: kurulumda ürün kataloğu yoktur (Hub indirir); eski {app}\\catalog silinir; ürün sorusu yalnızca Yüklü uygulamalar kaydı varken sorulur, Hayır seçilirse exe maintenance klasörüne kopyalanıp --sync-registrations çalıştırılır; /RELAUNCH=1 ile sessiz güncellemeden sonra Hub yeniden açılır.",
       "relationships": [
-        "tools/build_hub_installer.py staging ve çıktı dizinlerini vererek bu betiği derler.",
-        "HUB_PRODUCT_LIFECYCLE.md Windows dağıtım kararını açıklar."
+        "release/tools/build_hub_installer.py staging ve çıktı dizinlerini vererek bu betiği derler.",
+        "docs/decisions/REMOTE_CATALOG_AND_LIFECYCLE.md kaldırma ve güncelleme davranışını açıklar."
       ],
-      "review_sha256": "2e60658f9ca547b0e3a7fb7071b4a6d5d6732401248c536bb6ecfdcd6f6c4770"
+      "review_sha256": "bf8f6b136cd2a7d3b9a98fe5c3385e630e0f74095c1477fb863e8ae6a8de5300"
+    },
+    {
+      "path": "release/BETA_NOTICE.txt",
+      "role": "Yayın belgesi",
+      "purpose": "Kurulumdan önce gösterilen TR/EN beta ve SmartScreen bildirimi: imzasız kurulum, Ed25519 ile imzalı ürünler, SHA-256 karşılaştırması, kullanıcı başına kurulum ve kaldırmada kasanın korunması.",
+      "relationships": [
+        "hub_setup.iss InfoBeforeFile olarak gösterir; build_hub_installer.py ve release_package.py kopyalar."
+      ],
+      "review_sha256": "af36ff559012576aac52a86b96beb1530735c12a7dda9bbb6b66efbffb235fb7"
+    },
+    {
+      "path": "release/BUILD_FROM_SCRATCH.md",
+      "role": "Yayın belgesi",
+      "purpose": "Yalnızca üç repodan geliştirmeye devam etme rehberi: klasör düzeni ve klonlama, kurulacak araçlar, günlük test komutları (doğru unittest deseni dahil), sürüm yükseltme ve publish_release.py ile yayın, git dışında yedeklenmesi gerekenler (imza kasası).",
+      "relationships": [
+        "release/tools araçlarını ve release/docs/MASTER_HANDOFF.md'yi gösterir."
+      ],
+      "review_sha256": "fd2ae922153ea1170e16ef687818b38579fe6e3b457ed3767f08f58e5e0dead9"
+    },
+    {
+      "path": "release/README.md",
+      "role": "Yayın belgesi",
+      "purpose": "release/ klasörünün dizini: araçlar (publish_release, release_package, imza, derleme), BETA_NOTICE ve belgeler; anahtar malzemesinin repoda tutulmadığını belirtir.",
+      "relationships": [
+        "release/tools ve release/docs içeriğini tanıtır; ecosystem_root.py klasör bulma kuralını sağlar."
+      ],
+      "review_sha256": "8b26b5da650e98d403f577b735fd3f87313b9986e26760c6dbd0b7c67048a634"
+    },
+    {
+      "path": "release/docs/AUDIT_REPORT_2026-10-17.md",
+      "role": "Yayın belgesi",
+      "purpose": "2026-10-17 bağımsız denetim raporu (P0/P1/P2 bulgular) ve 2026-10-18 çözüm durumu, yayın engelleri ve kalan riskler. Tarihsel kayıttır.",
+      "relationships": [
+        "MASTER_HANDOFF.md §18 ve karar kayıtları bu rapora atıf yapar."
+      ],
+      "review_sha256": "e7084090c898dc3d7a094a853f5baff8f6a2422e9f4d9795707416754032fd11"
+    },
+    {
+      "path": "release/docs/CHATGPT_BRIEF.md",
+      "role": "Yayın belgesi",
+      "purpose": "Planlama için kısa proje özeti (2026-10-18 durumu) ve 2026-10-21 başlatıcı modeline geçiş notu; alınmış kararlar, doğrulanmış/doğrulanmamış noktalar, aday işler.",
+      "relationships": [
+        "Ayrıntı için MASTER_HANDOFF.md, INSTALL_LAYOUT.md ve REMOTE_CATALOG_AND_LIFECYCLE.md'ye yönlendirir."
+      ],
+      "review_sha256": "fbba70063aa51b650da905b42454e0f5d64a29b9f5add9e8641337de68d130e5"
+    },
+    {
+      "path": "release/docs/INSTALL_LAYOUT.md",
+      "role": "Yayın belgesi",
+      "purpose": "Windows betasında her adımın (Hub kurulumu, SecondBrain ve Orchestrator kurulumu, güncellemeler, kaldırma, Hub'ı ürünleri bırakarak kaldırma) neyi nerede oluşturduğunu, güncellediğini ve sildiğini listeler; bilinen boşluklar.",
+      "relationships": [
+        "Kod: catalog.rs, registration.rs, lifecycle.rs, cleanup.rs, hub_setup.iss; karar: docs/decisions/REMOTE_CATALOG_AND_LIFECYCLE.md."
+      ],
+      "review_sha256": "00475b469d6f27e40568d193ba0e94809581c167cedd6b6c638f67f11337b25e"
+    },
+    {
+      "path": "release/docs/MASTER_HANDOFF.md",
+      "role": "Yayın belgesi",
+      "purpose": "Ekosistemin tarihçe ve durum devri: ürün durumları, doğrulama kanıtları, kararlar, yayın aşaması ve §20'de başlatıcı modeli (uzak katalog, Yüklü uygulamalar, sorulan güncellemeler) ile sıradaki işler.",
+      "relationships": [
+        "Diğer release/docs belgelerine ve karar kayıtlarına yönlendirir."
+      ],
+      "review_sha256": "1218690e0f77d1b3b8fb86ff1f9328ed3df98a0058311e30a5d2b9887e7e31bd"
+    },
+    {
+      "path": "release/docs/RELEASE_NOTES_BETA.md",
+      "role": "Yayın belgesi",
+      "purpose": "0.1.0-beta.1 indirme sayfası metni: dosyalar, SmartScreen uyarısı ve SHA-256 doğrulaması, sorulan güncellemeler, kurulum yerleri (OneDrive uyarısı dahil), Windows Uygulamalar listesi, kaldırma kapsamı, bilinen sınırlar ve hata bildirim yeri.",
+      "relationships": [
+        "publish_release.py upload sürüm notu olarak kullanır."
+      ],
+      "review_sha256": "49d3711a0ed7f010d8895f39cf940fd5d70b67b4fd1c545f87723df50650c693"
+    },
+    {
+      "path": "release/docs/RELEASE_PHASE_PLAN.md",
+      "role": "Yayın belgesi",
+      "purpose": "Sertifikasız Windows beta yayın planı ve durum notları (2026-10-18 duraklama, 2026-10-21 başlatıcı modeline geçiş ve yeni yayın sırası).",
+      "relationships": [
+        "MASTER_HANDOFF.md §19-20 ile birlikte okunur."
+      ],
+      "review_sha256": "db781d67c02427f50adbf8765afa5d62380beea5a56ceb0d86c8d55273fefdf3"
+    },
+    {
+      "path": "release/docs/RESPECTED_MASTER_DIRECTIVE.md",
+      "role": "Yayın belgesi",
+      "purpose": "Ekosistemin ürün vizyonu ve yönerge metni (SecondBrain, Orchestrator, Hub hedefleri ve çalışma kuralları). Tarihsel referans.",
+      "relationships": [
+        "MASTER_HANDOFF.md §0 vizyon kaynağı olarak gösterir."
+      ],
+      "review_sha256": "f41ed053b003ccd3437d6a954ac7c80276484f4026b2bc8c7b0b1a70d1baeb8e"
+    },
+    {
+      "path": "release/tools/BRAIN_ACCEPT_REVIEW.md",
+      "role": "İnceleme kaydı",
+      "purpose": "brain_lane_accept.py kabul çalıştırıcısının bağımsız inceleme kaydı (sonuç: onaylandı). Tarihsel kanıt.",
+      "relationships": [
+        "release/tools/brain_lane_accept.py hakkındadır."
+      ],
+      "review_sha256": "75e01cb568a1519903d65227705a84de2fbc0fe59c2dd80a9bb2265c587cb7b2"
+    },
+    {
+      "path": "release/tools/BRAIN_ACCEPT_REVIEW2.md",
+      "role": "İnceleme kaydı",
+      "purpose": "brain_lane_accept.py kabul çalıştırıcısının bağımsız inceleme kaydı (sonuç: küçük düzeltmelerle onaylandı). Tarihsel kanıt.",
+      "relationships": [
+        "release/tools/brain_lane_accept.py hakkındadır."
+      ],
+      "review_sha256": "c418e6a5b271bed35b63aaf0e7780e07962fcbeef014af87290994d63e16d6d1"
+    },
+    {
+      "path": "release/tools/BRAIN_ACCEPT_REVIEW3.md",
+      "role": "İnceleme kaydı",
+      "purpose": "brain_lane_accept.py kabul çalıştırıcısının bağımsız inceleme kaydı (sonuç: küçük düzeltmelerle onaylandı). Tarihsel kanıt.",
+      "relationships": [
+        "release/tools/brain_lane_accept.py hakkındadır."
+      ],
+      "review_sha256": "33f12b98a581c3a8eabbb799abd24aa2ab17980146f27a110c9006d2dea5e873"
+    },
+    {
+      "path": "release/tools/BRAIN_REGRESSION_REVIEW.md",
+      "role": "İnceleme kaydı",
+      "purpose": "run_brain_regression.py regresyon betiğinin inceleme kaydı: PYTHONPATH, tam keşif, hata başına tek izole yeniden deneme, en az 900 test ve çıkış kodu kuralları. Tarihsel kanıt.",
+      "relationships": [
+        "release/tools/run_brain_regression.py hakkındadır."
+      ],
+      "review_sha256": "6b9338c052b8bf35498d024b8c57eafe9a01681456088843a0d3c2f7834a9aa5"
+    },
+    {
+      "path": "release/tools/accept_hub.py",
+      "role": "Yayın aracı",
+      "purpose": "Hub kabul kapısı: kaynağın atılabilir bir kopyasında derler ve testleri çalıştırır, böylece derleme çıktısı çalışma alanını kirletmez.",
+      "relationships": [
+        "npm/cargo test komutlarını çalıştırır; BUILD_FROM_SCRATCH.md'de anılır."
+      ],
+      "review_sha256": "c825fab8bea3e71747305359f63bbf8fc680e3ba844ea0899be3bbc225eb9802"
+    },
+    {
+      "path": "release/tools/brain_lane_accept.py",
+      "role": "Yayın aracı",
+      "purpose": "Kopya çalışma ağaçları için SecondBrain kabulü: tam keşif yapar ama yalnızca brain_mirror_baseline.txt dışında kalan hataları sayar; gerçek kaynakta tam suite run_brain_regression.py ile ayrıca koşar.",
+      "relationships": [
+        "brain_mirror_baseline.txt'i okur; run_brain_regression.py ile tamamlanır."
+      ],
+      "review_sha256": "7cc02bc50fae42a90a83221602841594fc5eb936f3ff99f5fa80e9867fff9878"
+    },
+    {
+      "path": "release/tools/brain_mirror_baseline.txt",
+      "role": "Yayın aracı",
+      "purpose": "Kopya ortamda (dist/.local yok) ortam gereği hep başarısız olan SecondBrain test kimlikleri, satır başına bir tane. Silinen Inno/migration testleri 2026-10-21'de çıkarıldı.",
+      "relationships": [
+        "brain_lane_accept.py okur."
+      ],
+      "review_sha256": "6845126c97e89f9b4fa9fbd58ed2073dc4bf34c1d4092e08a4f9bd0aa45bb7ff"
+    },
+    {
+      "path": "release/tools/build_brain_dist.py",
+      "role": "Yayın aracı",
+      "purpose": "Hub testleri ve yayın için donmuş SecondBrain dağıtımını üretir veya yeniden kullanır (<ecosystem>/.build-cache/brain-dist/RespectedBrain); SecondBrain'in kendi build_installer.py aracını çağırır, kaynak daha yeniyse yeniden derler.",
+      "relationships": [
+        "publish_release.py, Rust e2e testleri ve hub_native_e2e.mjs kullanır."
+      ],
+      "review_sha256": "23bfef89ec692324563dbbaef9a5a5489a74d60395c2320f3087bca768206ecf"
+    },
+    {
+      "path": "release/tools/build_bundle.py",
+      "role": "Yayın aracı",
+      "purpose": "Hub kataloğu için doğrulanabilir ürün paketi üretir (orchestrator/secondbrain kaynak paketi veya secondbrain-dist dağıtım paketi): bundle.json dosya listesini boyut ve SHA-256 ile, liste özetini ve Ed25519 imzasını (geliştirme anahtarı veya --key ile yayın anahtarı) taşır.",
+      "relationships": [
+        "bundle_signing.py ile imzalar; publish_release.py ve Rust e2e testleri çağırır."
+      ],
+      "review_sha256": "88b300516930e3814fbc96d5aeaadb60820a56fd81bd87dff34520bbc0fa36ca"
+    },
+    {
+      "path": "release/tools/build_hub_installer.py",
+      "role": "Yayın aracı",
+      "purpose": "Hub'ın üç Windows kurulumunu (Hub, SecondBrain, Orchestrator adlı; aynı Hub) derler: release exe'sini sahneler, --release-key ile üretim (geliştirme güveni yok, exe dize denetimi) veya geliştirme derlemesi yapar ve hub_setup.iss'i Inno ile derler. Kurulumlarda ürün paketi yoktur.",
+      "relationships": [
+        "packaging/windows/hub_setup.iss; publish_release.py build çağırır."
+      ],
+      "review_sha256": "adf62f58b9ce67b40a45564f7eaa82d8b21ac9fca52dfcb40cdc3776810f5d45"
+    },
+    {
+      "path": "release/tools/build_runtime.py",
+      "role": "Yayın aracı",
+      "purpose": "Hub'ın yönettiği Python çalışma ortamı paketini (runtime-<python sürümü>) üretir: çalışan python.org yorumlayıcısını kopyalar, gereksizleri ayıklar, agent-framework-core bağımlılık kapanışını ekler; RESPECTED_SIGNING_KEY verilirse yayın anahtarıyla imzalar.",
+      "relationships": [
+        "publish_release.py ve Rust e2e testleri çağırır."
+      ],
+      "review_sha256": "d6284f0aa887a6621fb9e74ece3d138cd23a3ebbc2ac36723f70f1fa583b3603"
+    },
+    {
+      "path": "release/tools/bundle_signing.py",
+      "role": "Yayın aracı",
+      "purpose": "Katalog paketlerinin Ed25519 imzası: geliştirme anahtar çifti oluşturma, paket imzalama/doğrulama ve yayın anahtarı kasasını açma; Hub trust.rs ile aynı ifadeyi imzalar.",
+      "relationships": [
+        "build_bundle.py, build_runtime.py, publish_release.py ve release_package.py kullanır."
+      ],
+      "review_sha256": "a9f3661461895be071c04955958d761d4c0709ce20733a8a6b0f03554aed3dfe"
+    },
+    {
+      "path": "release/tools/ecosystem_root.py",
+      "role": "Yayın aracı",
+      "purpose": "Üç ürün klasörünü yan yana tutan ekosistem klasörünü bulur; RESPECTED_ECOSYSTEM_ROOT ile geçersiz kılınabilir.",
+      "relationships": [
+        "release/tools altındaki tüm araçlar içe aktarır."
+      ],
+      "review_sha256": "8a90692cbd42b83b2f5ac3221152c4f625d6def2593378e6cd3cd51a5cb75a58"
+    },
+    {
+      "path": "release/tools/native_verify.py",
+      "role": "Yayın aracı",
+      "purpose": "Native Hub duman testi sürücüsü: atılabilir kopyada ön yüz ve release exe derler, Hub'ın duman testini çalıştırır ve her zaman rapor yazar.",
+      "relationships": [
+        "respected-hub kaynak klasöründen çalıştırılır."
+      ],
+      "review_sha256": "eec32c6777f91d2f76df41864718510511a367b209171c4cd527d4cc57db8cff"
+    },
+    {
+      "path": "release/tools/publish_release.py",
+      "role": "Yayın aracı",
+      "purpose": "Yayını üretir, imzalar ve GitHub Releases'e yükler: build (kurulumlar + imzalı ürün arşivleri + entries.json), catalog (yayındaki kataloğa birleştirir, sequence büyütür, kanal ve min_hub uygular, respected-catalog-v1 alanıyla imzalar), upload (önce ürünler, en son katalog; --yes olmadan yalnızca gh komutlarını yazar), local-catalog (testler için file:// adresli geliştirme kataloğu).",
+      "relationships": [
+        "bundle_signing, build_bundle, build_brain_dist, build_runtime ve build_hub_installer'ı kullanır; Hub tarafı src-tauri/src/catalog.rs'dir; test_release_tools.py ve tests/remote_catalog_e2e.rs sınar."
+      ],
+      "review_sha256": "e6f53c9d3a0e723152bd68255b851afb9c32a43196909ed49f7e18eafe5213ca"
+    },
+    {
+      "path": "release/tools/real_env_guard.py",
+      "role": "Yayın aracı",
+      "purpose": "Test çalıştırmalarının kullanıcının GERÇEK AI istemci yapılandırmasını değiştirmediğini veya test oturumu bırakmadığını snapshot/verify ile kanıtlar; çalıştırma için geçici bir ev klasörü üretir.",
+      "relationships": [
+        "run_brain_regression.py ve hub_native_e2e.mjs kullanır."
+      ],
+      "review_sha256": "8a78047e963434b9602c4bff908acc8b881c469be2642f25f2f07017f122ccf0"
+    },
+    {
+      "path": "release/tools/real_env_report.py",
+      "role": "Yayın aracı",
+      "purpose": "Geliştirme testlerinin gerçek kullanıcı ortamında bırakmış olabileceği artıkları salt okunur raporlar (istemci yapılandırması, oturum klasörleri, zamanlanmış görevler, kısayollar, kaldırma kayıtları, uygulama ve geçici klasörler).",
+      "relationships": [
+        "Temizlik ayrı, onaylı bir adımdır."
+      ],
+      "review_sha256": "006821b2a645866f8e283c50f9396abd82aa1f2e2a2a5ca73f529779d23f98ba"
+    },
+    {
+      "path": "release/tools/release_keys.py",
+      "role": "Yayın aracı",
+      "purpose": "Üretim imza anahtarı töreni: anahtar üretme (repo yolunu ve üzerine yazmayı reddeder), genel anahtarı yazdırma ve bir anahtarın Hub tarafından güvenilir olup olmadığını denetleme.",
+      "relationships": [
+        "src-tauri/release-keys.txt; build_hub_installer.py --release-key denetimi kullanır."
+      ],
+      "review_sha256": "30999a49700bf3c2292ef509667d5dd09dd99d22f430e86cbe0a6ef88ab5907f"
+    },
+    {
+      "path": "release/tools/release_package.py",
+      "role": "Yayın aracı",
+      "purpose": "İndirme klasörü için kurulumların SHA256SUMS.txt listesini ve Ed25519 imzasını (SHA256SUMS.sig) üretir ve doğrular; BETA_NOTICE.txt'i kopyalar.",
+      "relationships": [
+        "publish_release sonrası --dir dist/release ile çalıştırılır; test_release_tools.py sınar."
+      ],
+      "review_sha256": "07e30183d45bd682bdfa1961756a1980b8c9c57e1fa710343db8994980442cbf"
+    },
+    {
+      "path": "release/tools/release_vault.py",
+      "role": "Yayın aracı",
+      "purpose": "Üretim Ed25519 anahtarı için parola korumalı kasa (scrypt -> AES-256-GCM): oluşturma ve doğrulama; düz anahtar diske yazılmaz.",
+      "relationships": [
+        "bundle_signing.load_private kasayı açar."
+      ],
+      "review_sha256": "eeddb6e06479667e2c7be6e7eda09752473698613ee3fad13775285d8f836632"
+    },
+    {
+      "path": "release/tools/rpp_conformance.py",
+      "role": "Yayın aracı",
+      "purpose": "Ürünler arası RPP uyum denetimi: iki gerçek sunucuyu geçici veri köklerinde çalıştırır ve her yanıtı Hub'ın ayrıştırıcısına verir; v1.1 müzakere, manifest, lifecycle ve hata türlerini ayrıca sınar.",
+      "relationships": [
+        "src-tauri/src/rpp.rs sözleşmesine dayanır."
+      ],
+      "review_sha256": "b8ec786279f41f7b4ddb732b52800771679138772333ef9c1ea8642a0cde446f"
+    },
+    {
+      "path": "release/tools/run_brain_regression.py",
+      "role": "Yayın aracı",
+      "purpose": "SecondBrain tam regresyonu: boş bir sanal ev profiliyle tam keşif (*test*.py), başarısız her test için tek izole yeniden deneme, en az 900 test şartı ve gerçek ortamın değişmediğinin kanıtı.",
+      "relationships": [
+        "real_env_guard.py kullanır; BRAIN_REGRESSION_REVIEW.md incelemesidir."
+      ],
+      "review_sha256": "31dcb94dd8e2056f4e622d3348b2f18e244a315a95f2d45636c3de1477fcd3e3"
+    },
+    {
+      "path": "release/tools/test_release_tools.py",
+      "role": "Davranış/regresyon testi",
+      "purpose": "Yayın araçlarının geçici klasörde öz-denetimi: anahtar üretme korumaları, imzalı SHA256SUMS doğrulama ve kurcalama reddi, katalog birleştirme (sequence, korunan girdiler, URL, min_hub), katalog imzası ve arşiv düzeni.",
+      "relationships": [
+        "release_keys, release_package, bundle_signing ve publish_release'i sınar."
+      ],
+      "review_sha256": "3d7bbfb0fa960606a6f84c9994b113d35963e2c989f4a56abb07a73b7ed0b155"
     },
     {
       "path": "src-tauri/Cargo.lock",
@@ -224,17 +530,17 @@
         "src-tauri/Cargo.toml bağımlılıklarından cargo tarafından üretilir.",
         "cargo build/test ve Tauri paketlemesi bu kilidi okur."
       ],
-      "review_sha256": "3bce9098fd7a6c2dfdf38cc7342409ace12fb16e9cb28fb2ff26e2943e17bd53"
+      "review_sha256": "b809cf60fa0e436aa3feacee16347e9d28d1e86e62770e586a7ef19fec064c51"
     },
     {
       "path": "src-tauri/Cargo.toml",
       "role": "Native paket tarifi",
-      "purpose": "respected-hub crate'ini ve respected_hub_lib kütüphanesini (staticlib/cdylib/rlib) tanımlar; Tauri 2, dialog eklentisi, serde/serde_json ve sha2 bağımlılıklarını bildirir. tauri-plugin-single-instance, ed25519-dalek ve base64 bağımlılıklarını, yalnızca geliştirme derlemelerinde güveni açan dev-trust özelliğini bildirir.",
+      "purpose": "respected-hub crate'ini ve respected_hub_lib kütüphanesini (staticlib/cdylib/rlib) tanımlar; Tauri 2, dialog eklentisi, serde/serde_json ve sha2 bağımlılıklarını bildirir. tauri-plugin-single-instance, ed25519-dalek ve base64 bağımlılıklarını, yalnızca geliştirme derlemelerinde güveni açan dev-trust özelliğini bildirir. Sürüm 0.1.0-beta.1 (SemVer; beta sürümün parçasıdır).",
       "relationships": [
         "build.rs, src/main.rs ve src/lib.rs ile birlikte derlenir; Python ürün kodu crate'e import edilmez.",
         "sha2 hem runtime hem dev-dependency olarak lifecycle/doğrulama ve Rust testleri tarafından kullanılır."
       ],
-      "review_sha256": "0f1890a76ccadd347f4b301562bfc1c03218cce18aeb08d12914209cd41eba3b"
+      "review_sha256": "9a1277d03471e01c95305ba06aea394f46e9af4494ab4edbe8c19de8b4d900a2"
     },
     {
       "path": "src-tauri/build.rs",
@@ -410,60 +716,69 @@
     {
       "path": "src-tauri/release-keys.txt",
       "role": "Üretim genel imza anahtarları",
-      "purpose": "Üretim Hub derlemesine gömülen Ed25519 genel anahtarlar (satır başına 'anahtar_kimliği base64'). Özel anahtar asla buraya girmez; tools/release_keys.py yazar. Anahtar satırı yokken üretim derlemesi hiçbir paketi kurmaz.",
+      "purpose": "Üretim Hub derlemesine gömülen Ed25519 genel anahtarlar (satır başına 'anahtar_kimliği base64'). Özel anahtar asla buraya girmez; tools/release_keys.py yazar. Anahtar satırı yokken üretim derlemesi hiçbir paketi kurmaz. Şu an tek anahtar: dabcb5265227bbdf; katalog imzası da bu anahtarla doğrulanır.",
       "relationships": [
         "src-tauri/src/trust.rs include_str! ile derler; tools/release_keys.py ve build_hub_installer.py --release-key kontrol eder."
       ],
-      "review_sha256": "0b8475be4f7f865d233ed9461193fa13b5a544d294fb41f5efb5b410de770668"
+      "review_sha256": "f37ec846bd05780ddb4cc3e7e7e5f1d8fa591f47b9fb0667a60f7d0fd0181194"
     },
     {
       "path": "src-tauri/src/brain.rs",
       "role": "SecondBrain yaşam döngüsü",
-      "purpose": "SecondBrain ürününün motor-yönetimli kurulum, güncelleme, onarım, kaldırma ve geri almasını yürütür: katalogdan doğrulanmış dağıtımı hazırlar (stage, seri), ürünün kendi folderlarını (BrainDirs) kullanır, güvenli entegrasyon planını ürünün kendisinden salt-okunur alır ve istemci id'lerini doğrular. Çökme sonrası ürünün yarım işlemini tamamlatır/geri aldırır; ortam sırlardan arındırılmış çalışır, kullanıcı vault'una dokunmaz. SecondBrain kurulum/entegrasyon çağrılarına --allow-unattested yalnızca paket üretim imzalı değilse eklenir. Kurulum/güncelleme motor kapısını en çok 120 sn bekler; uzun bir işlem sürüyorsa açık bir 'meşgul' hatası verir; dizin geçersiz kılmaları yalnızca geliştirme derlemelerinde okunur.",
+      "purpose": "SecondBrain ürününün motor-yönetimli kurulum, güncelleme, onarım, kaldırma ve geri almasını yürütür: katalog önbelleğindeki doğrulanmış dağıtımı yerinde kullanır (stage, seri; ikinci kopya tutulmaz), ürünün kendi folderlarını (BrainDirs) kullanır, güvenli entegrasyon planını ürünün kendisinden salt-okunur alır ve istemci id'lerini doğrular. Çökme sonrası ürünün yarım işlemini tamamlatır/geri aldırır; ortam sırlardan arındırılmış çalışır, kullanıcı vault'una dokunmaz. Hub Ed25519 imzasını doğruladığı için SecondBrain çağrılarına --allow-unattested eklenir (SLSA CI gelene kadar). Kurulum/güncelleme motor kapısını en çok 120 sn bekler; uzun bir işlem sürüyorsa açık bir 'meşgul' hatası verir; dizin geçersiz kılmaları yalnızca geliştirme derlemelerinde okunur.",
       "relationships": [
         "lifecycle.rs journal/Roots/Bundle yapılarını kullanır; rpp.rs üzerinden ürün motorunu çağırır; main.rs komutları bunu çağırır.",
         "src-tauri/tests/brain_e2e.rs ve brain_concurrency_e2e.rs ile test edilir."
       ],
-      "review_sha256": "772555225e0584e5401739c3a108ad8388394d8e5bbba11ffd9f830798e51214"
+      "review_sha256": "38152692ecf26d52f754af290275d2f0110025509a77e9012ced8a9db0cf195e"
+    },
+    {
+      "path": "src-tauri/src/catalog.rs",
+      "role": "Uzak katalog",
+      "purpose": "GitHub Releases'teki imzalı katalog: indeksi curl.exe ile indirir, respected-catalog-v1 imzasını ve sequence'i doğrular, önbelleğe alır; beta/kararlı kanal seçimi; ürün arşivini yalnızca kur/güncelle/onar sırasında indirir, boyut ve SHA-256 ile denetler, tar.exe ile açar, paket imzası ve dosya özetleriyle yeniden doğrular ve yerel katalog önbelleğine koyar; bozuk önbelleği yeniler, eski sürümleri budar, durum çıktısına güncellemeyi ekler; Hub'ın kendi güncellemesini indirip /SILENT /RELAUNCH=1 ile başlatır.",
+      "relationships": [
+        "lib.rs (ensure_bundles, hub_status, komutlar), trust.rs (verify_detached), lifecycle.rs (version_key, read_bundle) ile çalışır; tests/remote_catalog_e2e.rs ve birim testleri sınar."
+      ],
+      "review_sha256": "207f2b8596a809eb6dd7c0c79a76f934d877c0a40c78125b46bbcdde55ca3ee2"
     },
     {
       "path": "src-tauri/src/cleanup.rs",
       "role": "Ürün temizliği (Hub kaldırılırken)",
-      "purpose": "Hub kaldırılırken kullanıcı isterse Hub'ın kurduğu ürünleri geri alır: Orchestrator MCP kayıtlarını kapatır, SecondBrain'i kendi kaldırıcısıyla (kasa ve veri kalır) kaldırır, Orchestrator ve çalışma zamanını kaldırır ve yönetilen klasörü siler. Notlar, kasalar ve Orchestrator çalışma kayıtları asla silinmez.",
+      "purpose": "Hub kaldırılırken kullanıcı isterse Hub'ın kurduğu ürünleri geri alır: Orchestrator MCP kayıtlarını kapatır, SecondBrain'i kendi kaldırıcısıyla (kasa ve veri kalır) kaldırır, Orchestrator ve çalışma zamanını kaldırır ve yönetilen klasörü siler. Not kasaları ve notlar asla silinmez. Kaldırılan ürünün katalog önbelleğindeki paketleri de silinir; Yüklü uygulamalar kayıtları headless kaldırmadan sonra senkronlanır.",
       "relationships": [
         "lib.rs headless_uninstall_products (respected-hub.exe --uninstall-products) tarafından çağrılır; Inno kaldırıcısı hub_setup.iss (CurUninstallStepChanged) ile çalıştırır.",
         "hub_apply, brain::status ve mcp_access::disable_all ile aynı günlüklü yaşam döngüsü yollarını kullanır; tests/cleanup_e2e.rs ile doğrulanır."
       ],
-      "review_sha256": "b8c904af88a4c7d534b6e979103792287ac1023198d502d5a2bc7136cbbc4035"
+      "review_sha256": "487cd3f25b31b1ba75ef259da59f08945ac53c724b48b8322172c221d33c2033"
     },
     {
       "path": "src-tauri/src/lib.rs",
       "role": "Native engine köprüsü",
-      "purpose": "Settings kalıcılığını ve doğrulamasını, motor/RPP isteklerini sınırlı JSON işlemleriyle yürütmeyi, ürün durumu, yaşam döngüsü (plan/apply/rollback/purge), orchestrator MCP, bellek erişimi/indeks/anlamsal arama ve etkinlik Tauri komutlarını sunar. Yalnızca açıkça izin verilen komutlar kayıtlıdır; kampanya id'si ve spec boyutu doğrulanır, açılışta yarım kalmış işlemler recover edilir. memory_search, memory_note_read, memory_capture_note ve memory_briefing_run komutları (motorun kendi yanıtını geçirir) eklendi. Tek örnek eklentisi ikinci pencereyi açmaz, mevcut pencereyi öne alır; açılış kurtarması arka plan iş parçacığında çalışır; motor süreç ağacı zaman aşımında sonlandırılır, okuyucu iş parçacıkları süre sınırlıdır, stderr 1 MB ile sınırlıdır; runtime işlemleri sonrası MCP launcher yenilenir; SecondBrain kurulum/güncellemesi sonrası Orchestrator bellek komutu yenilenir. Geliştirme ortam değişkenleri, kaynak dizin ve katalog varsayılanları yalnızca dev_enabled iken geçerlidir; save_settings üretimde reddedilir; product_status development alanı dev_enabled'dır; headless_uninstall_products ürün temizliğini başlatır; tek örnek eklentisi --install niyetini açık pencereye startup-intent olayıyla iletir.",
+      "purpose": "Settings kalıcılığını ve doğrulamasını, motor/RPP isteklerini sınırlı JSON işlemleriyle yürütmeyi, ürün durumu, yaşam döngüsü (plan/apply/rollback/purge), orchestrator MCP, bellek erişimi/indeks/anlamsal arama ve etkinlik Tauri komutlarını sunar. Yalnızca açıkça izin verilen komutlar kayıtlıdır; kampanya id'si ve spec boyutu doğrulanır, açılışta yarım kalmış işlemler recover edilir. memory_search, memory_note_read, memory_capture_note ve memory_briefing_run komutları (motorun kendi yanıtını geçirir) eklendi. Tek örnek eklentisi ikinci pencereyi açmaz, mevcut pencereyi öne alır; açılış kurtarması arka plan iş parçacığında çalışır; motor süreç ağacı zaman aşımında sonlandırılır, okuyucu iş parçacıkları süre sınırlıdır, stderr 1 MB ile sınırlıdır; runtime işlemleri sonrası MCP launcher yenilenir; SecondBrain kurulum/güncellemesi sonrası Orchestrator bellek komutu yenilenir. Geliştirme ortam değişkenleri, kaynak dizin ve katalog varsayılanları yalnızca dev_enabled iken geçerlidir; save_settings üretimde reddedilir; product_status development alanı dev_enabled'dır; headless_uninstall_products ürün temizliğini başlatır; tek örnek eklentisi --install niyetini açık pencereye startup-intent olayıyla iletir. 2026-10-21: katalog kökü <managed>/catalog (standard_roots); plan/apply öncesi ensure_bundles gereken paketi indirir (yayınlanmış katalog varsa çalışma ortamı zorunlu); hub_status uzak katalog güncellemesini ekler; başarılı işlemden sonra sweep (yalnız kurulu sürüm kalır) ve Yüklü uygulamalar senkronu; catalog_refresh, catalog_set_channel, hub_update_status, hub_update_install komutları; --install/--uninstall/--manage niyetleri; açılışta kurtarma, budama, kayıt senkronu, bakım kopyası temizliği ve katalog yenileme; headless --sync-registrations.",
       "relationships": [
-        "React api.ts invoke ile çağırır; brain, lifecycle, rpp, mcp_access, memory_access, memory_index ve memory_semantic modüllerini kullanır.",
+        "React api.ts ve lifecycle.ts invoke ile çağırır; brain, catalog, registration, lifecycle, rpp, mcp_access, memory_* modüllerini kullanır.",
         "Rust birim/e2e testleri ve src-tauri/src/main.rs (run çağrısı) kapsar; native IPC kabulü ayrı kapıdır."
       ],
-      "review_sha256": "a70f6cf95ec2f1ebecd1e73f340ffb989a979ca424c4b6f8d36b1b07583debd9"
+      "review_sha256": "bc8996983755d54dc0c40b788a5ecd09d933f31f833b9d6cd19b94edf6cf7b06"
     },
     {
       "path": "src-tauri/src/lifecycle.rs",
       "role": "Yaşam döngüsü çekirdeği",
-      "purpose": "Hub yönetimli ürünlerin (Orchestrator, SecondBrain, Python çalışma zamanı) katalog doğrulaması, sürümlü kurulum/güncelleme/onarım/kaldırma, journal'lı işlemler, geri alma, yedek temizleme ve kesintiden sonra kurtarmasını yapar. Yol geçişi, bozuk/imzasız paket ve hash uyuşmazlığını reddeder; doğrulama başarısızsa hiçbir şeyi değiştirmez. Her katalog paketi trust::verify ile doğrulanır (güven düzeyi Bundle.trust ve durum çıktısında); journal kimlikleri okuma/yazmada doğrulanır; Orchestrator kuruluyken runtime kaldırılamaz.",
+      "purpose": "Hub yönetimli ürünlerin (Orchestrator, SecondBrain, Python çalışma zamanı) katalog doğrulaması, sürümlü kurulum/güncelleme/onarım/kaldırma, journal'lı işlemler, geri alma, yedek temizleme ve kesintiden sonra kurtarmasını yapar. Yol geçişi, bozuk/imzasız paket ve hash uyuşmazlığını reddeder; doğrulama başarısızsa hiçbir şeyi değiştirmez. Her katalog paketi trust::verify ile doğrulanır (güven düzeyi Bundle.trust ve durum çıktısında); journal kimlikleri okuma/yazmada doğrulanır; Orchestrator kuruluyken runtime kaldırılamaz. version_key SemVer sırası ve PEP 440 yazımlarıyla karşılaştırır (her Hub sürümünde sabit kalmalı); güncellemeden sonra yalnızca etkin sürüm diskte kalır (prune_old_versions), bu yüzden güncelleme geri alınamaz.",
       "relationships": [
         "brain.rs, mcp_access.rs ve main.rs tarafından çağrılır; Bundle/Roots/LifecycleError tiplerini sağlar.",
         "Birim testleri kendi içinde; src-tauri/tests/lifecycle_e2e.rs gerçek motorlarla uçtan uca test eder."
       ],
-      "review_sha256": "c89941c3d2090961bae5b3da41e1a89698fa40f5a3ea77d1193f219feeae383c"
+      "review_sha256": "124529f545bd8d67a072fe4d57d2d81d1171c8247081d2dc6a319465fbea5619"
     },
     {
       "path": "src-tauri/src/main.rs",
       "role": "GUI executable girişi",
-      "purpose": "Release Windows console görünürlüğünü kapatıp Hub runtime'ını başlatır. --uninstall-products bağımsız değişkeni pencere açmadan ürün temizliğini çalıştırır.",
+      "purpose": "Release Windows console görünürlüğünü kapatıp Hub runtime'ını başlatır. --uninstall-products bağımsız değişkeni pencere açmadan ürün temizliğini çalıştırır. --sync-registrations pencere açmadan Yüklü uygulamalar kayıtlarını bu exe'ye göre yeniler.",
       "relationships": [
         "lib.rs run çağrılır; ayrı kullanıcı CLI/setup wizard değildir."
       ],
-      "review_sha256": "645d2f7b2d5bf369c9ffff701673c343f3cb2de5606c40a2b315fded0c8d75e5"
+      "review_sha256": "d616dda122d49b5d525004417b2a25a58ce7fc59abe3994fcd49fde427ab82a2"
     },
     {
       "path": "src-tauri/src/mcp_access.rs",
@@ -506,6 +821,15 @@
       "review_sha256": "4f79545652f7ebcc95e15eadbdc26e173d5296c0900da14a5ca8b8217bdc7c29"
     },
     {
+      "path": "src-tauri/src/registration.rs",
+      "role": "Windows kayıtları",
+      "purpose": "SecondBrain ve Orchestrator için Windows Yüklü uygulamalar kayıtlarını (HKCU Uninstall) kurulu duruma göre yazar/siler: Kaldır --uninstall=<ürün>, Değiştir --manage=<ürün> ile Hub'ı açar; Hub ürünler bırakılarak kaldırıldığında maintenance kopyasını tanır, tam Hub dönünce onu siler, son ürün gidince kendini ve klasörlerini temizler. Geliştirme derlemesi yalnızca açıkça verilen test anahtarına yazar.",
+      "relationships": [
+        "lib.rs başlangıçta ve her yaşam döngüsü işleminden sonra sync çağırır; hub_setup.iss --sync-registrations ve kayıt anahtarlarını kullanır."
+      ],
+      "review_sha256": "864b705348cc8cc3de28b4aeacb89c955d754f21a29313d22838c2647b435dce"
+    },
+    {
       "path": "src-tauri/src/rpp.rs",
       "role": "RPP motor köprüsü",
       "purpose": "Hub'ın Orchestrator ve SecondBrain motorlarıyla RPP üzerinden konuşan tek yerel köprüsü: istek/yanıt zarfları, operasyon id doğrulaması, bilinmeyen ürün/op'un süreç başlatmadan reddi, sır görünümlü ortam değişkenlerinin süzülmesi ve nötr çalışma dizini. Webview köprüsü yalnızca salt-okunur yaşam döngüsü ve ilk vault oluşturmaya izin verir; Hub-içi trusted çağrılar ayrıdır. Okuma/yazma geçidi (Gate) yazıcıya öncelik verir. İzin listesine memory.search/note.read/capture.note/briefing.run eklendi; memory.* köprüden yine engelli. isolate_python: yönetilen Python kullanıcının PYTHONHOME/PYTHONSTARTUP/kullanıcı site-packages ortamını almaz. Test HOME'u yalnızca geliştirme derlemelerinde uygulanır; köprü orchestrator için memory_* ayarlarını reddeder; Gate.write_within bekleyen yazıcıyı zaman aşımıyla bırakır.",
@@ -518,42 +842,42 @@
     {
       "path": "src-tauri/src/trust.rs",
       "role": "Paket özgünlüğü doğrulaması",
-      "purpose": "Katalog paketlerinin Ed25519 imzasını doğrular (fail-closed): imzalanan metin product, kind, version, schema ve bundle_digest'in alan ayrımlı kanonik JSON'udur; PRODUCTION_KEYS derlemeye gömülür (yayın aşamasına kadar boş), geliştirme anahtarı ve RESPECTED_HUB_ALLOW_UNSIGNED yalnızca debug veya dev-trust derlemelerinde vardır ve üretim derlemesinde koddan çıkarılır. Python aracıyla (tools/bundle_signing.py) üretilmiş bir imza birim testiyle doğrulanır. dev_env/dev_abs: geliştirme ortam değişkenleri üretim derlemesinde hiç okunmaz; üretim testi tüm geçersiz kılmaların yok sayıldığını kanıtlar. Üretim anahtarları release-keys.txt dosyasından derlenir.",
+      "purpose": "Katalog paketlerinin Ed25519 imzasını doğrular (fail-closed): imzalanan metin product, kind, version, schema ve bundle_digest'in alan ayrımlı kanonik JSON'udur; PRODUCTION_KEYS derlemeye gömülür (yayın aşamasına kadar boş), geliştirme anahtarı ve RESPECTED_HUB_ALLOW_UNSIGNED yalnızca debug veya dev-trust derlemelerinde vardır ve üretim derlemesinde koddan çıkarılır. Python aracıyla (tools/bundle_signing.py) üretilmiş bir imza birim testiyle doğrulanır. dev_env/dev_abs: geliştirme ortam değişkenleri üretim derlemesinde hiç okunmaz; üretim testi tüm geçersiz kılmaların yok sayıldığını kanıtlar. Üretim anahtarları release-keys.txt dosyasından derlenir. verify_detached: katalog indeksinin '<key_id> <base64>' biçimli ayrık imzasını aynı anahtarlarla doğrular (imzasız seçeneği yoktur).",
       "relationships": [
         "lifecycle::read_bundle her katalog paketi için verify çağırır; brain.rs güven düzeyine göre --allow-unattested kararını verir.",
         "tools/bundle_signing.py aynı ifadeyi imzalar; docs/decisions/BUNDLE_TRUST.md karar kaydıdır."
       ],
-      "review_sha256": "c1ef366bbc2c3c66bb8909cdd20e40c42424e36f518ab002254218fa7e520089"
+      "review_sha256": "c8c7b67f57e8d5f56aabb3c30e0520c1307ec7b43990fe248981e6f7fbf23a85"
     },
     {
       "path": "src-tauri/tauri.conf.json",
       "role": "Tauri development config",
-      "purpose": "Respected Hub ürün kimliğini, Vite dev URL'sini (127.0.0.1:1420), ../dist frontendDist'ini, ana pencere boyutlarını ve yalnızca self/ipc'ye izin veren CSP'yi tanımlar; bundle kapalıdır.",
+      "purpose": "Respected Hub ürün kimliğini, Vite dev URL'sini (127.0.0.1:1420), ../dist frontendDist'ini, ana pencere boyutlarını ve yalnızca self/ipc'ye izin veren CSP'yi tanımlar; bundle kapalıdır. Sürüm 0.1.0-beta.1.",
       "relationships": [
         "Tauri CLI/derleyici ve native pencere tarafından okunur; npm run dev/build komutlarını tetikler.",
         "Production release veya signing iddiası taşımaz."
       ],
-      "review_sha256": "b9535e4268f76a1ec114aa0b647de1d2926465d12eab3b1b7ed94c11fdcb2877"
+      "review_sha256": "48c01e403df0050451b1598338f6e630fc9717e11436d245945fdbaa33dbbbd7"
     },
     {
       "path": "src-tauri/tests/brain_concurrency_e2e.rs",
       "role": "Rust e2e testi",
-      "purpose": "SecondBrain kurulumu sürerken durum yoklamaları ve sihirbaz planları çalışsa da kurulumun kilitlenmeden bittiğini ve yoklamaların program klasöründen çalışmadığını kanıtlar. Geçici köklerde yürür.",
+      "purpose": "SecondBrain kurulumu sürerken durum yoklamaları ve sihirbaz planları çalışsa da kurulumun kilitlenmeden bittiğini ve yoklamaların program klasöründen çalışmadığını kanıtlar. Geçici köklerde yürür. Yayın araçlarını respected-hub/release/tools yolundan çağırır.",
       "relationships": [
         "brain.rs, rpp.rs Gate ve lifecycle.rs'yi gerçek ürün kaynaklarıyla sınar.",
         "cargo test ile çalışır; ../orchestrator ve ../secondbrain kardeş kaynaklarına bağlıdır."
       ],
-      "review_sha256": "c3e06b239386d6d9cdeec8e787b42702af3ba01aa09e90a93a22cfe427a5b065"
+      "review_sha256": "8c30d696ddb9e49cb9f2c61337d213936cdd271435e7c30911df40d15c87d7b2"
     },
     {
       "path": "src-tauri/tests/brain_e2e.rs",
       "role": "Rust e2e testi",
-      "purpose": "SecondBrain'in motor-yönetimli yaşam döngüsünü uçtan uca kanıtlar: doğrulanmış paket, salt-okunur SIL planı, AI istemci entegrasyonlu setup, RPP kontrolleri, onarım, geri alma ve kaldırma. Sahte HOME ve geçici kökler; kullanıcının gerçek yapılandırmaları okunmaz/yazılmaz. İstemci yapılandırmasını yeniden yazdıktan sonra kaldırmada yalnızca bizim girdilerimizin gittiği ve manifest/günlüklerde gizli bilginin tutulmadığı gerçek akışta doğrulanır.",
+      "purpose": "SecondBrain'in motor-yönetimli yaşam döngüsünü uçtan uca kanıtlar: doğrulanmış paket, salt-okunur SIL planı, AI istemci entegrasyonlu setup, RPP kontrolleri, onarım, geri alma ve kaldırma. Sahte HOME ve geçici kökler; kullanıcının gerçek yapılandırmaları okunmaz/yazılmaz. İstemci yapılandırmasını yeniden yazdıktan sonra kaldırmada yalnızca bizim girdilerimizin gittiği ve manifest/günlüklerde gizli bilginin tutulmadığı gerçek akışta doğrulanır. Yayın araçlarını respected-hub/release/tools yolundan çağırır.",
       "relationships": [
         "brain.rs ve lifecycle.rs'yi gerçek donmuş launcher ile sınar.",
         "cargo test ile çalışır; kardeş secondbrain dağıtımına bağlıdır."
       ],
-      "review_sha256": "58b82623edb0a373d169c4e19f5a40e376d4113d011ed5da0767b0235f4378de"
+      "review_sha256": "9b052b4dc623b00fe249f255b7b13f148db4c0a5dd835855f13a7db6881daad4"
     },
     {
       "path": "src-tauri/tests/campaign_e2e.rs",
@@ -568,21 +892,21 @@
     {
       "path": "src-tauri/tests/cleanup_e2e.rs",
       "role": "Hub kaldırma temizliği uçtan uca testi",
-      "purpose": "Gerçek respected-hub.exe --uninstall-products komutunu sahte HOME ve geçici köklerle çalıştırır: SecondBrain ve Orchestrator kurulu, Claude ve Codex yapılandırmalarına kayıtlı ve istemciler dosyalarını yeniden yazmışken kayıtlarımız kalkar, istemci ve kullanıcı değişiklikleri, kasa notu korunur, yönetilen klasör silinir; boş makinede komut hiçbir şey yaratmaz.",
+      "purpose": "Gerçek respected-hub.exe --uninstall-products komutunu sahte HOME ve geçici köklerle çalıştırır: SecondBrain ve Orchestrator kurulu, Claude ve Codex yapılandırmalarına kayıtlı ve istemciler dosyalarını yeniden yazmışken kayıtlarımız kalkar, istemci ve kullanıcı değişiklikleri, kasa notu korunur, yönetilen klasör silinir; boş makinede komut hiçbir şey yaratmaz. Yayın araçlarını respected-hub/release/tools yolundan çağırır.",
       "relationships": [
         "cleanup.rs, lib.rs, mcp_access ve brain yaşam döngüsünü gerçek ürünlerle çalıştırır."
       ],
-      "review_sha256": "fe792088cafad459cc9ad3ceaad809821d001c0163c2e8b47d9f27d1cd5d2b1e"
+      "review_sha256": "b263e55a2e2394f6a0a31e4554970d330c7fb1bbf7dca4d45ac862c8befeb782"
     },
     {
       "path": "src-tauri/tests/lifecycle_e2e.rs",
       "role": "Rust e2e testi",
-      "purpose": "Hub yönetimli yaşam döngüsünü gerçek ürün kaynaklarından üretilen paketlerle kanıtlar: iki ürün kur/doğrula/onar/güncelle/kaldır, motorun çalıştıramadığı kopya asla etkinleştirilmez, ürünler sistem Python'u olmadan Hub'ın Python'unda çalışır. Yalnızca geçici kök. Yerel paketler geliştirme imzasıyla doğrulanır (trust: development); bozuk ama geçerli imzalı paket motor doğrulamasıyla durdurulur.",
+      "purpose": "Hub yönetimli yaşam döngüsünü gerçek ürün kaynaklarından üretilen paketlerle kanıtlar: iki ürün kur/doğrula/onar/güncelle/kaldır, motorun çalıştıramadığı kopya asla etkinleştirilmez, ürünler sistem Python'u olmadan Hub'ın Python'unda çalışır. Yalnızca geçici kök. Yerel paketler geliştirme imzasıyla doğrulanır (trust: development); bozuk ama geçerli imzalı paket motor doğrulamasıyla durdurulur. Yayın araçlarını respected-hub/release/tools yolundan çağırır.",
       "relationships": [
         "lifecycle.rs ve rpp.rs'yi gerçek motorlarla sınar.",
         "cargo test ile çalışır; kardeş orchestrator/secondbrain kaynaklarına bağlıdır."
       ],
-      "review_sha256": "d0a98ef2a805e0954d2d452618c1701e8f216f892b4979ebeadbaf732a2c3d56"
+      "review_sha256": "c76436cb9335a49b3ee880370e90062c7d3fad9c132ca7ac9ef849f8331d820d"
     },
     {
       "path": "src-tauri/tests/mcp_access_e2e.rs",
@@ -615,6 +939,15 @@
       "review_sha256": "07233e46a67135e6b0e63d91685bfa4965b65e73644e0eb86508ee1bbc71f048"
     },
     {
+      "path": "src-tauri/tests/remote_catalog_e2e.rs",
+      "role": "Rust e2e testi",
+      "purpose": "İndirme yolunu uçtan uca kanıtlar: gerçek publish_release.py ile üretilmiş, geliştirme anahtarıyla imzalı file:// katalog curl ile alınır, arşiv tar ile açılıp önbelleğe girer, onarım ağ gerektirmez, bozuk önbellek yenilenir; kurcalanmış arşiv, kurcalanmış indeks ve daha eski sequence reddedilir.",
+      "relationships": [
+        "catalog.rs ve lifecycle.rs'yi sınar; release/tools/build_bundle.py ve publish_release.py'yi çağırır."
+      ],
+      "review_sha256": "f1b516f2cf0a0d0a5c25bd72ac8933e498b97c45d4da3b25e65bef936b1d8608"
+    },
+    {
       "path": "src-tauri/tests/rpp_e2e.rs",
       "role": "Rust e2e testi",
       "purpose": "Hub'ın gerçek Orchestrator ve SecondBrain motorlarını RPP 1.0/1.1 ile sürdüğünü kanıtlar: manifest/sağlık/şema, bilinmeyen anahtar reddi, uygula-geri oku ve idempotent tekrar, bilinmeyen op'un yerel reddi, motor bulunamadı, protokol uyuşmazlığı ve yaşam döngüsü planı. Geçici veri kökleri.",
@@ -627,30 +960,30 @@
     {
       "path": "src-tauri/tests/trust_catalog_e2e.rs",
       "role": "Katalog güveni saldırı testi",
-      "purpose": "Gerçek build_bundle çıktısı üzerinde katalogun yalnızca güvenilir anahtarla imzalı paketi sunduğunu kanıtlar: sürüm/tür değişimi, yeniden özetlenmiş içerik, bozulmuş imza, bilinmeyen algoritma, imza silme ve saldırgan anahtarıyla yeniden imzalama reddedilir; imzasız paket yalnızca geliştirme isteğiyle kabul edilir.",
+      "purpose": "Gerçek build_bundle çıktısı üzerinde katalogun yalnızca güvenilir anahtarla imzalı paketi sunduğunu kanıtlar: sürüm/tür değişimi, yeniden özetlenmiş içerik, bozulmuş imza, bilinmeyen algoritma, imza silme ve saldırgan anahtarıyla yeniden imzalama reddedilir; imzasız paket yalnızca geliştirme isteğiyle kabul edilir. Yayın araçlarını respected-hub/release/tools yolundan çağırır.",
       "relationships": [
         "lifecycle::catalog ve status, trust.rs ve tools/bundle_signing.py ile birlikte çalışır."
       ],
-      "review_sha256": "0103bdb77014b7bf874a5f138fb60e65ebc07e60b51d9873d7dee52a7daaa80c"
+      "review_sha256": "b8ffc811123d470e32a4a2eca72c92d27a54b55c8a24c3d236c8c00196378708"
     },
     {
       "path": "src/App.tsx",
       "role": "Görsel yönetim",
-      "purpose": "Hub kabuğunu çizer: global rail (Hub sayfaları ve uygulama çalışma alanları), üst çubuk, sağlık özeti ve yenileme; route'a göre Home, MyApps, Discover, Connections, Activity, Settings ve AppWorkspace görünümlerini gösterir. Tarayıcı önizlemesinde gerçek veri uydurmaz, uyarı gösterir. Seçili sayfa oturum boyunca sessionStorage'da tutulur; WebView yeniden yüklenirse (ör. kurulum sırasında) kullanıcı Ana Sayfa'ya atılmaz. Product kurulumcularından gelen --install niyeti oturum başına bir kez ilgili sayfayı açar (startupIntent). startup-intent olayı dinlenir: Hub açıkken başlatılan ürün kurucusunun seçimi ilgili sayfayı açar.",
+      "purpose": "Hub kabuğunu çizer: global rail (Hub sayfaları ve uygulama çalışma alanları), üst çubuk, sağlık özeti ve yenileme; route'a göre Home, MyApps, Discover, Connections, Activity, Settings ve AppWorkspace görünümlerini gösterir. Tarayıcı önizlemesinde gerçek veri uydurmaz, uyarı gösterir. Seçili sayfa oturum boyunca sessionStorage'da tutulur; WebView yeniden yüklenirse (ör. kurulum sırasında) kullanıcı Ana Sayfa'ya atılmaz. Product kurulumcularından gelen --install niyeti oturum başına bir kez ilgili sayfayı açar (startupIntent). startup-intent olayı dinlenir: Hub açıkken başlatılan ürün kurucusunun seçimi ilgili sayfayı açar. Windows Yüklü uygulamalar ve ürün kurulumlarından gelen niyetleri (install/uninstall/manage) işler; Hub ve ürün güncellemelerini Güncelle/Sonra bildirimiyle önerir, Hub güncellemesini başlatır; Hub sürümünü gösterir.",
       "relationships": [
         "main.tsx çağırır; apps.ts, api.ts (native), useEcosystem.ts, shellModel.ts (globalHealth), ui.tsx ve views/* kullanır.",
         "Kabuk modeli ve gezinme testleri sağlık/rota mantığını kapsar."
       ],
-      "review_sha256": "13e86e580b572e0c5563918123cf53590d6d78faba14bccb70d1c372b8124320"
+      "review_sha256": "f9a58025b217cbf84d0fafeb7f02ce9c28536b879cf18de622315b207fd09c3e"
     },
     {
       "path": "src/api.ts",
       "role": "Tipli native API",
-      "purpose": "Tauri invoke ile explicit engine/settings/product işlemleri ve runtime detection/types sağlar. startup_intent komutunu startupIntent olarak sunar.",
+      "purpose": "Tauri invoke ile explicit engine/settings/product işlemleri ve runtime detection/types sağlar. startup_intent komutunu startupIntent olarak sunar. StartupIntent türü: { action: install|uninstall|manage, product }.",
       "relationships": [
         "Rust command handler tüketilir; generic shell plugin veya sahte sonuç yoktur."
       ],
-      "review_sha256": "11bcd0898b69688f267d108257b5dffdc2455bde98777b2eec6cfbd086c22684"
+      "review_sha256": "b70581ef5037e4dda18ac01af9ae5fba65dfc178c852a57e2be4394206b7ae3a"
     },
     {
       "path": "src/apps.ts",
@@ -660,7 +993,7 @@
         "useEcosystem.ts, Home/MyApps/Discover görünümleri ve shell tarafından okunur; orchestrator/workspaceModel.ts'ten ORCHESTRATOR_PAGES alır.",
         "tests/appNav.test.ts kapsar."
       ],
-      "review_sha256": "0b9ca6d75b34684b55994e18b13bd6f5bea6586525806515feb48a695ab75607"
+      "review_sha256": "40c916cd7a2261f4e91b015ad63236064dc5fcb2467464c9d3dd43807548199d"
     },
     {
       "path": "src/brainClients.ts",
@@ -700,17 +1033,17 @@
         "views/Home.tsx tarafından çağrılır; productsModel.ts'ten ProductStatusKind türünü kullanır.",
         "tests/homeModel.test.ts kapsar."
       ],
-      "review_sha256": "5b777f2f5834e6409daa9068bc6f21525e510b59a6dc9758923816d33dc3dc52"
+      "review_sha256": "88c7ab743b0ec723c339833d5212973601f90bb627b568136f44d2f628858e8f"
     },
     {
       "path": "src/lifecycle.ts",
       "role": "Ürün yaşam döngüsü istemcisi",
-      "purpose": "Hub yönetimli ürünlerin kurulum/güncelleme/onarım/kaldırma/geri alma işlemleri için tipli native istemci, plan ve günlük türleri ve etiket/hata/geri alma yardımcıları. Native { ok, result, error } döner; hiçbir şey simüle edilmez. Güven düzeyi (trust) türü; SecondBrain kaldırması geri alınamaz olarak işaretlenir (canRollback).",
+      "purpose": "Hub yönetimli ürünlerin kurulum/güncelleme/onarım/kaldırma/geri alma işlemleri için tipli native istemci, plan ve günlük türleri ve etiket/hata/geri alma yardımcıları. Native { ok, result, error } döner; hiçbir şey simüle edilmez. Güven düzeyi (trust) türü; SecondBrain kaldırması geri alınamaz olarak işaretlenir (canRollback). Uzak katalog ve Hub güncellemesi istemcileri (hubUpdateStatus, catalogRefresh, catalogSetChannel, hubUpdateInstall), kanal türü, yeni hata kodları; güncelleme geri alınamaz (eski sürüm silinir).",
       "relationships": [
         "LifecycleControls, BrainSetup/BrainInstall, Activity, Discover, useEcosystem ve mcpAccess kullanır.",
         "tests/lifecycleModel.test.ts kapsar."
       ],
-      "review_sha256": "e609f647eb815805f2c0a93cb5121d8b06264ebe837c660f2bf037be1fe1e322"
+      "review_sha256": "c91f7cacb2b4fd19b6a7d3d29e65366a2d43923f7523438c273399be73655612"
     },
     {
       "path": "src/main.tsx",
@@ -799,7 +1132,7 @@
         "Uygulama kabuğu (App) tarafından çağrılır; productsModel.ts'ten durum türünü alır.",
         "tests/shellModel.test.ts kapsar."
       ],
-      "review_sha256": "dd20a42310fdb1cb6044b65e0d0bed95931241a59c85f1a9a5fddbd1ecb5ae78"
+      "review_sha256": "44c51a0a97adf73ec368e287a7d848061b2f186d13b0758605030ce79f87c301"
     },
     {
       "path": "src/tasks.ts",
@@ -828,7 +1161,7 @@
         "Kabuk ve tüm üst düzey görünümler tarafından kullanılır; apps.ts, productClient.ts, lifecycle.ts ve productsModel.ts'e dayanır.",
         "Doğrudan test yok; modelleri homeModel/shellModel/productsModel testleriyle kapsanır."
       ],
-      "review_sha256": "4d176afe0ff0b9d8935e10d8ac944c24ccee5ec12aaf5947443820b4b1b99486"
+      "review_sha256": "63a926981cc6cd7f4086b13f24ebf4b3a8a57b6c219868a6ee6f0b6a37d8f44c"
     },
     {
       "path": "src/views/Activity.tsx",
@@ -928,7 +1261,7 @@
         "Kabuk tarafından açılır; homeModel.ts, useEcosystem ve ui.tsx kullanır.",
         "Kapsam: tests/homeModel.test.ts."
       ],
-      "review_sha256": "001f3c8a776f542ba2e548e896b00c3a73cd23f1952536a83e53ed500831ff73"
+      "review_sha256": "6062a05ba49d9fccb395ceb78a0502f99359636b802bd2076bde04a917fdfe08"
     },
     {
       "path": "src/views/IntegrationPreview.tsx",
@@ -943,12 +1276,12 @@
     {
       "path": "src/views/LifecycleControls.tsx",
       "role": "Yaşam döngüsü kontrolleri",
-      "purpose": "Tek bir Hub yönetimli ürün için kur/güncelle/onar/kaldır: önce plan, onay, uygulama, sonra geri alma ve yedek temizleme sunar. Geri döndürülemez adımlar açıkça belirtilir. Yedekleri temizleme ve SecondBrain kaldırma metni iki adımlı onay ve doğru kapsam açıklamasıyla gösterilir.",
+      "purpose": "Tek bir Hub yönetimli ürün için kur/güncelle/onar/kaldır: önce plan, onay, uygulama, sonra geri alma ve yedek temizleme sunar. Geri döndürülemez adımlar açıkça belirtilir. Yedekleri temizleme ve SecondBrain kaldırma metni iki adımlı onay ve doğru kapsam açıklamasıyla gösterilir. autoAction ile başka yerde seçilmiş işlemin (Yüklü uygulamalar, güncelleme bildirimi) planını doğrudan açar; paket indirilirken durum metni gösterir; katalog alınamadıysa Ayarlar'a yönlendirir.",
       "relationships": [
         "MyApps tarafından kullanılır; lifecycle.ts işlemlerini çağırır.",
         "Kapsam: tests/lifecycleModel.test.ts."
       ],
-      "review_sha256": "9db6437029858201afb110604eafe333fa809a0c433801d90f8bbda42ec7bc7e"
+      "review_sha256": "8afba7b12b31fcbaf5ceae3fa31a325202dbbd1acb2c7f3012e2f02c1ac3e52b"
     },
     {
       "path": "src/views/MemoryAccess.tsx",
@@ -982,12 +1315,12 @@
     {
       "path": "src/views/MyApps.tsx",
       "role": "Uygulamalarım görünümü",
-      "purpose": "Hub'a bağlı ürünleri durum, sürüm ve yetenekleriyle listeler (ürünün kendi sağlık yanıtından); kurulum eksikse sihirbaza yönlendirir ve yaşam döngüsü kontrollerini barındırır.",
+      "purpose": "Hub'a bağlı ürünleri durum, sürüm ve yetenekleriyle listeler (ürünün kendi sağlık yanıtından); kurulum eksikse sihirbaza yönlendirir ve yaşam döngüsü kontrollerini barındırır. App'ten gelen istenen işlemi (ask) ilgili ürünün kontrollerine iletir; ürünlerin imzalı katalogdan indirildiğini ve Windows Uygulamalar listesinde göründüğünü açıklar.",
       "relationships": [
         "Kabuk tarafından açılır; useEcosystem, LifecycleControls ve ui.tsx kullanır.",
         "Doğrudan test yok."
       ],
-      "review_sha256": "ae0f105b72ab6cf91108c2017475c3ddba169bdf1cec65be5db71bd6d8234cf6"
+      "review_sha256": "ec3321d9268e28e12b1c35a8b39d3b1082f40f3a8f6463352652aa92dbbf4e58"
     },
     {
       "path": "src/views/OrchestratorMcp.tsx",
@@ -1012,12 +1345,12 @@
     {
       "path": "src/views/Settings.tsx",
       "role": "Hub ayarları görünümü",
-      "purpose": "Python yolu, ürün kaynak klasörleri ve görev verisi klasörü gibi geliştirme ayarlarını düzenletir; kayıt sonrası durumu (kaydediliyor/uygulandı/doğrulandı/başarısız) bildirir.",
+      "purpose": "Python yolu, ürün kaynak klasörleri ve görev verisi klasörü gibi geliştirme ayarlarını düzenletir; kayıt sonrası durumu (kaydediliyor/uygulandı/doğrulandı/başarısız) bildirir. Güncellemeler bölümü: Hub sürümü, beta/kararlı kanal seçimi ve Güncellemeleri denetle.",
       "relationships": [
         "Kabuk Ayarlar rotasında açılır; api.ts ve lifecycle.ts kullanır.",
         "Doğrudan test yok."
       ],
-      "review_sha256": "487cf38eada0e820ee35349afdbb4924b9a67b12a58162fe27adbd11887a83d2"
+      "review_sha256": "0e7dd484b42ef72a522c62a87ab267158dde732538abec5137a5a0007f948d48"
     },
     {
       "path": "src/views/Tasks.tsx",
@@ -1157,7 +1490,7 @@
         "src/apps.ts ve workspaceModel.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "7df091f552b5ae3788e40f70acf16dba09baafc589ab86093ba78ce915bb905c"
+      "review_sha256": "e8788c052d20f1a2aa57b51c9a54a5b310492dadc583c68c7fe14d38222a93e0"
     },
     {
       "path": "tests/brainClients.test.ts",
@@ -1207,17 +1540,17 @@
         "src/homeModel.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "b9f6d3f55b2958ab7104bd4b241c207d830c2f0bdde3df74825d94ae3932191b"
+      "review_sha256": "0fd71d11d232744faaded3e45ebd63fc696147015c1dc10d7af3144f70e3218e"
     },
     {
       "path": "tests/lifecycleModel.test.ts",
       "role": "Yaşam döngüsü testleri",
-      "purpose": "Yaşam döngüsü etiketleri, kullanılabilir eylemler, geri alma uygunluğu, hata ve günlük cümleleri ile operasyon kimliği üretimini doğrular.",
+      "purpose": "Yaşam döngüsü etiketleri, kullanılabilir eylemler, geri alma uygunluğu, hata ve günlük cümleleri ile operasyon kimliği üretimini doğrular. Güncellemenin geri alınamadığını sınar.",
       "relationships": [
         "src/lifecycle.ts'i sınar.",
         "node --test ile çalışır."
       ],
-      "review_sha256": "45f74e2db99b6334eabe720b38aab8e83ea8d0f2444d0d069d9b9263ed0601d5"
+      "review_sha256": "d20a91c909d1409ba80b41cb2d24cf96cfbd228e537612769e2dd6f003b5d622"
     },
     {
       "path": "tests/mcpAccess.test.ts",
@@ -1360,12 +1693,11 @@
     {
       "path": "tools/hub_native_e2e.mjs",
       "role": "Native E2E aracı",
-      "purpose": "Şu an boş bir yer tutucu dosyadır; içinde kod yoktur. Ürün yaşam döngüsü kararı Hub'un native E2E'sinin PATH'ten Python çıkarılarak çalıştırıldığını belirtir, ancak bu betik henüz bunu uygulamaz.",
+      "purpose": "Derlenmiş Hub'ı (geliştirme veya kurulu) WebView2 DevTools portu üzerinden gerçek masaüstünde uçtan uca sürer: atılabilir kökler, sahte kullanıcı evi, PATH'ten Python çıkarılmış; ürün paketlerini release/tools ile üretir, --remote-catalog ile indirme yolunu (publish_release.py local-catalog) kullanır; gerçek ortamın değişmediğini real_env_guard ile kanıtlar ve rapor yazar.",
       "relationships": [
-        "HUB_PRODUCT_LIFECYCLE.md native E2E'ye atıf yapar; şu an hiçbir kod bu dosyayı çağırmaz.",
-        "Doldurulana kadar kapsayan test yoktur."
+        "release/tools/build_bundle.py, build_brain_dist.py, build_runtime.py, publish_release.py ve real_env_guard.py'yi çağırır."
       ],
-      "review_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "review_sha256": "f4e612ea93d00807cf9ad172b90361c236137fedd78319efdbeaa74a560cff08"
     },
     {
       "path": "tools/repository_map.py",

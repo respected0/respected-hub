@@ -24,7 +24,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--force", action="store_true")
     if parser.parse_args().force or stale():
-        done = subprocess.run([sys.executable, str(ECO / "respected-secondbrain" / "tools" / "build_installer.py"), "--platform", "windows", "--output", str(CACHE), "--no-installer"], cwd=ECO / "respected-secondbrain")
+        done = subprocess.run([sys.executable, str(ECO / "respected-secondbrain" / "tools" / "build_installer.py"), "--platform", "windows", "--output", str(CACHE)], cwd=ECO / "respected-secondbrain")
         if done.returncode:
             sys.exit(done.returncode)
     print(DIST)

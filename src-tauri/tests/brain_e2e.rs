@@ -47,7 +47,7 @@ fn holds(bytes: &[u8], secret: &str) -> bool {
 }
 
 fn dist(eco: &Path) -> PathBuf {
-    let built = Command::new("python").arg("-B").arg(eco.join("tools").join("build_brain_dist.py")).output().expect("python");
+    let built = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_brain_dist.py")).output().expect("python");
     assert!(built.status.success(), "frozen SecondBrain build failed: {}", String::from_utf8_lossy(&built.stderr));
     PathBuf::from(String::from_utf8_lossy(&built.stdout).lines().last().unwrap().trim())
 }
@@ -67,7 +67,7 @@ fn secondbrain_lifecycle_runs_through_its_own_engine_with_safe_integrations() {
     std::env::set_var("RESPECTED_HUB_BRAIN_DATA_DIR", &dirs.data);
 
     let source = dist(&eco);
-    let built = Command::new("python").arg("-B").arg(eco.join("tools").join("build_bundle.py")).args(["secondbrain-dist", "--dist"]).arg(&source).arg("--out").arg(&catalog.0).status().unwrap();
+    let built = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_bundle.py")).args(["secondbrain-dist", "--dist"]).arg(&source).arg("--out").arg(&catalog.0).status().unwrap();
     assert!(built.success());
     let roots = Roots { managed: managed.0.clone(), catalog: catalog.0.clone() };
     let settings = Settings { python: "no-python-needed".into(), orchestrator_root: eco.join("respected-orchestrator"), brain_root: work.0.join("none"),

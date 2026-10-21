@@ -3,8 +3,9 @@ import type { Ecosystem } from '../useEcosystem.ts';
 import { Emblem, Icon, Weave } from '../ui.tsx';
 import type { Go } from './Home.tsx';
 import LifecycleControls from './LifecycleControls.tsx';
+import type { LifecycleAction } from '../lifecycle.ts';
 
-export default function MyApps({ eco, go }: { eco: Ecosystem; go: Go }) {
+export default function MyApps({ eco, go, ask, onAsked }: { eco: Ecosystem; go: Go; ask?: { product: string; action: LifecycleAction } | null; onAsked?: () => void }) {
   return <div className="page">
     <div className="page-head"><div><span className="eyebrow">Kütüphane</span><h1>Uygulamalarım</h1><p>Hub'a bağlı ürünler. Durum, sürüm ve yetenekler ürünün kendi sağlık yanıtından okunur.</p></div><button onClick={eco.refresh}><Icon name="refresh" />Durumu yenile</button></div>
     <div className="lib-list">{APPS.map(app => { const runtime = eco.apps[app.id]; const summary = runtime.summary; const needsSetup = runtime.configSource === 'defaults' && app.pages.some(page => page.id === 'setup');
@@ -18,14 +19,16 @@ export default function MyApps({ eco, go }: { eco: Ecosystem; go: Go }) {
           {summary.checks.length > 0 && <ul className="checks compact" aria-label="Sağlık kontrolleri">{summary.checks.map(check => <li key={check.name} className={check.ok ? 'ok' : 'bad'}><span aria-hidden="true">{check.ok ? '✓' : '✕'}</span>{check.name}{check.detail ? ` — ${check.detail}` : ''}</li>)}</ul>}
           {summary.errorText && <p className="error" role="alert">{summary.errorText}</p>}
           {installed && app.id === 'orchestrator' && <p className="muted">Orchestrator'ın ayrı bir penceresi yoktur: burada, "Çalışma alanını aç" ile görev ve ajanları yönetirsiniz. AI araçlarınızdan kullanmak için çalışma alanında MCP erişimini açın.</p>}
-          <LifecycleControls name={app.name} lc={eco.lifecycle?.products.find(item => item?.product === app.id) ?? null} onChanged={eco.refresh} onWizard={app.id === 'secondbrain' ? () => go({ app: app.id, page: 'setup' }) : undefined} /></div>
+          <LifecycleControls name={app.name} lc={eco.lifecycle?.products.find(item => item?.product === app.id) ?? null} onChanged={eco.refresh} onWizard={app.id === 'secondbrain' ? () => go({ app: app.id, page: 'setup' }) : undefined}
+            autoAction={ask?.product === app.id ? ask.action : undefined} onAutoDone={onAsked} /></div>
         {installed && <div className="lib-actions">
           {needsSetup && <button className="cta" onClick={() => go({ app: app.id, page: 'setup' })}>Kurulumu tamamla</button>}
           <button className={needsSetup ? '' : 'cta'} onClick={() => go({ app: app.id, page: 'overview' })}>Çalışma alanını aç</button>
           <button onClick={() => go({ app: app.id, page: 'settings' })}>Ayarlar</button>
         </div>}</article>; })}</div>
     <section className="lib-item sys-component" aria-label="Sistem bileşenleri"><div className="lib-body"><h2>Python çalışma ortamı</h2><p>Ürünler Hub'ın kendi Python'unu kullanır; bilgisayarında Python kurulu olması gerekmez. İlk ürün kurulumunda otomatik kurulur.</p>
-      <LifecycleControls name="Python çalışma ortamı" lc={eco.lifecycle?.products.find(item => item?.product === 'runtime') ?? null} onChanged={eco.refresh} /></div></section>
-    <div className="truth-bar"><Icon name="info" /><span>Hub'dan kurulan uygulamalar, katalog paketinden doğrulanmış bir kopya olarak Hub'ın yönettiği klasöre yerleştirilir; verileriniz ayrı kalır. Kurulu değilse Hub, Bağlantılar'daki geliştirme kaynağını kullanır.{eco.lifecycle && <> Yönetilen klasör: <code>{eco.lifecycle.managed_root}</code></>}</span></div>
+      <LifecycleControls name="Python çalışma ortamı" lc={eco.lifecycle?.products.find(item => item?.product === 'runtime') ?? null} onChanged={eco.refresh}
+        autoAction={ask?.product === 'runtime' ? ask.action : undefined} onAutoDone={onAsked} /></div></section>
+    <div className="truth-bar"><Icon name="info" /><span>Uygulamalar GitHub'daki imzalı Respected kataloğundan indirilir, doğrulanır ve Hub'ın yönettiği klasöre kurulur; verileriniz ve notlarınız ayrı kalır. Her uygulama Windows Ayarlar › Uygulamalar listesinde de ayrı görünür; oradan kaldırabilir veya değiştirebilirsiniz.{eco.lifecycle && <> Yönetilen klasör: <code>{eco.lifecycle.managed_root}</code></>}</span></div>
   </div>;
 }

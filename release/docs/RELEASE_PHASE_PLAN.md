@@ -54,3 +54,8 @@ Not done (in this order when resuming):
 6. Release gate: full suites on the final state (SecondBrain full regression was not re-run after the restore change; only the 14 backup/maintenance tests were), then publish `dist/` + `SHA256SUMS.*` + `BETA_NOTICE.txt`.
 
 Decisions needed from you next session: key custody location; clean-machine option (VM / Sandbox needs admin to enable / throwaway user); whether to also delete `%TEMP%\restic-dl` and the older test residue listed in the handoff (§16).
+
+## Status 2026-10-21 – launcher model
+The bundled-catalog installers of 2026-10-18 are superseded (never published). Products now come from the signed catalog on GitHub
+Releases (`MASTER_HANDOFF.md` §20). Release sequence: bump to the release version → `publish_release.py build/catalog` with the vault →
+`release_package.py build --dir dist\release` → clean-machine check (install from a staged catalog or the real one) → `upload --yes`.

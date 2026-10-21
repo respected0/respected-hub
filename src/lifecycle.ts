@@ -16,7 +16,8 @@ export interface ProductLifecycle {
   version: string | null;
   signed: boolean | null;
   problems: string[];
-  available: { version: string; signed: boolean; trust?: 'production' | 'development' | 'unsigned'; files: number; digest: string } | null;
+  /** `remote`: listed in the downloaded catalog index, fetched from GitHub when the person installs or updates. */
+  available: { version: string; signed: boolean; trust?: 'production' | 'development' | 'unsigned'; files?: number; digest?: string; remote?: boolean; size?: number } | null;
   previous_versions: string[];
   catalog_skipped: string[];
   removed_available: boolean;
@@ -52,6 +53,15 @@ export const lifecycleRollback = (operationId: string) => call<JournalEntry>('li
 export const lifecyclePurgeBackups = (product: string) => call<{ removed_entries: number }>('lifecycle_purge_backups', { product });
 export const activityList = (limit = 50) => call<JournalEntry[]>('activity_list', { limit });
 
+export type Channel = 'beta' | 'stable';
+export interface HubUpdate { current: string; channel: Channel; available: { version: string; size: number; min_hub: string | null } | null; checked: boolean; }
+export const hubUpdateStatus = () => call<HubUpdate>('hub_update_status');
+/** Downloads and verifies the signed catalog index again (GitHub), then answers like hubUpdateStatus. */
+export const catalogRefresh = () => call<HubUpdate>('catalog_refresh');
+export const catalogSetChannel = (channel: Channel) => call<HubUpdate>('catalog_set_channel', { channel });
+/** Starts the verified Hub installer; the Hub closes itself and the installer reopens it. */
+export const hubUpdateInstall = () => call<{ started: boolean }>('hub_update_install');
+
 export function newOperationId(action: LifecycleAction): string {
   return `${action}-${crypto.randomUUID()}`.slice(0, 64);
 }
@@ -71,6 +81,8 @@ const ERROR_TR: Record<string, string> = {
   RECEIPT_NOT_FOUND: 'İşlem kaydı bulunamadı.',
   BAD_REQUEST: 'İstek geçersiz.',
   INTERNAL: 'Beklenmeyen bir hata oluştu.',
+  CATALOG_UNAVAILABLE: 'Ürün kataloğuna ulaşılamadı.',
+  HUB_TOO_OLD: 'Bu sürüm daha yeni bir Hub gerektiriyor.',
 };
 
 /** One readable sentence for a failed lifecycle reply: the engine message first, then the recovery hint. */
@@ -107,4 +119,5 @@ export function journalSentence(entry: JournalEntry, productName: string): strin
 /** Only the newest applied operation of a product can be undone (journal is newest first). */
 export const canRollback = (entry: JournalEntry, journal: JournalEntry[] = [entry]) =>
   entry.status === 'applied' && entry.undo != null && !(entry.product === 'secondbrain' && entry.action === 'uninstall') // the engine cannot undo its own uninstall
+  && entry.action !== 'update' // an update deletes the replaced version (no leftovers), so there is nothing to go back to
   && !journal.some(other => other.product === entry.product && other.status === 'applied' && other.started_at > entry.started_at);

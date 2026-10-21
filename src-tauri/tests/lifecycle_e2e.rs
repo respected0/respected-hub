@@ -24,7 +24,7 @@ fn ecosystem() -> PathBuf {
 }
 
 fn build(eco: &Path, product: &str, out: &Path) {
-    let status = Command::new("python").arg("-B").arg(eco.join("tools").join("build_bundle.py")).args([product, "--out"]).arg(out).status().expect("python");
+    let status = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_bundle.py")).args([product, "--out"]).arg(out).status().expect("python");
     assert!(status.success(), "bundle build failed for {product}");
 }
 
@@ -101,7 +101,7 @@ fn a_copy_the_engine_cannot_run_is_never_activated() {
     doc["bundle_digest"] = json!(Sha256::digest(canonical.as_bytes()).iter().map(|b| format!("{b:02x}")).collect::<String>());
     std::fs::write(bundle.join("bundle.json"), serde_json::to_vec(&doc).unwrap()).unwrap();
     // consistently broken AND validly (development-)signed: the engine check must be what stops it, not the signature
-    assert!(Command::new("python").arg("-B").arg(eco.join("tools").join("bundle_signing.py")).arg("sign").arg(&bundle).status().unwrap().success());
+    assert!(Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("bundle_signing.py")).arg("sign").arg(&bundle).status().unwrap().success());
 
     let settings = Settings { python: "python".into(), orchestrator_root: eco.join("respected-orchestrator"), brain_root: eco.join("respected-secondbrain"),
         data_root: data.0.clone(), brain_data_root: Some(data.0.clone()), brain_exe: None, brain_app_dir: None };
@@ -116,7 +116,7 @@ fn products_run_on_the_hub_managed_python_without_any_system_python() {
     let (managed, catalog, data) = (Temp::new("managed3"), Temp::new("catalog3"), Temp::new("data3"));
     let roots = Roots { managed: managed.0.clone(), catalog: catalog.0.clone() };
     build(&eco, "orchestrator", &catalog.0);
-    let status = Command::new("python").arg("-B").arg(eco.join("tools").join("build_runtime.py")).arg("--out").arg(&catalog.0).status().expect("python");
+    let status = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_runtime.py")).arg("--out").arg(&catalog.0).status().expect("python");
     assert!(status.success(), "runtime bundle build failed");
     let settings = Settings { python: "definitely-not-a-python-executable".into(), orchestrator_root: eco.join("respected-orchestrator"), brain_root: eco.join("respected-secondbrain"),
         data_root: data.0.clone(), brain_data_root: Some(data.0.clone()), brain_exe: None, brain_app_dir: None };

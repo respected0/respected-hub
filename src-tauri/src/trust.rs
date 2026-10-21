@@ -74,20 +74,31 @@ fn verify_with(production: &[(String, Vec<u8>)], development: &[(String, Vec<u8>
         return if allow_unsigned { Ok(Trust::UnsignedAllowed) } else { Err("paket imzasız; bu derleme yalnızca imzalı paketleri kurar".into()) };
     }
     if signature["alg"].as_str() != Some("ed25519") { return Err("desteklenmeyen imza algoritması".into()); }
-    let id = signature["key_id"].as_str().unwrap_or("");
+    check(production, development, signature["key_id"].as_str().unwrap_or(""), signature["value"].as_str().unwrap_or(""), &statement(doc, product, kind, version, digest))
+}
+
+fn check(production: &[(String, Vec<u8>)], development: &[(String, Vec<u8>)], id: &str, value: &str, message: &[u8]) -> Result<Trust, String> {
     let (key, trust) = production.iter().find(|(k, _)| k == id).map(|(_, key)| (key, Trust::Production))
         .or_else(|| development.iter().find(|(k, _)| k == id).map(|(_, key)| (key, Trust::Development)))
         .ok_or_else(|| format!("imza anahtarı bu derlemede güvenilir değil ({id})"))?;
     let key: [u8; 32] = key.as_slice().try_into().map_err(|_| "geçersiz ortak anahtar".to_string())?;
     let key = VerifyingKey::from_bytes(&key).map_err(|_| "geçersiz ortak anahtar".to_string())?;
-    let raw = STANDARD.decode(signature["value"].as_str().unwrap_or("")).map_err(|_| "imza çözülemedi".to_string())?;
+    let raw = STANDARD.decode(value).map_err(|_| "imza çözülemedi".to_string())?;
     let raw: [u8; 64] = raw.as_slice().try_into().map_err(|_| "imza uzunluğu geçersiz".to_string())?;
-    key.verify(&statement(doc, product, kind, version, digest), &Signature::from_bytes(&raw)).map_err(|_| "imza doğrulanamadı".to_string())?;
+    key.verify(message, &Signature::from_bytes(&raw)).map_err(|_| "imza doğrulanamadı".to_string())?;
     Ok(trust)
 }
 
 pub fn verify(doc: &Value, product: &str, kind: &str, version: &str, digest: &str) -> Result<Trust, String> {
     verify_with(&parse_key_lines(PRODUCTION_KEYS), &dev_keys(), doc, product, kind, version, digest, allow_unsigned())
+}
+
+/// A detached `<key_id> <base64 signature>` line over `message` (the remote catalog index; same format as SHA256SUMS.sig).
+/// No unsigned opt-in: an index is always signed.
+pub fn verify_detached(message: &[u8], signature_line: &str) -> Result<Trust, String> {
+    let mut parts = signature_line.split_whitespace();
+    let (Some(id), Some(value), None) = (parts.next(), parts.next(), parts.next()) else { return Err("imza satırı geçersiz".into()) };
+    check(&parse_key_lines(PRODUCTION_KEYS), &dev_keys(), id, value, message)
 }
 
 #[cfg(test)]

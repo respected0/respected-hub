@@ -39,10 +39,10 @@ fn uninstalling_the_hub_can_remove_the_products_and_every_registration_without_t
     for (name, value) in [("RESPECTED_HUB_BRAIN_APP_DIR", &dirs.app), ("RESPECTED_HUB_BRAIN_DATA_DIR", &dirs.data)] { std::env::set_var(name, value); }
 
     let built = |args: &[&str], out: &Path| {
-        let done = Command::new("python").arg("-B").arg(eco.join("tools").join("build_bundle.py")).args(args).arg("--out").arg(out).status().unwrap();
+        let done = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_bundle.py")).args(args).arg("--out").arg(out).status().unwrap();
         assert!(done.success());
     };
-    let frozen = Command::new("python").arg("-B").arg(eco.join("tools").join("build_brain_dist.py")).output().unwrap();
+    let frozen = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_brain_dist.py")).output().unwrap();
     assert!(frozen.status.success(), "{}", String::from_utf8_lossy(&frozen.stderr));
     let dist = String::from_utf8_lossy(&frozen.stdout).lines().last().unwrap().trim().to_string();
     built(&["secondbrain-dist", "--dist", &dist], &catalog.0);
