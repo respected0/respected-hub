@@ -22,11 +22,11 @@ campaigns without exposing any generic shell.
   campaign directory NAMES under `<data_root>/campaigns`. It accepts only valid
   identities, ignores symlinks/junctions, and returns an empty list when the
   folder is missing. It never follows a path out of the campaigns root.
-- `src/campaigns.ts` holds the typed wrappers (`listCampaigns`, `campaignStatus`,
+- `src/products/orchestrator/campaigns.ts` holds the typed wrappers (`listCampaigns`, `campaignStatus`,
   `startCampaign`) and the pure `summarizeCampaign(status)` mapper.
   `summarizeCampaign` is tolerant of missing fields, so older campaigns without
   chain/continuation info still render.
-- `src/views/Campaigns.tsx` renders the list, a detail panel (lanes, timeline,
+- `src/products/orchestrator/views/Campaigns.tsx` renders the list, a detail panel (lanes, timeline,
   chain when present, supervisor-alive indicator) and a collapsed advanced
   section that sends a spec only after an explicit confirm. Polling runs every
   5 s only while a campaign is running and the view is mounted.

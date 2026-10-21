@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { changedOnly, clientLabel, initialDesired } from '../src/mcpAccess.ts';
-import type { McpPlan } from '../src/mcpAccess.ts';
+import { changedOnly, clientLabel, initialDesired } from '../src/products/orchestrator/mcpAccess.ts';
+import type { McpPlan } from '../src/products/orchestrator/mcpAccess.ts';
 
 const row = (client: string, state: McpPlan['clients'][number]['state']) => ({ client, config: `C:/${client}`, detected: true, state, action: 'unchanged' as const, reason: '' });
 

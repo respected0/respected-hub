@@ -4,9 +4,9 @@ Status: accepted.
 
 ## What is mounted
 
-- The existing `src/views/Campaigns.tsx` is now wired into the Orchestrator
-  workspace. `src/apps.ts` gains one page `{ id: 'campaigns', label: 'Kampanyalar' }`
-  and `src/views/AppWorkspace.tsx` renders `<Campaigns />` for that page. The
+- The existing `src/products/orchestrator/views/Campaigns.tsx` is now wired into the Orchestrator
+  workspace. `src/shell/apps.ts` gains one page `{ id: 'campaigns', label: 'Kampanyalar' }`
+  and `src/shell/views/AppWorkspace.tsx` renders `<Campaigns />` for that page. The
   existing `overview`, `runs` and `settings` pages are unchanged.
 - No new engine action, no new dependency and no new routing layer. The view
   reuses the already-accepted `listCampaigns`, `campaignStatus` and
@@ -15,7 +15,7 @@ Status: accepted.
 ## Data-root rule
 
 - The campaign folder is the user's configured Hub data root (`Settings.data_root`
-  loaded via the existing `loadSettings` in `src/api.ts`). It is shown read-only
+  loaded via the existing `loadSettings` in `src/shared/api.ts`). It is shown read-only
   in the Kampanyalar header; it is never hardcoded and the settings defaults are not
   touched.
 - When the list is empty the view says plainly (Turkish) that no campaign was

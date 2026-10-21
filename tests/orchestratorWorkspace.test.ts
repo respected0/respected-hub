@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { APPS } from '../src/apps.ts';
-import { ORCHESTRATOR_PAGES, mountFor, dataRootSummary } from '../src/views/orchestrator/workspaceModel.ts';
+import { APPS } from '../src/shell/apps.ts';
+import { ORCHESTRATOR_PAGES, mountFor, dataRootSummary } from '../src/products/orchestrator/views/workspaceModel.ts';
 
 test('orchestrator page order/ids match the workspace model registry', () => {
   const orchestrator = APPS.find(app => app.id === 'orchestrator');

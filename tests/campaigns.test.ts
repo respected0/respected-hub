@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { startCampaign, summarizeCampaign } from '../src/campaigns.ts';
+import { startCampaign, summarizeCampaign } from '../src/products/orchestrator/campaigns.ts';
 
 test('summary: a running campaign with a live supervisor polls as running', () => {
   const summary = summarizeCampaign({

@@ -21,7 +21,7 @@ Three different things were easy to conflate:
 
 ## Decision
 
-- Add `src/views/orchestrator/agentsModel.ts`: a pure, testable model. It takes
+- Add `src/products/orchestrator/views/agentsModel.ts`: a pure, testable model. It takes
   the raw `status.workers` record and the raw RPP `settings.readback` settings
   and returns two clearly separate lists plus a plain note.
   - `roles` is the fixed set of engine roles above; it is never derived from
@@ -29,12 +29,12 @@ Three different things were easy to conflate:
   - `profiles` is read only from settings keys that really exist in the
     readback (`default_worker`, `default_worker_profile`,
     `default_reviewer_profile`). Keys that are absent or empty are skipped.
-- Add `src/views/orchestrator/AgentsPanel.tsx` (default export) rendering the
+- Add `src/products/orchestrator/views/AgentsPanel.tsx` (default export) rendering the
   roles list, the model/provider profiles list and the worker CLI list as
   separate, read-only blocks, plus the note. No add/edit/delete controls.
-- Add `src/views/orchestrator/agents.css` for the small amount of layout the
+- Add `src/products/orchestrator/views/agents.css` for the small amount of layout the
   global styles do not cover. `src/hub.css`, `src/style.css` and
-  `src/views/AppWorkspace.tsx` are left untouched; the panel is standalone and
+  `src/shell/views/AppWorkspace.tsx` are left untouched; the panel is standalone and
   can be mounted inside the Orchestrator workspace later.
 
 ## Honesty rules

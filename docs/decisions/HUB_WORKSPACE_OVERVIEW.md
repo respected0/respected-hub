@@ -11,7 +11,7 @@ state without a browser-side polling loop of its own. Two engine reads feed it:
 
 ## Decision
 
-- `src/views/orchestrator/overviewModel.ts` is a pure, testable mapper (no React,
+- `src/products/orchestrator/views/overviewModel.ts` is a pure, testable mapper (no React,
   no Tauri imports). `deriveOverview(status, runs)` returns `{runCounts,
   latestRuns, workersAvailable, workersMissing, warnings}`. It tolerates missing
   or malformed fields: unknown statuses degrade to plain Turkish groups, malformed
@@ -20,18 +20,18 @@ state without a browser-side polling loop of its own. Two engine reads feed it:
   - `runCounts` groups runs as `active` (non-terminal), `succeeded`
     (`completed`), `failed` (`failed`/`timed_out`/`interrupted`/`invalid`) and
     `other` (e.g. `cancelled`), using the shared `terminal()` helper from
-    `src/tasks.ts`.
+    `src/products/orchestrator/tasks.ts`.
   - `latestRuns` is the newest five. The engine `list` reply has no timestamps,
     so "newest" is approximated by `run_id`, which is timestamp-prefixed
     (`run-20261011122324-...`). The sort is direction-independent: it is correct
     whether the engine returns runs oldest- or newest-first.
   - `workersAvailable` / `workersMissing` split `status.workers` by whether a
     resolved path is present.
-- `src/views/orchestrator/OverviewPanel.tsx` (default export, props `{runs;
+- `src/products/orchestrator/views/OverviewPanel.tsx` (default export, props `{runs;
   workers; onOpenTasks?; onOpenRun?}`) renders the counts, the latest runs and
   the worker availability. It owns no timer; the shell refreshes and passes data.
   Outside Tauri it shows an honest notice and never fabricates data.
-- `src/views/orchestrator/overview.css` carries the panel's styles; no change to
+- `src/products/orchestrator/views/overview.css` carries the panel's styles; no change to
   `src/hub.css` and no new dependency.
 - `tests/orchestratorOverview.test.ts` covers the pure model with `node --test`.
 

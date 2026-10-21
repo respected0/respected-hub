@@ -6,7 +6,7 @@ import {
   parseResponse,
   negotiate,
   describeError,
-} from '../src/rpp.ts';
+} from '../src/shared/rpp.ts';
 
 const okEnvelope = JSON.stringify({
   rpp: '1.0', ok: true, operation_id: 'op-123', result: { status: 'healthy' }, error: null,
