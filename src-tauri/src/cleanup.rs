@@ -4,7 +4,8 @@
 //! shortcut, Orchestrator MCP entries). Without this, uninstalling the Hub would leave them pointing at products nobody can
 //! manage any more. It goes through the same journaled lifecycle paths as the UI: SecondBrain's own uninstaller (keeps the vault
 //! and data, restores foreign config entries), then Orchestrator; finally the Hub's managed folder is dropped.
-//! Notes, vaults and Orchestrator run data are never touched.
+//! Vaults and notes are never touched. The products' own data (settings, state, backups, Orchestrator runs) goes with them
+//! in a production build; a removal can not be undone.
 
 use crate::lifecycle::{self, Roots};
 use crate::{brain, hub_apply, rpp, Settings};

@@ -25,6 +25,7 @@ pub fn launcher_json(roots: &Roots) -> Value {
 /// The program and leading arguments of the launcher: the packaged executable, or (development builds) the source on Python.
 fn engine_program(settings: &Settings) -> Option<(String, Vec<String>, Option<PathBuf>)> {
     if let Some(exe) = settings.orchestrator_exe.as_ref().filter(|exe| exe.is_file()) { return Some((exe.to_string_lossy().to_string(), Vec::new(), None)); }
+    if !crate::trust::dev_enabled() { return None; }
     let source = settings.orchestrator_root.join("src");
     if !source.join("respected_orchestrator").is_dir() { return None; }
     Some((rpp::resolve_program(&settings.python), vec!["-m".into(), "respected_orchestrator".into()], Some(source)))

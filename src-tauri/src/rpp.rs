@@ -1,6 +1,7 @@
 // Respected Product Protocol (RPP) v1.0/v1.1 client for the Hub's native backend.
 // One JSON request on stdin, one JSON response line on stdout. Never panics: every
 // failure becomes a protocol envelope so callers always get a typed answer.
+use crate::lifecycle::valid_operation_id;
 use crate::{pump, PumpError, Settings};
 use serde_json::{json, Value};
 use std::process::{Command, Stdio};
@@ -58,11 +59,6 @@ fn forbidden_lifecycle_call(product: &str, op: &str, payload: Option<&Value>) ->
         }
         _ => None,
     }
-}
-
-fn valid_operation_id(id: &str) -> bool {
-    let length = id.len();
-    (8..=64).contains(&length) && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
 }
 
 pub fn generate_operation_id() -> String {
@@ -142,14 +138,6 @@ impl Gate {
         }
         Some(GateGuard { gate: self, writer: true })
     }
-
-    pub fn write(&self) -> GateGuard<'_> {
-        let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
-        while state.1 { state = self.changed.wait(state).unwrap_or_else(|p| p.into_inner()); }
-        state.1 = true; // new readers now wait
-        while state.0 > 0 { state = self.changed.wait(state).unwrap_or_else(|p| p.into_inner()); }
-        GateGuard { gate: self, writer: true }
-    }
 }
 
 impl Drop for GateGuard<'_> {
@@ -206,6 +194,7 @@ pub fn brain_rpp_command(settings: &Settings) -> Option<(Vec<String>, serde_json
         }
         argv
     } else {
+        if !crate::trust::dev_enabled() { return None; }
         let source = settings.brain_root.join("src");
         let package = source.join("respectedbrain");
         if !(package.join("__main__.py").is_file() || package.join("__init__.py").is_file() || source.join("respectedbrain.py").is_file()) { return None; }
@@ -231,7 +220,7 @@ pub fn orchestrator_command(settings: &Settings, args: &[&str]) -> Option<Comman
     let mut command = match settings.orchestrator_exe.as_ref().filter(|exe| exe.is_file()) {
         Some(exe) => Command::new(exe),
         None => {
-            if !settings.orchestrator_root.join("src/respected_orchestrator/__main__.py").is_file() { return None; }
+            if !crate::trust::dev_enabled() || !settings.orchestrator_root.join("src/respected_orchestrator/__main__.py").is_file() { return None; }
             let mut command = Command::new(&settings.python);
             isolate_python(&mut command);
             command.env("PYTHONPATH", settings.orchestrator_root.join("src")).args(["-m", "respected_orchestrator"]);
@@ -244,9 +233,17 @@ pub fn orchestrator_command(settings: &Settings, args: &[&str]) -> Option<Comman
     Some(command)
 }
 
+/// How the person starts the Orchestrator from a PowerShell prompt (manual approval and apply are never run by the Hub):
+/// the installed program with the data folder this Hub uses. `None` when no packaged Orchestrator is installed.
+pub fn orchestrator_cli_line(settings: &Settings) -> Option<String> {
+    let exe = settings.orchestrator_exe.as_ref().filter(|exe| exe.is_file())?;
+    Some(format!("& \"{}\" --data-root \"{}\"", exe.display(), settings.data_root.display()))
+}
+
 fn engine_command(settings: &Settings, product: &str) -> Option<Command> {
     if product == "orchestrator" { return orchestrator_command(settings, &["rpp"]); }
     if let Some(command) = frozen_brain_command(settings) { return Some(command); }
+    if !crate::trust::dev_enabled() { return None; }
     let source = settings.brain_root.join("src");
     let package = source.join("respectedbrain");
     if !(package.join("__main__.py").is_file() || package.join("__init__.py").is_file() || source.join("respectedbrain.py").is_file()) { return None; }
@@ -429,7 +426,7 @@ mod tests {
         let first = GATE.read();
         let wrote = Arc::new(AtomicBool::new(false));
         let flag = wrote.clone();
-        let writer = std::thread::spawn(move || { let _w = GATE.write(); flag.store(true, Ordering::SeqCst); });
+        let writer = std::thread::spawn(move || { let _w = GATE.write_within(Duration::from_secs(10)).expect("the reader finishes in time"); flag.store(true, Ordering::SeqCst); });
         std::thread::sleep(Duration::from_millis(100));
         assert!(!wrote.load(Ordering::SeqCst), "the writer waits for the running reader");
         let late = std::thread::spawn(|| { let _r = GATE.read(); });

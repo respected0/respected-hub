@@ -32,6 +32,7 @@ test('only applied operations with an undo record can be rolled back', () => {
   assert.equal(canRollback(entry()), true);
   assert.equal(canRollback(entry({ status: 'failed' })), false);
   assert.equal(canRollback(entry({ undo: null })), false);
+  assert.equal(canRollback(entry({ action: 'uninstall' })), false, 'a removal deletes the product data too');
 });
 
 test('operation ids satisfy the 8..64 [A-Za-z0-9_-] rule; times format or stay empty', () => {

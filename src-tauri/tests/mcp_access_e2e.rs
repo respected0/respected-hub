@@ -4,24 +4,14 @@ use respected_hub_lib::lifecycle::{self, Roots};
 use respected_hub_lib::{mcp_access, Settings};
 use serde_json::{json, Value};
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
-use std::time::{SystemTime, UNIX_EPOCH};
+mod common;
+use common::Temp;
 
 // Both tests repoint process-wide HOME variables.
 static ENV: Mutex<()> = Mutex::new(());
-
-struct Temp(PathBuf);
-impl Temp {
-    fn new(label: &str) -> Self {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-        let path = std::env::temp_dir().join(format!("hub-mcp-e2e-{label}-{}-{nanos}", std::process::id()));
-        std::fs::create_dir_all(&path).unwrap();
-        Temp(path)
-    }
-}
-impl Drop for Temp { fn drop(&mut self) { let _ = std::fs::remove_dir_all(&self.0); } }
 
 fn read_json(path: &Path) -> Value { serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap() }
 
@@ -109,26 +99,4 @@ fn orchestrator_mcp_registration_is_planned_approved_working_and_reversible() {
     let refused = mcp_access::apply(&roots, &settings, &json!({ "claude-code": true }), conflict["plan_digest"].as_str().unwrap(), "e2e-mcp-on-0002").unwrap_err();
     assert_eq!(refused.code, "LIFECYCLE_CONFLICT");
     assert_eq!(read_json(&home.join(".claude.json")), taken);
-}
-
-/// Validation helper (not part of the suite): registers Claude Code + Codex in a disposable HOME that real clients can then be
-/// pointed at. Runs only when RESPECTED_MCP_KEEP_DIR names an empty directory; leaves everything there.
-#[test]
-fn registers_a_disposable_home_for_real_client_checks() {
-    let _env = ENV.lock().unwrap_or_else(|e| e.into_inner());
-    let Some(keep) = std::env::var_os("RESPECTED_MCP_KEEP_DIR").map(PathBuf::from) else { return };
-    let eco = std::env::var_os("RESPECTED_ECOSYSTEM_ROOT").map(std::path::PathBuf::from).unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(".."));
-    let home = keep.join("home");
-    let off = std::env::var_os("RESPECTED_MCP_KEEP_ACTION").map_or(false, |a| a == "off");
-    std::fs::create_dir_all(home.join(".codex")).unwrap();
-    if !off { std::fs::write(home.join(".claude.json"), br#"{"theme":"dark","mcpServers":{"foreign-demo":{"command":"x","args":[]}}}"#).unwrap();
-        std::fs::write(home.join(".codex/config.toml"), "model = \"m\"\n\n[mcp_servers.foreign-demo]\ncommand = \"x\"\n").unwrap(); }
-    for name in ["USERPROFILE", "HOME"] { std::env::set_var(name, &home); }
-    std::env::set_var("APPDATA", home.join("AppData"));
-    let roots = Roots { managed: keep.join("managed"), catalog: keep.join("catalog") };
-    let settings = Settings { python: "python".into(), orchestrator_root: eco.join("respected-orchestrator"), brain_root: keep.join("none"),
-        data_root: keep.join("orch"), brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None };
-    let desired = json!({ "claude-code": !off, "codex": !off });
-    let planned = mcp_access::plan(&roots, &settings, &desired).unwrap();
-    mcp_access::apply(&roots, &settings, &desired, planned["plan_digest"].as_str().unwrap(), if off { "e2e-mcp-keep-002" } else { "e2e-mcp-keep-001" }).unwrap();
 }

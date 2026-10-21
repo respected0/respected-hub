@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyRun, deriveOverview, latestRuns, DROPPED_WARNING, RUNS_WARNING, WORKERS_WARNING } from '../../src/products/orchestrator/views/overviewModel.ts';
+import { classifyRun, deriveOverview, latestRuns, DROPPED_WARNING, RUNS_WARNING, WORKERS_WARNING } from '../../src/products/orchestrator/overviewModel.ts';
 import type { Run } from '../../src/shared/api.ts';
 
 function run(id: string, status: string): Run {

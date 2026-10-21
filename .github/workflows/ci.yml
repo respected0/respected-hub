@@ -58,3 +58,6 @@ jobs:
       - name: Rust unit and end-to-end tests
         working-directory: respected-hub
         run: cargo test --manifest-path src-tauri/Cargo.toml --no-fail-fast
+      - name: Production trust set (release profile, no development keys)
+        working-directory: respected-hub
+        run: cargo test --release --manifest-path src-tauri/Cargo.toml --lib production_build

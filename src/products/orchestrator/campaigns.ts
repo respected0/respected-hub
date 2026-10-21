@@ -11,12 +11,12 @@ export interface CampaignStatusResponse {
   supervisor_alive?: boolean;
 }
 
-export interface CampaignStart { campaign_id: string; status: string; pid: number }
+interface CampaignStart { campaign_id: string; status: string; pid: number }
 
 export type CampaignPhase = 'running' | 'finished' | 'needs_review' | 'interrupted' | 'blocked';
-export interface CampaignLane { name: string; statusText: string; detail: string; tokens: number | null }
-export interface CampaignTimelineItem { at: string; text: string }
-export interface CampaignChain { index: number; parent: string; outcome: string }
+interface CampaignLane { name: string; statusText: string; detail: string; tokens: number | null }
+interface CampaignTimelineItem { at: string; text: string }
+interface CampaignChain { index: number; parent: string; outcome: string }
 export interface CampaignSummary {
   headline: string;
   phase: CampaignPhase;

@@ -66,10 +66,6 @@ def sandbox_home() -> Path:
     return home
 
 
-def sandbox_env(home: Path) -> dict[str, str]:
-    return {"USERPROFILE": str(home), "HOME": str(home), "APPDATA": str(home / "AppData/Roaming"), "LOCALAPPDATA": str(home / "AppData/Local")}
-
-
 if __name__ == "__main__":
     command = sys.argv[1] if len(sys.argv) > 1 else ""
     if command == "snapshot":

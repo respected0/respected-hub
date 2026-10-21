@@ -19,7 +19,7 @@ from ecosystem_root import ECO
 # product -> (repository, build command relative to it, distribution folder name, launcher)
 PRODUCTS = {
     "orchestrator": ("respected-orchestrator", ["tools/build_dist.py"], "RespectedOrchestrator", "respected-orchestrator.exe"),
-    "secondbrain": ("respected-secondbrain", ["tools/build_installer.py", "--platform", "windows"], "RespectedBrain", "respectedbrain.exe"),
+    "secondbrain": ("respected-secondbrain", ["tools/build_dist.py", "--platform", "windows"], "RespectedBrain", "respectedbrain.exe"),
 }
 
 

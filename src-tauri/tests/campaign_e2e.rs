@@ -3,28 +3,8 @@
 use respected_hub_lib::{call_engine, list_campaigns, valid_campaign_id, Settings};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
-
-struct TempRoot(PathBuf);
-
-impl TempRoot {
-    fn new(label: &str) -> Self {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-        let path = std::env::temp_dir().join(format!("hub-campaign-e2e-{label}-{}-{nanos}", std::process::id()));
-        std::fs::create_dir_all(&path).expect("create temp data root");
-        TempRoot(path)
-    }
-}
-
-impl Drop for TempRoot {
-    fn drop(&mut self) { let _ = std::fs::remove_dir_all(&self.0); }
-}
-
-fn ecosystem_root() -> PathBuf {
-    std::env::var_os("RESPECTED_ECOSYSTEM_ROOT").map(PathBuf::from).unwrap_or_else(|| {
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
-    })
-}
+mod common;
+use common::{ecosystem, Temp};
 
 fn settings_for(ecosystem: &Path, data_root: &Path) -> Settings {
     Settings {
@@ -57,8 +37,8 @@ fn campaign_identity_rules_match_the_engine() {
 
 #[test]
 fn campaign_list_returns_only_valid_directories_newest_first() {
-    let data = TempRoot::new("list");
-    let settings = settings_for(&ecosystem_root(), &data.0);
+    let data = Temp::new("list");
+    let settings = settings_for(&ecosystem(), &data.0);
     campaign_folder(&data.0, "camp-20260101000000-aaaaaaaa");
     campaign_folder(&data.0, "camp-20260202000000-bbbbbbbb");
     // A regular file with a valid-looking name is not a campaign directory.
@@ -74,15 +54,15 @@ fn campaign_list_returns_only_valid_directories_newest_first() {
         "camp-20260101000000-aaaaaaaa".to_string(),
     ]);
 
-    let missing = TempRoot::new("list-missing");
-    let empty = list_campaigns(&settings_for(&ecosystem_root(), &missing.0)).unwrap();
+    let missing = Temp::new("list-missing");
+    let empty = list_campaigns(&settings_for(&ecosystem(), &missing.0)).unwrap();
     assert!(empty.is_empty(), "{empty:?}");
 }
 
 #[test]
 fn campaign_status_reads_the_engine_for_a_fixture_without_a_supervisor() {
-    let data = TempRoot::new("status");
-    let settings = settings_for(&ecosystem_root(), &data.0);
+    let data = Temp::new("status");
+    let settings = settings_for(&ecosystem(), &data.0);
     let id = "camp-20260101000000-aaaaaaaa";
     campaign_folder(&data.0, id);
 
@@ -95,24 +75,24 @@ fn campaign_status_reads_the_engine_for_a_fixture_without_a_supervisor() {
 
 #[test]
 fn invalid_campaign_identity_is_rejected_before_any_process_spawns() {
-    let data = TempRoot::new("reject");
-    let mut settings = settings_for(&ecosystem_root(), &data.0);
+    let data = Temp::new("reject");
+    let mut settings = settings_for(&ecosystem(), &data.0);
     // A missing executable would surface a spawn error if validation ran first.
     settings.python = "definitely-not-a-real-python".into();
 
     let error = call_engine(settings, "campaign-status", Some("not-a-campaign".into()), None).unwrap_err();
     assert!(error.contains("Invalid campaign identity"), "{error}");
 
-    let data = TempRoot::new("reject-body");
-    let mut settings = settings_for(&ecosystem_root(), &data.0);
+    let data = Temp::new("reject-body");
+    let mut settings = settings_for(&ecosystem(), &data.0);
     settings.python = "definitely-not-a-real-python".into();
     assert!(call_engine(settings, "campaign-start", None, None).unwrap_err().contains("JSON body"));
 }
 
 #[test]
 fn campaign_start_with_an_invalid_spec_returns_the_engine_validation_error() {
-    let data = TempRoot::new("spec");
-    let settings = settings_for(&ecosystem_root(), &data.0);
+    let data = Temp::new("spec");
+    let settings = settings_for(&ecosystem(), &data.0);
     // An empty workstream list fails engine validation long before a worker could start.
     let error = call_engine(settings, "campaign-start", None, Some(json!({ "workstreams": [] }))).unwrap_err();
     assert!(error.contains("workstreams"), "{error}");
@@ -122,8 +102,8 @@ fn campaign_start_with_an_invalid_spec_returns_the_engine_validation_error() {
 
 #[test]
 fn campaign_start_rejects_a_run_identity() {
-    let data = TempRoot::new("run-id");
-    let settings = settings_for(&ecosystem_root(), &data.0);
+    let data = Temp::new("run-id");
+    let settings = settings_for(&ecosystem(), &data.0);
     let request: Option<Value> = Some(json!({ "workstreams": [] }));
     assert!(call_engine(settings, "campaign-start", Some("camp-x".into()), request).is_err());
 }

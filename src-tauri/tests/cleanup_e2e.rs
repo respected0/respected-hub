@@ -7,23 +7,18 @@ use respected_hub_lib::{hub_apply, mcp_access, Settings};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::Mutex;
+mod common;
+use common::{ecosystem, Temp};
 
-struct Temp(PathBuf);
-impl Temp {
-    fn new(label: &str) -> Self {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-        let path = std::env::temp_dir().join(format!("hub-cleanup-e2e-{label}-{}-{nanos}", std::process::id()));
-        std::fs::create_dir_all(&path).unwrap();
-        Temp(path)
-    }
-}
-impl Drop for Temp { fn drop(&mut self) { let _ = std::fs::remove_dir_all(&self.0); } }
+// the tests point process-wide HOME variables at their own fake homes
+static ENV: Mutex<()> = Mutex::new(());
 
 fn json_of(path: &Path) -> Value { serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap() }
 
 #[test]
 fn uninstalling_the_hub_can_remove_the_products_and_every_registration_without_touching_user_data() {
+    let _env = ENV.lock().unwrap_or_else(|e| e.into_inner());
     let eco = std::env::var_os("RESPECTED_ECOSYSTEM_ROOT").map(PathBuf::from).unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(".."));
     let (managed, catalog, work) = (Temp::new("managed"), Temp::new("catalog"), Temp::new("work"));
     let managed_root = managed.0.join("hubdata").join("managed");
@@ -106,4 +101,28 @@ fn the_cleanup_command_is_a_no_op_on_a_machine_with_nothing_installed() {
         .env("RESPECTED_ORCHESTRATOR_DATA_ROOT", work.0.join("orch")).output().unwrap();
     assert!(ran.status.success(), "{}", String::from_utf8_lossy(&ran.stderr));
     assert!(!work.0.join("home").exists(), "nothing was created in the (fake) home");
+}
+
+#[test]
+fn a_removal_through_the_hub_is_final_in_the_result_and_in_the_journal() {
+    let _env = ENV.lock().unwrap_or_else(|e| e.into_inner());
+    let eco = ecosystem();
+    let (managed, catalog, work) = (Temp::new("managed2"), Temp::new("catalog2"), Temp::new("work2"));
+    let home = work.0.join("home");
+    std::fs::create_dir_all(&home).unwrap();
+    for name in ["USERPROFILE", "HOME"] { std::env::set_var(name, &home); }
+    std::env::set_var("APPDATA", home.join("AppData"));
+    let dirs = BrainDirs { app: work.0.join("app"), data: work.0.join("data") };
+    assert!(Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build_bundle.py"))
+        .args(["orchestrator", "--out"]).arg(&catalog.0).status().unwrap().success());
+    let roots = Roots { managed: managed.0.clone(), catalog: catalog.0.clone() };
+    let settings = Settings { python: "python".into(), orchestrator_root: work.0.join("none"), brain_root: work.0.join("none"),
+        data_root: work.0.join("orch"), brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None };
+    hub_apply(&roots, &dirs, settings.clone(), "orchestrator", "install", &json!({}), "e2e-final-inst-1").unwrap_or_else(|e| panic!("install: {}", e.message));
+    let removed = hub_apply(&roots, &dirs, settings, "orchestrator", "uninstall", &json!({}), "e2e-final-rem-01").unwrap_or_else(|e| panic!("uninstall: {}", e.message));
+    assert!(removed["undo"].is_null(), "the result offers no undo: {removed}");
+    let journal = respected_hub_lib::lifecycle::read_journal(&roots, "e2e-final-rem-01").unwrap();
+    assert!(journal["undo"].is_null(), "the journal offers no undo either");
+    let refused = respected_hub_lib::hub_rollback(&roots, &dirs, "e2e-final-rem-01").unwrap_err();
+    assert_eq!(refused.code, "ROLLBACK_UNAVAILABLE");
 }

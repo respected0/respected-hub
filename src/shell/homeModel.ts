@@ -2,7 +2,7 @@
 import type { ProductStatusKind } from '../shared/productsModel.ts';
 
 export interface AppSnapshot { loading: boolean; kind: ProductStatusKind; configSource: 'file' | 'defaults' | null; }
-export type HomeMode = 'preview' | 'loading' | 'first-launch' | 'attention' | 'setup-incomplete' | 'active';
+type HomeMode = 'preview' | 'loading' | 'first-launch' | 'attention' | 'setup-incomplete' | 'active';
 
 export function homeMode(native: boolean, apps: AppSnapshot[]): HomeMode {
   if (!native) return 'preview';

@@ -3,13 +3,13 @@ import { invoke } from '@tauri-apps/api/core';
 import { native } from '../../shared/api.ts';
 import type { LifecycleError } from '../../shell/lifecycle.ts';
 
-export interface SearchHit { path: string; title: string; category: string; tags: string; snippet: string; score: number | null; }
-export interface SearchInfo { mode: 'fts' | 'semantic' | 'hybrid'; semantic: string; reason?: string; }
+interface SearchHit { path: string; title: string; category: string; tags: string; snippet: string; score: number | null; }
+interface SearchInfo { mode: 'fts' | 'semantic' | 'hybrid'; semantic: string; reason?: string; }
 export interface SearchResult { results: SearchHit[]; count: number; dropped: number; dropped_stale: number; search: SearchInfo; index: { state: string }; }
 export interface NoteContent { path: string; title: string; content: string; truncated: boolean; size: number; modified: string; }
 export interface CaptureResult { path: string; replayed: boolean; indexed: boolean; }
-export interface BriefingResult { status: number; }
-export type WorkspaceReply<T> = { ok: true; result: T; error: null } | { ok: false; result: null; error: LifecycleError };
+interface BriefingResult { status: number; }
+type WorkspaceReply<T> = { ok: true; result: T; error: null } | { ok: false; result: null; error: LifecycleError };
 
 const unavailable = (): WorkspaceReply<never> => ({ ok: false, result: null, error: { code: 'UNAVAILABLE', message: 'Bu işlem yalnızca masaüstü uygulamasında kullanılabilir.', hint: 'Tauri masaüstü sürümünü çalıştırın.' } });
 

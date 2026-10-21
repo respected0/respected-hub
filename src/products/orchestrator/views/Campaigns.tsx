@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadSettings, native } from '../../../shared/api.ts';
 import { campaignStatus, listCampaigns, startCampaign, summarizeCampaign } from '../campaigns.ts';
+import './campaigns.css';
 import type { CampaignPhase, CampaignStatusResponse, CampaignSummary } from '../campaigns.ts';
 
 function errorText(reason: unknown): string {

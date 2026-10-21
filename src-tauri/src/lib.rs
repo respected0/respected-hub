@@ -1,207 +1,21 @@
-use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::{fs, io::{Read, Write}, path::{Path, PathBuf}, process::Command, time::{Duration, Instant}};
-use tauri::Manager;
+use std::{fs, path::{Path, PathBuf}, time::Duration};
 
 pub mod catalog;
 pub mod registration;
 pub mod products;
 // product modules keep their short paths (crate::brain, respected_hub_lib::mcp_access, ...)
-pub use products::{brain, mcp_access, memory_access, memory_index, memory_semantic};
+pub use products::{brain, mcp_access, memory_access, memory_index, memory_semantic, orchestrator};
+pub use orchestrator::{apply_orchestrator, call_engine, engine_verifier, list_campaigns, valid_campaign_id, ORCHESTRATOR_EXE};
+pub use settings::{get_settings, Settings};
+use settings::default_data_root;
+pub(crate) use process::{pump, PumpError};
 pub mod lifecycle;
 pub mod trust;
 pub mod cleanup;
 pub mod rpp;
-
-#[derive(Clone, Deserialize, Serialize)]
-pub struct Settings {
-    pub python: String,
-    pub orchestrator_root: PathBuf,
-    pub brain_root: PathBuf,
-    pub data_root: PathBuf,
-    #[serde(default)]
-    pub brain_data_root: Option<PathBuf>,
-    /// Frozen SecondBrain launcher (installed or staged) that serves RPP; absent means run the source with Python.
-    #[serde(default)]
-    pub brain_exe: Option<PathBuf>,
-    /// Application folder the launcher should treat as its install location (RESPECTED_APP_DIR).
-    #[serde(default)]
-    pub brain_app_dir: Option<PathBuf>,
-    /// Packaged Orchestrator (the Hub-managed copy's respected-orchestrator.exe); absent means the source checkout on Python.
-    #[serde(default)]
-    pub orchestrator_exe: Option<PathBuf>,
-}
-
-fn settings_file(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    Ok(app.path().app_data_dir().map_err(|e| e.to_string())?.join("connections.json"))
-}
-
-/// Default data_root for a fresh install. An explicit absolute path from
-/// RESPECTED_ORCHESTRATOR_DATA_ROOT wins; a saved connections.json still wins
-/// over this because get_settings returns it before reaching here. Pure, unit-tested.
-fn default_data_root(env_value: Option<&str>, fallback: PathBuf) -> PathBuf {
-    match env_value {
-        Some(value) if !value.trim().is_empty() && Path::new(value).is_absolute() => PathBuf::from(value),
-        _ => fallback,
-    }
-}
-
-#[tauri::command]
-fn get_settings(app: tauri::AppHandle) -> Result<Settings, String> {
-    let file = settings_file(&app)?;
-    if file.exists() {
-        return serde_json::from_slice(&fs::read(file).map_err(|e| e.to_string())?).map_err(|e| e.to_string());
-    }
-    let data_base = app.path().app_local_data_dir().map_err(|e| e.to_string())?;
-    // Production: no source checkout and no development data folder - products come from the managed, verified copies only.
-    let (siblings, data_root) = if trust::dev_enabled() {
-        let hub = Path::new(env!("CARGO_MANIFEST_DIR")).parent().ok_or("Missing Hub root")?;
-        (hub.parent().ok_or("Missing product root")?.to_path_buf(),
-         default_data_root(trust::dev_env("RESPECTED_ORCHESTRATOR_DATA_ROOT").and_then(|v| v.into_string().ok()).as_deref(), data_base.with_file_name("RespectedOrchestratorDevelopment")))
-    } else {
-        (data_base.join("no-source-checkout"), brain::respected_root().join("RespectedOrchestrator").join("data"))
-    };
-    Ok(Settings { python: "python".into(), orchestrator_root: siblings.join("respected-orchestrator"),
-        brain_root: siblings.join("respected-secondbrain"), data_root,
-        brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None })
-}
-
-fn validate(settings: &Settings) -> Result<(), String> {
-    if settings.python.trim().is_empty() || !settings.orchestrator_root.is_absolute() || !settings.data_root.is_absolute() {
-        return Err("Explicit product/data paths and Python executable required".into());
-    }
-    if !settings.orchestrator_root.join("src/respected_orchestrator/__main__.py").is_file() {
-        return Err("Independent Orchestrator source not found".into());
-    }
-    Ok(())
-}
-
-#[tauri::command]
-fn save_settings(app: tauri::AppHandle, settings: Settings) -> Result<(), String> {
-    // These fields choose which programs the Hub starts (Python, source checkouts, SecondBrain launcher): only a development build
-    // lets them be edited, never a webview of an installed product.
-    if !trust::dev_enabled() { return Err("Ürün kaynak bağlantıları yalnızca geliştirme derlemelerinde değiştirilir.".into()); }
-    validate(&settings)?;
-    let file = settings_file(&app)?;
-    fs::create_dir_all(file.parent().ok_or("Invalid settings parent")?).map_err(|e| e.to_string())?;
-    let temporary = file.with_extension("json.tmp");
-    fs::write(&temporary, serde_json::to_vec_pretty(&settings).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
-    fs::rename(temporary, file).map_err(|e| e.to_string())
-}
-
-pub(crate) struct PumpOutput { pub stdout: Vec<u8>, pub stderr: Vec<u8>, pub success: bool }
-
-pub(crate) enum PumpError { Spawn(String), Missing(&'static str), Io(String), Timeout, Reader(&'static str), TooLarge }
-
-impl PumpError {
-    pub(crate) fn message(&self) -> String {
-        match self {
-            PumpError::Spawn(e) => format!("Engine could not start: {e}"),
-            PumpError::Missing(what) => (*what).to_string(),
-            PumpError::Io(e) => e.clone(),
-            PumpError::Timeout => "Engine request timed out; inspect task state before retrying".into(),
-            PumpError::Reader(which) => format!("Engine {which} reader failed"),
-            PumpError::TooLarge => "Engine output exceeded the allowed size".into(),
-        }
-    }
-}
-
-/// Kill the engine and everything it started (a plain `kill` leaves grandchildren running and writing files).
-fn kill_tree(child: &mut std::process::Child) {
-    #[cfg(windows)] {
-        use std::os::windows::process::CommandExt;
-        let _ = Command::new("taskkill").args(["/T", "/F", "/PID", &child.id().to_string()]).creation_flags(0x08000000).output();
-    }
-    let _ = child.kill();
-    let _ = child.wait();
-}
-
-pub(crate) fn pump(mut command: Command, request: Option<Vec<u8>>, timeout: Duration, max_output: usize) -> Result<PumpOutput, PumpError> {
-    let mut child = command.spawn().map_err(|e| PumpError::Spawn(e.to_string()))?;
-    if let Some(mut input) = child.stdin.take() {
-        if let Some(payload) = request {
-            if let Err(error) = input.write_all(&payload) { let _ = child.kill(); let _ = child.wait(); return Err(PumpError::Io(error.to_string())); }
-        }
-    }
-    let stdout = child.stdout.take().ok_or(PumpError::Missing("Missing stdout"))?;
-    let stderr = child.stderr.take().ok_or(PumpError::Missing("Missing stderr"))?;
-    let limit = max_output.saturating_add(1) as u64;
-    let out = std::thread::spawn(move || { let mut bytes = Vec::new(); stdout.take(limit).read_to_end(&mut bytes).map(|_| bytes) });
-    let err = std::thread::spawn(move || { let mut bytes = Vec::new(); stderr.take(1 << 20).read_to_end(&mut bytes).map(|_| bytes) });
-    let deadline = Instant::now() + timeout;
-    let status = loop {
-        if let Some(status) = child.try_wait().map_err(|e| PumpError::Io(e.to_string()))? { break status; }
-        if Instant::now() >= deadline { kill_tree(&mut child); return Err(PumpError::Timeout); }
-        std::thread::sleep(Duration::from_millis(25));
-    };
-    // a grandchild that inherited the pipes must not hold the caller (and the engine gate) forever
-    let grace = Instant::now() + Duration::from_secs(10);
-    while !(out.is_finished() && err.is_finished()) {
-        if Instant::now() >= grace { return Err(PumpError::Io("Engine output pipe is still held by a child process".into())); }
-        std::thread::sleep(Duration::from_millis(25));
-    }
-    let bytes = out.join().map_err(|_| PumpError::Reader("output"))?.map_err(|e| PumpError::Io(e.to_string()))?;
-    let error_bytes = err.join().map_err(|_| PumpError::Reader("error"))?.map_err(|e| PumpError::Io(e.to_string()))?;
-    if bytes.len() > max_output { return Err(PumpError::TooLarge); }
-    Ok(PumpOutput { stdout: bytes, stderr: error_bytes, success: status.success() })
-}
-
-const MAX_CAMPAIGN_SPEC: usize = 64 * 1024;
-
-/// Campaign identities the engine accepts: `camp-` followed by 1..60 characters of [a-z0-9-].
-pub fn valid_campaign_id(id: &str) -> bool {
-    id.strip_prefix("camp-").map_or(false, |rest| {
-        (1..=60).contains(&rest.len())
-            && rest.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
-    })
-}
-
-pub fn call_engine(settings: Settings, action: &str, run_id: Option<String>, request: Option<Value>) -> Result<Value, String> {
-    if !["status", "create", "start", "list", "inspect", "cancel", "check", "retry", "campaign-start", "campaign-status"].contains(&action) {
-        return Err("Unsupported engine operation".into());
-    }
-    match action {
-        "campaign-start" => {
-            if run_id.is_some() { return Err("campaign-start does not accept a run identity".into()); }
-            let body = request.as_ref().ok_or("campaign-start requires a JSON body")?;
-            if serde_json::to_vec(body).map_err(|e| e.to_string())?.len() > MAX_CAMPAIGN_SPEC {
-                return Err("Campaign spec exceeds the allowed size".into());
-            }
-        }
-        "campaign-status" => {
-            let id = run_id.as_deref().ok_or("campaign-status requires a campaign identity")?;
-            if !valid_campaign_id(id) { return Err("Invalid campaign identity".into()); }
-        }
-        _ => {}
-    }
-    let mut command = rpp::orchestrator_command(&settings, &[action]).ok_or("Orchestrator kurulu değil; Hub'dan kurun.")?;
-    if let Some(id) = run_id { command.arg(id); }
-    #[cfg(windows)] {
-        use std::os::windows::process::CommandExt;
-        command.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
-    let payload = match request { Some(value) => Some(serde_json::to_vec(&value).map_err(|e| e.to_string())?), None => None };
-    let output = pump(command, payload, Duration::from_secs(30), usize::MAX).map_err(|e| e.message())?;
-    let value: Value = serde_json::from_slice(&output.stdout).map_err(|e| format!("Invalid engine JSON: {e}; {}", String::from_utf8_lossy(&output.stderr)))?;
-    if !output.success { return Err(value.get("error").and_then(Value::as_str).unwrap_or("Engine operation failed").into()); }
-    Ok(value)
-}
-
-/// Newest-first names of campaign directories under `<data_root>/campaigns`, read-only.
-pub fn list_campaigns(settings: &Settings) -> Result<Vec<String>, String> {
-    let root = settings.data_root.join("campaigns");
-    let entries = match fs::read_dir(&root) { Ok(entries) => entries, Err(_) => return Ok(Vec::new()) };
-    let mut names: Vec<String> = Vec::new();
-    for entry in entries.flatten() {
-        let name = match entry.file_name().into_string() { Ok(name) => name, Err(_) => continue };
-        if !valid_campaign_id(&name) { continue; }
-        // A symlink or junction is a reparse point: never follow it out of the campaigns root.
-        if entry.file_type().map(|kind| kind.is_dir() && !kind.is_symlink()).unwrap_or(false) { names.push(name); }
-    }
-    names.sort_unstable_by(|a, b| b.cmp(a));
-    names.truncate(30);
-    Ok(names)
-}
+pub mod process;
+pub mod settings;
 
 #[tauri::command]
 async fn engine_request(app: tauri::AppHandle, action: String, run_id: Option<String>, request: Option<Value>) -> Result<Value, String> {
@@ -224,10 +38,11 @@ async fn rpp_request(app: tauri::AppHandle, product: String, op: String, payload
 #[tauri::command]
 async fn product_status(app: tauri::AppHandle) -> Result<Value, String> {
     let settings = resolved_settings(&app)?;
-    let brain = settings.brain_root.join("src/respectedbrain/__init__.py").is_file();
-    let orchestrator = settings.orchestrator_exe.as_ref().map_or(false, |exe| exe.is_file()) || settings.orchestrator_root.join("src/respected_orchestrator/__main__.py").is_file();
+    let brain = settings.brain_exe.as_ref().map_or(false, |exe| exe.is_file()) || (trust::dev_enabled() && settings.brain_root.join("src/respectedbrain/__init__.py").is_file());
+    let orchestrator = settings.orchestrator_exe.as_ref().map_or(false, |exe| exe.is_file()) || (trust::dev_enabled() && settings.orchestrator_root.join("src/respected_orchestrator/__main__.py").is_file());
+    let cli = rpp::orchestrator_cli_line(&settings);
     let engine = tauri::async_runtime::spawn_blocking(move || call_engine(settings, "status", None, None)).await.map_err(|e| e.to_string())?;
-    Ok(json!({ "development": trust::dev_enabled(), "brain_available": brain, "orchestrator_available": orchestrator,
+    Ok(json!({ "development": trust::dev_enabled(), "brain_available": brain, "orchestrator_available": orchestrator, "orchestrator_cli": cli,
         "hub_version": env!("CARGO_PKG_VERSION"), "engine": engine.unwrap_or_else(|error| json!({"error": error})) }))
 }
 
@@ -241,9 +56,6 @@ pub fn standard_roots() -> lifecycle::Roots {
     let catalog = trust::dev_abs("RESPECTED_HUB_CATALOG_ROOT").or(sibling).unwrap_or_else(|| managed.join("catalog"));
     lifecycle::Roots { managed, catalog }
 }
-
-/// The packaged Orchestrator's launcher inside its Hub-managed copy.
-pub const ORCHESTRATOR_EXE: &str = "respected-orchestrator.exe";
 
 /// Point settings at the Hub-managed copies: the packaged Orchestrator and SecondBrain's installed launcher.
 pub fn overlay(roots: &lifecycle::Roots, dirs: &brain::BrainDirs, settings: &mut Settings) {
@@ -260,47 +72,6 @@ fn resolved_settings(app: &tauri::AppHandle) -> Result<Settings, String> {
 
 fn lifecycle_reply(result: Result<Value, lifecycle::LifecycleError>) -> Value {
     match result { Ok(value) => json!({ "ok": true, "result": value, "error": Value::Null }), Err(error) => json!({ "ok": false, "result": Value::Null, "error": error.to_json() }) }
-}
-
-/// Verify a staged copy with the product's own RPP answers; scratch data roots keep user data out of it.
-pub fn engine_verifier(settings: &Settings) -> impl Fn(&str, &Path) -> Result<(), String> {
-    let base = settings.clone();
-    move |product, dir| {
-        let scratch = std::env::temp_dir().join(format!("hub-verify-{}-{}", std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0)));
-        if product != "orchestrator" { return Err(format!("{product} is installed by its own engine, not verified here")); }
-        fs::create_dir_all(&scratch).map_err(|e| e.to_string())?;
-        let mut settings = base.clone();
-        settings.orchestrator_exe = Some(dir.join(ORCHESTRATOR_EXE));
-        settings.data_root = scratch.clone();
-        settings.brain_data_root = Some(scratch.clone());
-        let outcome = (|| {
-            for op in ["manifest", "health"] {
-                let response = rpp::rpp_call(&settings, product, op, None, None);
-                if response["ok"] != true { return Err(format!("{op}: {}", response["error"]["message"].as_str().unwrap_or("yanıt yok"))); }
-            }
-            {
-                // The product records the install in its own manifest from its distribution.json (every file hash checked
-                // again on its side), so the product and the Hub agree on what is installed and when it needs repair.
-                let target = json!({ "action": "install", "target": { "app_root": dir, "distribution": true } });
-                let recorded = rpp::rpp_call_trusted(&settings, product, "lifecycle.apply", Some(target), Some(format!("hub-record-{}", std::process::id())));
-                if recorded["ok"] != true { return Err(format!("install record: {}", recorded["error"]["message"].as_str().unwrap_or("yanıt yok"))); }
-                let manifest = rpp::rpp_call(&settings, product, "manifest", None, None);
-                if manifest["result"]["installed"] != true || manifest["result"]["install_state"] != "installed" { return Err(format!("product reports {}", manifest["result"]["install_state"])); }
-            }
-            Ok(())
-        })();
-        let _ = fs::remove_dir_all(&scratch);
-        outcome
-    }
-}
-
-/// Install, update, repair or uninstall the Hub-managed packaged Orchestrator; its MCP registrations follow the copy.
-pub fn apply_orchestrator(roots: &lifecycle::Roots, settings: Settings, action: &str, operation_id: &str) -> Result<Value, lifecycle::LifecycleError> {
-    if action == "uninstall" { mcp_access::disable_all(roots, &settings, operation_id); }
-    let applied = lifecycle::apply(roots, "orchestrator", action, operation_id, &engine_verifier(&settings));
-    // the stable MCP launcher names the versioned executable: rewrite it whenever the active copy changes
-    if applied.is_ok() && matches!(action, "install" | "update" | "repair") { mcp_access::refresh_launcher(roots, &settings); }
-    applied
 }
 
 /// Component status: SecondBrain comes from its own engine, the rest from the Hub-managed copies.
@@ -341,7 +112,8 @@ pub fn hub_apply(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: Setti
         if action == "uninstall" { cleanup::after_uninstall(roots, d, &settings, product, id); } else { sweep(roots, d); }
         registration::sync(roots, d);
     }
-    applied
+    // a removal also deleted the product's data and the undo copy: the result must not offer "Geri al" either
+    applied.map(|mut result| { if action == "uninstall" && result.get("undo").is_some() { result["undo"] = Value::Null; } result })
 }
 
 /// No leftovers: only the installed version of each component stays, in the managed folder and in the catalog cache.
@@ -648,7 +420,7 @@ pub fn run() {
             if let Some(wanted) = intent(args.into_iter()) { let _ = app.emit("startup-intent", wanted); }
         }))
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![startup_intent, get_settings, save_settings, engine_request, rpp_request, product_status, campaign_list,
+        .invoke_handler(tauri::generate_handler![startup_intent, settings::get_settings, settings::save_settings, engine_request, rpp_request, product_status, campaign_list,
             lifecycle_status, lifecycle_plan, lifecycle_apply, lifecycle_rollback, lifecycle_purge_backups, activity_list,
             catalog_refresh, catalog_set_channel, hub_update_status, hub_update_install,
             orchestrator_mcp_plan, orchestrator_mcp_apply,

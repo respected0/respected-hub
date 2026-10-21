@@ -34,7 +34,7 @@ impl LifecycleError {
 }
 
 #[derive(Clone, Debug)]
-pub struct Bundle { pub dir: PathBuf, pub product: String, pub version: String, pub files: Vec<(String, u64, String)>, pub digest: String, pub signed: bool, pub trust: String, pub kind: String }
+pub struct Bundle { pub dir: PathBuf, pub product: String, pub version: String, pub files: Vec<(String, u64, String)>, pub digest: String, pub signed: bool, pub trust: String }
 
 // ---------- small helpers ----------
 
@@ -110,7 +110,7 @@ fn check_product(product: &str) -> Result<(), LifecycleError> {
 // ---------- bundles ----------
 
 pub fn read_bundle(dir: &Path) -> Result<Bundle, LifecycleError> {
-    let bad = |m: String| -> Result<Bundle, LifecycleError> { fail("VERIFY_FAILED", format!("Paket geçersiz: {m}"), "Paketi tools/build_bundle.py ile yeniden oluşturun.") };
+    let bad = |m: String| -> Result<Bundle, LifecycleError> { fail("VERIFY_FAILED", format!("Paket geçersiz: {m}"), "Ürün kataloğunu yenileyin; sorun sürerse paketi yeniden indirmek için ürünü onarın.") };
     let bytes = match fs::read(dir.join("bundle.json")) { Ok(b) => b, Err(e) => return bad(format!("bundle.json okunamadı ({e})")) };
     let doc: Value = match serde_json::from_slice(&bytes) { Ok(v) => v, Err(e) => return bad(format!("bundle.json JSON değil ({e})")) };
     if doc["schema"] != 1 { return bad("desteklenmeyen şema".into()); }
@@ -146,7 +146,7 @@ pub fn read_bundle(dir: &Path) -> Result<Bundle, LifecycleError> {
     // fail closed: only a signature from a key this build trusts (or the explicit development opt-in) is accepted
     let trust = match crate::trust::verify(&doc, &product, &kind, &version, &digest) { Ok(t) => t, Err(reason) => return bad(reason) };
     let signed = trust != crate::trust::Trust::UnsignedAllowed;
-    Ok(Bundle { dir: dir.to_path_buf(), product, version, files, digest, signed, trust: trust.as_str().to_string(), kind })
+    Ok(Bundle { dir: dir.to_path_buf(), product, version, files, digest, signed, trust: trust.as_str().to_string() })
 }
 
 /// Release order key: SemVer 2 (`0.1.0-beta.2 < 0.1.0-rc.1 < 0.1.0 < 0.1.1-beta.1`) plus the PEP 440 spellings Python
@@ -302,7 +302,7 @@ pub fn plan(roots: &Roots, product: &str, action: &str) -> Result<Value, Lifecyc
         "install" | "update" => {
             if action == "install" && installed { return fail("LIFECYCLE_CONFLICT", "Ürün zaten kurulu.", "Güncelleme veya onarım kullanın."); }
             if action == "update" && !installed { return fail("LIFECYCLE_CONFLICT", "Ürün kurulu değil.", "Önce kurun."); }
-            if available.is_null() { return fail("BAD_REQUEST", "Katalogda bu ürün için geçerli paket yok.", "tools/build_bundle.py ile paket oluşturup kataloğa koyun."); }
+            if available.is_null() { return fail("BAD_REQUEST", "Katalogda bu ürün için geçerli paket yok.", "Ürün kataloğunu yenileyin (Ayarlar › Güncellemeleri denetle)."); }
             if action == "update" && st["install_state"] == "repair-needed" { return fail("LIFECYCLE_CONFLICT", "Kurulu kopya bozuk.", "Önce onarın, sonra güncelleyin."); }
             if action == "update" && st["install_state"] != "update-available" { return fail("LIFECYCLE_CONFLICT", "Güncelleme yok; kurulu sürüm güncel.", "Sorun varsa onarımı kullanın."); }
             steps.push(step("stage", "Paket dosyalarını güvenli bir ara klasöre kopyala ve her dosyanın özetini doğrula", true, None));
@@ -320,7 +320,7 @@ pub fn plan(roots: &Roots, product: &str, action: &str) -> Result<Value, Lifecyc
         _ => {
             if !installed { return fail("LIFECYCLE_CONFLICT", "Ürün kurulu değil.", "Kaldırılacak bir şey yok."); }
             steps.push(step("remove", "Hub'ın yönettiği program kopyasını ve ürüne ait tüm dosyaları kaldır (geri alma kopyası tutulmaz)", false, Some("Kaldırma geri alınamaz; yeniden kurmak gerekir")));
-            steps.push(step("keep-data", "Verileriniz, notlarınız ve çalışma kayıtlarınız silinmez", true, None));
+            steps.push(step("keep-notes", "Not kasanız ve notlarınız silinmez; ürüne ait ayarlar, çalışma verileri ve yedekler kaldırılır", true, None));
         }
     }
     Ok(json!({ "product": product, "action": action, "dry_run": true, "from_version": st["version"], "to_version": available.get("version").cloned().unwrap_or(Value::Null), "plan": { "steps": steps } }))

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { evidenceFor } from '../../src/products/orchestrator/views/evidenceModel.ts';
+import { evidenceFor } from '../../src/products/orchestrator/evidenceModel.ts';
 
 test('approved lane with a patch gives the exact manual apply command', () => {
   const campaign = { status: 'LANES_APPROVED', result: { lanes: [
@@ -69,4 +69,11 @@ test('malformed and empty payloads never throw and stay unknown', () => {
   assert.equal(evidenceFor('nope', 5).verdict, 'unknown');
   assert.equal(evidenceFor(null, { result: { lanes: 'x' } }).verdict, 'unknown');
   assert.equal(evidenceFor({ request: 'bad', logs: 'bad' }, null).verdict, 'unknown');
+});
+test('manual commands use the installed program and data folder, never Python', () => {
+  const cli = '& "C:\Respected\respected-orchestrator.exe" --data-root "D:\data"';
+  const campaign = { status: 'LANES_NEED_REVIEW', result: { lanes: [{ status: 'HUMAN_APPROVAL_REQUIRED', run_id: 'run-7' }] } };
+  const text = evidenceFor(null, campaign, '', cli).nextStepText;
+  assert.ok(text.includes(`${cli} maf-approve run-7`));
+  assert.ok(!text.includes('python'));
 });

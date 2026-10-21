@@ -1,8 +1,8 @@
 import { native, type Run } from '../../../shared/api.ts';
-import { deriveOverview, type RunGroup } from './overviewModel.ts';
+import { deriveOverview, type RunGroup } from '../overviewModel.ts';
 import './overview.css';
 
-export interface OverviewPanelProps {
+interface OverviewPanelProps {
   runs: Run[];
   workers: Record<string, string[] | null> | null;
   onOpenTasks?: () => void;

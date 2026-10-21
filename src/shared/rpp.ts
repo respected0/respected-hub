@@ -2,19 +2,19 @@
 // One JSON request in, one JSON response line out. RPP is not MCP and not a daemon.
 
 export const RPP_VERSION = '1.0';
-export const RPP_VERSION_MAX = '1.1';
-export const V11_OPS = ['lifecycle.plan', 'lifecycle.apply', 'lifecycle.status', 'lifecycle.rollback', 'operation.receipt'] as const;
+const RPP_VERSION_MAX = '1.1';
+const V11_OPS = ['lifecycle.plan', 'lifecycle.apply', 'lifecycle.status', 'lifecycle.rollback', 'operation.receipt'] as const;
 const ID_REQUIRED_OPS = ['settings.apply', 'lifecycle.apply', 'lifecycle.rollback'];
 const SUPPORTED_VERSIONS = [RPP_VERSION, RPP_VERSION_MAX];
 
-export function versionForOp(op: string): string {
+function versionForOp(op: string): string {
   return (V11_OPS as readonly string[]).includes(op) ? RPP_VERSION_MAX : RPP_VERSION;
 }
 export const SECRET_REDACTED = '***set***';
 
-export interface RppProtocolRange { min: string; max: string; }
+interface RppProtocolRange { min: string; max: string; }
 
-export interface RppRequest {
+interface RppRequest {
   rpp: string;
   op: string;
   operation_id: string | null;
@@ -23,8 +23,8 @@ export interface RppRequest {
 
 export interface RppError { code: string; message: string; hint?: string; }
 
-export interface RppOk { rpp: string; ok: true; operation_id: string | null; result: unknown; error: null; }
-export interface RppFail { rpp: string; ok: false; operation_id: string | null; result: null; error: RppError; }
+interface RppOk { rpp: string; ok: true; operation_id: string | null; result: unknown; error: null; }
+interface RppFail { rpp: string; ok: false; operation_id: string | null; result: null; error: RppError; }
 export type RppResponse = RppOk | RppFail;
 
 export interface Manifest {
@@ -34,9 +34,6 @@ export interface Manifest {
   capabilities: string[];
   settings_supported: boolean;
 }
-
-export interface HealthCheck { name: string; ok: boolean; detail: string; }
-export interface Health { status: 'healthy' | 'degraded' | 'unhealthy'; version: string; checks: HealthCheck[]; }
 
 export type SettingType = 'string' | 'integer' | 'boolean' | 'enum';
 export interface SettingsField {
@@ -52,10 +49,9 @@ export interface SettingsField {
 }
 export interface SettingsSchema { fields: SettingsField[]; }
 export interface SettingsValidation { valid: boolean; errors: { key: string; message: string }[]; }
-export interface SettingsReadback { settings: Record<string, unknown>; source: 'file' | 'defaults'; }
 
-export interface Negotiation { compatible: boolean; reason?: string; capabilities: string[]; }
-export interface PlainError { message: string; messageEn: string; hint?: string; }
+interface Negotiation { compatible: boolean; reason?: string; capabilities: string[]; }
+interface PlainError { message: string; messageEn: string; hint?: string; }
 
 export function buildRequest(op: string, payload: Record<string, unknown> = {}, operationId?: string): RppRequest {
   const operation_id = operationId ?? (ID_REQUIRED_OPS.includes(op) ? crypto.randomUUID() : null);

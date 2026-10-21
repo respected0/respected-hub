@@ -1,0 +1,19 @@
+/* Campaigns view (Orchestrator workspace) */
+.campaigns-view h3 { margin: 18px 0 8px; }
+.campaign-grid { display: grid; grid-template-columns: 320px 1fr; gap: 18px; align-items: start; }
+.campaign-list-col { display: flex; flex-direction: column; gap: 8px; }
+.campaign-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow: auto; }
+.campaign-row { width: 100%; text-align: left; border: 1px solid var(--line); background: var(--surface); color: var(--text); padding: 10px 12px; border-radius: var(--r-md); font-size: 12.5px; transition: border-color .18s; }
+.campaign-row:hover { border-color: var(--line-strong); } .campaign-row.active { border-color: var(--accent); background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent); }
+.campaign-id { font-family: var(--font-mono); word-break: break-all; }
+.campaign-detail { min-width: 0; } .campaign-panel { display: flex; flex-direction: column; }
+.campaign-supervisor { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin: 6px 0 4px; }
+.campaign-lanes, .campaign-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.campaign-lanes li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--line-soft); font-size: 13px; } .campaign-lanes li strong { min-width: 72px; }
+.campaign-timeline li { display: grid; grid-template-columns: 170px 1fr; gap: 12px; padding: 9px 12px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--line-soft); font-size: 13px; } .campaign-timeline time { color: var(--muted); font-size: 12px; }
+.chain-note p { margin: 0; font-size: 13px; }
+.campaign-final { white-space: pre-wrap; word-break: break-word; background: #080c15; border: 1px solid var(--line-soft); border-radius: var(--r-md); padding: 12px; font-size: 12.5px; margin: 0; }
+.campaign-advanced summary { font-weight: 600; } .campaign-advanced label { margin: 14px 0 6px; color: var(--muted); }
+.campaign-advanced textarea { font-family: var(--font-mono); font-size: 12.5px; }
+.campaign-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
+@media (max-width: 1040px) { .campaign-grid { grid-template-columns: 1fr; } .campaign-timeline li { grid-template-columns: 1fr; } }

@@ -6,22 +6,8 @@ use respected_hub_lib::{engine_verifier, Settings, ORCHESTRATOR_EXE};
 use serde_json::json;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
-
-struct Temp(PathBuf);
-impl Temp {
-    fn new(label: &str) -> Self {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-        let path = std::env::temp_dir().join(format!("hub-lc-e2e-{label}-{}-{nanos}", std::process::id()));
-        std::fs::create_dir_all(&path).unwrap();
-        Temp(path)
-    }
-}
-impl Drop for Temp { fn drop(&mut self) { let _ = std::fs::remove_dir_all(&self.0); } }
-
-fn ecosystem() -> PathBuf {
-    std::env::var_os("RESPECTED_ECOSYSTEM_ROOT").map(PathBuf::from).unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(".."))
-}
+mod common;
+use common::{ecosystem, Temp};
 
 fn tools(eco: &Path) -> PathBuf { eco.join("respected-hub").join("release").join("tools") }
 
@@ -82,7 +68,8 @@ fn the_packaged_orchestrator_installs_verifies_repairs_and_uninstalls_without_py
     assert_eq!(repaired["status"], "applied");
     assert_eq!(lifecycle::status(&roots, "orchestrator").unwrap()["install_state"], "installed");
 
-    // Uninstall keeps user data and is reversible until backups are purged.
+    // At this (transaction) layer an uninstall keeps a backup, so the operation itself can be undone; the Hub's final removal
+    // (data deleted, no undo) is proven through hub_apply in cleanup_e2e.
     lifecycle::apply(&roots, "orchestrator", "uninstall", "e2e-remove-orch", &verifier).unwrap();
     assert!(lifecycle::read_current(&roots, "orchestrator").is_none());
     assert!(data.0.is_dir(), "user data root untouched");

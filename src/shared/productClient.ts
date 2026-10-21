@@ -7,14 +7,14 @@ import type { RppResponse } from './rpp.ts';
 
 export type RppProduct = 'secondbrain' | 'orchestrator';
 
-export type RppInvocation = {
+type RppInvocation = {
   product: RppProduct;
   op: string;
   payload: Record<string, unknown> | null;
   operationId: string | null;
 };
 
-export type RppTransport = (invocation: RppInvocation) => Promise<unknown>;
+type RppTransport = (invocation: RppInvocation) => Promise<unknown>;
 
 export async function rppCallVia(
   transport: RppTransport,

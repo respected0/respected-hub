@@ -3,9 +3,9 @@ import { invoke } from '@tauri-apps/api/core';
 import { native } from '../../shared/api.ts';
 import type { LifecycleError } from '../../shell/lifecycle.ts';
 
-export type SemanticState = 'unsupported' | 'no-vault' | 'unknown' | 'off' | 'provider_missing' | 'model_missing' | 'building' | 'ready';
+type SemanticState = 'unsupported' | 'no-vault' | 'unknown' | 'off' | 'provider_missing' | 'model_missing' | 'building' | 'ready';
 export interface SemanticStatus { supported: boolean; state: SemanticState; model?: string; provider?: string; download_mb?: number | null; notes?: number; vectors?: number; problem?: string; }
-export type SemanticReply = { ok: true; result: SemanticStatus; error: null } | { ok: false; result: null; error: LifecycleError };
+type SemanticReply = { ok: true; result: SemanticStatus; error: null } | { ok: false; result: null; error: LifecycleError };
 
 async function call(command: string): Promise<SemanticReply> {
   if (!native) return { ok: false, result: null, error: { code: 'UNAVAILABLE', message: 'Bu işlem yalnızca masaüstü uygulamasında kullanılabilir.', hint: 'Tauri masaüstü sürümünü çalıştırın.' } };
