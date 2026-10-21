@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRequest, terminal } from '../src/products/orchestrator/tasks.ts';
+import { buildRequest, terminal } from '../../src/products/orchestrator/tasks.ts';
 
 const form = { projectRoot: 'C:/fixture', task: 'Fix task', worker: 'codex', kind: 'write', ownership: 'src/file.py\ntests',
   forbidden: '.env', acceptance: '[["python","-m","unittest"]]', customCommand: '', timeout: 120 };

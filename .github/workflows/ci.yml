@@ -1,0 +1,63 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: "utf-8"
+  CARGO_TERM_COLOR: never
+
+jobs:
+  test:
+    # The Rust end-to-end tests drive the real sibling products on disposable roots, so the three repositories are
+    # checked out side by side exactly like a development ecosystem folder.
+    name: hub (windows)
+    runs-on: windows-latest
+    timeout-minutes: 75
+    env:
+      RESPECTED_ECOSYSTEM_ROOT: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: respected-hub
+      - uses: actions/checkout@v7
+        with:
+          repository: respected0/respected-secondbrain
+          path: respected-secondbrain
+      - uses: actions/checkout@v7
+        with:
+          repository: respected0/respected-orchestrator
+          path: respected-orchestrator
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Install products and release tooling
+        run: python -m pip install -e "respected-secondbrain[dev]" -e respected-orchestrator cryptography
+      - name: Repository atlas
+        working-directory: respected-hub
+        run: python tools/repository_map.py --check
+      - name: TypeScript check and unit tests
+        working-directory: respected-hub
+        run: |
+          npm ci
+          npm run check
+      - name: Release tooling self-check
+        working-directory: respected-hub
+        run: python release/tools/test_release_tools.py
+      - name: Rust unit and end-to-end tests
+        working-directory: respected-hub
+        run: cargo test --manifest-path src-tauri/Cargo.toml --no-fail-fast

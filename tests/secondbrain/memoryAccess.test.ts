@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { describeMemoryError, describeMemoryStatus, memoryAccessDisable, memoryAccessEnable, memoryAccessStatus } from '../src/products/secondbrain/memoryAccess.ts';
-import type { MemoryStatus } from '../src/products/secondbrain/memoryAccess.ts';
+import { describeMemoryError, describeMemoryStatus, memoryAccessDisable, memoryAccessEnable, memoryAccessStatus } from '../../src/products/secondbrain/memoryAccess.ts';
+import type { MemoryStatus } from '../../src/products/secondbrain/memoryAccess.ts';
 
 const base: MemoryStatus = { supported: true, enabled: false, grant_id: null, token_set: false, pending_revoke: false, problems: [] };
 

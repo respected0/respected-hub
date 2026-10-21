@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rppCallVia } from '../src/shared/productClient.ts';
+import { rppCall, rppCallVia, rppTry } from '../../src/shared/productClient.ts';
+import { engine, native } from '../../src/shared/api.ts';
+import { listCampaigns, campaignStatus } from '../../src/products/orchestrator/campaigns.ts';
 
 const okEnvelope = JSON.stringify({
   rpp: '1.0', ok: true, operation_id: 'op-1', result: { status: 'healthy' }, error: null,
@@ -40,4 +42,18 @@ test('rppCallVia maps malformed replies to BAD_RESPONSE without throwing', async
     assert.equal(response.ok, false, reply);
     if (!response.ok) assert.equal(response.error.code, 'BAD_RESPONSE', reply);
   }
+});
+
+// Unit tests run on plain Node, outside the Tauri shell, so the native IPC entry
+// points must refuse the work instead of pretending it succeeded.
+test('native IPC entry points reject outside the desktop app', async () => {
+  assert.equal(native, false);
+  await assert.rejects(() => engine('list'), /Tauri/);
+  await assert.rejects(() => rppCall('secondbrain', 'manifest'), /Tauri/);
+  await assert.rejects(() => listCampaigns(), /Tauri/);
+  await assert.rejects(() => campaignStatus('campaign-x'), /Tauri/);
+});
+
+test('rppTry reports an unreachable product as null instead of throwing', async () => {
+  assert.equal(await rppTry('secondbrain', 'health'), null);
 });

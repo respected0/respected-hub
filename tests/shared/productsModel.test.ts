@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { changedSettings, formFromSchema, parseFieldValue, summarizeProduct, verifyReadback } from '../src/shared/productsModel.ts';
-import type { FormField } from '../src/shared/productsModel.ts';
-import type { RppResponse, SettingsSchema } from '../src/shared/rpp.ts';
+import { changedSettings, formFromSchema, parseFieldValue, summarizeProduct, verifyReadback } from '../../src/shared/productsModel.ts';
+import type { FormField } from '../../src/shared/productsModel.ts';
+import type { RppResponse, SettingsSchema } from '../../src/shared/rpp.ts';
 
 function ok(result: unknown): RppResponse {
   return { rpp: '1.0', ok: true, operation_id: null, result, error: null };

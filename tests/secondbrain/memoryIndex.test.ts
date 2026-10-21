@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { describeIndexError, describeIndexStatus, describeRefreshResult, memoryIndexRefresh, memoryIndexStatus } from '../src/products/secondbrain/memoryIndex.ts';
-import type { IndexState, IndexStatus } from '../src/products/secondbrain/memoryIndex.ts';
+import { describeIndexError, describeIndexStatus, describeRefreshResult, memoryIndexRefresh, memoryIndexStatus } from '../../src/products/secondbrain/memoryIndex.ts';
+import type { IndexState, IndexStatus } from '../../src/products/secondbrain/memoryIndex.ts';
 
 const base: IndexStatus = { supported: true, state: 'fresh', indexed_files: 7, changed_files: 0, vault_id: 'v', last_refresh: null, problems: [] };
 

@@ -1,5 +1,5 @@
 // Real desktop end-to-end drive of a built Hub (dev build or the installed one) through WebView2's DevTools port.
-//   node tools/hub_native_e2e.mjs <hub.exe> [--remote-catalog] [--report DIR]
+//   node tests/native/hub_native_e2e.mjs <hub.exe> [--remote-catalog] [--report DIR]
 // --remote-catalog: products come through the download path (a signed file:// catalog made by release/tools/publish_release.py).
 // Everything runs on disposable roots and a FAKE user home (a foreign ~/.claude.json to be preserved). The
 // Hub is started with Python removed from PATH, so passing proves products run without a system Python.
@@ -13,9 +13,10 @@ const args = process.argv.slice(2);
 const exe = resolve(args.find(a => !a.startsWith('--')) ?? '');
 const remote = args.includes('--remote-catalog');
 const brainOnly = args.includes('--only-brain'); // targeted rerun: skip the Orchestrator/runtime scenarios
-const eco = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const tools = join(eco, 'release', 'tools');
-const reportDir = resolve(args.includes('--report') ? args[args.indexOf('--report') + 1] : join(eco, '.campaign-data', 'master-plan', 'reports', 'hub-native'));
+const hub = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const eco = resolve(hub, '..');
+const tools = join(hub, 'release', 'tools');
+const reportDir = resolve(args.includes('--report') ? args[args.indexOf('--report') + 1] : join(eco, '.build-cache', 'hub-native'));
 mkdirSync(reportDir, { recursive: true });
 if (!existsSync(exe)) { console.error('exe not found:', exe); process.exit(2); }
 
@@ -45,7 +46,7 @@ const env = { ...process.env, PATH: pathWithoutPython, RESPECTED_HUB_TEST_HOME: 
   RESPECTED_HUB_MANAGED_ROOT: dirs.managed, RESPECTED_ORCHESTRATOR_DATA_ROOT: dirs.data,
   RESPECTED_HUB_BRAIN_APP_DIR: dirs.brainApp, RESPECTED_HUB_BRAIN_DATA_DIR: dirs.brainData, PYTHONDONTWRITEBYTECODE: '1' };
 // development builds trust the local dev signing key only when told where it is (an installed dev build has dev-trust.pub beside it)
-env.RESPECTED_HUB_DEV_TRUST = join(eco, '..', '.build-cache', 'signing', 'dev-ed25519.pub');
+env.RESPECTED_HUB_DEV_TRUST = join(eco, '.build-cache', 'signing', 'dev-ed25519.pub');
 if (remote) env.RESPECTED_HUB_CATALOG_URL = pathToFileURL(join(served, 'catalog.json')).href; // cache: <managed>/catalog
 else env.RESPECTED_HUB_CATALOG_ROOT = dirs.catalog;
 const intent = args.find(a => a.startsWith('--intent='))?.slice(9); // product installers launch Hub with --install=<product>

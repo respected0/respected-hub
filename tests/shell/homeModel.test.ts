@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { homeMode } from '../src/shell/homeModel.ts';
-import type { AppSnapshot } from '../src/shell/homeModel.ts';
+import { homeMode } from '../../src/shell/homeModel.ts';
+import type { AppSnapshot } from '../../src/shell/homeModel.ts';
 
 const app = (kind: AppSnapshot['kind'], configSource: AppSnapshot['configSource'] = 'file', loading = false): AppSnapshot => ({ kind, configSource, loading });
 
