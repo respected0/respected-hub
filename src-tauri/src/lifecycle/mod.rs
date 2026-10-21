@@ -61,7 +61,7 @@ pub fn sha256_file(path: &Path) -> std::io::Result<String> {
     Ok(hex(&hasher.finalize()))
 }
 
-fn valid_version(version: &str) -> bool {
+pub(crate) fn valid_version(version: &str) -> bool {
     (1..=32).contains(&version.len()) && version.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'-' | b'+'))
         && !version.starts_with('.')
 }

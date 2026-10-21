@@ -1,10 +1,11 @@
+import { useEffect, useState } from 'react';
 import { visibleApps } from '../apps.ts';
 import { homeMode } from '../homeModel.ts';
 import { native } from '../../shared/api.ts';
 import { terminal } from '../../products/orchestrator/tasks.ts';
 import type { Ecosystem } from '../useEcosystem.ts';
 import { Emblem, Icon, Weave, statusLabel, statusTone } from '../../shared/ui.tsx';
-import { readAssistantName } from '../../products/secondbrain/views/BrainSetup.tsx';
+import { rppCall } from '../../shared/productClient.ts';
 
 export type Go = (target: 'apps' | 'connections' | 'discover' | 'activity' | { app: string; page: string }) => void;
 
@@ -14,7 +15,15 @@ export default function Home({ eco, go }: { eco: Ecosystem; go: Go }) {
   const mode = homeMode(native, snapshots);
   const running = eco.runs.filter(run => !terminal(run.status));
   const recent = eco.runs.filter(run => terminal(run.status)).slice(0, 4);
-  const assistant = readAssistantName();
+  const [assistant, setAssistant] = useState('');
+  useEffect(() => {
+    let active = true;
+    rppCall('secondbrain', 'settings.readback').then(response => {
+      const name = response.ok ? (response.result as { settings?: { assistant_name?: unknown } }).settings?.assistant_name : '';
+      if (active && typeof name === 'string') setAssistant(name.trim());
+    }).catch(() => { /* optional personalization */ });
+    return () => { active = false; };
+  }, []);
   const problems = APPS.filter(app => { const kind = eco.apps[app.id]?.summary.statusKind; return kind && kind !== 'ok'; });
   const healthy = APPS.length - problems.length;
   const live = native && mode !== 'loading';
