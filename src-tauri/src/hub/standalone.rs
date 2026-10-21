@@ -8,10 +8,13 @@ use std::path::{Path, PathBuf};
 
 pub struct Standalone { pub version: String, pub app_dir: PathBuf, pub exe: PathBuf }
 
-/// The Orchestrator installed by `RespectedOrchestrator-Windows-Setup.exe` in its default place.
-pub fn orchestrator() -> Option<Standalone> { at(&secondbrain::respected_root().join("RespectedOrchestrator").join("app")) }
+/// Where `RespectedOrchestrator-Windows-Setup.exe` puts the program.
+pub fn orchestrator_dir() -> PathBuf { secondbrain::respected_root().join("RespectedOrchestrator").join("app") }
 
-fn at(app_dir: &Path) -> Option<Standalone> {
+/// The Orchestrator installed by its own installer in its default place.
+pub fn orchestrator() -> Option<Standalone> { at(&orchestrator_dir()) }
+
+pub(crate) fn at(app_dir: &Path) -> Option<Standalone> {
     let doc: Value = serde_json::from_slice(&fs::read(app_dir.join(".respected").join("install.json")).ok()?).ok()?;
     if doc["product_id"] != "respected-orchestrator" || doc["distribution"] != true { return None; }
     let version = doc["product_version"].as_str().filter(|v| lifecycle::valid_version(v))?.to_string();

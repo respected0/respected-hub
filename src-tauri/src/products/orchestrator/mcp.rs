@@ -133,7 +133,7 @@ pub fn rollback(roots: &Roots, settings: &Settings, id: &str) -> Result<Value, L
 pub fn refresh_launcher(roots: &Roots, settings: &Settings) {
     if !launcher_path(roots).is_file() { return; }
     let mut fresh = settings.clone();
-    if let Some(exe) = lifecycle::installed_launcher(roots, PRODUCT, crate::ORCHESTRATOR_EXE) { fresh.orchestrator_exe = Some(exe); }
+    if let Some(exe) = lifecycle::installed_launcher(roots, PRODUCT, crate::ORCHESTRATOR_EXE).or_else(|| crate::hub::standalone::orchestrator().map(|s| s.exe)) { fresh.orchestrator_exe = Some(exe); }
     let _ = write_launcher(roots, &fresh);
 }
 
