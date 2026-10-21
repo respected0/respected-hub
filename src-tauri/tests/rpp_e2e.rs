@@ -5,29 +5,10 @@ use respected_hub_lib::Settings;
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
+mod common;
+use common::{ecosystem, Temp};
 
 const PRODUCTS: [&str; 2] = ["orchestrator", "secondbrain"];
-
-struct TempRoot(PathBuf);
-
-impl TempRoot {
-    fn new(label: &str) -> Self {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-        let path = std::env::temp_dir().join(format!("hub-rpp-e2e-{label}-{}-{nanos}", std::process::id()));
-        std::fs::create_dir_all(&path).expect("create temp data root");
-        TempRoot(path)
-    }
-}
-
-impl Drop for TempRoot {
-    fn drop(&mut self) { let _ = std::fs::remove_dir_all(&self.0); }
-}
-
-fn ecosystem_root() -> PathBuf {
-    std::env::var_os("RESPECTED_ECOSYSTEM_ROOT").map(PathBuf::from).unwrap_or_else(|| {
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
-    })
-}
 
 fn product_root(ecosystem: &Path, product: &str) -> PathBuf {
     match product {
@@ -82,9 +63,9 @@ fn sample_value(field: &Value) -> Value {
 
 #[test]
 fn manifest_health_and_schema_are_reachable_for_both_products() {
-    let ecosystem = ecosystem_root();
+    let ecosystem = ecosystem();
     for product in PRODUCTS {
-        let data = TempRoot::new(product);
+        let data = Temp::new(product);
         let settings = settings_for(&ecosystem, &data.0);
 
         let manifest = call(&settings, product, "manifest", None, None);
@@ -109,10 +90,10 @@ fn manifest_health_and_schema_are_reachable_for_both_products() {
 
 #[test]
 fn validate_rejects_an_unknown_key_for_both_products() {
-    let ecosystem = ecosystem_root();
+    let ecosystem = ecosystem();
     let unknown = json!({ "settings": { "definitely_not_a_real_rpp_key": "x" } });
     for product in PRODUCTS {
-        let data = TempRoot::new(product);
+        let data = Temp::new(product);
         let settings = settings_for(&ecosystem, &data.0);
         let response = call(&settings, product, "settings.validate", Some(unknown.clone()), None);
         assert_eq!(response["ok"], true, "{product}: {response}");
@@ -123,9 +104,9 @@ fn validate_rejects_an_unknown_key_for_both_products() {
 
 #[test]
 fn apply_readback_and_idempotent_replay_for_both_products() {
-    let ecosystem = ecosystem_root();
+    let ecosystem = ecosystem();
     for product in PRODUCTS {
-        let data = TempRoot::new(product);
+        let data = Temp::new(product);
         let settings = settings_for(&ecosystem, &data.0);
 
         let schema = call(&settings, product, "settings.schema", None, None);
@@ -153,9 +134,9 @@ fn apply_readback_and_idempotent_replay_for_both_products() {
 
 #[test]
 fn unknown_op_is_rejected_locally_for_both_products() {
-    let ecosystem = ecosystem_root();
+    let ecosystem = ecosystem();
     for product in PRODUCTS {
-        let data = TempRoot::new(product);
+        let data = Temp::new(product);
         let settings = settings_for(&ecosystem, &data.0);
         let response = call(&settings, product, "definitely_unknown_op", None, None);
         assert_eq!(response["ok"], false, "{product}: {response}");
@@ -166,7 +147,7 @@ fn unknown_op_is_rejected_locally_for_both_products() {
 
 #[test]
 fn missing_engine_root_reports_engine_not_found() {
-    let data = TempRoot::new("missing");
+    let data = Temp::new("missing");
     let settings = Settings {
         python: "python".into(),
         orchestrator_root: data.0.join("no-orchestrator"),
@@ -183,9 +164,9 @@ fn missing_engine_root_reports_engine_not_found() {
 
 #[test]
 fn protocol_mismatch_is_surfaced_by_the_engine() {
-    let ecosystem = ecosystem_root();
+    let ecosystem = ecosystem();
     for product in PRODUCTS {
-        let data = TempRoot::new(product);
+        let data = Temp::new(product);
         let settings = settings_for(&ecosystem, &data.0);
         let response = rpp_call_version(&settings, product, "manifest", None, None, "0.9");
         assert_eq!(response["ok"], false, "{product}: {response}");
@@ -195,9 +176,9 @@ fn protocol_mismatch_is_surfaced_by_the_engine() {
 
 #[test]
 fn lifecycle_plan_and_unknown_receipt_work_over_v11_for_both_products() {
-    let ecosystem = ecosystem_root();
+    let ecosystem = ecosystem();
     for product in PRODUCTS {
-        let data = TempRoot::new(product);
+        let data = Temp::new(product);
         let settings = settings_for(&ecosystem, &data.0);
         let manifest = call(&settings, product, "manifest", None, None);
         if manifest["result"]["protocol"]["max"] != "1.1" { continue; }

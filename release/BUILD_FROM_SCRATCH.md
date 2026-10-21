@@ -33,7 +33,7 @@ Hub frontend: `cd respected-hub && npm ci`.
 
 ## 3. Everyday checks
 * Hub: `cd respected-hub && npm run check`; Rust: `cargo test --manifest-path src-tauri/Cargo.toml --no-fail-fast` (set `CARGO_TARGET_DIR` to `<ecosystem>\.cargo-target-hub`); both at once with the real-environment guard: `python release/tools/accept_hub.py`. The first Rust run freezes both products into `<ecosystem>\.build-cache\dist` (a few minutes, then cached).
-* SecondBrain: `cd respected-secondbrain && python -m unittest discover -s tests -t .` (the distribution test needs `python tools/build_installer.py --platform windows --output dist` first).
+* SecondBrain: `cd respected-secondbrain && python -m unittest discover -s tests -t .` (the distribution test needs `python tools/build_dist.py --platform windows --output dist` first).
 * Orchestrator: `cd respected-orchestrator && python -m unittest discover -s tests -t .` (the packaged-build tests need `python tools/build_dist.py` first; do not run it in parallel with the SecondBrain suite).
 * Release tooling self-check: `python respected-hub/release/tools/test_release_tools.py`.
 

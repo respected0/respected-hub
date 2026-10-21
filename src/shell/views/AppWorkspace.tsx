@@ -16,7 +16,7 @@ import OrchestratorMcp from '../../products/orchestrator/views/OrchestratorMcp.t
 import OverviewPanel from '../../products/orchestrator/views/OverviewPanel.tsx';
 import AgentsPanel from '../../products/orchestrator/views/AgentsPanel.tsx';
 import EvidencePanel from '../../products/orchestrator/views/EvidencePanel.tsx';
-import { dataRootSummary, mountFor } from '../../products/orchestrator/views/workspaceModel.ts';
+import { dataRootSummary, mountFor } from '../workspaceModel.ts';
 import { Emblem } from '../../shared/ui.tsx';
 import '../../products/orchestrator/views/settings.css';
 

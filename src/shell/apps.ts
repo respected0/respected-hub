@@ -1,9 +1,9 @@
 ﻿// Registry of ecosystem apps the shell knows about. Adding an app = adding an entry;
 // `rpp` is set only for products that speak the Respected Product Protocol.
 import type { RppProduct } from '../shared/productClient.ts';
-import { ORCHESTRATOR_PAGES } from '../products/orchestrator/views/workspaceModel.ts';
+import { ORCHESTRATOR_PAGES } from './workspaceModel.ts';
 
-export interface AppPage { id: string; label: string; }
+interface AppPage { id: string; label: string; }
 export interface AppDef { id: string; name: string; tagline: string; rpp?: RppProduct; accent: 'blue' | 'violet'; pages: AppPage[]; }
 export type HubRoute = 'home' | 'apps' | 'discover' | 'connections' | 'activity' | 'settings';
 export const HUB_NAV: { id: HubRoute; label: string }[] = [

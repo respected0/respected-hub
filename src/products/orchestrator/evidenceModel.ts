@@ -4,8 +4,8 @@
 // without importing the Tauri-bound client into a pure model.
 
 export type Verdict = 'approved' | 'needs_changes' | 'failed' | 'human_approval' | 'unknown';
-export interface EvidenceItem { label: string; text: string; }
-export interface ReviewItem { stage: string; profile: string; decision: string; reason: string; }
+interface EvidenceItem { label: string; text: string; }
+interface ReviewItem { stage: string; profile: string; decision: string; reason: string; }
 export interface Evidence {
   headline: string;
   verdict: Verdict;
@@ -107,13 +107,13 @@ function headlineOf(verdict: Verdict): string {
   }
 }
 
-function nextStepOf(verdict: Verdict, hasPatch: boolean, runId: string, statuses: string[]): string {
+function nextStepOf(verdict: Verdict, hasPatch: boolean, runId: string, statuses: string[], cli: string): string {
   const id = runId || RUN_PLACEHOLDER;
   if (verdict === 'human_approval') {
-    return `Bu iş elle onay bekliyor. Onay interaktif bir terminal gerektirir; Hub onay veremez ve bu komutu çalıştırmaz. Kendi terminalinizde şunu çalıştırın:\npython -m respected_orchestrator maf-approve ${id}`;
+    return `Bu iş elle onay bekliyor. Onay interaktif bir terminal gerektirir; Hub onay veremez ve bu komutu çalıştırmaz. Kendi PowerShell penceresinde şunu çalıştırın:\n${cli} maf-approve ${id}`;
   }
   if (statuses.includes('MASTER_APPROVED') || (verdict === 'approved' && hasPatch)) {
-    return `Bu çalışma onaylandı. Hub güvenlik nedeniyle değişiklikleri kendisi uygulamaz ve bu komutu çalıştırmaz; kendi terminalinizde şunu çalıştırın:\npython -m respected_orchestrator apply ${id}`;
+    return `Bu çalışma onaylandı. Hub güvenlik nedeniyle değişiklikleri kendisi uygulamaz ve bu komutu çalıştırmaz; kendi PowerShell pencerenizde şunu çalıştırın:\n${cli} apply ${id}`;
   }
   if (verdict === 'approved') return 'Çalışma onaylandı; uygulanacak bir değişiklik görünmüyor. Ek işlem gerekmez.';
   if (verdict === 'needs_changes') return 'İnceleme değişiklik istedi; düzeltmeden sonra çalışmayı yeniden inceleyin.';
@@ -180,7 +180,7 @@ function evidenceItems(input: EvidenceInput): EvidenceItem[] {
  * Builds the review/evidence summary from an engine `inspect` payload (a run) and/or a
  * `campaign-status` reply (the campaign lane summary). Tolerant of missing or malformed fields.
  */
-export function evidenceFor(inspect: unknown, campaign: unknown, fallbackRunId = ''): Evidence {
+export function evidenceFor(inspect: unknown, campaign: unknown, fallbackRunId = '', cli = 'respected-orchestrator'): Evidence {
   const run = isRecord(inspect) ? inspect : {};
   const root = isRecord(campaign) ? campaign : {};
   const result = isRecord(root.result) ? root.result : {};
@@ -207,6 +207,6 @@ export function evidenceFor(inspect: unknown, campaign: unknown, fallbackRunId =
     evidence: evidenceItems({ run, request, lanes, root, result, changedFiles, patchPreview }),
     reviews,
     hasPatch,
-    nextStepText: nextStepOf(verdict, hasPatch, runId, statuses),
+    nextStepText: nextStepOf(verdict, hasPatch, runId, statuses, cli),
   };
 }

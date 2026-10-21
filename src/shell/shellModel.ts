@@ -1,7 +1,7 @@
 // Pure model for the global shell: top-bar health pill and breadcrumb text. No React/Tauri.
 import type { ProductStatusKind } from '../shared/productsModel.ts';
 
-export interface Health { tone: 'ok' | 'warn' | 'error' | 'unreachable' | 'idle'; label: string; }
+interface Health { tone: 'ok' | 'warn' | 'error' | 'unreachable' | 'idle'; label: string; }
 
 export function globalHealth(native: boolean, loading: boolean, kinds: ProductStatusKind[]): Health {
   if (!native) return { tone: 'idle', label: 'Tarayıcı önizlemesi' };

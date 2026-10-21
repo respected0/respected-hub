@@ -23,7 +23,7 @@ export default function Connections() {
         {settings ? <form onSubmit={event => { event.preventDefault(); void action(async () => { await saveSettings(settings); setMessage('Yerel ürün bağlantıları kaydedildi.'); }); }}>
           {(['python', 'orchestrator_root', 'brain_root', 'data_root'] as const).filter(key => key in settings).map(key => <label key={key}>{({ python: 'Python executable', orchestrator_root: 'Orchestrator kaynak dizini', brain_root: 'Brain kaynak dizini', data_root: 'Orchestrator bağımsız DataRoot' } as Record<string, string>)[key]}<input value={settings[key as keyof Settings]} onChange={e => setSettings({ ...settings, [key]: e.target.value })} required /></label>)}
           <button disabled={busy}>Kaydet</button></form> : <p>Ayarlar masaüstü uygulamasında kullanılabilir.</p>}
-        <p className="muted">Hub'dan kurulan ürünler yönetilen kopyalarından çalışır ve bu kaynak klasörlerini yok sayar; kaynak klasörleri yalnızca ürün Hub'dan kurulu değilken kullanılır. İmzalı uzak katalog ve AI araç entegrasyonlarının uygulanması henüz yoktur.</p>
+        <p className="muted">Hub'dan kurulan ürünler yönetilen kopyalarından çalışır ve bu kaynak klasörlerini yok sayar; kaynak klasörleri yalnızca ürün Hub'dan kurulu değilken kullanılır.</p>
       </details>}
   </>;
 }

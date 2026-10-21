@@ -1,9 +1,9 @@
 // SecondBrain memory search index: read its state and refresh it. Only the user's click may start a refresh;
 // SecondBrain writes nothing but its own search index.
+use super::memory_access::CallFn;
 use crate::rpp::generate_operation_id;
 use serde_json::{json, Value};
 
-pub type CallFn<'a> = &'a dyn Fn(&str, &str, Option<Value>, Option<String>) -> Value;
 
 fn is_ok(reply: &Value) -> bool { reply["ok"] == true }
 

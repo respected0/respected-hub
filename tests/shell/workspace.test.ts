@@ -1,14 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { APPS } from '../../src/shell/apps.ts';
-import { ORCHESTRATOR_PAGES, mountFor, dataRootSummary } from '../../src/products/orchestrator/views/workspaceModel.ts';
+import { ORCHESTRATOR_PAGES, mountFor, dataRootSummary } from '../../src/shell/workspaceModel.ts';
 
-test('orchestrator page order/ids match the workspace model registry', () => {
-  const orchestrator = APPS.find(app => app.id === 'orchestrator');
-  assert.ok(orchestrator, 'orchestrator app is missing');
-  assert.deepEqual(orchestrator.pages.map(page => page.id), ORCHESTRATOR_PAGES.map(page => page.id));
-  assert.deepEqual(orchestrator.pages.map(page => page.label), ORCHESTRATOR_PAGES.map(page => page.label));
-});
 
 test('every orchestrator page id has a mount', () => {
   for (const page of ORCHESTRATOR_PAGES) {

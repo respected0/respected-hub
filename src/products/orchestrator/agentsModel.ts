@@ -3,24 +3,24 @@
 // model/provider profiles come from RPP `settings.readback` fields that really
 // exist. No React, no Tauri imports. No invented providers or live metrics.
 
-export interface WorkerCli {
+interface WorkerCli {
   name: string;
   available: boolean;
 }
 
-export interface AgentRole {
+interface AgentRole {
   id: string;
   name: string;
   description: string;
 }
 
-export interface ModelProfile {
+interface ModelProfile {
   key: string;
   label: string;
   value: string;
 }
 
-export interface AgentsModel {
+interface AgentsModel {
   workers: WorkerCli[];
   roles: AgentRole[];
   profiles: ModelProfile[];

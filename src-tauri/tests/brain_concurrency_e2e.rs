@@ -5,26 +5,12 @@ use respected_hub_lib::lifecycle::Roots;
 use respected_hub_lib::rpp::rpp_call;
 use respected_hub_lib::{hub_apply, hub_plan, Settings};
 use serde_json::json;
-use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-
-struct Temp(PathBuf);
-impl Temp {
-    fn new(label: &str) -> Self {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-        let path = std::env::temp_dir().join(format!("hub-conc-{label}-{}-{nanos}", std::process::id()));
-        std::fs::create_dir_all(&path).unwrap();
-        Temp(path)
-    }
-}
-impl Drop for Temp { fn drop(&mut self) { let _ = std::fs::remove_dir_all(&self.0); } }
-
-fn ecosystem() -> PathBuf {
-    std::env::var_os("RESPECTED_ECOSYSTEM_ROOT").map(PathBuf::from).unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(".."))
-}
+use std::time::{Duration, Instant};
+mod common;
+use common::{ecosystem, Temp};
 
 #[test]
 fn an_install_completes_while_status_polls_and_wizard_plans_keep_running() {

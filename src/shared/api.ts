@@ -15,6 +15,6 @@ export interface StartupIntent { action: 'install' | 'uninstall' | 'manage'; pro
 export const startupIntent = () => invoke<StartupIntent | null>('startup_intent');
 export const loadSettings = () => invoke<Settings>('get_settings');
 export const saveSettings = (settings: Settings) => invoke<void>('save_settings', { settings });
-export interface Products { development: boolean; brain_available: boolean; orchestrator_available: boolean;
+export interface Products { development: boolean; brain_available: boolean; orchestrator_available: boolean; orchestrator_cli: string | null;
   hub_version: string; engine: { version?: string; workers?: Record<string, string[] | null>; error?: string } }
 export const products = () => invoke<Products>('product_status');

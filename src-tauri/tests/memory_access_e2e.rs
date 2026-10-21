@@ -5,22 +5,8 @@ use respected_hub_lib::rpp::{brain_rpp_command, rpp_call, rpp_call_trusted};
 use respected_hub_lib::Settings;
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
-
-struct Temp(PathBuf);
-impl Temp {
-    fn new(label: &str) -> Self {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-        let path = std::env::temp_dir().join(format!("hub-mem-e2e-{label}-{}-{nanos}", std::process::id()));
-        std::fs::create_dir_all(&path).unwrap();
-        Temp(path)
-    }
-}
-impl Drop for Temp { fn drop(&mut self) { let _ = std::fs::remove_dir_all(&self.0); } }
-
-fn ecosystem() -> PathBuf {
-    std::env::var_os("RESPECTED_ECOSYSTEM_ROOT").map(PathBuf::from).unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(".."))
-}
+mod common;
+use common::{ecosystem, Temp};
 
 fn find_file(dir: &Path, name: &str) -> Option<PathBuf> {
     for entry in std::fs::read_dir(dir).ok()?.flatten() {

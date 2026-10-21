@@ -8,7 +8,7 @@ Kurulum düzeni: `INSTALL_LAYOUT.md`. Sıfırdan derleme: `../BUILD_FROM_SCRATCH
 | Ürün | Dağıtım | Testler |
 |---|---|---|
 | Orchestrator | `tools/build_dist.py` ile PyInstaller onedir (`respected-orchestrator.exe`, Python gerekmez) | `python -m unittest discover -s tests -t .` |
-| SecondBrain | `tools/build_installer.py` ile dondurulmuş dağıtım klasörü (`respectedbrain.exe`) | `python -m unittest discover -s tests -t .` |
+| SecondBrain | `tools/build_dist.py` ile dondurulmuş dağıtım klasörü (`respectedbrain.exe`) | `python -m unittest discover -s tests -t .` |
 | Hub | Tauri uygulaması; iki ürünü imzalı katalogdan kurar (yalnızca "distribution" paketleri) | `npm run check`, `cargo test --manifest-path src-tauri/Cargo.toml`, `python release/tools/accept_hub.py` |
 
 Üç depoda GitHub Actions CI vardır (windows-latest). Hub CI'ı kardeş depoları yan yana çeker.

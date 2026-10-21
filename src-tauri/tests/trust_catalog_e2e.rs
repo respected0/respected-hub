@@ -4,20 +4,8 @@ use respected_hub_lib::lifecycle::{self, Roots};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
-
-struct Temp(PathBuf);
-impl Temp {
-    fn new(label: &str) -> Self {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-        let path = std::env::temp_dir().join(format!("hub-trust-{label}-{}-{nanos}", std::process::id()));
-        std::fs::create_dir_all(&path).unwrap();
-        Temp(path)
-    }
-}
-impl Drop for Temp { fn drop(&mut self) { let _ = std::fs::remove_dir_all(&self.0); } }
-
-fn eco() -> PathBuf { Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..") }
+mod common;
+use common::{ecosystem, Temp};
 
 fn python(args: &[&str]) {
     let done = Command::new("python").arg("-B").args(args).status().expect("python");
@@ -27,7 +15,7 @@ fn python(args: &[&str]) {
 /// Fresh signed orchestrator bundle in its own catalog; returns (catalog, bundle dir).
 fn fresh() -> (Temp, PathBuf) {
     let catalog = Temp::new("catalog");
-    python(&[eco().join("respected-hub/release/tools/build_bundle.py").to_str().unwrap(), "orchestrator", "--out", catalog.0.to_str().unwrap()]);
+    python(&[ecosystem().join("respected-hub/release/tools/build_bundle.py").to_str().unwrap(), "orchestrator", "--out", catalog.0.to_str().unwrap()]);
     let bundle = catalog.0.read_dir().unwrap().flatten().next().unwrap().path();
     (catalog, bundle)
 }
@@ -92,9 +80,9 @@ fn only_a_bundle_signed_by_a_trusted_key_is_offered() {
     python(&["-c", &format!("import base64,sys; sys.path.insert(0, r'{}'); \
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey as K; from cryptography.hazmat.primitives import serialization as s; \
         open(r'{}','w').write(base64.b64encode(K.generate().private_bytes(s.Encoding.Raw, s.PrivateFormat.Raw, s.NoEncryption())).decode())",
-        eco().join("respected-hub").join("release").join("tools").display(), key.display())]);
+        ecosystem().join("respected-hub").join("release").join("tools").display(), key.display())]);
     std::fs::write(bundle.join("bundle.json"), serde_json::to_vec(&original).unwrap()).unwrap();
-    python(&[eco().join("respected-hub/release/tools/bundle_signing.py").to_str().unwrap(), "sign", bundle.to_str().unwrap(), "--key", key.to_str().unwrap()]);
+    python(&[ecosystem().join("respected-hub/release/tools/bundle_signing.py").to_str().unwrap(), "sign", bundle.to_str().unwrap(), "--key", key.to_str().unwrap()]);
     let (count, skipped) = offered(&catalog);
     assert_eq!(count, 0, "attacker-signed bundle must not be offered");
     assert!(skipped[0].contains("güvenilir değil"), "{skipped:?}");

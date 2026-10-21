@@ -6,7 +6,7 @@ import { rppTry } from '../shared/productClient.ts';
 import { activityList, lifecycleStatus, type JournalEntry, type LifecycleOverview } from './lifecycle.ts';
 import { summarizeProduct, type ProductSummary } from '../shared/productsModel.ts';
 
-export interface AppRuntime { loading: boolean; summary: ProductSummary; configSource: 'file' | 'defaults' | null; }
+interface AppRuntime { loading: boolean; summary: ProductSummary; configSource: 'file' | 'defaults' | null; }
 export interface Ecosystem { apps: Record<string, AppRuntime>; runs: Run[]; lifecycle: LifecycleOverview | null; journal: JournalEntry[]; refresh: () => void; }
 
 const pending: AppRuntime = { loading: true, summary: summarizeProduct(null, null), configSource: null };

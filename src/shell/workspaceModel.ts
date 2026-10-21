@@ -2,10 +2,10 @@
 // No React and no Tauri imports: node --test can import this module directly.
 // Real data only; the browser preview is labelled honestly, never faked.
 
-export interface WorkspacePage { id: string; label: string; }
+interface WorkspacePage { id: string; label: string; }
 
 // Orchestrator workspace tabs, in tab order. This is the single source of truth
-// used by src/apps.ts so the registry and the mount logic cannot drift apart.
+// used by apps.ts so the registry and the mount logic cannot drift apart.
 export const ORCHESTRATOR_PAGES: WorkspacePage[] = [
   { id: 'overview', label: 'Genel bak\u0131\u015f' },
   { id: 'agents', label: 'Ajanlar ve modeller' },
@@ -15,7 +15,7 @@ export const ORCHESTRATOR_PAGES: WorkspacePage[] = [
   { id: 'settings', label: 'Ayarlar' },
 ];
 
-export type WorkspaceMount =
+type WorkspaceMount =
   | 'overview' | 'agents' | 'evidence' | 'campaigns' | 'runs' | 'settings' | 'setup' | 'memory' | 'none';
 
 // Which component an app/page pair mounts. Every orchestrator page id resolves to
@@ -31,7 +31,7 @@ export function mountFor(appId: string, page: string): WorkspaceMount {
   return 'none';
 }
 
-export interface DataRootSummary {
+interface DataRootSummary {
   dataRoot: string;
   campaignCount: number | null;
   text: string;

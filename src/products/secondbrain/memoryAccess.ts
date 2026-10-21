@@ -5,9 +5,9 @@ import { native } from '../../shared/api.ts';
 import type { LifecycleError } from '../../shell/lifecycle.ts';
 
 export interface MemoryStatus { supported: boolean; enabled: boolean; write?: boolean; write_supported?: boolean; grant_id: string | null; token_set: boolean; pending_revoke: boolean; problems: string[]; }
-export interface MemoryEnableResult { enabled: boolean; grant_id: string | null; }
-export interface MemoryDisableResult { enabled: false; revoked: boolean; pending_revoke: boolean; }
-export type MemoryReply<T> = { ok: true; result: T; error: null } | { ok: false; result: null; error: LifecycleError };
+interface MemoryEnableResult { enabled: boolean; grant_id: string | null; }
+interface MemoryDisableResult { enabled: false; revoked: boolean; pending_revoke: boolean; }
+type MemoryReply<T> = { ok: true; result: T; error: null } | { ok: false; result: null; error: LifecycleError };
 
 const unavailable = (): MemoryReply<never> => ({ ok: false, result: null, error: { code: 'UNAVAILABLE', message: 'Bu işlem yalnızca masaüstü uygulamasında kullanılabilir.', hint: 'Tauri masaüstü sürümünü çalıştırın.' } });
 
@@ -21,8 +21,8 @@ export const memoryAccessStatus = () => call<MemoryStatus>('memory_access_status
 export const memoryAccessEnable = (write = false) => call<MemoryEnableResult>('memory_access_enable', { write });
 export const memoryAccessDisable = () => call<MemoryDisableResult>('memory_access_disable');
 
-export type MemoryState = 'unsupported' | 'off' | 'on' | 'pending-revoke';
-export interface MemoryDescription { state: MemoryState; title: string; detail: string; }
+type MemoryState = 'unsupported' | 'off' | 'on' | 'pending-revoke';
+interface MemoryDescription { state: MemoryState; title: string; detail: string; }
 
 export function describeMemoryStatus(status: MemoryStatus): MemoryDescription {
   if (status.pending_revoke) return { state: 'pending-revoke', title: 'Erişim iptali tamamlanamadı', detail: 'Hafıza erişimi kapatıldı ancak SecondBrain tarafındaki izin henüz iptal edilemedi. İptali yeniden deneyin.' };

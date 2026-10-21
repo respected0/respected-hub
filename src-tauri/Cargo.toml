@@ -23,6 +23,3 @@ dev-trust = []
 [lib]
 name = "respected_hub_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
-
-[dev-dependencies]
-sha2 = "0.10"

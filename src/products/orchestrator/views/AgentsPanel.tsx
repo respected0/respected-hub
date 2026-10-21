@@ -1,8 +1,8 @@
 import { native } from '../../../shared/api.ts';
-import { deriveAgentsModel } from './agentsModel.ts';
+import { deriveAgentsModel } from '../agentsModel.ts';
 import './agents.css';
 
-export interface AgentsPanelProps {
+interface AgentsPanelProps {
   workers: Record<string, string[] | null> | null;
   settings: Record<string, unknown> | null;
   loading: boolean;

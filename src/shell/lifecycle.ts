@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { native } from '../shared/api.ts';
 
 export type LifecycleAction = 'install' | 'update' | 'repair' | 'uninstall' | 'integrations';
-export type InstallState = 'absent' | 'installed' | 'update-available' | 'repair-needed';
+type InstallState = 'absent' | 'installed' | 'update-available' | 'repair-needed';
 
 export interface LifecycleError { code: string; message: string; hint: string; }
 export type LifecycleReply<T> = { ok: true; result: T; error: null } | { ok: false; result: null; error: LifecycleError };
@@ -25,11 +25,11 @@ export interface ProductLifecycle {
   engine_managed?: boolean;
 }
 export interface LifecycleOverview { products: (ProductLifecycle | null)[]; managed_root: string; catalog_root: string; }
-export interface PlanStep { id: string; summary: string; reversible: boolean; irreversible_reason: string | null; }
-export interface IntegrationChange { kind: string; target: string; action: 'create' | 'modify' | 'restore' | 'unchanged'; summary: string; size_after: number; }
+interface PlanStep { id: string; summary: string; reversible: boolean; irreversible_reason: string | null; }
+interface IntegrationChange { kind: string; target: string; action: 'create' | 'modify' | 'restore' | 'unchanged'; summary: string; size_after: number; }
 export interface IntegrationPlan { desired: Record<string, unknown>; current?: Record<string, unknown>; clients?: { id: string; detected: boolean }[]; launcher: string[]; discovered: { client_config: string; present: boolean }[]; changes: IntegrationChange[]; writes_nothing: boolean; external_effects: string[]; }
 export interface LifecyclePlan { product: string; action: LifecycleAction; from_version: string | null; to_version: string | null; plan: { steps: PlanStep[] }; integrations?: IntegrationPlan | null; engine_managed?: boolean; }
-export type LifecycleParams = Record<string, unknown>;
+type LifecycleParams = Record<string, unknown>;
 export interface JournalEntry {
   operation_id: string; product: string; action: LifecycleAction;
   status: 'staging' | 'verifying' | 'switching' | 'applied' | 'failed' | 'rolled_back';
@@ -118,6 +118,7 @@ export function journalSentence(entry: JournalEntry, productName: string): strin
 
 /** Only the newest applied operation of a product can be undone (journal is newest first). */
 export const canRollback = (entry: JournalEntry, journal: JournalEntry[] = [entry]) =>
-  entry.status === 'applied' && entry.undo != null && !(entry.product === 'secondbrain' && entry.action === 'uninstall') // the engine cannot undo its own uninstall
+  entry.status === 'applied' && entry.undo != null
+  && entry.action !== 'uninstall' // a removal also deletes the product's data and backups, so it is never offered as undoable
   && entry.action !== 'update' // an update deletes the replaced version (no leftovers), so there is nothing to go back to
   && !journal.some(other => other.product === entry.product && other.status === 'applied' && other.started_at > entry.started_at);

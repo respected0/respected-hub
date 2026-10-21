@@ -140,10 +140,10 @@ mod tests {
         assert_eq!(verify_with(&keys(), &[], &doc(Value::Null), "orchestrator", "source", "0.1.0", DIGEST, true), Ok(Trust::UnsignedAllowed));
     }
 
-    // Only compiled into (and therefore only proven by) a PRODUCTION build: `cargo test --release --lib trust` without dev-trust.
+    // Only compiled into (and therefore only proven by) a PRODUCTION build: `cargo test --release --lib production_build` without dev-trust.
     #[cfg(not(any(debug_assertions, feature = "dev-trust")))]
     #[test]
-    fn a_production_build_has_no_development_trust_and_no_unsigned_bypass() {
+    fn production_build_has_no_development_trust_and_no_unsigned_bypass() {
         std::env::set_var("RESPECTED_HUB_ALLOW_UNSIGNED", "1");
         std::env::set_var("RESPECTED_HUB_DEV_TRUST", "dev-trust.pub");
         assert!(!dev_enabled() && !allow_unsigned() && dev_keys().is_empty());
@@ -162,7 +162,7 @@ mod tests {
     }
 
     #[test]
-    fn production_trust_set_is_empty_until_the_release_key_is_provisioned() {
+    fn every_release_key_line_is_a_valid_ed25519_key() {
         let provisioned = parse_key_lines(PRODUCTION_KEYS);
         let lines = PRODUCTION_KEYS.lines().filter(|l| !l.trim().is_empty() && !l.trim_start().starts_with('#')).count();
         assert_eq!(provisioned.len(), lines, "every non-comment line of release-keys.txt must be a valid key");

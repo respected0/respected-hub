@@ -4,18 +4,8 @@
 use respected_hub_lib::{catalog, lifecycle::{self, Roots}};
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
-
-struct Temp(PathBuf);
-impl Temp {
-    fn new(label: &str) -> Self {
-        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-        let path = std::env::temp_dir().join(format!("hub-remote-{label}-{}-{nanos}", std::process::id()));
-        std::fs::create_dir_all(&path).unwrap();
-        Temp(path)
-    }
-}
-impl Drop for Temp { fn drop(&mut self) { let _ = std::fs::remove_dir_all(&self.0); } }
+mod common;
+use common::Temp;
 
 fn tools() -> PathBuf { Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("release").join("tools") }
 

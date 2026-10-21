@@ -1,6 +1,6 @@
 // AI clients SecondBrain can connect to. `hooks`: captures sessions and gets the memory rules/skills (Sources);
 // `mcp`: gets the memory MCP server entry (Permissions). The product validates every id again.
-export interface ClientDef { id: string; label: string; hooks: boolean; mcp: boolean; }
+interface ClientDef { id: string; label: string; hooks: boolean; mcp: boolean; }
 export const CLIENTS: ClientDef[] = [
   { id: 'claude', label: 'Claude Code', hooks: true, mcp: true },
   { id: 'codex', label: 'Codex', hooks: true, mcp: false },

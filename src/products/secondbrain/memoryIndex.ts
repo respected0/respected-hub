@@ -4,10 +4,10 @@ import { native } from '../../shared/api.ts';
 import type { LifecycleError } from '../../shell/lifecycle.ts';
 
 export type IndexState = 'unsupported' | 'no-vault' | 'missing' | 'invalid' | 'fresh' | 'stale' | 'unknown';
-export interface LastRefresh { at: string; operation_id: string; indexed: number; skipped: number; deleted: number; total: number; duration_seconds: number; force: boolean; }
+interface LastRefresh { at: string; operation_id: string; indexed: number; skipped: number; deleted: number; total: number; duration_seconds: number; force: boolean; }
 export interface IndexStatus { supported: boolean; state: IndexState; indexed_files: number; changed_files: number; vault_id: string | null; last_refresh: LastRefresh | null; problems: string[]; }
-export interface IndexRefreshResult { indexed: number; skipped: number; deleted: number; total: number; duration_seconds: number; state: IndexState; }
-export type IndexReply<T> = { ok: true; result: T; error: null } | { ok: false; result: null; error: LifecycleError };
+interface IndexRefreshResult { indexed: number; skipped: number; deleted: number; total: number; duration_seconds: number; state: IndexState; }
+type IndexReply<T> = { ok: true; result: T; error: null } | { ok: false; result: null; error: LifecycleError };
 
 const unavailable = (): IndexReply<never> => ({ ok: false, result: null, error: { code: 'UNAVAILABLE', message: 'Bu işlem yalnızca masaüstü uygulamasında kullanılabilir.', hint: 'Tauri masaüstü sürümünü çalıştırın.' } });
 
@@ -22,7 +22,7 @@ export interface CaptureResult { captured_sessions: number; compile_status: numb
 export const memoryCaptureRun = () => call<CaptureResult>('memory_capture_run');
 export const memoryIndexRefresh = (force = false) => call<IndexRefreshResult>('memory_index_refresh', { force });
 
-export interface IndexDescription { state: IndexState; title: string; detail: string; }
+interface IndexDescription { state: IndexState; title: string; detail: string; }
 
 export function describeIndexStatus(status: IndexStatus): IndexDescription {
   const state = status.supported ? status.state : 'unsupported';

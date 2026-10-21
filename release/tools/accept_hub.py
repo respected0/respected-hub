@@ -5,7 +5,6 @@
 The Rust end-to-end tests drive the sibling products on disposable roots; real_env_guard proves afterwards that no
 real AI-client configuration, shortcut or scheduled task was touched. CI runs the same steps without the guard."""
 import os, shutil, subprocess, sys
-from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import real_env_guard  # noqa: E402
@@ -16,6 +15,7 @@ before = real_env_guard.snapshot()
 env = dict(os.environ, CARGO_TARGET_DIR=str(ECO / ".cargo-target-hub"), RESPECTED_ECOSYSTEM_ROOT=str(ECO), PYTHONDONTWRITEBYTECODE="1")
 npm = shutil.which("npm") or "npm"
 steps = [(["cargo", "test", "--manifest-path", "src-tauri/Cargo.toml", "--no-fail-fast"], 3600),
+         (["cargo", "test", "--release", "--manifest-path", "src-tauri/Cargo.toml", "--lib", "production_build"], 3600),  # no development keys
          ([npm, "run", "check"], 600)]
 code = 0
 for command, limit in steps:

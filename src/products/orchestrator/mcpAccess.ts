@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { native } from '../../shared/api.ts';
 import type { JournalEntry, LifecycleError, LifecycleReply } from '../../shell/lifecycle.ts';
 
-export interface McpClientRow { client: string; config: string; detected: boolean; state: 'absent' | 'owned' | 'foreign' | 'modified'; action: 'unchanged' | 'create' | 'update' | 'remove' | 'refuse'; reason: string; }
+interface McpClientRow { client: string; config: string; detected: boolean; state: 'absent' | 'owned' | 'foreign' | 'modified'; action: 'unchanged' | 'create' | 'update' | 'remove' | 'refuse'; reason: string; }
 export interface McpPlan { clients: McpClientRow[]; plan_digest: string; writes_nothing: boolean; }
 
 const CLIENT_LABEL: Record<string, string> = { 'claude-code': 'Claude Code', codex: 'Codex', cursor: 'Cursor', gemini: 'Gemini CLI', windsurf: 'Windsurf', 'claude-desktop': 'Claude Desktop' };

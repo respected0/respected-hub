@@ -1,9 +1,9 @@
 // Optional local semantic search of SecondBrain: status, enable (confirm -> model download -> vector build) and disable.
 // FTS search keeps working in every state. The download goes through the user's local embedding service only.
+use super::memory_access::CallFn;
 use crate::rpp::generate_operation_id;
 use serde_json::{json, Value};
 
-pub type CallFn<'a> = &'a dyn Fn(&str, &str, Option<Value>, Option<String>) -> Value;
 
 fn is_ok(reply: &Value) -> bool { reply["ok"] == true }
 
@@ -35,7 +35,7 @@ pub fn enable(call: CallFn) -> Result<Value, String> {
     if !supported(call) { return Err("Kurulu SecondBrain anlamsal aramayı desteklemiyor; önce güncelleyin.".into()); }
     let steps: [(&str, Value, &str); 3] = [
         ("memory.semantic.configure", json!({ "confirm": true, "enabled": true }), "Anlamsal arama açılamadı"),
-        ("memory.semantic.pull", json!({ "confirm": true }), "Model indirilemedi (Ollama kurulu ve çalışıyor mu?)"),
+        ("memory.semantic.pull", json!({ "confirm": true }), "Model indirilemedi"),
         ("memory.index.refresh", json!({ "confirm": true }), "Vektör dizini oluşturulamadı"),
     ];
     for (op, payload, what) in steps {
@@ -82,7 +82,7 @@ mod tests {
     fn a_failed_download_stops_before_the_vector_build_and_explains() {
         let log = RefCell::new(vec![]);
         let error = enable(&fake(&log, Some("memory.semantic.pull"))).unwrap_err();
-        assert!(error.contains("Model indirilemedi") && error.contains("Ollama"), "{error}");
+        assert!(error.contains("Model indirilemedi") && error.contains("kapalı"), "the product's own explanation is shown: {error}");
         assert!(!log.borrow().iter().any(|o| o == "memory.index.refresh"));
     }
 

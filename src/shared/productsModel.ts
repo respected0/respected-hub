@@ -4,7 +4,7 @@ import type { Manifest, RppError, RppResponse, SettingType, SettingsField, Setti
 
 export type ProductStatusKind = 'ok' | 'warn' | 'error' | 'unreachable';
 
-export interface ProductCheck { name: string; ok: boolean; detail: string; }
+interface ProductCheck { name: string; ok: boolean; detail: string; }
 
 export interface ProductSummary {
   title: string;
@@ -180,7 +180,7 @@ export function changedSettings(
   return changes;
 }
 
-export interface ReadbackMismatch { key: string; expected: string; actual: string; }
+interface ReadbackMismatch { key: string; expected: string; actual: string; }
 
 function show(value: unknown): string {
   return value === undefined || value === null ? '' : String(value);

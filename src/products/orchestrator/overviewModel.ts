@@ -3,14 +3,14 @@
 // counts come from engine `list`. No React, no Tauri imports. Nothing is faked:
 // missing engine data degrades to honest Turkish warnings.
 
-import { terminal } from '../tasks.ts';
-import type { Run } from '../../../shared/api.ts';
+import { terminal } from './tasks.ts';
+import type { Run } from '../../shared/api.ts';
 
 export type RunGroup = 'active' | 'succeeded' | 'failed' | 'other';
 
-export interface RunCounts { active: number; succeeded: number; failed: number; other: number; }
+interface RunCounts { active: number; succeeded: number; failed: number; other: number; }
 
-export interface OverviewModel {
+interface OverviewModel {
   runCounts: RunCounts;
   latestRuns: Run[];
   workersAvailable: string[];
@@ -21,7 +21,7 @@ export interface OverviewModel {
 export const WORKERS_WARNING = 'Worker CLI durumu motor tarafından bildirilmedi.';
 export const RUNS_WARNING = 'Çalıştırma listesi alınamadı.';
 export const DROPPED_WARNING = 'Bazı çalıştırma kayıtları okunamadı, listeye alınmadı.';
-export const LATEST_LIMIT = 5;
+const LATEST_LIMIT = 5;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
