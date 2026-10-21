@@ -91,6 +91,23 @@ def build(product: str, dist: Path, out: Path, key: Path | None = None) -> Path:
     return target
 
 
+def build_installer(product: str, installer: Path, dist: Path, out: Path, key: Path | None = None) -> Path:
+    """A bundle of kind ``installer``: the product's own signed installer is the only payload file; the Hub runs it silently."""
+    if not installer.name.endswith("-Windows-Setup.exe"):
+        raise ValueError("the installer file must be named ...-Windows-Setup.exe")
+    version = json.loads((dist / "distribution.json").read_text("utf-8"))["version"]
+    target = out / f"{product}-{version}"
+    if target.exists():
+        shutil.rmtree(target)
+    (target / "payload").mkdir(parents=True)
+    shutil.copyfile(installer, target / "payload" / installer.name)
+    files = [{"path": installer.name, "size": installer.stat().st_size, "sha256": sha256_file(installer)}]
+    digest = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
+    manifest = {"schema": 1, "product": product, "kind": "installer", "version": version, "files": files, "bundle_digest": digest, "signature": None}
+    (target / "bundle.json").write_text(json.dumps(sign_manifest(manifest, key), indent=1), encoding="utf-8")
+    return target
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("product", choices=sorted(PRODUCTS))
@@ -98,5 +115,11 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=Path, default=ECO / "catalog")
     parser.add_argument("--key", type=Path, help="release signing key (default: local development key)")
     parser.add_argument("--force", action="store_true", help="rebuild the distribution even when the cache is current")
+    parser.add_argument("--installer", type=Path, help="bundle this product installer (kind installer) instead of the distribution folder; --dist names the folder it was built from")
     args = parser.parse_args()
-    print(build(args.product, args.dist or frozen(args.product, args.force), args.out, args.key))
+    if args.installer:
+        if not args.dist:
+            parser.error("--installer needs --dist (its distribution.json supplies the version)")
+        print(build_installer(args.product, args.installer, args.dist, args.out, args.key))
+    else:
+        print(build(args.product, args.dist or frozen(args.product, args.force), args.out, args.key))

@@ -49,6 +49,12 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def installer_path(name: str) -> Path:
+    """Where `name`'s Windows installer was built: the Hub's in <ecosystem>/dist, a product's in its own repository's dist."""
+    repo = {"RespectedHub": ECO / "dist", "RespectedSecondBrain": ECO / REPOS["secondbrain"] / "dist", "RespectedOrchestrator": ECO / REPOS["orchestrator"] / "dist"}[name]
+    return repo / f"{name}-Windows-Setup.exe"
+
+
 def source_version(product: str) -> str:
     """The human version written in the repository (SemVer, e.g. 0.1.0-beta.1): it names the release tag."""
     if product == "hub":
@@ -89,14 +95,20 @@ def build(args) -> None:
     if "hub" in only:
         if not args.skip_hub_build:
             run(py + [str(TOOLS / "build" / "build_hub_installer.py"), "--release-key", str(args.key)])
-        for name in INSTALLERS:
-            shutil.copyfile(ECO / "dist" / f"{name}-Windows-Setup.exe", OUT / f"{name}-Windows-Setup.exe")
+        for name in INSTALLERS:  # the Hub installer is built beside the Hub; each product builds its own in its repository (see below)
+            shutil.copyfile(installer_path(name), OUT / f"{name}-Windows-Setup.exe")
         entries["hub"] = entry(OUT / "RespectedHub-Windows-Setup.exe", source_version("hub"), REPOS["hub"], hub_tag)
     for product in ("orchestrator", "secondbrain"):
         if product not in only:
             continue
         # a release is always frozen from the current source (--force): never a cached build of older code
-        run(py + [str(TOOLS / "build" / "build_bundle.py"), product, "--force", "--out", str(STAGE), *key])
+        if product == "orchestrator":  # shipped as its own signed installer, which the Hub runs silently
+            repo = ECO / REPOS[product]
+            run(py + [str(repo / "packaging" / "build_installer.py")], cwd=repo)
+            run(py + [str(TOOLS / "build" / "build_bundle.py"), product, "--installer", str(repo / "dist" / "RespectedOrchestrator-Windows-Setup.exe"),
+                      "--dist", str(repo / "dist" / "RespectedOrchestrator"), "--out", str(STAGE), *key])
+        else:
+            run(py + [str(TOOLS / "build" / "build_bundle.py"), product, "--force", "--out", str(STAGE), *key])
         bundle = next(STAGE.glob(f"{product}-*"))
         archive = OUT / f"{product}-{bundle_version(bundle)}.zip"
         zip_bundle(bundle, archive)

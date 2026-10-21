@@ -35,7 +35,7 @@ impl LifecycleError {
 }
 
 #[derive(Clone, Debug)]
-pub struct Bundle { pub dir: PathBuf, pub product: String, pub version: String, pub files: Vec<(String, u64, String)>, pub digest: String, pub signed: bool, pub trust: String }
+pub struct Bundle { pub dir: PathBuf, pub product: String, pub kind: String, pub version: String, pub files: Vec<(String, u64, String)>, pub digest: String, pub signed: bool, pub trust: String }
 
 // ---------- small helpers ----------
 
@@ -117,9 +117,9 @@ pub fn read_bundle(dir: &Path) -> Result<Bundle, LifecycleError> {
     if doc["schema"] != 1 { return bad("desteklenmeyen şema".into()); }
     let product = doc["product"].as_str().unwrap_or("").to_string();
     if !PRODUCTS.contains(&product.as_str()) { return bad("bilinmeyen ürün".into()); }
-    // every product ships as its packaged (frozen) distribution folder
+    // a product ships as its packaged (frozen) distribution folder, or as its own signed installer (one file)
     let kind = doc["kind"].as_str().unwrap_or("").to_string();
-    if kind != "distribution" { return bad("geçersiz paket türü".into()); }
+    if kind != "distribution" && kind != "installer" { return bad("geçersiz paket türü".into()); }
     let version = doc["version"].as_str().unwrap_or("").to_string();
     if !valid_version(&version) { return bad("geçersiz sürüm".into()); }
     let list = match doc["files"].as_array() { Some(l) if !l.is_empty() && l.len() <= MAX_FILES => l, _ => return bad("dosya listesi boş veya çok büyük".into()) };
@@ -136,6 +136,7 @@ pub fn read_bundle(dir: &Path) -> Result<Bundle, LifecycleError> {
         files.push((path.to_string(), size.unwrap_or(0), sha.to_ascii_lowercase()));
     }
     if total > MAX_TOTAL_BYTES { return bad("paket çok büyük".into()); }
+    if kind == "installer" && (files.len() != 1 || !files[0].0.ends_with("-Windows-Setup.exe")) { return bad("kurucu paketi tek bir ...-Windows-Setup.exe içermeli".into()); }
     // The digest binds the exact file list as the builder serialised it (sorted keys, compact).
     let canonical = serde_json::to_string(&Value::Array(list.iter().map(|i| {
         let mut m = serde_json::Map::new(); // BTreeMap-ordered by serde_json default => sorted keys
@@ -147,7 +148,7 @@ pub fn read_bundle(dir: &Path) -> Result<Bundle, LifecycleError> {
     // fail closed: only a signature from a key this build trusts (or the explicit development opt-in) is accepted
     let trust = match crate::trust::verify(&doc, &product, &kind, &version, &digest) { Ok(t) => t, Err(reason) => return bad(reason) };
     let signed = trust != crate::trust::Trust::UnsignedAllowed;
-    Ok(Bundle { dir: dir.to_path_buf(), product, version, files, digest, signed, trust: trust.as_str().to_string() })
+    Ok(Bundle { dir: dir.to_path_buf(), product, kind, version, files, digest, signed, trust: trust.as_str().to_string() })
 }
 
 /// Release order key: SemVer 2 (`0.1.0-beta.2 < 0.1.0-rc.1 < 0.1.0 < 0.1.1-beta.1`) plus the PEP 440 spellings Python
@@ -174,14 +175,17 @@ pub fn version_key(version: &str) -> (Vec<u64>, u8, Vec<(u8, u64, String)>) {
 }
 
 /// Valid catalog bundles for `product`, newest first, plus the reasons others were skipped.
-pub fn catalog(roots: &Roots, product: &str) -> (Vec<Bundle>, Vec<String>) {
+pub fn catalog(roots: &Roots, product: &str) -> (Vec<Bundle>, Vec<String>) { catalog_of(roots, product, "distribution") }
+
+/// Valid bundles of one kind (`distribution` folders the Hub copies, or `installer` files the product runs itself).
+pub fn catalog_of(roots: &Roots, product: &str, kind: &str) -> (Vec<Bundle>, Vec<String>) {
     let (mut found, mut skipped) = (Vec::new(), Vec::new());
     if let Ok(entries) = fs::read_dir(&roots.catalog) {
         for entry in entries.flatten() {
             let path = entry.path();
             if !path.is_dir() || is_link(&path) || !path.join("bundle.json").is_file() { continue; }
             match read_bundle(&path) {
-                Ok(b) if b.product == product => found.push(b),
+                Ok(b) if b.product == product && b.kind == kind => found.push(b),
                 Ok(_) => {}
                 Err(e) => skipped.push(format!("{}: {}", entry.file_name().to_string_lossy(), e.message)),
             }

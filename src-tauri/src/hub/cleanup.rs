@@ -53,7 +53,7 @@ pub fn remove_products(roots: &Roots, dirs: &secondbrain::BrainDirs, settings: &
         let outcome = hub_apply(roots, dirs, settings.clone(), "secondbrain", "uninstall", &json!({}), &rpp::generate_operation_id());
         record("secondbrain", outcome, &mut steps, &mut ok);
     }
-    if lifecycle::read_current(roots, "orchestrator").is_some() {
+    if super::installed_version(roots, dirs, "orchestrator").is_some() {
         let outcome = hub_apply(roots, dirs, settings.clone(), "orchestrator", "uninstall", &json!({}), &rpp::generate_operation_id());
         record("orchestrator", outcome, &mut steps, &mut ok);
     }
