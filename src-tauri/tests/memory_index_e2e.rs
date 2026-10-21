@@ -1,6 +1,6 @@
 //! Real end-to-end proof of reading and refreshing SecondBrain's memory search index through the real engine.
 //! Temporary data roots and a fake home only; the vault notes must stay byte-identical.
-use respected_hub_lib::memory_index;
+use respected_hub_lib::secondbrain_memory_index;
 use respected_hub_lib::rpp::{rpp_call, rpp_call_trusted, rpp_call_trusted_timeout};
 use respected_hub_lib::Settings;
 use serde_json::{json, Value};
@@ -41,13 +41,13 @@ fn the_search_index_is_read_and_refreshed_through_the_real_engine() {
     // The vault created by the install already holds SecondBrain's template notes: count them instead of assuming only ours.
     let baseline = count_markdown(&vault.0);
 
-    let status = memory_index::status(&call);
+    let status = secondbrain_memory_index::status(&call);
     assert_eq!(status["supported"], true, "{status}");
     assert_eq!(status["state"], "missing", "{status}");
 
-    let first = memory_index::refresh(&call, false).unwrap_or_else(|e| panic!("refresh: {e}"));
+    let first = secondbrain_memory_index::refresh(&call, false).unwrap_or_else(|e| panic!("refresh: {e}"));
     assert_eq!(first["indexed"], json!(baseline), "{first}");
-    let status = memory_index::status(&call);
+    let status = secondbrain_memory_index::status(&call);
     assert_eq!(status["state"], "fresh", "{status}");
     assert!(status["last_refresh"].is_object(), "{status}");
 
@@ -55,9 +55,9 @@ fn the_search_index_is_read_and_refreshed_through_the_real_engine() {
     std::fs::write(&notes[0], "# Not 1\n\nDeğişti.\n").unwrap();
     let extra = vault.0.join("note-4.md");
     std::fs::write(&extra, "# Not 4\n\nYeni not.\n").unwrap();
-    let stale = memory_index::status(&call);
+    let stale = secondbrain_memory_index::status(&call);
     assert_eq!(stale["state"], "stale", "{stale}");
-    let second = memory_index::refresh(&call, false).unwrap_or_else(|e| panic!("refresh: {e}"));
+    let second = secondbrain_memory_index::refresh(&call, false).unwrap_or_else(|e| panic!("refresh: {e}"));
     assert_eq!((second["indexed"].clone(), second["skipped"].clone()), (json!(2), json!(baseline - 1)), "{second}");
 
     // Refreshing only writes SecondBrain's own index: the vault notes are untouched.

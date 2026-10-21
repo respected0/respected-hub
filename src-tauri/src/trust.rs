@@ -157,7 +157,7 @@ mod tests {
         let mut command = std::process::Command::new("x");
         crate::rpp::apply_test_home(&mut command);
         assert!(command.get_envs().next().is_none(), "the test home must not reach product processes");
-        assert_eq!(crate::brain::dirs().app, std::path::PathBuf::from(std::env::var_os("LOCALAPPDATA").unwrap_or_else(|| std::env::temp_dir().into())).join("Respected").join("RespectedBrain").join("app"));
+        assert_eq!(crate::secondbrain::dirs().app, std::path::PathBuf::from(std::env::var_os("LOCALAPPDATA").unwrap_or_else(|| std::env::temp_dir().into())).join("Respected").join("RespectedBrain").join("app"));
         assert!(verify(&doc(Value::Null), "orchestrator", "source", "0.1.0", DIGEST).is_err());
     }
 

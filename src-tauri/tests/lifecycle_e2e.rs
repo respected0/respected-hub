@@ -53,8 +53,8 @@ fn the_packaged_orchestrator_installs_verifies_repairs_and_uninstalls_without_py
     assert_eq!(manifest["result"]["install_state"], "installed", "product and Hub agree: {manifest}");
     assert_eq!(rpp_call(&live, "orchestrator", "health", None, None)["ok"], true);
     // The stable MCP launcher a client registers starts the packaged executable on its own (no Hub, no Python).
-    respected_hub_lib::mcp_access::write_launcher(&roots, &live).unwrap_or_else(|e| panic!("launcher: {}", e.message));
-    let tools = respected_hub_lib::mcp_access::probe(&roots).unwrap_or_else(|e| panic!("MCP launcher: {e}"));
+    respected_hub_lib::orchestrator_mcp::write_launcher(&roots, &live).unwrap_or_else(|e| panic!("launcher: {}", e.message));
+    let tools = respected_hub_lib::orchestrator_mcp::probe(&roots).unwrap_or_else(|e| panic!("MCP launcher: {e}"));
     assert!(tools > 0);
 
     // Damage a runtime file: both the Hub and the product notice; repair restores it from the catalog.

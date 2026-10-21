@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 use std::{fs, path::{Path, PathBuf}};
 use tauri::Manager;
-use crate::{brain, trust};
+use crate::{secondbrain, trust};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Settings {
@@ -51,7 +51,7 @@ pub fn get_settings(app: tauri::AppHandle) -> Result<Settings, String> {
         (hub.parent().ok_or("Missing product root")?.to_path_buf(),
          default_data_root(trust::dev_env("RESPECTED_ORCHESTRATOR_DATA_ROOT").and_then(|v| v.into_string().ok()).as_deref(), data_base.with_file_name("RespectedOrchestratorDevelopment")))
     } else {
-        (data_base.join("no-source-checkout"), brain::respected_root().join("RespectedOrchestrator").join("data"))
+        (data_base.join("no-source-checkout"), secondbrain::respected_root().join("RespectedOrchestrator").join("data"))
     };
     Ok(Settings { python: "python".into(), orchestrator_root: siblings.join("respected-orchestrator"),
         brain_root: siblings.join("respected-secondbrain"), data_root,

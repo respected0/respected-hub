@@ -1,6 +1,6 @@
 //! Real end-to-end proof of enabling/disabling SecondBrain memory access for the Orchestrator through the
 //! real engines. Temporary data roots and a fake home only; the grant token never reaches this test's API.
-use respected_hub_lib::memory_access;
+use respected_hub_lib::secondbrain_memory_access;
 use respected_hub_lib::rpp::{brain_rpp_command, rpp_call, rpp_call_trusted};
 use respected_hub_lib::Settings;
 use serde_json::{json, Value};
@@ -42,12 +42,12 @@ fn memory_access_is_enabled_and_disabled_through_the_real_engines() {
     let install = call("secondbrain", "lifecycle.apply", Some(json!({ "action": "install", "target": { "vault_path": vault.0.to_string_lossy() } })), Some("mem-e2e-vault-1".into()));
     assert_eq!(install["ok"], true, "{install}");
 
-    let status = memory_access::status(&call);
+    let status = secondbrain_memory_access::status(&call);
     assert_eq!(status["supported"], true, "{status}");
     assert_eq!(status["enabled"], false, "{status}");
 
     let command = brain_rpp_command(&settings).expect("brain command");
-    let enabled = memory_access::enable(&call, command, false).unwrap_or_else(|e| panic!("enable: {e}"));
+    let enabled = secondbrain_memory_access::enable(&call, command, false).unwrap_or_else(|e| panic!("enable: {e}"));
     assert_eq!(enabled["enabled"], true);
     let grant_id = enabled["grant_id"].as_str().expect("grant id").to_string();
 
@@ -69,9 +69,9 @@ fn memory_access_is_enabled_and_disabled_through_the_real_engines() {
     let grants: Value = serde_json::from_str(&grants_text).unwrap();
     let grant = find_grant(&grants, &grant_id).unwrap_or_else(|| panic!("grant {grant_id} listed"));
     assert_ne!(grant["revoked"], true, "{grant}");
-    assert_eq!(memory_access::status(&call)["enabled"], true);
+    assert_eq!(secondbrain_memory_access::status(&call)["enabled"], true);
 
-    let disabled = memory_access::disable(&call).unwrap_or_else(|e| panic!("disable: {e}"));
+    let disabled = secondbrain_memory_access::disable(&call).unwrap_or_else(|e| panic!("disable: {e}"));
     assert_eq!(disabled, json!({ "enabled": false, "revoked": true, "pending_revoke": false }));
     let after = call("orchestrator", "settings.readback", None, None);
     assert_eq!(after["result"]["settings"]["memory_enabled"], false, "{after}");

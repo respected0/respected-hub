@@ -1,6 +1,6 @@
 //! The Hub polls SecondBrain over RPP every few seconds while a lifecycle operation runs. An install must still
 //! finish (no deadlock between the polls and the installer) and the polls must never run from the program folder.
-use respected_hub_lib::brain::{self, BrainDirs};
+use respected_hub_lib::secondbrain::{self, BrainDirs};
 use respected_hub_lib::lifecycle::Roots;
 use respected_hub_lib::rpp::rpp_call;
 use respected_hub_lib::{hub_apply, hub_plan, Settings};
@@ -40,7 +40,7 @@ fn an_install_completes_while_status_polls_and_wizard_plans_keep_running() {
         threads.push(std::thread::spawn(move || {
             while !stop.load(Ordering::SeqCst) {
                 let mut live = settings.clone();
-                brain::overlay(&roots, &dirs, &mut live);
+                secondbrain::overlay(&roots, &dirs, &mut live);
                 for op in ["manifest", "health", "settings.readback"] { let _ = rpp_call(&live, "secondbrain", op, None, None); }
                 polls.fetch_add(1, Ordering::SeqCst);
                 std::thread::sleep(Duration::from_millis(500));

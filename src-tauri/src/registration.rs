@@ -4,7 +4,7 @@
 // so `sync` after every lifecycle change and at start keeps them true. When the Hub itself is uninstalled but the products
 // are kept, its uninstaller leaves a copy of the executable in `maintenance\` and runs `--sync-registrations` from there,
 // so the entries keep working; that copy removes itself once the last product is gone.
-use crate::brain::{self, BrainDirs};
+use crate::secondbrain::{self, BrainDirs};
 use crate::lifecycle::{self, Roots};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -27,7 +27,7 @@ fn reg(args: &[&str]) -> bool {
 
 /// Installed version of each Hub-managed product (None = not installed).
 fn installed(roots: &Roots, d: &BrainDirs) -> [(usize, Option<String>); 2] {
-    let brain = brain::status(roots, d);
+    let brain = secondbrain::status(roots, d);
     [(0, if brain["installed"] == true { brain["version"].as_str().map(str::to_string) } else { None }),
      (1, lifecycle::read_current(roots, "orchestrator").map(|c| c.0))]
 }
