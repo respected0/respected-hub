@@ -1,7 +1,7 @@
 //! Real end-to-end proof of SecondBrain's engine-driven lifecycle (frozen launcher, no Python): verified catalog
 //! package -> read-only SIL plan -> product `setup` with AI-client integrations -> RPP checks -> repair ->
 //! rollback/uninstall. Everything runs on a fake HOME and temporary roots; the user's real configs are never read or written.
-use respected_hub_lib::brain::{self, BrainDirs};
+use respected_hub_lib::secondbrain::{self, BrainDirs};
 use respected_hub_lib::lifecycle::{self, Roots};
 use respected_hub_lib::{hub_apply, hub_plan, hub_rollback, hub_status, Settings};
 use serde_json::{json, Value};
@@ -79,7 +79,7 @@ fn secondbrain_lifecycle_runs_through_its_own_engine_with_safe_integrations() {
 
     // The product answers over RPP through its own launcher (no Python anywhere).
     let mut live = settings.clone();
-    brain::overlay(&roots, &dirs, &mut live);
+    secondbrain::overlay(&roots, &dirs, &mut live);
     let manifest = respected_hub_lib::rpp::rpp_call(&live, "secondbrain", "manifest", None, None);
     assert_eq!(manifest["ok"], true, "{manifest}");
     assert_eq!(manifest["result"]["install_state"], "installed");

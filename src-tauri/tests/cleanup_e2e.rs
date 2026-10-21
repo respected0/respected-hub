@@ -1,9 +1,9 @@
 //! The Hub's own uninstall path: `respected-hub.exe --uninstall-products` (what the uninstaller runs when the user chose to remove the
 //! products too) must undo every AI-client registration, remove the products and the Hub's managed folder, and leave the user's
 //! notes, vault and foreign client configuration alone. Everything runs on a fake HOME and temporary roots.
-use respected_hub_lib::brain::BrainDirs;
+use respected_hub_lib::secondbrain::BrainDirs;
 use respected_hub_lib::lifecycle::Roots;
-use respected_hub_lib::{hub_apply, mcp_access, Settings};
+use respected_hub_lib::{hub_apply, orchestrator_mcp, Settings};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -48,8 +48,8 @@ fn uninstalling_the_hub_can_remove_the_products_and_every_registration_without_t
     hub_apply(&roots, &dirs, settings.clone(), "secondbrain", "install", &params, "e2e-clean-brain-1").unwrap_or_else(|e| panic!("brain install: {} {}", e.message, e.hint));
     hub_apply(&roots, &dirs, settings.clone(), "orchestrator", "install", &json!({}), "e2e-clean-orch-1").unwrap_or_else(|e| panic!("orchestrator install: {} {}", e.message, e.hint));
     let desired = json!({ "claude-code": true, "codex": true });
-    let planned = mcp_access::plan(&roots, &settings, &desired).unwrap();
-    mcp_access::apply(&roots, &settings, &desired, planned["plan_digest"].as_str().unwrap(), "e2e-clean-mcp-01").unwrap();
+    let planned = orchestrator_mcp::plan(&roots, &settings, &desired).unwrap();
+    orchestrator_mcp::apply(&roots, &settings, &desired, planned["plan_digest"].as_str().unwrap(), "e2e-clean-mcp-01").unwrap();
     let registered = json_of(&home.join(".claude.json"));
     assert!(registered["mcpServers"]["respected-vault"].is_object() && registered["mcpServers"]["respected-orchestrator"].is_object());
     assert!(std::fs::read_to_string(home.join(".codex/config.toml")).unwrap().contains("respected-orchestrator"));

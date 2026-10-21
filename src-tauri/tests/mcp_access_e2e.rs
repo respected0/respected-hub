@@ -1,7 +1,7 @@
 //! Hub-managed Orchestrator MCP registration on a fake HOME and temporary roots: plan -> approval-bound apply ->
 //! the registered command works as a client would start it (no Hub running) -> disable/rollback -> foreign entries intact.
 use respected_hub_lib::lifecycle::{self, Roots};
-use respected_hub_lib::{mcp_access, Settings};
+use respected_hub_lib::{orchestrator_mcp, Settings};
 use serde_json::{json, Value};
 use std::io::Write;
 use std::path::Path;
@@ -46,23 +46,23 @@ fn orchestrator_mcp_registration_is_planned_approved_working_and_reversible() {
     let settings = Settings { python: "python".into(), orchestrator_root: eco.join("respected-orchestrator"), brain_root: work.0.join("none"),
         data_root: work.0.join("orch"), brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None };
 
-    let status = mcp_access::plan(&roots, &settings, &json!({})).unwrap();
+    let status = orchestrator_mcp::plan(&roots, &settings, &json!({})).unwrap();
     let state = |plan: &Value, client: &str| plan["clients"].as_array().unwrap().iter().find(|c| c["client"] == client).unwrap().clone();
     assert_eq!(state(&status, "claude-code")["state"], "absent");
     assert_eq!(state(&status, "cursor")["detected"], false);
 
     let desired = json!({ "claude-code": true, "codex": true });
-    let planned = mcp_access::plan(&roots, &settings, &desired).unwrap();
+    let planned = orchestrator_mcp::plan(&roots, &settings, &desired).unwrap();
     assert_eq!(planned["writes_nothing"], true);
     assert_eq!(state(&planned, "codex")["action"], "create");
     assert_eq!(read_json(&home.join(".claude.json")), foreign_json, "plan wrote nothing");
 
-    let stale = mcp_access::apply(&roots, &settings, &desired, &"0".repeat(64), "e2e-mcp-stale-1").unwrap_err();
+    let stale = orchestrator_mcp::apply(&roots, &settings, &desired, &"0".repeat(64), "e2e-mcp-stale-1").unwrap_err();
     assert_eq!(stale.code, "PLAN_CHANGED");
     assert_eq!(read_json(&home.join(".claude.json")), foreign_json);
 
     let digest = planned["plan_digest"].as_str().unwrap();
-    let applied = mcp_access::apply(&roots, &settings, &desired, digest, "e2e-mcp-on-0001").unwrap();
+    let applied = orchestrator_mcp::apply(&roots, &settings, &desired, digest, "e2e-mcp-on-0001").unwrap();
     assert_eq!(applied["status"], "applied");
     let after = read_json(&home.join(".claude.json"));
     assert_eq!(after["numStartups"], 3);
@@ -77,16 +77,16 @@ fn orchestrator_mcp_registration_is_planned_approved_working_and_reversible() {
 
     // Disconnect one client; the other and all foreign settings stay.
     let off = json!({ "claude-code": false });
-    let off_plan = mcp_access::plan(&roots, &settings, &off).unwrap();
-    mcp_access::apply(&roots, &settings, &off, off_plan["plan_digest"].as_str().unwrap(), "e2e-mcp-off-0001").unwrap();
+    let off_plan = orchestrator_mcp::plan(&roots, &settings, &off).unwrap();
+    orchestrator_mcp::apply(&roots, &settings, &off, off_plan["plan_digest"].as_str().unwrap(), "e2e-mcp-off-0001").unwrap();
     assert_eq!(read_json(&home.join(".claude.json")), foreign_json);
     assert!(std::fs::read_to_string(home.join(".codex/config.toml")).unwrap().contains("respected-orchestrator"));
 
     // Roll the first operation back: codex returns to its original content (claude-code was already off, so it is refused as changed).
-    assert_eq!(mcp_access::rollback(&roots, &settings, "e2e-mcp-on-0001").unwrap_err().code, "ROLLBACK_UNAVAILABLE");
+    assert_eq!(orchestrator_mcp::rollback(&roots, &settings, "e2e-mcp-on-0001").unwrap_err().code, "ROLLBACK_UNAVAILABLE");
     let off_codex = json!({ "codex": false });
-    let p = mcp_access::plan(&roots, &settings, &off_codex).unwrap();
-    mcp_access::apply(&roots, &settings, &off_codex, p["plan_digest"].as_str().unwrap(), "e2e-mcp-off-0002").unwrap();
+    let p = orchestrator_mcp::plan(&roots, &settings, &off_codex).unwrap();
+    orchestrator_mcp::apply(&roots, &settings, &off_codex, p["plan_digest"].as_str().unwrap(), "e2e-mcp-off-0002").unwrap();
     assert_eq!(std::fs::read_to_string(home.join(".codex/config.toml")).unwrap().trim(), foreign_toml.trim());
     assert_eq!(lifecycle::read_journal(&roots, "e2e-mcp-on-0001").unwrap()["status"], "applied");
 
@@ -94,9 +94,9 @@ fn orchestrator_mcp_registration_is_planned_approved_working_and_reversible() {
     let mut taken = foreign_json.clone();
     taken["mcpServers"]["respected-orchestrator"] = json!({ "command": "mine" });
     std::fs::write(home.join(".claude.json"), serde_json::to_vec(&taken).unwrap()).unwrap();
-    let conflict = mcp_access::plan(&roots, &settings, &json!({ "claude-code": true })).unwrap();
+    let conflict = orchestrator_mcp::plan(&roots, &settings, &json!({ "claude-code": true })).unwrap();
     assert_eq!(state(&conflict, "claude-code")["action"], "refuse");
-    let refused = mcp_access::apply(&roots, &settings, &json!({ "claude-code": true }), conflict["plan_digest"].as_str().unwrap(), "e2e-mcp-on-0002").unwrap_err();
+    let refused = orchestrator_mcp::apply(&roots, &settings, &json!({ "claude-code": true }), conflict["plan_digest"].as_str().unwrap(), "e2e-mcp-on-0002").unwrap_err();
     assert_eq!(refused.code, "LIFECYCLE_CONFLICT");
     assert_eq!(read_json(&home.join(".claude.json")), taken);
 }

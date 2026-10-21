@@ -1,7 +1,7 @@
 //! The Orchestrator as the Hub runs it: engine operations, campaign listing, verification of a staged copy and its lifecycle.
 use serde_json::{json, Value};
 use std::{fs, path::Path, time::Duration};
-use crate::{lifecycle, mcp_access, rpp, Settings};
+use crate::{lifecycle, orchestrator_mcp, rpp, Settings};
 use crate::process::pump;
 
 const MAX_CAMPAIGN_SPEC: usize = 64 * 1024;
@@ -89,9 +89,9 @@ pub fn engine_verifier(settings: &Settings) -> impl Fn(&str, &Path) -> Result<()
 
 /// Install, update, repair or uninstall the Hub-managed packaged Orchestrator; its MCP registrations follow the copy.
 pub fn apply_orchestrator(roots: &lifecycle::Roots, settings: Settings, action: &str, operation_id: &str) -> Result<Value, lifecycle::LifecycleError> {
-    if action == "uninstall" { mcp_access::disable_all(roots, &settings, operation_id); }
+    if action == "uninstall" { orchestrator_mcp::disable_all(roots, &settings, operation_id); }
     let applied = lifecycle::apply(roots, "orchestrator", action, operation_id, &engine_verifier(&settings));
     // the stable MCP launcher names the versioned executable: rewrite it whenever the active copy changes
-    if applied.is_ok() && matches!(action, "install" | "update" | "repair") { mcp_access::refresh_launcher(roots, &settings); }
+    if applied.is_ok() && matches!(action, "install" | "update" | "repair") { orchestrator_mcp::refresh_launcher(roots, &settings); }
     applied
 }

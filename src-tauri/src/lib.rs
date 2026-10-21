@@ -4,8 +4,8 @@ use std::{fs, path::{Path, PathBuf}, time::Duration};
 pub mod catalog;
 pub mod registration;
 pub mod products;
-// product modules keep their short paths (crate::brain, respected_hub_lib::mcp_access, ...)
-pub use products::{brain, mcp_access, memory_access, memory_index, memory_semantic, orchestrator};
+// product modules keep their short paths (crate::secondbrain, respected_hub_lib::orchestrator_mcp, ...)
+pub use products::{secondbrain, orchestrator_mcp, secondbrain_memory_access, secondbrain_memory_index, secondbrain_memory_semantic, orchestrator};
 pub use orchestrator::{apply_orchestrator, call_engine, engine_verifier, list_campaigns, valid_campaign_id, ORCHESTRATOR_EXE};
 pub use settings::{get_settings, Settings};
 use settings::default_data_root;
@@ -51,22 +51,22 @@ fn lifecycle_roots(_app: &tauri::AppHandle) -> Result<lifecycle::Roots, String> 
 /// `<Respected>\RespectedHub\managed` and its catalog cache (bundles downloaded from GitHub Releases). Only a development build
 /// may point elsewhere or fall back to `<ecosystem>/catalog` built by release/tools.
 pub fn standard_roots() -> lifecycle::Roots {
-    let managed = trust::dev_abs("RESPECTED_HUB_MANAGED_ROOT").unwrap_or_else(|| brain::respected_root().join("RespectedHub").join("managed"));
+    let managed = trust::dev_abs("RESPECTED_HUB_MANAGED_ROOT").unwrap_or_else(|| secondbrain::respected_root().join("RespectedHub").join("managed"));
     let sibling = if trust::dev_enabled() { Path::new(env!("CARGO_MANIFEST_DIR")).parent().and_then(Path::parent).map(|p| p.join("catalog")).filter(|p| p.is_dir()) } else { None };
     let catalog = trust::dev_abs("RESPECTED_HUB_CATALOG_ROOT").or(sibling).unwrap_or_else(|| managed.join("catalog"));
     lifecycle::Roots { managed, catalog }
 }
 
 /// Point settings at the Hub-managed copies: the packaged Orchestrator and SecondBrain's installed launcher.
-pub fn overlay(roots: &lifecycle::Roots, dirs: &brain::BrainDirs, settings: &mut Settings) {
+pub fn overlay(roots: &lifecycle::Roots, dirs: &secondbrain::BrainDirs, settings: &mut Settings) {
     if let Some(exe) = lifecycle::installed_launcher(roots, "orchestrator", ORCHESTRATOR_EXE) { settings.orchestrator_exe = Some(exe); }
-    brain::overlay(roots, dirs, settings);
+    secondbrain::overlay(roots, dirs, settings);
 }
 
 /// Saved connections with each Hub-managed product pointing at its active verified copy.
 fn resolved_settings(app: &tauri::AppHandle) -> Result<Settings, String> {
     let mut settings = get_settings(app.clone())?;
-    overlay(&lifecycle_roots(app)?, &brain::dirs(), &mut settings);
+    overlay(&lifecycle_roots(app)?, &secondbrain::dirs(), &mut settings);
     Ok(settings)
 }
 
@@ -75,9 +75,9 @@ fn lifecycle_reply(result: Result<Value, lifecycle::LifecycleError>) -> Value {
 }
 
 /// Component status: SecondBrain comes from its own engine, the rest from the Hub-managed copies.
-pub fn hub_status(roots: &lifecycle::Roots, d: &brain::BrainDirs) -> Value {
+pub fn hub_status(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs) -> Value {
     let products: Vec<Value> = lifecycle::PRODUCTS.iter().map(|p| {
-        let mut status = if *p == "secondbrain" { brain::status(roots, d) } else { lifecycle::status(roots, p).unwrap_or(Value::Null) };
+        let mut status = if *p == "secondbrain" { secondbrain::status(roots, d) } else { lifecycle::status(roots, p).unwrap_or(Value::Null) };
         catalog::overlay_status(roots, &mut status);
         status
     }).collect();
@@ -85,13 +85,13 @@ pub fn hub_status(roots: &lifecycle::Roots, d: &brain::BrainDirs) -> Value {
 }
 
 /// Download (once) the bundles an action needs: the newest release for install/update, the installed version for repair.
-fn ensure_bundles(roots: &lifecycle::Roots, d: &brain::BrainDirs, product: &str, action: &str) -> Result<(), lifecycle::LifecycleError> {
+fn ensure_bundles(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs, product: &str, action: &str) -> Result<(), lifecycle::LifecycleError> {
     match action {
         "install" | "update" => {
             catalog::ensure_bundle(roots, product, None)?;
         }
         "repair" => {
-            let installed = if product == "secondbrain" { brain::status(roots, d)["version"].as_str().map(str::to_string) } else { lifecycle::read_current(roots, product).map(|c| c.0) };
+            let installed = if product == "secondbrain" { secondbrain::status(roots, d)["version"].as_str().map(str::to_string) } else { lifecycle::read_current(roots, product).map(|c| c.0) };
             catalog::ensure_bundle(roots, product, installed.as_deref())?;
         }
         _ => {}
@@ -99,13 +99,13 @@ fn ensure_bundles(roots: &lifecycle::Roots, d: &brain::BrainDirs, product: &str,
     Ok(())
 }
 
-pub fn hub_plan(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: &Settings, product: &str, action: &str, params: &Value) -> Result<Value, lifecycle::LifecycleError> {
+pub fn hub_plan(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs, settings: &Settings, product: &str, action: &str, params: &Value) -> Result<Value, lifecycle::LifecycleError> {
     ensure_bundles(roots, d, product, action)?;
-    if product == "secondbrain" { return brain::plan(roots, d, settings, action, params); }
+    if product == "secondbrain" { return secondbrain::plan(roots, d, settings, action, params); }
     lifecycle::plan(roots, product, action)
 }
 
-pub fn hub_apply(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: Settings, product: &str, action: &str, params: &Value, id: &str) -> Result<Value, lifecycle::LifecycleError> {
+pub fn hub_apply(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs, settings: Settings, product: &str, action: &str, params: &Value, id: &str) -> Result<Value, lifecycle::LifecycleError> {
     ensure_bundles(roots, d, product, action)?;
     let applied = hub_apply_inner(roots, d, settings.clone(), product, action, params, id);
     if applied.is_ok() {
@@ -117,22 +117,22 @@ pub fn hub_apply(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: Setti
 }
 
 /// No leftovers: only the installed version of each component stays, in the managed folder and in the catalog cache.
-pub fn sweep(roots: &lifecycle::Roots, d: &brain::BrainDirs) {
+pub fn sweep(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs) {
     for product in lifecycle::PRODUCTS {
         lifecycle::prune_old_versions(roots, product);
-        let installed = if product == "secondbrain" { brain::status(roots, d)["version"].as_str().map(str::to_string) } else { lifecycle::read_current(roots, product).map(|c| c.0) };
+        let installed = if product == "secondbrain" { secondbrain::status(roots, d)["version"].as_str().map(str::to_string) } else { lifecycle::read_current(roots, product).map(|c| c.0) };
         if let Some(version) = installed { catalog::prune(roots, product, &version); }
     }
 }
 
-fn hub_apply_inner(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: Settings, product: &str, action: &str, params: &Value, id: &str) -> Result<Value, lifecycle::LifecycleError> {
+fn hub_apply_inner(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs, settings: Settings, product: &str, action: &str, params: &Value, id: &str) -> Result<Value, lifecycle::LifecycleError> {
     if product == "secondbrain" {
-        let applied = brain::apply(roots, d, &settings, action, params, id);
+        let applied = secondbrain::apply(roots, d, &settings, action, params, id);
         if applied.is_ok() && matches!(action, "install" | "update" | "repair") {
             let mut fresh = settings.clone();
-            brain::overlay(roots, d, &mut fresh);
+            secondbrain::overlay(roots, d, &mut fresh);
             if let Some(command) = rpp::brain_rpp_command(&fresh) {
-                memory_access::refresh_command(&|p: &str, o: &str, pl: Option<Value>, i: Option<String>| rpp::rpp_call_trusted(&fresh, p, o, pl, i), command);
+                secondbrain_memory_access::refresh_command(&|p: &str, o: &str, pl: Option<Value>, i: Option<String>| rpp::rpp_call_trusted(&fresh, p, o, pl, i), command);
             }
         }
         return applied;
@@ -140,9 +140,9 @@ fn hub_apply_inner(roots: &lifecycle::Roots, d: &brain::BrainDirs, settings: Set
     apply_orchestrator(roots, settings, action, id)
 }
 
-pub fn hub_rollback(roots: &lifecycle::Roots, d: &brain::BrainDirs, id: &str) -> Result<Value, lifecycle::LifecycleError> {
+pub fn hub_rollback(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs, id: &str) -> Result<Value, lifecycle::LifecycleError> {
     match lifecycle::read_journal(roots, id) {
-        Some(entry) if entry["undo"]["engine"] == true => brain::rollback(roots, d, id),
+        Some(entry) if entry["undo"]["engine"] == true => secondbrain::rollback(roots, d, id),
         _ => lifecycle::rollback(roots, id),
     }
 }
@@ -150,23 +150,23 @@ pub fn hub_rollback(roots: &lifecycle::Roots, d: &brain::BrainDirs, id: &str) ->
 #[tauri::command]
 async fn lifecycle_status(app: tauri::AppHandle) -> Result<Value, String> {
     let roots = lifecycle_roots(&app)?;
-    tauri::async_runtime::spawn_blocking(move || hub_status(&roots, &brain::dirs())).await.map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(move || hub_status(&roots, &secondbrain::dirs())).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 async fn lifecycle_plan(app: tauri::AppHandle, product: String, action: String, params: Option<Value>) -> Result<Value, String> {
     let roots = lifecycle_roots(&app)?;
     let settings = resolved_settings(&app)?;
-    tauri::async_runtime::spawn_blocking(move || lifecycle_reply(hub_plan(&roots, &brain::dirs(), &settings, &product, &action, &params.unwrap_or(Value::Null)))).await.map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(move || lifecycle_reply(hub_plan(&roots, &secondbrain::dirs(), &settings, &product, &action, &params.unwrap_or(Value::Null)))).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 async fn lifecycle_apply(app: tauri::AppHandle, product: String, action: String, operation_id: String, params: Option<Value>) -> Result<Value, String> {
     let roots = lifecycle_roots(&app)?;
     let settings = resolved_settings(&app)?;
-    let reply = tauri::async_runtime::spawn_blocking({ let roots = roots.clone(); move || lifecycle_reply(hub_apply(&roots, &brain::dirs(), settings, &product, &action, &params.unwrap_or(Value::Null), &operation_id)) }).await.map_err(|e| e.to_string())?;
+    let reply = tauri::async_runtime::spawn_blocking({ let roots = roots.clone(); move || lifecycle_reply(hub_apply(&roots, &secondbrain::dirs(), settings, &product, &action, &params.unwrap_or(Value::Null), &operation_id)) }).await.map_err(|e| e.to_string())?;
     // left behind by a kept-products Hub uninstall: once nothing is installed it has no job, so it removes itself
-    if registration::running_from_maintenance(&roots) && registration::sync(&roots, &brain::dirs()) == 0 {
+    if registration::running_from_maintenance(&roots) && registration::sync(&roots, &secondbrain::dirs()) == 0 {
         registration::retire_maintenance(&roots);
         std::thread::spawn(move || { std::thread::sleep(Duration::from_millis(2500)); app.exit(0); });
     }
@@ -206,7 +206,7 @@ async fn lifecycle_rollback(app: tauri::AppHandle, operation_id: String) -> Resu
     let settings = resolved_settings(&app)?;
     tauri::async_runtime::spawn_blocking(move || {
         let mcp = lifecycle::read_journal(&roots, &operation_id).map_or(false, |e| e["undo"]["mcp"] == true);
-        lifecycle_reply(if mcp { mcp_access::rollback(&roots, &settings, &operation_id) } else { hub_rollback(&roots, &brain::dirs(), &operation_id) })
+        lifecycle_reply(if mcp { orchestrator_mcp::rollback(&roots, &settings, &operation_id) } else { hub_rollback(&roots, &secondbrain::dirs(), &operation_id) })
     }).await.map_err(|e| e.to_string())
 }
 
@@ -214,14 +214,14 @@ async fn lifecycle_rollback(app: tauri::AppHandle, operation_id: String) -> Resu
 async fn orchestrator_mcp_plan(app: tauri::AppHandle, desired: Value) -> Result<Value, String> {
     let roots = lifecycle_roots(&app)?;
     let settings = resolved_settings(&app)?;
-    tauri::async_runtime::spawn_blocking(move || lifecycle_reply(mcp_access::plan(&roots, &settings, &desired))).await.map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(move || lifecycle_reply(orchestrator_mcp::plan(&roots, &settings, &desired))).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 async fn orchestrator_mcp_apply(app: tauri::AppHandle, desired: Value, plan_digest: String, operation_id: String) -> Result<Value, String> {
     let roots = lifecycle_roots(&app)?;
     let settings = resolved_settings(&app)?;
-    tauri::async_runtime::spawn_blocking(move || lifecycle_reply(mcp_access::apply(&roots, &settings, &desired, &plan_digest, &operation_id))).await.map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(move || lifecycle_reply(orchestrator_mcp::apply(&roots, &settings, &desired, &plan_digest, &operation_id))).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -243,7 +243,7 @@ async fn memory_access_status(app: tauri::AppHandle) -> Result<Value, String> {
     let settings = resolved_settings(&app)?;
     tauri::async_runtime::spawn_blocking(move || {
         let call = |p: &str, o: &str, pl: Option<Value>, id: Option<String>| rpp::rpp_call_trusted(&settings, p, o, pl, id);
-        memory_reply(Ok(memory_access::status(&call)))
+        memory_reply(Ok(secondbrain_memory_access::status(&call)))
     }).await.map_err(|e| e.to_string())
 }
 
@@ -253,7 +253,7 @@ async fn memory_access_enable(app: tauri::AppHandle, write: Option<bool>) -> Res
     tauri::async_runtime::spawn_blocking(move || {
         let call = |p: &str, o: &str, pl: Option<Value>, id: Option<String>| rpp::rpp_call_trusted(&settings, p, o, pl, id);
         memory_reply(match rpp::brain_rpp_command(&settings) {
-            Some(command) => memory_access::enable(&call, command, write.unwrap_or(false)),
+            Some(command) => secondbrain_memory_access::enable(&call, command, write.unwrap_or(false)),
             None => Err("SecondBrain başlatma komutu bulunamadı; SecondBrain'i kurun.".to_string()),
         })
     }).await.map_err(|e| e.to_string())
@@ -264,7 +264,7 @@ async fn memory_access_disable(app: tauri::AppHandle) -> Result<Value, String> {
     let settings = resolved_settings(&app)?;
     tauri::async_runtime::spawn_blocking(move || {
         let call = |p: &str, o: &str, pl: Option<Value>, id: Option<String>| rpp::rpp_call_trusted(&settings, p, o, pl, id);
-        memory_reply(memory_access::disable(&call))
+        memory_reply(secondbrain_memory_access::disable(&call))
     }).await.map_err(|e| e.to_string())
 }
 
@@ -281,7 +281,7 @@ async fn memory_index_status(app: tauri::AppHandle) -> Result<Value, String> {
     let settings = resolved_settings(&app)?;
     tauri::async_runtime::spawn_blocking(move || {
         let call = |p: &str, o: &str, pl: Option<Value>, id: Option<String>| rpp::rpp_call_trusted(&settings, p, o, pl, id);
-        index_reply(Ok(memory_index::status(&call)))
+        index_reply(Ok(secondbrain_memory_index::status(&call)))
     }).await.map_err(|e| e.to_string())
 }
 
@@ -292,7 +292,7 @@ async fn memory_index_refresh(app: tauri::AppHandle, force: Option<bool>) -> Res
         // A refresh can take minutes on a big vault; only that op gets the long timeout.
         let call = |p: &str, o: &str, pl: Option<Value>, id: Option<String>| rpp::rpp_call_trusted_timeout(&settings, p, o, pl, id,
             if o == "memory.index.refresh" { Duration::from_secs(15 * 60) } else { Duration::from_secs(30) });
-        index_reply(memory_index::refresh(&call, force.unwrap_or(false)))
+        index_reply(secondbrain_memory_index::refresh(&call, force.unwrap_or(false)))
     }).await.map_err(|e| e.to_string())
 }
 
@@ -301,7 +301,7 @@ async fn memory_semantic_status(app: tauri::AppHandle) -> Result<Value, String> 
     let settings = resolved_settings(&app)?;
     tauri::async_runtime::spawn_blocking(move || {
         let call = |p: &str, o: &str, pl: Option<Value>, id: Option<String>| rpp::rpp_call_trusted(&settings, p, o, pl, id);
-        index_reply(Ok(memory_semantic::status(&call)))
+        index_reply(Ok(secondbrain_memory_semantic::status(&call)))
     }).await.map_err(|e| e.to_string())
 }
 
@@ -317,13 +317,13 @@ fn semantic_call<'a>(settings: &'a Settings) -> impl Fn(&str, &str, Option<Value
 #[tauri::command]
 async fn memory_semantic_enable(app: tauri::AppHandle) -> Result<Value, String> {
     let settings = resolved_settings(&app)?;
-    tauri::async_runtime::spawn_blocking(move || index_reply(memory_semantic::enable(&semantic_call(&settings)))).await.map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(move || index_reply(secondbrain_memory_semantic::enable(&semantic_call(&settings)))).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 async fn memory_semantic_disable(app: tauri::AppHandle) -> Result<Value, String> {
     let settings = resolved_settings(&app)?;
-    tauri::async_runtime::spawn_blocking(move || index_reply(memory_semantic::disable(&semantic_call(&settings)))).await.map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(move || index_reply(secondbrain_memory_semantic::disable(&semantic_call(&settings)))).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -391,10 +391,10 @@ pub fn headless_uninstall_products() -> i32 {
     let local = std::env::var_os("LOCALAPPDATA").map(PathBuf::from).unwrap_or_else(std::env::temp_dir);
     let base = local.join("com.respected.hub");
     let roots = standard_roots();
-    let dirs = brain::dirs();
+    let dirs = secondbrain::dirs();
     let data_root = if trust::dev_enabled() {
         default_data_root(trust::dev_env("RESPECTED_ORCHESTRATOR_DATA_ROOT").and_then(|v| v.into_string().ok()).as_deref(), base.with_file_name("RespectedOrchestratorDevelopment"))
-    } else { brain::respected_root().join("RespectedOrchestrator").join("data") };
+    } else { secondbrain::respected_root().join("RespectedOrchestrator").join("data") };
     let mut settings = Settings { python: "python".into(), orchestrator_root: base.join("no-source-checkout").join("respected-orchestrator"),
         brain_root: base.join("no-source-checkout").join("respected-secondbrain"), data_root, brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None };
     overlay(&roots, &dirs, &mut settings);
@@ -408,7 +408,7 @@ pub fn headless_uninstall_products() -> i32 {
 
 /// `respected-hub.exe --sync-registrations` (no window): the Hub uninstaller runs this from the maintenance copy when the
 /// person keeps the products, so their Installed-apps entries point at an executable that still exists.
-pub fn headless_sync_registrations() -> i32 { registration::sync(&standard_roots(), &brain::dirs()); 0 }
+pub fn headless_sync_registrations() -> i32 { registration::sync(&standard_roots(), &secondbrain::dirs()); 0 }
 
 pub fn run() {
     tauri::Builder::default()
@@ -434,8 +434,8 @@ pub fn run() {
             let (handle, catalog_roots) = (app.handle().clone(), roots.clone());
             std::thread::spawn(move || { use tauri::Emitter; let _ = catalog::refresh(&catalog_roots); let _ = handle.emit("catalog-updated", ()); });
             std::thread::spawn(move || {
-                let dirs = brain::dirs();
-                brain::recover_if_interrupted(&roots, &dirs);
+                let dirs = secondbrain::dirs();
+                secondbrain::recover_if_interrupted(&roots, &dirs);
                 let _ = lifecycle::recover(&roots);
                 sweep(&roots, &dirs);                 // a folder an MCP server still held at update time goes now
                 registration::sync(&roots, &dirs);   // Installed-apps entries follow what is really installed

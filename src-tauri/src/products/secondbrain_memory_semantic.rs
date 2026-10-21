@@ -1,6 +1,6 @@
 // Optional local semantic search of SecondBrain: status, enable (confirm -> model download -> vector build) and disable.
 // FTS search keeps working in every state. The download goes through the user's local embedding service only.
-use super::memory_access::CallFn;
+use super::secondbrain_memory_access::CallFn;
 use crate::rpp::generate_operation_id;
 use serde_json::{json, Value};
 

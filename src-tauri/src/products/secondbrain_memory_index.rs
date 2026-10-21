@@ -1,6 +1,6 @@
 // SecondBrain memory search index: read its state and refresh it. Only the user's click may start a refresh;
 // SecondBrain writes nothing but its own search index.
-use super::memory_access::CallFn;
+use super::secondbrain_memory_access::CallFn;
 use crate::rpp::generate_operation_id;
 use serde_json::{json, Value};
 
