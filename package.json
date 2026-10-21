@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 1420 --strictPort",
     "build": "tsc --noEmit && vite build",
-    "test": "node --test tests/*.test.ts",
+    "test": "node --test \"tests/**/*.test.ts\"",
+    "check": "tsc --noEmit && npm test",
     "tauri": "tauri"
   },
   "dependencies": {

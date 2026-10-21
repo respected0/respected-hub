@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ACTION_LABEL, availableActions, canRollback, describeLifecycleError, journalSentence, formatWhen, newOperationId } from '../src/shell/lifecycle.ts';
-import type { JournalEntry } from '../src/shell/lifecycle.ts';
+import { ACTION_LABEL, availableActions, canRollback, describeLifecycleError, journalSentence, formatWhen, newOperationId } from '../../src/shell/lifecycle.ts';
+import type { JournalEntry } from '../../src/shell/lifecycle.ts';
 
 const entry = (over: Partial<JournalEntry> = {}): JournalEntry => ({
   operation_id: 'install-12345678', product: 'orchestrator', action: 'install', status: 'applied', from_version: null, to_version: '0.1.0',

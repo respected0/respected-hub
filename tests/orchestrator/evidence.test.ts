@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { evidenceFor } from '../src/products/orchestrator/views/evidenceModel.ts';
+import { evidenceFor } from '../../src/products/orchestrator/views/evidenceModel.ts';
 
 test('approved lane with a patch gives the exact manual apply command', () => {
   const campaign = { status: 'LANES_APPROVED', result: { lanes: [

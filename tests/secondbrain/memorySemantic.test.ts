@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { describeSemantic } from '../src/products/secondbrain/memorySemantic.ts';
+import { describeSemantic } from '../../src/products/secondbrain/memorySemantic.ts';
 
 test('every state explains that normal search keeps working or the data stays local', () => {
   assert.equal(describeSemantic({ supported: true, state: 'off' }).tone, 'unreachable');
