@@ -4,6 +4,7 @@
   <script>
     // DEV-ONLY design preview, never part of the app (vite build only packs index.html): it pretends to be the desktop shell
     // so the screens can be looked at while Brain has an update waiting. Every number, step and version here is invented.
+    // States (query ?state=): update (default: Brain has an update), installed (all current), absent (neither product installed).
     // Run: npm run preview:update. Click through Güncelle > Onayla ve uygula: the fake product then moves to the new version.
     window.isTauri = true;
     const ok = result => ({ rpp: '1', ok: true, operation_id: null, result });
@@ -13,7 +14,11 @@
       orchestrator: [{ name: 'data_root_writable', ok: true, detail: 'x' }, { name: 'git_available', ok: true, detail: 'git' }, { name: 'worker_cli', ok: true, detail: 'claude, codex' }, { name: 'engine_key', ok: true, detail: 'engine key is created with the first task' }] };
     const product = (id, state, version, available) => ({ product: id, installed: true, install_state: state, version, recorded_at: String(Date.now() - 3600e3),
       available: { version: available, signed: true, trust: 'production', remote: true, size: 1 }, catalog_skipped: [], root: 'x' });
-    const lifecycle = { catalog_root: 'x', products: [product('brain', 'update-available', '0.1.0b2', '0.1.0b3'), product('orchestrator', 'installed', '0.1.0b2', '0.1.0b2')] };
+    const state = new URLSearchParams(location.search).get('state') || 'update';
+    const absent = id => ({ product: id, installed: false, install_state: 'absent', version: null, recorded_at: null, available: { version: '0.1.0b2', signed: true, trust: 'production', remote: true, size: 1 }, catalog_skipped: [], root: null });
+    const lifecycle = { catalog_root: 'x', products: state === 'absent' ? [absent('brain'), absent('orchestrator')]
+      : [product('brain', state === 'installed' ? 'installed' : 'update-available', '0.1.0b2', state === 'installed' ? '0.1.0b2' : '0.1.0b3'), product('orchestrator', 'installed', '0.1.0b2', '0.1.0b2')] };
+    const gone = { rpp: '1', ok: false, operation_id: null, result: null, error: { code: 'ENGINE_NOT_FOUND', message: 'The product engine is not installed.', hint: 'Install the product from the Hub.' } };
     const journal = [];
     const brain = () => lifecycle.products[0];
     window.__TAURI_INTERNALS__ = { transformCallback: () => 1, unregisterCallback() {}, convertFileSrc: x => x,
@@ -35,6 +40,8 @@
         }
         if (cmd === 'hub_update_status') return { ok: true, result: { current: '0.1.0-beta.2', channel: 'stable', available: { version: '0.1.0-beta.3', size: 1, min_hub: null }, checked: true }, error: null };
         if (cmd === 'hub_update_install') return { ok: true, result: null, error: null };
+        if (cmd === 'engine_request' && state === 'absent') throw 'The orchestrator engine is not installed.';
+        if (cmd === 'rpp_request' && state === 'absent') return gone;
         if (cmd === 'engine_request') return args.action === 'status' ? { workers: { claude: ['claude'], codex: ['codex'] } } : { runs: [] };
         if (cmd === 'rpp_request') {
           if (args.op === 'manifest') return ok({ rpp: '1', product_id: 'respected-' + args.product, product_version: lifecycle.products[args.product === 'brain' ? 0 : 1].version, capabilities: [] });

@@ -19,7 +19,7 @@ export default function Discover({ eco, go, ask, onAsked }: { eco: Ecosystem; go
       <div className="store-art"><Weave /><Emblem app={featured.id} /></div>
       <aside className="store-panel">
         <h1>{featured.name}</h1><p>{featured.tagline}</p>
-        <p className="meta">{version ? <span className="ver">v{version}</span> : <span className="ver">Katalogda paket yok</span>}</p>
+        {installed && <p className="meta">{version ? <span className="ver">v{version}</span> : <span className="ver">Katalogda paket yok</span>}</p>}
         {installed
           ? <div className="actions"><button className="cta" onClick={() => go({ app: featured.id, page: 'overview' })}>Kütüphanede aç</button></div>
           : <LifecycleControls key={featured.id} name={featured.name} lc={lc} onChanged={eco.refresh} onWizard={featured.id === 'brain' ? () => go({ app: featured.id, page: 'settings' }) : undefined}
@@ -31,7 +31,7 @@ export default function Discover({ eco, go, ask, onAsked }: { eco: Ecosystem; go
         return <button key={app.id} className={`store-tile accent-${app.accent} ${app.id === featured.id ? 'on' : ''}`} aria-pressed={app.id === featured.id} onClick={() => setPicked(app.id)}>
           <span className="store-tile-art"><Weave /><Emblem app={app.id} /></span>
           <span className="store-tile-body"><strong>{app.name}</strong><small>{app.tagline}</small>
-            <span className="store-tile-foot"><span className="ver">{item?.available?.version ?? item?.version ? `v${item?.available?.version ?? item?.version}` : ''}</span><span className={`badge-status ${item?.installed ? 'ok' : 'unreachable'}`}>{item ? STATE_LABEL[item.install_state] : '…'}</span></span></span>
+            <span className="store-tile-foot"><span className="ver">{item?.available?.version ?? item?.version ? `v${item?.available?.version ?? item?.version}` : ''}</span>{item?.install_state === 'installed' ? <span className="store-open">Kütüphanede aç</span> : item && item.install_state !== 'absent' ? <span className="badge-status warn">{STATE_LABEL[item.install_state]}</span> : null}</span></span>
         </button>; })}</div></section>
   </div>;
 }

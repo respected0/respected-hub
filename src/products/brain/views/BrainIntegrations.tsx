@@ -64,7 +64,7 @@ export default function BrainIntegrations({ settings, onApplied }: { settings: R
     <ClientPicker kind="mcp" selected={selection.mcp} detected={detected} onChange={mcp => setSelection({ ...selection, mcp })} />
     <label className="choice"><span><strong>Sabah özeti zamanlanmış görevi</strong><small>Windows Görev Zamanlayıcı’ya günlük bir görev ekler.</small></span>
       <input type="checkbox" role="switch" checked={selection.schedule} onChange={event => setSelection({ ...selection, schedule: event.target.checked })} /></label>
-    <label className="choice"><span><strong>Masaüstü kısayolu</strong><small>Masaüstüne not kasası klasörünü açan bir kısayol koyar.</small></span>
+    <label className="choice"><span><strong>Masaüstü kısayolu</strong><small>Masaüstüne not kasasını Obsidian'da açan bir kısayol koyar.</small></span>
       <input type="checkbox" role="switch" checked={selection.shortcut} onChange={event => setSelection({ ...selection, shortcut: event.target.checked })} /></label>
     {planError && <p className="error" role="alert">{planError}</p>}
     {plan && <IntegrationPreview plan={plan} hideUnchanged />}

@@ -182,7 +182,7 @@ try {
   check('the wizard answers arrived as the product\'s own settings', settings.user_name === 'Test' && settings.assistant_name === 'Jarvis' && settings.capture_mode === 'manual'
     && settings['integrations.clients'] === 'claude' && settings['integrations.mcp_clients'] === 'claude', JSON.stringify(settings).slice(0, 300));
   const claude = readJson(join(dirs.home, '.claude.json'));
-  check('foreign MCP entry preserved, Respected entry added in the fake home', !!claude.mcpServers?.['someone-elses'] && !!claude.mcpServers?.['respected-vault'] && claude.theme === 'dark');
+  check('foreign MCP entry preserved, Respected entry added in the fake home', !!claude.mcpServers?.['someone-elses'] && !!claude.mcpServers?.['respected-brain'] && claude.theme === 'dark');
   check('only the chosen client was configured (Claude hooks yes, Gemini no)', existsSync(join(dirs.home, '.claude', 'settings.json')) && !existsSync(join(dirs.home, '.gemini', 'settings.json')));
   check('assistant name was written into the vault template', walk(vault).filter(f => f.endsWith('.md')).some(f => readFileSync(f, 'utf8').includes('Jarvis')));
 
@@ -197,7 +197,7 @@ try {
   await clickText('Bağlantıları uygula');
   await waitFor(`document.body.innerText.includes('Bağlantılar Brain tarafından uygulandı')`, 'connection change applied by the product', 300000);
   const after = readJson(join(dirs.home, '.claude.json'));
-  check('MCP entry removed, foreign entry intact', !after.mcpServers?.['respected-vault'] && !!after.mcpServers?.['someone-elses']);
+  check('MCP entry removed, foreign entry intact', !after.mcpServers?.['respected-brain'] && !!after.mcpServers?.['someone-elses']);
   await shot('06-brain-settings');
 
   // Memory page: quick capture -> search finds it -> reader opens it; the note is a new file in the Dump inbox.
