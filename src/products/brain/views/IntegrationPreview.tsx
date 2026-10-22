@@ -15,6 +15,7 @@ export default function IntegrationPreview({ plan, hideUnchanged = false }: { pl
     {changes.length === 0 ? <p className="muted">Hiçbir AI aracı yapılandırması değişmeyecek.</p>
       : <ul className="plan-changes">{changes.map(change => <li key={`${change.kind}:${change.target}`}><span className={`pill ${change.action}`}>{label(change)}</span> <small>{KIND[change.kind] ?? change.kind}</small> <span className="mono">{change.target}</span></li>)}</ul>}
     {changes.some(change => change.action === 'restore') && <p className="muted">Silinir: Respected'ın kendi oluşturduğu dosya, görev ya da kısayol. Eski haline döner: Respected'tan önce de içeriği olan dosya, aynen o haline. Girdisi kaldırılır: başka araçların da yazdığı dosyada yalnızca Respected'ın girdisi gider, kalanı korunur.</p>}
+    {(plan.warnings ?? []).map(warning => <p className="notice warning" role="note" key={warning}>{warning}</p>)}
     {plan.external_effects.map(effect => <p className="muted" key={effect}>Ayrıca değişir: {effect}</p>)}
     <details><summary>Algılanan AI araç yapılandırmaları ({found.length})</summary>
       {found.length === 0 ? <p className="muted">Desteklenen araçlardan hiçbirinin yapılandırması bulunamadı.</p> : <ul className="plan-changes">{found.map(item => <li key={item.client_config}><span className="mono">{item.client_config}</span></li>)}</ul>}

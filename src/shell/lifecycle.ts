@@ -24,7 +24,7 @@ export interface ProductLifecycle {
 export interface LifecycleOverview { products: (ProductLifecycle | null)[]; catalog_root: string; }
 interface PlanStep { id: string; summary: string; reversible: boolean; irreversible_reason: string | null; }
 interface IntegrationChange { kind: string; target: string; action: 'create' | 'modify' | 'restore' | 'unchanged'; outcome?: 'delete' | 'restore' | 'remove-entry'; summary: string; size_after: number; }
-export interface IntegrationPlan { desired: Record<string, unknown>; current?: Record<string, unknown>; clients?: { id: string; detected: boolean }[]; launcher: string[]; discovered: { client_config: string; present: boolean }[]; changes: IntegrationChange[]; writes_nothing: boolean; external_effects: string[]; }
+export interface IntegrationPlan { desired: Record<string, unknown>; current?: Record<string, unknown>; clients?: { id: string; detected: boolean }[]; launcher: string[]; discovered: { client_config: string; present: boolean }[]; changes: IntegrationChange[]; writes_nothing: boolean; external_effects: string[]; warnings?: string[]; }
 export interface LifecyclePlan { product: string; action: LifecycleAction; from_version: string | null; to_version: string | null; plan: { steps: PlanStep[] }; }
 type LifecycleParams = Record<string, unknown>;
 export interface JournalEntry {
