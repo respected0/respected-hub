@@ -18,7 +18,7 @@ interface OverviewModel {
   warnings: string[];
 }
 
-export const WORKERS_WARNING = 'Worker CLI durumu motor tarafından bildirilmedi.';
+export const WORKERS_WARNING = 'Çalışan araçların durumu motor tarafından bildirilmedi.';
 export const RUNS_WARNING = 'Çalıştırma listesi alınamadı.';
 export const DROPPED_WARNING = 'Bazı çalıştırma kayıtları okunamadı, listeye alınmadı.';
 const LATEST_LIMIT = 5;
