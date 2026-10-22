@@ -90,7 +90,7 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
       <p className="muted">Hangi araçlar hafızayı MCP sunucusu olarak kullanabilsin? Her izin istediğin zaman Hub'dan geri alınabilir.</p>
       <ClientPicker kind="mcp" selected={selection.mcp} detected={null} onChange={mcp => setSelection({ ...selection, mcp })} />
       {choice('Sabah özeti zamanlanmış görevi', 'Windows Görev Zamanlayıcı’ya günlük bir görev ekler.', selection.schedule, schedule => setSelection({ ...selection, schedule }))}
-      {choice('Masaüstü kısayolu', 'Masaüstüne not kasasını Obsidian\'da açan bir kısayol koyar.', selection.shortcut, shortcut => setSelection({ ...selection, shortcut }))}
+      {choice('Masaüstü kısayolu', 'Masaüstüne not kasasını Obsidian\'da açan bir kısayol koyar. Çalışması için kasanın Obsidian\'da en az bir kez açılmış olması gerekir.', selection.shortcut, shortcut => setSelection({ ...selection, shortcut }))}
       <p className="muted">Orchestrator'ın hafızaya erişimi (okuma, isteğe bağlı yazma) burada değil, kurulumdan sonra Orchestrator › Ayarlar'da ayrıca ve varsayılan kapalı verilir.</p></div>}
     {step === 4 && <div className="step-body"><h2>Onay</h2>
       <ul className="review"><li><span>Kimlik</span><strong>{name.trim() || '—'}{assistant.trim() ? ` · asistan: ${assistant.trim()}` : ''}</strong></li>
