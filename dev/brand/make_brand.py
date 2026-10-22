@@ -140,6 +140,30 @@ def render(svg_path: Path, png_path: Path) -> None:
                         f"--screenshot={png_path}", page.as_uri()], check=True, capture_output=True, timeout=120)
 
 
+SOCIAL = {   # name: (title, one-line tagline, accent): the 1280x640 picture GitHub shows for a repository
+    "hub": ("Respected Hub", "Respected ekosisteminin masaüstü uygulaması", BLUE),
+    "brain": ("Respected Brain", "Ajanlar değişir. Ortak hafıza sizin kasanızda kalır.", VIOLET),
+    "orchestrator": ("Respected Orchestrator", "Çok ajanlı görev motoru: izole çalıştır, doğrula, incele.", BLUE),
+}
+
+
+def social(name: str) -> None:
+    title, tagline, accent = SOCIAL[name]
+    edge = next((p for p in (r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe", r"C:\Program Files\Microsoft\Edge\Application\msedge.exe") if os.path.exists(p)), None)
+    with tempfile.TemporaryDirectory() as temp:
+        page = Path(temp) / "social.html"
+        page.write_text(f"""<!doctype html><meta charset="utf-8"><style>
+          html, body {{ margin: 0; width: 1280px; height: 640px; background: {NAVY.replace('11161d', '161e29')}; overflow: hidden; }}
+          body {{ display: flex; align-items: center; gap: 72px; padding: 0 96px; box-sizing: border-box; font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif; color: #f2f4f8; }}
+          img {{ width: 340px; height: 340px; flex: none; }}
+          h1 {{ margin: 0 0 20px; font-size: 76px; line-height: 1.05; font-weight: 700; letter-spacing: -1.5px; }}
+          p {{ margin: 0; font-size: 34px; line-height: 1.35; color: #c6d4df; max-width: 640px; }}
+          .bar {{ width: 96px; height: 8px; border-radius: 4px; background: {accent}; margin: 0 0 28px; }}
+        </style><img src="{(OUT / f'{name}.svg').as_uri()}"><div><h1>{title}</h1><div class="bar"></div><p>{tagline}</p></div>""", encoding="utf-8")
+        subprocess.run([edge, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--window-size=1280,640", f"--screenshot={OUT / (name + '-social.png')}", page.as_uri()],
+                       check=True, capture_output=True, timeout=120)
+
+
 def ico(path: Path, images: list[tuple[int, bytes]]) -> None:
     head = struct.pack("<HHH", 0, 1, len(images))
     offset = 6 + 16 * len(images)
@@ -167,6 +191,7 @@ def main() -> None:
             if size == 256:
                 (OUT / f"{name}-256.png").write_bytes(png)
         ico(OUT / f"{name}.ico", images)
+        social(name)
         print(name, "ok")
 
 
