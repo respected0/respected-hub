@@ -1,120 +1,85 @@
-//! What the Hub does with the products it manages: where they live, their status, and plan/apply/rollback across the
-//! catalog, the product modules and the Installed-apps entries.
+//! What the Hub does with the products: show what is installed (read from the products), offer the catalog's installers and
+//! run them. The Hub keeps nothing about a product; its own folder holds only the download cache and its activity journal.
 use crate::lifecycle::{self, catalog};
-use crate::{apply_orchestrator, rpp, secondbrain, trust, Settings, ORCHESTRATOR_EXE};
+use crate::{rpp, trust, Settings};
 use serde_json::{json, Value};
 use std::path::Path;
 
-pub mod cleanup;
+pub mod installed;
 pub mod installer;
-pub mod registration;
-pub mod standalone;
 pub mod startup;
 
-/// `<Respected>\RespectedHub\managed` and its catalog cache (bundles downloaded from GitHub Releases). Only a development build
-/// may point elsewhere or fall back to `<ecosystem>/catalog` built by release/tools.
+/// `<Respected>\RespectedHub\managed`: the Hub's own download cache (catalog bundles) and activity journal. Only a development
+/// build may point elsewhere or fall back to `<ecosystem>/catalog` built by release/tools.
 pub fn standard_roots() -> lifecycle::Roots {
-    let managed = trust::dev_abs("RESPECTED_HUB_MANAGED_ROOT").unwrap_or_else(|| secondbrain::respected_root().join("RespectedHub").join("managed"));
+    let managed = trust::dev_abs("RESPECTED_HUB_MANAGED_ROOT").unwrap_or_else(|| installed::respected_root().join("RespectedHub").join("managed"));
     let sibling = if trust::dev_enabled() { Path::new(env!("CARGO_MANIFEST_DIR")).parent().and_then(Path::parent).map(|p| p.join("catalog")).filter(|p| p.is_dir()) } else { None };
     let catalog = trust::dev_abs("RESPECTED_HUB_CATALOG_ROOT").or(sibling).unwrap_or_else(|| managed.join("catalog"));
     lifecycle::Roots { managed, catalog }
 }
 
-/// Point settings at the Hub-managed copies: the packaged Orchestrator and SecondBrain's installed launcher.
-pub fn overlay(roots: &lifecycle::Roots, dirs: &secondbrain::BrainDirs, settings: &mut Settings) {
-    if let Some(exe) = lifecycle::installed_launcher(roots, "orchestrator", ORCHESTRATOR_EXE).or_else(|| standalone::orchestrator().map(|s| s.exe)) { settings.orchestrator_exe = Some(exe); }
-    secondbrain::overlay(roots, dirs, settings);
+/// Point settings at the installed products' own programs.
+pub fn overlay(settings: &mut Settings) {
+    if let Some(i) = installed::product("orchestrator").and_then(|p| p.installed()) { settings.orchestrator_exe = Some(i.exe); }
+    if let Some(i) = installed::product("secondbrain").and_then(|p| p.installed()) { settings.brain_exe = Some(i.exe); }
 }
 
-/// Component status: SecondBrain comes from its own engine, the rest from the Hub-managed copies.
-pub fn hub_status(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs) -> Value {
-    let products: Vec<Value> = lifecycle::PRODUCTS.iter().map(|p| {
-        let mut status = if *p == "secondbrain" { secondbrain::status(roots, d) } else { lifecycle::status(roots, p).unwrap_or(Value::Null) };
-        if let Some(own) = standalone_of(roots, p) { status = own.status(); }
-        catalog::overlay_status(roots, &mut status);
-        status
-    }).collect();
-    json!({ "ok": true, "result": { "products": products, "managed_root": roots.managed, "catalog_root": roots.catalog, "brain_app_dir": d.app, "brain_data_dir": d.data }, "error": Value::Null })
+/// The product's own word on its installation (its manifest): a damaged program reports `repair-needed`.
+fn product_state(settings: &Settings, product: &str, found: &installed::Installed) -> String {
+    let mut live = settings.clone();
+    if product == "orchestrator" { live.orchestrator_exe = Some(found.exe.clone()); } else { live.brain_exe = Some(found.exe.clone()); }
+    let reply = rpp::rpp_call(&live, product, "manifest", None, None);
+    reply["result"]["install_state"].as_str().filter(|_| reply["ok"] == true).unwrap_or("repair-needed").to_string()
 }
 
-/// Download (once) the bundles an action needs: the newest release for install/update, the installed version for repair.
-fn ensure_bundles(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs, product: &str, action: &str) -> Result<(), lifecycle::LifecycleError> {
-    match action {
-        "install" | "update" => {
-            catalog::ensure_bundle(roots, product, None)?;
-        }
-        "repair" => {
-            catalog::ensure_bundle(roots, product, installed_version(roots, d, product).as_deref())?;
-        }
-        _ => {}
-    }
-    Ok(())
+fn product_status(roots: &lifecycle::Roots, settings: &Settings, product: &installed::Product) -> Value {
+    let current = product.installed();
+    let (offered, skipped) = lifecycle::installers(roots, product.id);
+    let newest = offered.first();
+    let state = match (&current, newest) {
+        (None, _) => "absent".to_string(),
+        (Some(i), _) if product_state(settings, product.id, i) == "repair-needed" => "repair-needed".to_string(),
+        (Some(i), Some(n)) if lifecycle::version_key(&n.version) > lifecycle::version_key(&i.version) => "update-available".to_string(),
+        _ => "installed".to_string(),
+    };
+    let mut status = json!({
+        "product": product.id, "installed": current.is_some(), "install_state": state, "version": current.as_ref().map(|i| i.version.clone()),
+        "root": current.as_ref().map(|i| i.app_dir.to_string_lossy().to_string()),
+        "available": newest.map(|b| json!({ "version": b.version, "signed": b.signed, "trust": b.trust })), "catalog_skipped": skipped,
+    });
+    catalog::overlay_status(roots, &mut status);
+    status
 }
 
-/// The installed version of a product, wherever it lives (the Hub's managed copy, SecondBrain's engine or the product's own installer).
-pub fn installed_version(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs, product: &str) -> Option<String> {
-    if product == "secondbrain" { return secondbrain::status(roots, d)["version"].as_str().map(str::to_string); }
-    lifecycle::read_current(roots, product).map(|c| c.0).or_else(|| standalone::orchestrator().map(|s| s.version))
+pub fn hub_status(roots: &lifecycle::Roots, settings: &Settings) -> Value {
+    let products: Vec<Value> = installed::PRODUCTS.iter().map(|p| product_status(roots, settings, p)).collect();
+    json!({ "ok": true, "result": { "products": products, "catalog_root": roots.catalog }, "error": Value::Null })
 }
 
-/// The product's own installation, when it was installed by its own installer and the Hub holds no managed copy of it.
-fn standalone_of(roots: &lifecycle::Roots, product: &str) -> Option<standalone::Standalone> {
-    if product != "orchestrator" || lifecycle::read_current(roots, product).is_some() { return None; }
-    standalone::orchestrator()
+/// Download (once) the installer an action needs: the newest release; a removal needs none.
+fn ensure_installer(roots: &lifecycle::Roots, product: &str, action: &str) -> Result<(), lifecycle::LifecycleError> {
+    if action == "uninstall" { return Ok(()); }
+    catalog::ensure_bundle(roots, product, None)
 }
 
-/// A SecondBrain that has its own installer is removed through that installer's uninstaller, so its Installed-apps entry goes too.
-fn owns_removal(d: &secondbrain::BrainDirs, product: &str, action: &str) -> bool { product == "secondbrain" && action == "uninstall" && standalone::brain_has_installer(d) }
-
-pub fn hub_plan(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs, settings: &Settings, product: &str, action: &str, params: &Value) -> Result<Value, lifecycle::LifecycleError> {
-    if owns_removal(d, product, action) { return Ok(installer::plan_brain_removal()); }
-    ensure_bundles(roots, d, product, action)?;
-    if installer::applies(roots, product, action) { return installer::plan(roots, action); }
-    if standalone_of(roots, product).is_some() { return Err(standalone::conflict()); }
-    if product == "secondbrain" { return secondbrain::plan(roots, d, settings, action, params); }
-    lifecycle::plan(roots, product, action)
+pub fn hub_plan(roots: &lifecycle::Roots, product: &str, action: &str, params: &Value) -> Result<Value, lifecycle::LifecycleError> {
+    ensure_installer(roots, product, action)?;
+    installer::plan(roots, product, action, params)
 }
 
-pub fn hub_apply(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs, settings: Settings, product: &str, action: &str, params: &Value, id: &str) -> Result<Value, lifecycle::LifecycleError> {
-    ensure_bundles(roots, d, product, action)?;
-    if standalone_of(roots, product).is_some() && !installer::applies(roots, product, action) { return Err(standalone::conflict()); }
-    let applied = if owns_removal(d, product, action) { installer::remove_brain(roots, d, id) } else { hub_apply_inner(roots, d, settings.clone(), product, action, params, id) };
-    if applied.is_ok() {
-        if action == "uninstall" { cleanup::after_uninstall(roots, d, &settings, product, id); } else { sweep(roots, d); }
-        registration::sync(roots, d);
-    }
-    // a removal also deleted the product's data and the undo copy: the result must not offer "Geri al" either
-    applied.map(|mut result| { if action == "uninstall" && result.get("undo").is_some() { result["undo"] = Value::Null; } result })
-}
-
-/// No leftovers: only the installed version of each component stays, in the managed folder and in the catalog cache.
-pub fn sweep(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs) {
-    for product in lifecycle::PRODUCTS {
-        lifecycle::prune_old_versions(roots, product);
-        if let Some(version) = installed_version(roots, d, product) { catalog::prune(roots, product, &version); }
-    }
-}
-
-fn hub_apply_inner(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs, settings: Settings, product: &str, action: &str, params: &Value, id: &str) -> Result<Value, lifecycle::LifecycleError> {
-    if product == "secondbrain" {
-        let applied = secondbrain::apply(roots, d, &settings, action, params, id);
-        if applied.is_ok() && matches!(action, "install" | "update" | "repair") {
-            let mut fresh = settings.clone();
-            secondbrain::overlay(roots, d, &mut fresh);
-            if let Some(command) = rpp::brain_rpp_command(&fresh) {
-                secondbrain::memory_access::refresh_command(&|p: &str, o: &str, pl: Option<Value>, i: Option<String>| rpp::rpp_call_trusted(&fresh, p, o, pl, i), command);
-            }
-        }
-        return applied;
-    }
-    if installer::applies(roots, product, action) { return installer::apply(roots, &settings, action, id); }
-    // shortcut: the Hub-managed copy stays for catalogs that carry no installer bundle yet, delete it (and lifecycle::apply's Orchestrator use) once a release publishes one
-    apply_orchestrator(roots, settings, action, id)
-}
-
-pub fn hub_rollback(roots: &lifecycle::Roots, d: &secondbrain::BrainDirs, id: &str) -> Result<Value, lifecycle::LifecycleError> {
-    match lifecycle::read_journal(roots, id) {
-        Some(entry) if entry["undo"]["engine"] == true => secondbrain::rollback(roots, d, id),
-        _ => lifecycle::rollback(roots, id),
-    }
+pub fn hub_apply(roots: &lifecycle::Roots, settings: Settings, product: &str, action: &str, params: &Value, id: &str) -> Result<Value, lifecycle::LifecycleError> {
+    ensure_installer(roots, product, action)?;
+    // after the installer: the product must answer for itself (its own manifest says it is installed)
+    let verify = |found: &installed::Installed| -> Result<(), String> {
+        let mut live = settings.clone();
+        if product == "orchestrator" { live.orchestrator_exe = Some(found.exe.clone()); } else { live.brain_exe = Some(found.exe.clone()); }
+        let reply = rpp::rpp_call_trusted(&live, product, "manifest", None, None);
+        if reply["ok"] != true { return Err(reply["error"]["message"].as_str().unwrap_or("yanıt yok").to_string()); }
+        if reply["result"]["installed"] != true { return Err(format!("ürün durumu: {}", reply["result"]["install_state"])); }
+        Ok(())
+    };
+    let applied = installer::apply(roots, product, action, params, id, &verify)?;
+    // only the installer of what is installed now stays in the download cache (offline repair needs it); a removal keeps none
+    match installed::product(product).and_then(|p| p.installed()) { Some(i) => catalog::prune(roots, product, &i.version), None => catalog::forget(roots, product) }
+    Ok(applied)
 }

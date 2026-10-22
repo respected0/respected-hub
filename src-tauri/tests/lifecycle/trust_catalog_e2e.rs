@@ -23,7 +23,7 @@ fn fresh() -> (Temp, PathBuf) {
 
 fn offered(catalog: &Temp) -> (usize, Vec<String>) {
     let roots = Roots { managed: std::env::temp_dir().join("hub-trust-unused"), catalog: catalog.0.clone() };
-    let (found, skipped) = lifecycle::catalog(&roots, "orchestrator");
+    let (found, skipped) = lifecycle::installers(&roots, "orchestrator");
     (found.len(), skipped)
 }
 
@@ -42,7 +42,7 @@ fn only_a_bundle_signed_by_a_trusted_key_is_offered() {
     let (count, skipped) = offered(&catalog);
     assert_eq!((count, skipped.is_empty()), (1, true), "{skipped:?}");
     let roots = Roots { managed: std::env::temp_dir().join("hub-trust-unused"), catalog: catalog.0.clone() };
-    assert_eq!(lifecycle::status(&roots, "orchestrator").unwrap()["available"]["trust"], "development");
+    assert_eq!(lifecycle::installers(&roots, "orchestrator").0[0].trust, "development");
 
     // 2. the signature cannot be moved to another version or product
     let original: Value = serde_json::from_slice(&std::fs::read(bundle.join("bundle.json")).unwrap()).unwrap();
@@ -50,7 +50,7 @@ fn only_a_bundle_signed_by_a_trusted_key_is_offered() {
     assert_eq!(offered(&catalog).0, 0, "version swap must break the signature");
     std::fs::write(bundle.join("bundle.json"), serde_json::to_vec(&original).unwrap()).unwrap();
     edit(&bundle, |d| d["kind"] = json!("source"));
-    assert_eq!(offered(&catalog).0, 0, "only packaged distributions are installable, whatever the signature covers");
+    assert_eq!(offered(&catalog).0, 0, "only a product installer is installable, whatever the signature covers");
     std::fs::write(bundle.join("bundle.json"), serde_json::to_vec(&original).unwrap()).unwrap();
 
     // 3. a changed payload list (even with a recomputed digest) is not covered by the old signature
@@ -94,6 +94,6 @@ fn only_a_bundle_signed_by_a_trusted_key_is_offered() {
     std::env::set_var("RESPECTED_HUB_ALLOW_UNSIGNED", "1");
     let (count, _) = offered(&catalog);
     assert_eq!(count, 1, "explicit development opt-in accepts a local unsigned bundle");
-    assert_eq!(lifecycle::status(&roots, "orchestrator").unwrap()["available"]["trust"], "unsigned");
+    assert_eq!(lifecycle::installers(&roots, "orchestrator").0[0].trust, "unsigned");
     std::env::remove_var("RESPECTED_HUB_ALLOW_UNSIGNED");
 }

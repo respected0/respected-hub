@@ -1,40 +1,25 @@
-//! Where the products are: saved connections (development builds only) and the data folders the Hub passes to them.
+//! Where the products are: the installed programs, or (development builds only) saved source checkouts. The Hub passes the
+//! products no folders of its own: each product chooses its data folder itself.
 use serde::{Deserialize, Serialize};
 use std::{fs, path::{Path, PathBuf}};
 use tauri::Manager;
-use crate::{secondbrain, trust};
+use crate::trust;
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Settings {
     pub python: String,
     pub orchestrator_root: PathBuf,
     pub brain_root: PathBuf,
-    pub data_root: PathBuf,
-    #[serde(default)]
-    pub brain_data_root: Option<PathBuf>,
-    /// Frozen SecondBrain launcher (installed or staged) that serves RPP; absent means run the source with Python.
+    /// The installed SecondBrain program; absent means run the source with Python (development builds).
     #[serde(default)]
     pub brain_exe: Option<PathBuf>,
-    /// Application folder the launcher should treat as its install location (RESPECTED_APP_DIR).
-    #[serde(default)]
-    pub brain_app_dir: Option<PathBuf>,
-    /// Packaged Orchestrator (the Hub-managed copy's respected-orchestrator.exe); absent means the source checkout on Python.
+    /// The installed Orchestrator program; absent means the source checkout on Python (development builds).
     #[serde(default)]
     pub orchestrator_exe: Option<PathBuf>,
 }
 
 fn settings_file(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(app.path().app_data_dir().map_err(|e| e.to_string())?.join("connections.json"))
-}
-
-/// Default data_root for a fresh install. An explicit absolute path from
-/// RESPECTED_ORCHESTRATOR_DATA_ROOT wins; a saved connections.json still wins
-/// over this because get_settings returns it before reaching here. Pure, unit-tested.
-pub(crate) fn default_data_root(env_value: Option<&str>, fallback: PathBuf) -> PathBuf {
-    match env_value {
-        Some(value) if !value.trim().is_empty() && Path::new(value).is_absolute() => PathBuf::from(value),
-        _ => fallback,
-    }
 }
 
 #[tauri::command]
@@ -44,23 +29,20 @@ pub fn get_settings(app: tauri::AppHandle) -> Result<Settings, String> {
     if trust::dev_enabled() && file.exists() {
         return serde_json::from_slice(&fs::read(file).map_err(|e| e.to_string())?).map_err(|e| e.to_string());
     }
-    let data_base = app.path().app_local_data_dir().map_err(|e| e.to_string())?;
-    // Production: no source checkout and no development data folder - products come from the managed, verified copies only.
-    let (siblings, data_root) = if trust::dev_enabled() {
+    // Production: no source checkout - products are the installed programs only.
+    let siblings = if trust::dev_enabled() {
         let hub = Path::new(env!("CARGO_MANIFEST_DIR")).parent().ok_or("Missing Hub root")?;
-        (hub.parent().ok_or("Missing product root")?.to_path_buf(),
-         default_data_root(trust::dev_env("RESPECTED_ORCHESTRATOR_DATA_ROOT").and_then(|v| v.into_string().ok()).as_deref(), data_base.with_file_name("RespectedOrchestratorDevelopment")))
+        hub.parent().ok_or("Missing product root")?.to_path_buf()
     } else {
-        (data_base.join("no-source-checkout"), secondbrain::respected_root().join("RespectedOrchestrator").join("data"))
+        app.path().app_local_data_dir().map_err(|e| e.to_string())?.join("no-source-checkout")
     };
     Ok(Settings { python: "python".into(), orchestrator_root: siblings.join("respected-orchestrator"),
-        brain_root: siblings.join("respected-secondbrain"), data_root,
-        brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None })
+        brain_root: siblings.join("respected-secondbrain"), brain_exe: None, orchestrator_exe: None })
 }
 
 fn validate(settings: &Settings) -> Result<(), String> {
-    if settings.python.trim().is_empty() || !settings.orchestrator_root.is_absolute() || !settings.data_root.is_absolute() {
-        return Err("Explicit product/data paths and Python executable required".into());
+    if settings.python.trim().is_empty() || !settings.orchestrator_root.is_absolute() {
+        return Err("Explicit product paths and Python executable required".into());
     }
     if !settings.orchestrator_root.join("src/respected_orchestrator/__main__.py").is_file() {
         return Err("Independent Orchestrator source not found".into());
@@ -85,23 +67,8 @@ pub fn save_settings(app: tauri::AppHandle, settings: Settings) -> Result<(), St
 mod tests {
     use super::*;
 
-    fn settings(python: &str, orchestrator_root: PathBuf, data_root: PathBuf) -> Settings {
-        Settings { python: python.into(), orchestrator_root, brain_root: PathBuf::new(), data_root, brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None }
-    }
-
-    #[test]
-    fn default_data_root_prefers_absolute_env() {
-        let fallback = std::env::temp_dir().join("hub-fallback");
-        let custom = std::env::temp_dir().join("hub-custom");
-        assert_eq!(default_data_root(Some(custom.to_str().unwrap()), fallback.clone()), custom);
-    }
-
-    #[test]
-    fn default_data_root_ignores_relative_or_empty_or_missing() {
-        let fallback = std::env::temp_dir().join("hub-fallback");
-        assert_eq!(default_data_root(Some("relative/data"), fallback.clone()), fallback);
-        assert_eq!(default_data_root(Some("   "), fallback.clone()), fallback);
-        assert_eq!(default_data_root(None, fallback.clone()), fallback);
+    fn settings(python: &str, orchestrator_root: PathBuf) -> Settings {
+        Settings { python: python.into(), orchestrator_root, brain_root: PathBuf::new(), brain_exe: None, orchestrator_exe: None }
     }
 
     #[test]
@@ -109,12 +76,11 @@ mod tests {
         let root = std::env::temp_dir().join(format!("hub-settings-{}", std::process::id()));
         let entry = root.join("src/respected_orchestrator");
         fs::create_dir_all(&entry).unwrap();
-        assert!(validate(&settings("python", root.clone(), root.clone())).is_err(), "no __main__.py yet");
+        assert!(validate(&settings("python", root.clone())).is_err(), "no __main__.py yet");
         fs::write(entry.join("__main__.py"), "").unwrap();
-        assert!(validate(&settings("python", root.clone(), root.clone())).is_ok());
-        assert!(validate(&settings("  ", root.clone(), root.clone())).is_err());
-        assert!(validate(&settings("python", PathBuf::from("relative"), root.clone())).is_err());
-        assert!(validate(&settings("python", root.clone(), PathBuf::from("relative"))).is_err());
+        assert!(validate(&settings("python", root.clone())).is_ok());
+        assert!(validate(&settings("  ", root.clone())).is_err());
+        assert!(validate(&settings("python", PathBuf::from("relative"))).is_err());
         fs::remove_dir_all(&root).unwrap();
     }
 }

@@ -1,18 +1,9 @@
-﻿// Respected Product Protocol (RPP) v1.0/v1.1 - shared TypeScript contract.
+// Respected Product Protocol (RPP) 1 - shared TypeScript contract (docs/PRODUCT_CONTRACT.md in the ecosystem root).
 // One JSON request in, one JSON response line out. RPP is not MCP and not a daemon.
 
-export const RPP_VERSION = '1.0';
-const RPP_VERSION_MAX = '1.1';
-const V11_OPS = ['lifecycle.plan', 'lifecycle.apply', 'lifecycle.status', 'lifecycle.rollback', 'operation.receipt'] as const;
-const ID_REQUIRED_OPS = ['settings.apply', 'lifecycle.apply', 'lifecycle.rollback'];
-const SUPPORTED_VERSIONS = [RPP_VERSION, RPP_VERSION_MAX];
-
-function versionForOp(op: string): string {
-  return (V11_OPS as readonly string[]).includes(op) ? RPP_VERSION_MAX : RPP_VERSION;
-}
+export const RPP_VERSION = '1';
+const ID_REQUIRED_OPS = ['settings.apply', 'integrations.apply', 'integrations.rollback'];
 export const SECRET_REDACTED = '***set***';
-
-interface RppProtocolRange { min: string; max: string; }
 
 interface RppRequest {
   rpp: string;
@@ -30,9 +21,11 @@ export type RppResponse = RppOk | RppFail;
 export interface Manifest {
   product_id: string;
   product_version: string;
-  protocol: RppProtocolRange;
+  rpp: string;
   capabilities: string[];
-  settings_supported: boolean;
+  installed: boolean;
+  install_state: string;
+  roots: { app: string | null; data: string; vault: string | null };
 }
 
 export type SettingType = 'string' | 'integer' | 'boolean' | 'enum';
@@ -40,6 +33,7 @@ export interface SettingsField {
   key: string;
   type: SettingType;
   label: string;
+  help?: string;
   default: unknown;
   secret: boolean;
   hidden?: boolean;
@@ -55,7 +49,7 @@ interface PlainError { message: string; messageEn: string; hint?: string; }
 
 export function buildRequest(op: string, payload: Record<string, unknown> = {}, operationId?: string): RppRequest {
   const operation_id = operationId ?? (ID_REQUIRED_OPS.includes(op) ? crypto.randomUUID() : null);
-  return { rpp: versionForOp(op), op, operation_id, payload };
+  return { rpp: RPP_VERSION, op, operation_id, payload };
 }
 
 export function parseResponse(text: string): RppResponse {
@@ -69,7 +63,7 @@ export function parseResponse(text: string): RppResponse {
   if (typeof data !== 'object' || data === null || Array.isArray(data)) return bad('Yanıt bir JSON nesnesi değil.');
 
   const o = data as Record<string, unknown>;
-  if (typeof o.rpp !== 'string' || !SUPPORTED_VERSIONS.includes(o.rpp)) return bad(`Beklenmeyen protokol sürümü: ${String(o.rpp)}.`);
+  if (o.rpp !== RPP_VERSION) return bad(`Beklenmeyen protokol sürümü: ${String(o.rpp)}.`);
   if (typeof o.ok !== 'boolean') return bad('Yanıtta "ok" alanı boolean değil.');
   if (!('operation_id' in o) || (o.operation_id !== null && typeof o.operation_id !== 'string')) {
     return bad('Yanıtta "operation_id" alanı yok veya metin/null değil.');
@@ -100,42 +94,16 @@ export function parseResponse(text: string): RppResponse {
   };
 }
 
-function versionWeight(version: string): number {
-  const m = /^(\d+)\.(\d+)$/.exec(version);
-  return m ? Number(m[1]) * 1000 + Number(m[2]) : NaN;
-}
-
-export function negotiate(
-  manifest: Partial<Manifest> | null | undefined,
-  hubSupported: RppProtocolRange = { min: RPP_VERSION, max: RPP_VERSION_MAX },
-): Negotiation {
-  const capabilities = Array.isArray(manifest?.capabilities)
-    ? manifest.capabilities.filter((c): c is string => typeof c === 'string')
-    : [];
-
-  const protocol = manifest?.protocol;
-  if (!protocol || typeof protocol.min !== 'string' || typeof protocol.max !== 'string') {
-    return { compatible: false, reason: 'Ürün protokol aralığını bildirmedi.', capabilities };
-  }
-
-  const hubMin = versionWeight(hubSupported.min), hubMax = versionWeight(hubSupported.max);
-  const peerMin = versionWeight(protocol.min), peerMax = versionWeight(protocol.max);
-  if ([hubMin, hubMax, peerMin, peerMax].some(Number.isNaN)) {
-    return { compatible: false, reason: 'Protokol sürümü major.minor biçiminde değil.', capabilities };
-  }
-  if (Math.max(hubMin, peerMin) > Math.min(hubMax, peerMax)) {
-    return {
-      compatible: false,
-      reason: `Örtüşen protokol sürümü yok (ürün ${protocol.min}-${protocol.max}, hub ${hubSupported.min}-${hubSupported.max}).`,
-      capabilities,
-    };
-  }
-  return { compatible: true, capabilities };
+/** The product speaks this Hub's protocol: there is one version, "1". */
+export function negotiate(manifest: Partial<Manifest> | null | undefined): Negotiation {
+  const capabilities = Array.isArray(manifest?.capabilities) ? manifest.capabilities.filter((c): c is string => typeof c === 'string') : [];
+  if (manifest?.rpp === RPP_VERSION) return { compatible: true, capabilities };
+  return { compatible: false, reason: `Ürün RPP ${RPP_VERSION} konuşmuyor (${manifest?.rpp ?? 'sürüm bildirmedi'}).`, capabilities };
 }
 
 const PLAIN: Record<string, { tr: string; en: string }> = {
   UNKNOWN_OP: { tr: 'Bu işlem ürün tarafından tanınmıyor.', en: 'The product does not recognise this operation.' },
-  PROTOCOL_UNSUPPORTED: { tr: 'Ürün bu protokol sürümünü desteklemiyor.', en: 'The product does not support this protocol version.' },
+  UNSUPPORTED_VERSION: { tr: 'Ürün bu protokol sürümünü desteklemiyor.', en: 'The product does not support this protocol version.' },
   BAD_REQUEST: { tr: 'İstek biçimi geçersiz.', en: 'The request format is invalid.' },
   BAD_RESPONSE: { tr: 'Üründen gelen yanıt beklenen biçimde değil.', en: 'The response from the product has an unexpected format.' },
   INVALID_SETTINGS: { tr: 'Ayarlar geçersiz; hiçbir değişiklik kaydedilmedi.', en: 'The settings are invalid; nothing was saved.' },

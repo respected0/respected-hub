@@ -9,7 +9,7 @@ zararlı olduğu anlamına gelmez; yalnızca yayıncının Microsoft tarafından
 Kurmak için: "Ek bilgi" > "Yine de çalıştır". Güvenmiyorsanız kurmayın.
 
 ELİMİZDE NE VAR, NE YOK?
-* Var: Ürün paketleri (SecondBrain, Orchestrator, çalışma ortamı) ücretsiz Ed25519 anahtarıyla imzalıdır. Hub, imzası
+* Var: Ürün kataloğu ve ürün paketleri (SecondBrain ve Orchestrator kurucuları) ücretsiz Ed25519 anahtarıyla imzalıdır. Hub, imzası
   doğrulanmayan hiçbir paketi kurmaz. Bu, paketlerin bizden geldiğini ve yolda değişmediğini garanti eder.
 * Yok: Kurulum dosyasının kendisi Microsoft tarafından doğrulanmış bir yayıncıya bağlı değildir. Dosyayı indirdiğiniz
   yerin (resmi sayfamız) güvenilir olduğundan emin olun ve SHA256SUMS.txt ile karşılaştırın:
@@ -18,9 +18,9 @@ ELİMİZDE NE VAR, NE YOK?
 
 NE KURULUR, NEYE DOKUNULMAZ?
 * Yönetici yetkisi gerekmez; yalnızca kendi kullanıcı profilinize kurulur.
-* Hub, siz onay verdikçe SecondBrain ve Orchestrator'ı kurar ve AI araçlarınıza (Claude, Codex vb.) kayıt ekler.
-  Her kayıt kaldırmada geri alınır; sizin kendi eklediğiniz ayarlara dokunulmaz.
-* Kaldırırken notlarınız, kasanız ve çalışma kayıtlarınız silinmez.
+* Hub, siz onay verdikçe SecondBrain ve Orchestrator'ı kendi kurucularıyla kurar. Ürünler, sizin seçtiğiniz AI
+  araçlarına (Claude, Codex vb.) kayıt ekler; her kayıt kaldırmada geri alınır, sizin eklediğiniz ayarlara dokunulmaz.
+* Hub'ı kaldırmak ürünlere dokunmaz. Bir ürünü kaldırırken not kasanız hiçbir durumda silinmez.
 * Beta sürümde hata olabilir. Önemli notlarınızı yedekleyin.
 
 WebView2: Hub arayüzü Microsoft Edge WebView2 gerektirir (Windows 11'de hazırdır). Eksikse kurulum sizi uyarır.
@@ -37,5 +37,5 @@ What is protected: every product bundle is signed with a free Ed25519 key and th
 signature does not verify. What is not: the installer itself has no verified publisher. Compare the file's SHA-256
 (Get-FileHash) with SHA256SUMS.txt from the official download page before running it.
 
-Per-user install, no administrator rights. Client registrations are undone on removal. Uninstall keeps your notes,
-vault and run records. It needs Microsoft Edge WebView2 (preinstalled on Windows 11).
+Per-user install, no administrator rights. Client registrations are undone on removal. Removing the Hub leaves the products as they are; removing a product never
+deletes your note vault. It needs Microsoft Edge WebView2 (preinstalled on Windows 11).

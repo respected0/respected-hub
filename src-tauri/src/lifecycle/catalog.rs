@@ -115,12 +115,8 @@ fn newer(candidate: &str, than: &str) -> bool { lifecycle::version_key(candidate
 /// Same release whatever the spelling (`0.1.0b1` from Python metadata, `0.1.0-beta.1` in the catalog).
 fn same(a: &str, b: &str) -> bool { lifecycle::version_key(a) == lifecycle::version_key(b) }
 
-/// Every cached bundle of `product`, whatever its kind (a distribution folder or the product's own installer).
-fn cached_versions(roots: &Roots, product: &str) -> Vec<lifecycle::Bundle> {
-    let mut all = lifecycle::catalog(roots, product).0;
-    all.extend(lifecycle::catalog_of(roots, product, "installer").0);
-    all
-}
+/// Every cached installer bundle of `product`.
+fn cached_versions(roots: &Roots, product: &str) -> Vec<lifecycle::Bundle> { lifecycle::installers(roots, product).0 }
 
 /// Make sure the catalog cache holds `product` at `want` (repair: the installed version) or else at the newest index release.
 /// Network is used only when that bundle is not cached yet.

@@ -1,14 +1,8 @@
 ﻿; Respected Hub - per-user Windows installer (no administrator rights).
-; Built by release/tools/build/build_hub_installer.py, which stages the Hub executable. Products are not inside: the Hub downloads
-; them from the signed catalog on GitHub Releases when the person installs them.
+; Built by release/tools/build/build_hub_installer.py, which stages the Hub executable. Products are not inside: each product has
+; its own installer, which the Hub downloads from the signed catalog and runs. Removing the Hub never touches a product.
 #ifndef AppVersion
   #define AppVersion "0.1.0-beta.1"
-#endif
-#ifndef Product
-  #define Product ""
-#endif
-#ifndef OutputBase
-  #define OutputBase "RespectedHub-Windows-Setup"
 #endif
 #ifndef StageDir
   #define StageDir "..\..\..\.build-cache\hub-stage"
@@ -22,12 +16,13 @@ AppId={{5C0F6A1E-3B7D-4E2A-9D55-7A1C2F0E8B31}
 AppName=Respected Hub
 AppVersion={#AppVersion}
 AppPublisher=Respected
+AppCopyright=Copyright (c) 2026 RESPECTED (MIT)
 DefaultDirName={localappdata}\Respected\RespectedHub\app
 UsePreviousAppDir=yes
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir={#OutputDir}
-OutputBaseFilename={#OutputBase}
+OutputBaseFilename=RespectedHub-Windows-Setup
 Compression=lzma2
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible
@@ -37,17 +32,14 @@ CloseApplications=yes
 WizardStyle=modern
 InfoBeforeFile={#StageDir}\BETA_NOTICE.txt
 
-[InstallDelete]
-; installers before 0.1.0-beta.1 shipped a product catalog here; products now come from the downloaded catalog cache
-Type: filesandordirs; Name: "{app}\catalog"
+[Languages]
+Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 
 [UninstallDelete]
-; the WebView cache and window settings are the Hub's own; the products (managed, data) are removed only through --uninstall-products
-Type: filesandordirs; Name: "{localappdata}\com.respected.hub\EBWebView"
-Type: files; Name: "{localappdata}\Respected\RespectedHub\uninstall-products.log"
-Type: dirifempty; Name: "{localappdata}\com.respected.hub"
+; everything the Hub keeps is its own: the window data, the download cache and its activity journal
+Type: filesandordirs; Name: "{localappdata}\com.respected.hub"
 Type: filesandordirs; Name: "{userappdata}\com.respected.hub"
-Type: dirifempty; Name: "{localappdata}\Respected\RespectedHub"
+Type: filesandordirs; Name: "{localappdata}\Respected\RespectedHub"
 Type: dirifempty; Name: "{localappdata}\Respected"
 
 [Files]
@@ -59,14 +51,11 @@ Name: "{autoprograms}\Respected Hub"; Filename: "{app}\respected-hub.exe"
 Name: "{autodesktop}\Respected Hub"; Filename: "{app}\respected-hub.exe"
 
 [Run]
-Filename: "{app}\respected-hub.exe"; Parameters: "{#Product}"; Description: "Respected Hub'ı başlat"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\respected-hub.exe"; Description: "Respected Hub'ı başlat"; Flags: nowait postinstall skipifsilent
 ; the Hub's own update runs this installer with /SILENT /RELAUNCH=1: open the Hub again afterwards
 Filename: "{app}\respected-hub.exe"; Flags: nowait; Check: RelaunchAfterUpdate
 
 [Code]
-var
-  ProductsAsked, ProductsWanted: Boolean;
-
 function WebView2Present(): Boolean;
 var
   Version: String;
@@ -90,50 +79,3 @@ function RelaunchAfterUpdate(): Boolean;
 begin
   Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
 end;
-
-// The Hub lists each product it installed in Installed apps (src-tauri/src/hub/registration.rs): that is how we know any exist.
-function ProductsInstalled(): Boolean;
-begin
-  Result := RegKeyExists(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\RespectedSecondBrain') or
-            RegKeyExists(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\RespectedOrchestrator');
-end;
-
-function RemoveProducts(): Boolean;
-begin
-  if not ProductsAsked then
-  begin
-    ProductsAsked := True;
-    if ExpandConstant('{param:REMOVEPRODUCTS|0}') = '1' then
-      ProductsWanted := True
-    else if not UninstallSilent and ProductsInstalled() then
-      ProductsWanted := MsgBox('Hub ile kurulan SecondBrain ve Orchestrator da kaldırılsın mı?' + #13#10 + #13#10 +
-        'Evet: ürünler, verileri ve AI araçlarındaki Respected kayıtları (kanca, MCP, görev, kısayol) kaldırılır. Not kasanız ve notlarınız silinmez.' + #13#10 + #13#10 +
-        'Hayır: ürünler çalışmaya devam eder ama Hub olmadan güncellenemez ve onarılamaz. Onları sonra Windows Ayarlar > Uygulamalar listesinden kaldırabilirsiniz; bunun için küçük bir bakım dosyası kalır.',
-        mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES;
-  end;
-  Result := ProductsWanted;
-end;
-
-procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
-var
-  ResultCode: Integer;
-  Maintenance: String;
-begin
-  // Before the Hub's own files are removed. (Decided here, not with an [UninstallRun] Check: Inno evaluates that Check at install time.)
-  if CurUninstallStep = usUninstall then
-  begin
-    if RemoveProducts() then
-      // undo the AI-client registrations of the products the Hub installed and remove them
-      Exec(ExpandConstant('{app}\respected-hub.exe'), '--uninstall-products', '', SW_HIDE, ewWaitUntilTerminated, ResultCode)
-    else if ProductsInstalled() then
-    begin
-      // products kept: their Installed-apps entries must point at an executable that survives this uninstall
-      Maintenance := ExpandConstant('{localappdata}\Respected\RespectedHub\maintenance');
-      if ForceDirectories(Maintenance) and CopyFile(ExpandConstant('{app}\respected-hub.exe'), Maintenance + '\respected-hub.exe', False) then
-        Exec(Maintenance + '\respected-hub.exe', '--sync-registrations', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    end;
-  end;
-end;
-
-// Uninstall removes what the installer put here and, only when asked, the products the Hub installed (see above).
-// Note vaults live elsewhere and are never touched.

@@ -9,10 +9,10 @@ import {
 } from '../../src/shared/rpp.ts';
 
 const okEnvelope = JSON.stringify({
-  rpp: '1.0', ok: true, operation_id: 'op-123', result: { status: 'healthy' }, error: null,
+  rpp: '1', ok: true, operation_id: 'op-123', result: { status: 'healthy' }, error: null,
 });
 const errEnvelope = JSON.stringify({
-  rpp: '1.0', ok: false, operation_id: null, result: null,
+  rpp: '1', ok: false, operation_id: null, result: null,
   error: { code: 'UNKNOWN_OP', message: 'Bilinmeyen işlem.', hint: 'manifest çağırın.' },
 });
 
@@ -57,15 +57,15 @@ test('parseResponse maps malformed input to BAD_RESPONSE and never throws', () =
     '[]',
     'null',
     JSON.stringify({ rpp: '9.9', ok: true, operation_id: null, result: {}, error: null }),
-    JSON.stringify({ rpp: '1.0', ok: 'yes', operation_id: null, result: {}, error: null }),
-    JSON.stringify({ rpp: '1.0', ok: false, operation_id: null, result: null, error: null }),
-    JSON.stringify({ rpp: '1.0', ok: false, operation_id: null, result: null, error: { code: 'lower', message: 'x' } }),
-    JSON.stringify({ rpp: '1.0', ok: false, operation_id: null, result: null, error: { code: 'X', message: '' } }),
-    JSON.stringify({ rpp: '1.0', ok: true, operation_id: null, result: {}, error: { code: 'X', message: 'y' } }),
-    JSON.stringify({ rpp: '1.0', ok: true, result: {}, error: null }),
-    JSON.stringify({ rpp: '1.0', ok: true, operation_id: 42, result: {}, error: null }),
-    JSON.stringify({ rpp: '1.0', ok: true, operation_id: null, error: null }),
-    JSON.stringify({ rpp: '1.0', ok: false, operation_id: null, result: {}, error: { code: 'UNKNOWN_OP', message: 'x' } }),
+    JSON.stringify({ rpp: '1', ok: 'yes', operation_id: null, result: {}, error: null }),
+    JSON.stringify({ rpp: '1', ok: false, operation_id: null, result: null, error: null }),
+    JSON.stringify({ rpp: '1', ok: false, operation_id: null, result: null, error: { code: 'lower', message: 'x' } }),
+    JSON.stringify({ rpp: '1', ok: false, operation_id: null, result: null, error: { code: 'X', message: '' } }),
+    JSON.stringify({ rpp: '1', ok: true, operation_id: null, result: {}, error: { code: 'X', message: 'y' } }),
+    JSON.stringify({ rpp: '1', ok: true, result: {}, error: null }),
+    JSON.stringify({ rpp: '1', ok: true, operation_id: 42, result: {}, error: null }),
+    JSON.stringify({ rpp: '1', ok: true, operation_id: null, error: null }),
+    JSON.stringify({ rpp: '1', ok: false, operation_id: null, result: {}, error: { code: 'UNKNOWN_OP', message: 'x' } }),
   ];
   for (const input of inputs) {
     const res = parseResponse(input);
@@ -74,29 +74,9 @@ test('parseResponse maps malformed input to BAD_RESPONSE and never throws', () =
   }
 });
 
-test('negotiate compares protocol ranges numerically and keeps advertised capabilities', () => {
-  const manifest = { protocol: { min: '1.0', max: '1.0' }, capabilities: ['settings.apply', 'health'] };
-  const same = negotiate(manifest);
-  assert.equal(same.compatible, true);
-  assert.deepEqual(same.capabilities, ['settings.apply', 'health']);
-
-  const hubAhead = negotiate({ protocol: { min: '0.9', max: '1.0' }, capabilities: [] });
-  assert.equal(hubAhead.compatible, true);
-
-  const mismatch = negotiate({ protocol: { min: '2.0', max: '2.1' }, capabilities: [] });
-  assert.equal(mismatch.compatible, false);
-  assert.ok(mismatch.reason);
-
-  const missing = negotiate({ capabilities: ['health'] });
-  assert.equal(missing.compatible, false);
-  assert.deepEqual(missing.capabilities, ['health']);
-
-  const malformed = negotiate({ protocol: { min: 'v1', max: '1.0' }, capabilities: [] });
-  assert.equal(malformed.compatible, false);
-});
 
 test('describeError covers every contract code in Turkish with an English fallback', () => {
-  for (const code of ['UNKNOWN_OP', 'PROTOCOL_UNSUPPORTED', 'BAD_REQUEST', 'BAD_RESPONSE', 'INVALID_SETTINGS', 'OPERATION_ID_CONFLICT']) {
+  for (const code of ['UNKNOWN_OP', 'UNSUPPORTED_VERSION', 'BAD_REQUEST', 'BAD_RESPONSE', 'INVALID_SETTINGS', 'OPERATION_ID_CONFLICT']) {
     const plain = describeError({ code, message: 'raw', hint: 'do this' });
     assert.ok(plain.message.length > 0, code);
     assert.ok(plain.messageEn.length > 0, code);
@@ -108,30 +88,29 @@ test('describeError covers every contract code in Turkish with an English fallba
   assert.equal(unknown.hint, undefined);
   assert.equal(describeError(null).message.length > 0, true);
 });
-test('v1.1 ops are sent under rpp 1.1 with a required operation id; v1.0 ops stay on 1.0', () => {
-  const plan = buildRequest('lifecycle.plan', { action: 'install' });
-  assert.equal(plan.rpp, '1.1');
-  assert.equal(plan.operation_id, null);
-  assert.ok(buildRequest('lifecycle.apply').operation_id);
-  assert.ok(buildRequest('lifecycle.rollback').operation_id);
-  assert.equal(buildRequest('health').rpp, '1.0');
-});
 
-test('parseResponse accepts 1.1, keeps the version and rejects unknown versions', () => {
-  const ok = parseResponse(JSON.stringify({ rpp: '1.1', ok: true, operation_id: null, result: {}, error: null }));
-  assert.ok(ok.ok && ok.rpp === '1.1');
-  const bad = parseResponse(JSON.stringify({ rpp: '2.0', ok: true, operation_id: null, result: {}, error: null }));
-  assert.ok(!bad.ok && bad.error.code === 'BAD_RESPONSE');
-});
 
-test('negotiate accepts a v1.0-only product and a 1.0..1.1 product, rejects 2.x', () => {
-  assert.equal(negotiate({ protocol: { min: '1.0', max: '1.0' }, capabilities: ['a'] }).compatible, true);
-  assert.equal(negotiate({ protocol: { min: '1.0', max: '1.1' }, capabilities: [] }).compatible, true);
-  assert.equal(negotiate({ protocol: { min: '2.0', max: '2.1' }, capabilities: [] }).compatible, false);
-});
 
-test('every v1.1 typed error has a Turkish message', () => {
-  for (const code of ['UNSUPPORTED_OP', 'LIFECYCLE_CONFLICT', 'LIFECYCLE_PARTIAL', 'VERIFY_FAILED', 'ROLLBACK_UNAVAILABLE', 'PERMISSION_DENIED', 'RECEIPT_NOT_FOUND']) {
+test('every typed error has a Turkish message', () => {
+  for (const code of ['LIFECYCLE_CONFLICT', 'LIFECYCLE_PARTIAL', 'VERIFY_FAILED', 'PERMISSION_DENIED']) {
     assert.ok(!describeError({ code, message: 'x' }).message.startsWith('İşlem başarısız:'), code);
+  }
+});
+
+test('one protocol version: requests carry rpp 1, replies with any other version are refused, manifests are checked', () => {
+  assert.equal(buildRequest('health').rpp, '1');
+  assert.ok(buildRequest('settings.apply').operation_id);
+  assert.equal(buildRequest('integrations.plan').operation_id, null);
+  for (const version of ['1.0', '1.1', '2']) {
+    const reply = parseResponse(JSON.stringify({ rpp: version, ok: true, operation_id: null, result: {}, error: null }));
+    assert.ok(!reply.ok && reply.error.code === 'BAD_RESPONSE', version);
+  }
+  const speaking = negotiate({ rpp: '1', capabilities: ['health', 'settings.apply'] });
+  assert.equal(speaking.compatible, true);
+  assert.deepEqual(speaking.capabilities, ['health', 'settings.apply']);
+  for (const manifest of [{ rpp: '1.1', capabilities: [] }, { capabilities: ['health'] }, null]) {
+    const answer = negotiate(manifest);
+    assert.equal(answer.compatible, false);
+    assert.ok(answer.reason);
   }
 });

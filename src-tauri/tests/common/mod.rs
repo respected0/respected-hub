@@ -22,3 +22,13 @@ impl Drop for Temp {
 pub fn ecosystem() -> PathBuf {
     std::env::var_os("RESPECTED_ECOSYSTEM_ROOT").map(PathBuf::from).unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(".."))
 }
+
+/// Point the products this test starts at `data` (and a program folder beside it) through RESPECTED_DATA_DIR / RESPECTED_APP_DIR,
+/// the one override every product shares. The variables are process-wide, so tests that need their own folders hold this lock.
+pub fn product_folders(data: &Path) -> std::sync::MutexGuard<'static, ()> {
+    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let guard = LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    std::env::set_var("RESPECTED_DATA_DIR", data);
+    std::env::set_var("RESPECTED_APP_DIR", data.with_extension("app"));
+    guard
+}

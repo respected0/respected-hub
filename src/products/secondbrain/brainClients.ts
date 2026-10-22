@@ -33,6 +33,20 @@ export function fromCurrent(current: Record<string, unknown>): Selection {
   return { sources: list('global', 'clients', 'hooks'), mcp: list('mcp', 'mcp_clients', 'mcp'), schedule: current.schedule === true, shortcut: current.shortcut === true };
 }
 
+/** The same choice as SecondBrain settings (`integrations.*`), what its installer (`/SET=`) and `settings.apply` take. */
+export function toSettings(selection: Selection): Record<string, boolean | string> {
+  return { 'integrations.global': selection.sources.length > 0, 'integrations.clients': [...selection.sources].sort().join(','),
+    'integrations.mcp': selection.mcp.length > 0, 'integrations.mcp_clients': [...selection.mcp].sort().join(','),
+    'integrations.schedule': selection.schedule, 'integrations.shortcut': selection.shortcut };
+}
+
+/** Selection from SecondBrain's settings readback (an empty client list means "every client"). */
+export function fromSettings(settings: Record<string, unknown>): Selection {
+  const list = (value: unknown) => typeof value === 'string' && value ? value.split(',').filter(Boolean) : undefined;
+  return fromCurrent({ global: settings['integrations.global'], mcp: settings['integrations.mcp'], schedule: settings['integrations.schedule'],
+    shortcut: settings['integrations.shortcut'], clients: list(settings['integrations.clients']), mcp_clients: list(settings['integrations.mcp_clients']) });
+}
+
 export const toggle = (list: string[], id: string, on: boolean) => on ? [...new Set([...list, id])] : list.filter(item => item !== id);
 const clientLabel = (id: string) => CLIENTS.find(client => client.id === id)?.label ?? id;
 export const summarize = (list: string[]) => list.length ? list.map(clientLabel).join(', ') : 'Hiçbiri';

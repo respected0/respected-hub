@@ -1,6 +1,6 @@
 // Optional local semantic search of SecondBrain: status, enable (confirm -> model download -> vector build) and disable.
 // FTS search keeps working in every state. The download goes through the user's local embedding service only.
-use super::memory_access::CallFn;
+use super::CallFn;
 use crate::rpp::generate_operation_id;
 use serde_json::{json, Value};
 
@@ -12,12 +12,7 @@ fn failure(reply: &Value, what: &str) -> String {
     format!("{what}: {} — {}{hint}", reply["error"]["code"].as_str().unwrap_or("UNKNOWN"), reply["error"]["message"].as_str().unwrap_or("yanıt yok"))
 }
 
-fn supported(call: CallFn) -> bool {
-    let manifest = call("secondbrain", "manifest", None, None);
-    // A protocol 1.0 manifest hides 1.1-only capabilities from `capabilities`; `capability_details` always lists them.
-    is_ok(&manifest) && ["capabilities", "capability_details"].iter().any(|key| manifest["result"][*key].as_array()
-        .map_or(false, |caps| caps.iter().any(|c| *c == "memory_semantic" || c["id"] == "memory_semantic")))
-}
+fn supported(call: CallFn) -> bool { super::offers(&call("secondbrain", "manifest", None, None), "memory.semantic.status") }
 
 pub fn status(call: CallFn) -> Value {
     if !supported(call) { return json!({ "supported": false, "state": "unsupported" }); }
@@ -62,7 +57,7 @@ mod tests {
             log.borrow_mut().push(op.to_string());
             if Some(op) == fail_at { return json!({ "ok": false, "result": Value::Null, "error": { "code": "PROVIDER_UNAVAILABLE", "message": "kapalı", "hint": "Ollama" } }); }
             match op {
-                "manifest" => json!({ "ok": true, "result": { "capabilities": [], "capability_details": [{ "id": "memory_semantic" }] }, "error": Value::Null }),
+                "manifest" => json!({ "ok": true, "result": { "capabilities": ["memory.semantic.status"] }, "error": Value::Null }),
                 "memory.semantic.status" => json!({ "ok": true, "result": { "state": "ready", "enabled": true }, "error": Value::Null }),
                 _ => { assert!(payload.map_or(true, |p| p["confirm"] == true || p == json!({}))); json!({ "ok": true, "result": {}, "error": Value::Null }) }
             }

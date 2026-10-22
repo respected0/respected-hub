@@ -1,6 +1,6 @@
 // SecondBrain memory search index: read its state and refresh it. Only the user's click may start a refresh;
 // SecondBrain writes nothing but its own search index.
-use super::memory_access::CallFn;
+use super::CallFn;
 use crate::rpp::generate_operation_id;
 use serde_json::{json, Value};
 
@@ -13,12 +13,10 @@ fn failure(reply: &Value, what: &str) -> String {
     format!("{what}: {} — {}", code_of(reply), reply["error"]["message"].as_str().unwrap_or("yanıt yok"))
 }
 
-/// A protocol 1.0 manifest hides 1.1-only capabilities from `capabilities`; `capability_details` always lists them.
 fn supports_index(call: CallFn, problems: &mut Vec<String>) -> bool {
     let manifest = call("secondbrain", "manifest", None, None);
     if !is_ok(&manifest) { problems.push(failure(&manifest, "SecondBrain bildirimi")); return false; }
-    ["capabilities", "capability_details"].iter().any(|key| manifest["result"][*key].as_array()
-        .map_or(false, |caps| caps.iter().any(|c| *c == "memory_index" || c["id"] == "memory_index")))
+    super::offers(&manifest, "memory.index.status")
 }
 
 pub fn status(call: CallFn) -> Value {
@@ -85,9 +83,8 @@ mod tests {
             self.log.borrow_mut().push((op.into(), payload));
             match op {
                 "manifest" => ok(match self.capability {
-                    Some("details") => json!({ "capabilities": [], "capability_details": [{ "id": "memory_index" }] }),
-                    Some(_) => json!({ "capabilities": ["memory_index"] }),
-                    None => json!({ "capabilities": ["other"], "capability_details": [{ "id": "other" }] }),
+                    Some(_) => json!({ "capabilities": ["memory.index.refresh", "memory.index.status"] }),
+                    None => json!({ "capabilities": ["manifest"] }),
                 }),
                 "memory.index.status" => self.status.clone(),
                 "memory.index.refresh" => self.refresh.clone(),

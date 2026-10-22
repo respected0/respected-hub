@@ -37,12 +37,12 @@ export default function MemoryAccess() {
         <li>{write ? 'Yazma açık: yalnızca kasadaki “Inbox/Orchestrator” klasörüne yeni not eklenir; mevcut notlarınıza dokunulmaz, notlar geri alınabilir.' : 'Erişim salt okunurdur; SecondBrain hiçbir şey yazmaz.'}</li>
         <li>İzni istediğiniz zaman iptal edebilirsiniz.</li>
       </ul>
-      {status?.write_supported !== false && <label className="choice"><span><strong>Notları SecondBrain’e yazmasına da izin ver</strong><small>İsteğe bağlı; Orchestrator yalnızca siz istediğinizde yeniden kullanılabilir bir not ekleyebilir.</small></span>
+      {<label className="choice"><span><strong>Notları SecondBrain’e yazmasına da izin ver</strong><small>İsteğe bağlı; Orchestrator yalnızca siz istediğinizde yeniden kullanılabilir bir not ekleyebilir.</small></span>
         <input type="checkbox" checked={write} disabled={busy} onChange={event => setWrite(event.target.checked)} /></label>}
     </div>}
     <div className="actions">
       {status?.pending_revoke && <button type="button" className="cta" disabled={busy} onClick={() => void run(memoryAccessDisable)}>{busy ? 'Deneniyor…' : 'İptali yeniden dene'}</button>}
-      {status && !status.pending_revoke && status.supported && !status.enabled && !confirming && <button type="button" className="cta" disabled={busy} onClick={() => setConfirming(true)}>Erişimi aç</button>}
+      {status && !status.pending_revoke && !status.enabled && !confirming && <button type="button" className="cta" disabled={busy} onClick={() => setConfirming(true)}>Erişimi aç</button>}
       {confirming && <>
         <button type="button" className="cta" disabled={busy} onClick={() => void run(memoryAccessEnable)}>{busy ? 'Açılıyor…' : 'Onayla ve aç'}</button>
         <button type="button" disabled={busy} onClick={() => setConfirming(false)}>Vazgeç</button></>}
