@@ -57,7 +57,7 @@ export default function BrainIntegrations({ settings, onApplied }: { settings: R
   const detected = plan?.clients ? Object.fromEntries(plan.clients.map(item => [item.id, item.detected])) : null;
   const changes = (plan?.changes ?? []).filter(change => change.action !== 'unchanged');
   return <div className="step-body"><h2>AI araç bağlantıları</h2>
-    <p className="muted">Değişiklikleri Brain kendisi yapar: yalnızca Respected'a ait kayıtlar yönetilir, diğer araçların ve senin ayarların korunur, bir aracı kapatınca onun dosyaları eski haline döner.</p>
+    <p className="muted">Değişiklikleri Brain kendisi yapar: yalnızca Respected'a ait kayıtlar yönetilir, diğer araçların ve senin ayarların korunur, bir aracı kapatınca Respected'ın o araçtaki kayıtları kaldırılır.</p>
     <h3>Kaynaklar <small className="muted">oturumları hafızaya yakalanan araçlar</small></h3>
     <ClientPicker kind="hooks" selected={selection.sources} detected={detected} onChange={sources => setSelection({ ...selection, sources })} />
     <h3>İzinler <small className="muted">hafızayı MCP ile kullanabilen araçlar</small></h3>

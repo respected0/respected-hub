@@ -11,7 +11,8 @@ export default function Activity({ eco, go }: { eco: Ecosystem; go: Go }) {
   const nameOf = (id: string) => APPS.find(app => app.id === id)?.name ?? id;
   return <div className="settings-stack">
     <div className="section-head"><h2>Görev geçmişi{native && eco.runs.length > 0 ? <small className="muted"> · {eco.runs.length} kayıt{running ? `, ${running} tanesi sürüyor` : ''}</small> : null}</h2><button onClick={eco.refresh}><Icon name="refresh" />Yenile</button></div>
-    {eco.journal.length > 0 && <section aria-label="Kurulum işlemleri"><div className="section-head" style={{ marginBottom: 14 }}><h2>Kurulum işlemleri</h2></div>
+    {eco.journal.length > 0 && <section aria-label="Kurulum işlemleri"><div className="section-head" style={{ marginBottom: 14 }}><h2>Hub'dan yapılan kurulum işlemleri</h2></div>
+      <p className="muted" style={{ margin: '0 0 12px' }}>Burada yalnızca Hub üzerinden yaptığınız kurulum, güncelleme, onarım ve kaldırma görünür. Ürünün kurucusunu (Setup.exe) doğrudan çalıştırarak yaptıklarınız Hub'a kaydedilmez; onları ürün kendi kurulum kaydına yazar.</p>
       <ol className="timeline" aria-label="Kurulum işlemleri">{eco.journal.map(entry => <li key={entry.operation_id} className={`tl-item tone-${entry.status === 'applied' ? 'ok' : entry.status === 'failed' ? 'error' : 'live'}`}>
         <span className="t">{journalSentence(entry, nameOf(entry.product))}</span>
         <span className="m"><span>{formatWhen(entry.started_at)}</span><span className="mono">{entry.operation_id}</span></span></li>)}</ol></section>}

@@ -305,7 +305,7 @@ try {
   await sleep(3000); // the uninstaller's own copy finishes a moment later
   check('purged: the whole Orchestrator folder and its Installed-apps entry are gone', !existsSync(product.orch.folder) && !registered(product.orch.key));
   await rail('Ayarlar'); await settingsTab('Etkinlik');
-  await waitFor(`document.body.innerText.includes('Kurulum işlemleri')&&document.body.innerText.includes('kaldırıldı')&&document.body.innerText.includes('onarıldı')&&document.body.innerText.includes('kuruldu')`, 'Activity lists the Hub\'s own operations');
+  await waitFor(`document.body.innerText.includes('kurulum işlemleri')&&document.body.innerText.includes('kaldırıldı')&&document.body.innerText.includes('onarıldı')&&document.body.innerText.includes('kuruldu')`, 'Activity lists the Hub\'s own operations');
   await shot('10-activity');
 } catch (error) {
   if (String(error) !== 'Error: done') {
