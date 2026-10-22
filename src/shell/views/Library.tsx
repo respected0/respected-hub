@@ -54,7 +54,7 @@ export default function Library({ eco, appId, page, select, go, ask, onAsked }: 
       {matches.length === 0 && <p className="muted lib-none">Eşleşen uygulama yok.</p>}
       {matches.map(app => { const runtime = eco.apps[app.id];
         return <button key={app.id} className={`lib-entry accent-${app.accent} ${app.id === current.id ? 'active' : ''}`} aria-current={app.id === current.id ? 'page' : undefined} onClick={() => select(app.id)}>
-          <Emblem app={app.id} /><strong>{app.name.replace('Respected ', '')}</strong>{hasUpdate(app.id) && <span className="lib-upd" title="Güncelleme var"><Icon name="download" /></span>}
+          <Emblem app={app.id} small /><strong>{app.name.replace('Respected ', '')}</strong>{hasUpdate(app.id) && <span className="lib-upd" title="Güncelleme var"><Icon name="download" /></span>}
           <span className={`dot ${runtime?.loading ? '' : runtime?.summary.statusKind ?? ''}`} aria-hidden="true" /></button>; })}</nav>
     <div className="lib-main"><AppWorkspace key={current.id} appId={current.id} page={page} eco={eco} go={target => select(current.id, target)} ask={ask} onAsked={onAsked} /></div>
   </div>;

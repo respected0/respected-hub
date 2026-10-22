@@ -1,4 +1,9 @@
-import type React from 'react';
+import hubMark from '../../assets/brand/hub.svg';
+import hubSmall from '../../assets/brand/hub-small.svg';
+import brainMark from '../../assets/brand/brain.svg';
+import brainSmall from '../../assets/brand/brain-small.svg';
+import orchestratorMark from '../../assets/brand/orchestrator.svg';
+import orchestratorSmall from '../../assets/brand/orchestrator-small.svg';
 // Shared presentational pieces: icon set, generative app emblems and plain-language status labels.
 const PATHS: Record<string, string> = {
   home: 'M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
@@ -26,13 +31,15 @@ export function Icon({ name }: { name: string }) {
   return <svg className={`ico ${name}`} viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={PATHS[name] ?? PATHS.apps} /></svg>;
 }
 
-// Brain: a small memory graph. Orchestrator: lanes that fork and merge.
-const GLYPHS: Record<string, React.ReactElement> = {
-  brain: <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="2.6" fill="currentColor" /><circle cx="5" cy="6" r="1.8" /><circle cx="19" cy="7" r="1.8" /><circle cx="6" cy="19" r="1.8" /><circle cx="19" cy="18" r="1.8" /><path d="M10 10.5L6.2 7.3M14 10.8l3.4-2.6M10.2 13.8l-3 3.8M14 13.6l3.6 3" /></g>,
-  orchestrator: <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="2" fill="currentColor" /><circle cx="19" cy="5" r="1.8" /><circle cx="19" cy="12" r="1.8" /><circle cx="19" cy="19" r="1.8" /><path d="M7 12h3c3 0 3-7 7-7M10 12h7M10 12c3 0 3 7 7 7" /></g>,
+// The product marks (assets/brand, built by dev/brand/make_brand.py). The small variants carry one bold shape instead of fine detail.
+const MARKS: Record<string, { full: string; small: string }> = {
+  hub: { full: hubMark, small: hubSmall },
+  brain: { full: brainMark, small: brainSmall },
+  orchestrator: { full: orchestratorMark, small: orchestratorSmall },
 };
-export function Emblem({ app, className = '' }: { app: string; className?: string }) {
-  return <span className={`emblem-tile ${className}`} aria-hidden="true"><svg viewBox="0 0 24 24">{GLYPHS[app] ?? GLYPHS.orchestrator}</svg></span>;
+export function Emblem({ app, className = '', small = false }: { app: string; className?: string; small?: boolean }) {
+  const mark = MARKS[app] ?? MARKS.hub;
+  return <span className={`emblem-tile brand ${className}`} aria-hidden="true"><img src={small ? mark.small : mark.full} alt="" draggable={false} /></span>;
 }
 export function Weave() {
   return <svg className="weave" viewBox="0 0 400 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true" fill="none" stroke="currentColor" style={{ color: 'var(--accent)' }}>
