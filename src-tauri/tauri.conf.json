@@ -10,7 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [{ "label": "main", "title": "Respected Hub", "width": 1200, "height": 850, "minWidth": 820, "minHeight": 600, "decorations": false }],
+    "windows": [{ "label": "main", "title": "Respected Hub", "width": 1200, "height": 850, "minWidth": 820, "minHeight": 600, "decorations": false, "backgroundColor": "#1b2838" }],
     "security": { "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; style-src 'self' 'unsafe-inline'; img-src 'self' data:" }
   },
   "bundle": { "active": false, "icon": [] }
