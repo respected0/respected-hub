@@ -5,14 +5,19 @@ import { ORCHESTRATOR_PAGES } from './workspaceModel.ts';
 
 interface AppPage { id: string; label: string; }
 export interface AppDef { id: string; name: string; tagline: string; rpp?: RppProduct; accent: 'blue' | 'violet'; pages: AppPage[]; }
-export type HubRoute = 'home' | 'apps' | 'discover' | 'connections' | 'activity' | 'settings';
+export type HubRoute = 'home' | 'discover' | 'apps' | 'settings';
+/** Settings holds what used to be separate pages: Hub settings, product status and the activity history. */
+export type SettingsTab = 'general' | 'status' | 'activity';
 export const HUB_NAV: { id: HubRoute; label: string }[] = [
   { id: 'home', label: 'Ana Sayfa' },
-  { id: 'apps', label: 'Uygulamalarım' },
   { id: 'discover', label: 'Keşfet' },
-  { id: 'connections', label: 'Ürün durumu' },
-  { id: 'activity', label: 'Etkinlik' },
+  { id: 'apps', label: 'Kütüphane' },
   { id: 'settings', label: 'Ayarlar' },
+];
+export const SETTINGS_TABS: { id: SettingsTab; label: string }[] = [
+  { id: 'general', label: 'Genel' },
+  { id: 'status', label: 'Ürün durumu' },
+  { id: 'activity', label: 'Etkinlik' },
 ];
 
 import type { LifecycleOverview } from './lifecycle.ts';

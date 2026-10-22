@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { ACTION_DONE, ACTION_LABEL, STATE_LABEL, availableActions, describeLifecycleError, lifecycleApply, lifecyclePlan } from '../lifecycle.ts';
 import type { JournalEntry, LifecycleAction, LifecyclePlan, ProductLifecycle } from '../lifecycle.ts';
 import { Icon } from '../../shared/ui.tsx';
+import { FACTS, phaseOf, type FactSubject } from '../installFacts.ts';
+import InstallFacts from './InstallFacts.tsx';
 
 const ICON: Record<LifecycleAction, string> = { install: 'download', update: 'sync', repair: 'wrench', uninstall: 'trash' };
 
@@ -52,6 +54,7 @@ export default function LifecycleControls({ name, lc, onChanged, onWizard, autoA
     {pending && <div className="panel-glass" role="group" aria-label="İşlem planı">
       <h3>{ACTION_LABEL[pending.action]}: {name}{pending.to_version && pending.action !== 'uninstall' ? ` → v${pending.to_version}` : ''}</h3>
       <ol className="plan-steps">{pending.plan.steps.map(step => <li key={step.id}>{step.summary}{!step.reversible && <em className="pill"> Geri alınamaz: {step.irreversible_reason}</em>}</li>)}</ol>
+      {pending.product in FACTS && <InstallFacts subject={pending.product as FactSubject} only={phaseOf(pending.action)} />}
       {pending.action === 'uninstall' && <label className="choice"><span><strong>Ayarlar ve çalışma verileri de silinsin</strong><small>Kapalıysa yeniden kurduğunda kaldığın yerden devam edersin. Not kasan hiçbir durumda silinmez.</small></span>
         <input type="checkbox" role="switch" checked={purge} disabled={busy} onChange={event => setPurge(event.target.checked)} /></label>}
       <div className="actions"><button className="cta" disabled={busy} onClick={() => void confirm()}>{busy ? 'Uygulanıyor…' : 'Onayla ve uygula'}</button><button disabled={busy} onClick={() => setPending(null)}>Vazgeç</button></div></div>}

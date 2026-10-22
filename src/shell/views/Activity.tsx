@@ -9,8 +9,8 @@ import { formatWhen, journalSentence } from '../lifecycle.ts';
 export default function Activity({ eco, go }: { eco: Ecosystem; go: Go }) {
   const running = eco.runs.filter(run => !terminal(run.status)).length;
   const nameOf = (id: string) => APPS.find(app => app.id === id)?.name ?? id;
-  return <div className="page">
-    <div className="page-head"><div><span className="eyebrow">Etkinlik</span><h1>Görev geçmişi</h1><p>Orchestrator motorunun gerçek görev kayıtları. {native && eco.runs.length > 0 ? `${eco.runs.length} kayıt${running ? `, ${running} tanesi sürüyor` : ''}.` : ''}</p></div><button onClick={eco.refresh}><Icon name="refresh" />Yenile</button></div>
+  return <div className="settings-stack">
+    <div className="section-head"><h2>Görev geçmişi{native && eco.runs.length > 0 ? <small className="muted"> · {eco.runs.length} kayıt{running ? `, ${running} tanesi sürüyor` : ''}</small> : null}</h2><button onClick={eco.refresh}><Icon name="refresh" />Yenile</button></div>
     {eco.journal.length > 0 && <section aria-label="Kurulum işlemleri"><div className="section-head" style={{ marginBottom: 14 }}><h2>Kurulum işlemleri</h2></div>
       <ol className="timeline" aria-label="Kurulum işlemleri">{eco.journal.map(entry => <li key={entry.operation_id} className={`tl-item tone-${entry.status === 'applied' ? 'ok' : entry.status === 'failed' ? 'error' : 'live'}`}>
         <span className="t">{journalSentence(entry, nameOf(entry.product))}</span>

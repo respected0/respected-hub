@@ -31,7 +31,7 @@ export default function Home({ eco, go }: { eco: Ecosystem; go: Go }) {
   const hero = {
     preview: { eyebrow: 'Tarayıcı önizlemesi', title: 'Gerçek durum masaüstünde görünür', body: 'Bu önizlemede ürünlere bağlanılamaz; hiçbir durum uydurulmaz. Gerçek ekosistem durumunu görmek için Tauri masaüstü uygulamasını çalıştır.', cta: null },
     loading: { eyebrow: 'Kontrol ediliyor', title: 'Ekosistem durumu okunuyor…', body: 'Ürünlerin sağlık bilgisi alınıyor.', cta: null },
-    'first-launch': { eyebrow: 'Hoş geldin', title: 'Respected ekosistemini birlikte kuralım', body: "Henüz çalışan bir ürün bulunamadı. Brain ve Orchestrator'ı Uygulamalarım sayfasından kurabilir veya Bağlantılar bölümünde mevcut bir kaynağı gösterebilirsin.", cta: { label: 'Ürünleri kur', run: () => go('apps') } },
+    'first-launch': { eyebrow: 'Hoş geldin', title: 'Respected ekosistemini birlikte kuralım', body: "Henüz çalışan bir ürün bulunamadı. Brain ve Orchestrator'ı Kütüphane sayfasından kurabilir veya Bağlantılar bölümünde mevcut bir kaynağı gösterebilirsin.", cta: { label: 'Ürünleri kur', run: () => go('apps') } },
     attention: { eyebrow: 'Dikkat gerekiyor', title: `${problems.length} ürün sağlıklı değil`, body: 'Ürünü açıp kontrolleri ve ayarları inceleyebilirsin.', cta: problems[0] ? { label: `${problems[0].name.replace('Respected ', '')} ürününü aç`, run: () => go({ app: problems[0].id, page: 'overview' }) } : null },
     active: { eyebrow: 'Ekosistem hazır', title: assistant ? `${assistant} ve ekosistemin hazır` : 'Ekosistemin hazır', body: running.length ? `${running.length} görev şu anda çalışıyor.` : 'Çalışan görev yok; yeni bir görevi Orchestrator çalışma alanından başlatabilirsin.', cta: running.length ? { label: 'Çalışan görevleri gör', run: () => go('activity') } : { label: 'Görev başlat', run: () => go({ app: 'orchestrator', page: 'runs' }) } },
   }[mode];
@@ -40,7 +40,7 @@ export default function Home({ eco, go }: { eco: Ecosystem; go: Go }) {
     <section className={`hero hero-${mode}`} aria-label="Durum özeti"><Weave />
       <div><span className="eyebrow">{hero.eyebrow}</span><h1>{hero.title}</h1><p>{hero.body}</p>
         <div className="hero-actions">{hero.cta && <button className="cta" onClick={hero.cta.run}>{hero.cta.label}<Icon name="arrow" /></button>}
-          {live && <button onClick={() => go('apps')}>Uygulamalarım</button>}</div></div>
+          {live && <button onClick={() => go('apps')}>Kütüphane</button>}</div></div>
       <div className="hero-art" aria-hidden="true"><span className="emblem-tile"><span className="mark" /></span></div>
     </section>
     {live && <section className="metrics" aria-label="Ekosistem özeti">
@@ -50,7 +50,7 @@ export default function Home({ eco, go }: { eco: Ecosystem; go: Go }) {
     </section>}
     <div className="home-grid">
       <div className="home-main">
-        <section aria-label="Uygulamalar"><div className="section-head" style={{ marginBottom: 14 }}><h2>Uygulamalarım</h2><button className="link-btn" onClick={() => go('apps')}>Tümünü yönet</button></div>
+        <section aria-label="Uygulamalar"><div className="section-head" style={{ marginBottom: 14 }}><h2>Kütüphane</h2><button className="link-btn" onClick={() => go('apps')}>Tümünü yönet</button></div>
           <div className="app-cards">{APPS.map(app => { const runtime = eco.apps[app.id]; const summary = runtime.summary;
             return <button key={app.id} className={`app-card accent-${app.accent}`} onClick={() => go({ app: app.id, page: 'overview' })}>
               <span className="app-card-art"><Weave /><Emblem app={app.id} />{summary.version && <span className="lib-state">v{summary.version}</span>}</span>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { loadSettings, native, saveSettings, type Settings } from '../../shared/api.ts';
+import InstallFacts from './InstallFacts.tsx';
 import { catalogRefresh, catalogSetChannel, describeLifecycleError, hubUpdateStatus, lifecycleStatus, type Channel, type HubUpdate } from '../lifecycle.ts';
 
 type SaveState = 'idle' | 'saving' | 'applied' | 'verified' | 'failed';
@@ -25,7 +26,7 @@ function Updates({ onCatalogChanged }: { onCatalogChanged?: () => void }) {
     setBusy(false);
     if (!reply.ok) { setMessage(describeLifecycleError(reply.error)); return; }
     setInfo(reply.result);
-    setMessage(reply.result.available ? `Respected Hub ${reply.result.available.version} hazır; üstteki bildirimden güncelleyebilirsiniz.` : 'Katalog güncel; ürün güncellemeleri Uygulamalarım’da görünür.');
+    setMessage(reply.result.available ? `Respected Hub ${reply.result.available.version} hazır; üstteki bildirimden güncelleyebilirsiniz.` : 'Katalog güncel; ürün güncellemeleri Kütüphane’de görünür.');
     onCatalogChanged?.();
   }
   async function choose(channel: Channel) {
@@ -78,9 +79,11 @@ export default function Settings({ onCatalogChanged }: { onCatalogChanged?: () =
     }
   }
 
-  return <div className="page">
-    <div className="section-head"><div><span className="eyebrow">Ayarlar</span><h1>Hub ayarları</h1></div></div>
+  return <div className="settings-stack">
     <Updates onCatalogChanged={onCatalogChanged} />
+    <section className="card settings-card" aria-labelledby="settings-facts"><h2 id="settings-facts">Hub bilgisayarınıza neler kurar?</h2>
+      <p>Hub ve ürünler ayrı programlardır; her birinin kurduğu, güncellediği ve sildiği şeyler Kütüphane'de ürün kartında da listelenir.</p>
+      <InstallFacts subject="hub" /></section>
     <section className="card settings-card" aria-labelledby="settings-sources">
       <h2 id="settings-sources">Kaynak arama yolları</h2>
       <p>Bu ayarlar Hub’ın geliştirme sürümünde ürün kaynaklarını nerede arayacağını belirler. Canlı AI yapılandırmalarına dokunmaz.</p>

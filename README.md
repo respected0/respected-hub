@@ -26,11 +26,9 @@ sürümün kurucusunu çalıştırmaktır; Hub güncellemesi doğrulanmış Hub 
 | Ekran | Ne var |
 |---|---|
 | Ana Sayfa | İlk açılışta karşılama; sonra ürünlerin gerçek durumu |
-| Uygulamalarım | Her ürünün kartı: durum, sürüm, Kur / Güncelle / Onar / Kaldır (planı gösterir, onayla çalışır) |
 | Keşfet | Katalogdaki ürünler |
-| Ürün durumu | Ürünlerin sağlık yanıtları |
-| Etkinlik | Hub'ın yaptığı kurulum işlemleri |
-| Ayarlar | Kanal (beta/kararlı), güncellemeleri denetle; geliştirme sürümünde kaynak bağlantıları |
+| Kütüphane | Her ürünün kartı: durum, sürüm, Kur / Güncelle / Onar / Kaldır (planı ve "neler değişecek" bilgisini gösterir, onayla çalışır); her kartta kurulumda, kullanırken, güncellemede ve kaldırmada neler olduğu |
+| Ayarlar | Üç sekme: **Genel** (kanal, güncellemeleri denetle, Hub'ın neler kurduğu; geliştirme sürümünde kaynak yolları), **Ürün durumu** (ürünlerin sağlık yanıtları), **Etkinlik** (kurulum işlemleri ve görev geçmişi) |
 | Brain | Genel bakış, Hafıza (arama, okuma, hızlı not, sabah özeti), Kurulum sihirbazı, Ayarlar (şemadan form, AI aracı bağlantıları, anlamsal arama) |
 | Orchestrator | Görevler, kampanyalar, kanıt, ajanlar; Ayarlar (şemadan form, Brain hafıza erişimi, AI araçlarına MCP kaydı) |
 
@@ -70,7 +68,7 @@ Hub'ı açtığı yolu dener; `--remote-catalog` indirme yolunu; `--real-semanti
 
 | Yol | İçerik |
 |---|---|
-| `src/shell/` | Uygulama çerçevesi, gezinme, Ana Sayfa, Uygulamalarım, Etkinlik, Ayarlar, kurulum düğmeleri |
+| `src/shell/` | Uygulama çerçevesi, gezinme, Ana Sayfa, Keşfet, Kütüphane, Ayarlar (Genel, Ürün durumu, Etkinlik sekmeleri), kurulum düğmeleri |
 | `src/products/brain/`, `src/products/orchestrator/` | Ürün çalışma alanları ve saf modelleri |
 | `src/shared/` | RPP istemcisi, yerel köprü, tasarım sistemi |
 | `src-tauri/src/hub/` | Kurulu ürünleri bulma, kurucuyu çalıştırma, açılış niyetleri |
