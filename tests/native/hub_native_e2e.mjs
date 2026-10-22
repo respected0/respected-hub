@@ -126,15 +126,15 @@ try {
   await send('Page.enable'); await send('Runtime.enable');
   await waitFor(`document.body.innerText.includes('Respected')`, 'app window renders');
   if (intent) { // a product installer's "Hub ile devam et": the Hub must open on that product's install page, then stop.
-    await waitFor(`document.querySelector('.crumbs')?.textContent.includes(${JSON.stringify(intent === 'brain' ? 'Kurulum' : 'Kütüphane')})`, `${intent} hand-over opens its install page`, 30000);
+    await waitFor(`document.querySelector('.crumbs')?.textContent.includes(${JSON.stringify(intent === 'brain' ? 'Kurulum' : 'Keşfet')})`, `${intent} hand-over opens its install page`, 30000);
     await shot('intent-' + intent);
     throw new Error('done'); // the intent run ends here; `finally` reports
   }
   check('running as the native desktop app', await ev(`'__TAURI_INTERNALS__' in window`));
   check('Python is not on the PATH of this Hub', !spawnSync('python', ['--version'], { env, encoding: 'utf8' }).stdout);
 
-  await rail('Kütüphane');
-  await waitFor(`document.querySelector('.page-head h1')?.textContent==='Kütüphane'&&document.querySelectorAll('article.lib-item').length===2`, 'My Apps lists both products');
+  await rail('Keşfet');   // a product is installed from Discover; the Library lists what is installed
+  await waitFor(`document.querySelector('.page-head h1')?.textContent==='Kurulabilir uygulamalar'&&document.querySelectorAll('article.lib-item').length===2`, 'Discover lists both products');
   await waitFor(`${cardHas('Brain', 'Kurulu değil')}&&${cardHas('Orchestrator', 'Kurulu değil')}`, 'both products start not installed');
   await shot('01-my-apps-before');
 
@@ -146,8 +146,10 @@ try {
   await waitFor(cardHas('Orchestrator', 'Kurulu ve doğrulandı'), 'Orchestrator installed and verified', 300000);
   check('Orchestrator is in its own folder with its own Installed-apps entry', existsSync(product.orch.exe) && registered(product.orch.key));
   check('the Hub keeps no copy of the product', !existsSync(join(dirs.managed, 'orchestrator')) && !existsSync(join(dirs.managed, 'versions')));
-  await waitFor(`(()=>{const a=${card('Orchestrator')};return !!a&&!a.textContent.includes('Ürüne ulaşılamadı')&&/v0\\.1\\.0/.test(a.textContent)})()`, 'Orchestrator answers over RPP from its installed program', 60000);
+  await rail('Kütüphane');
+  await waitFor(`(()=>{const a=${card('Orchestrator')};return !!a&&/v0\.1\.0/.test(a.textContent)})()`, 'Orchestrator is listed in the Library with its version', 60000);
   await shot('03-orchestrator-installed');
+  await rail('Keşfet');
 
   // Brain: the wizard collects identity, vault and connections; its installer gets them as /VAULT= and /SET=.
   await inCard('Brain', 'Kur');

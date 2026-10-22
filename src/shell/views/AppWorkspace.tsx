@@ -20,17 +20,15 @@ import { dataRootSummary, mountFor } from '../workspaceModel.ts';
 import { Emblem, Weave } from '../../shared/ui.tsx';
 import '../../products/orchestrator/views/settings.css';
 
+const BRAIN_ABOUT: Record<string, string> = { memory: 'Notlarda ara, oku, hızlı not ekle, sabah özetini gör.', setup: 'AI araç bağlantıları, MCP izinleri ve not kasası.', settings: 'Ürün ayarları, arama dizini ve anlamsal arama.' };
+
+// No health here: product health is shown once, in Settings > Product status.
 function Overview({ app, eco, go }: { app: AppDef; eco: Ecosystem; go: (page: string) => void }) {
-  const runtime = eco.apps[app.id]; const summary = runtime.summary;
   const [workers, setWorkers] = useState<Record<string, string[] | null> | null>(null);
   useEffect(() => { if (native && app.id === 'orchestrator') engine<{ workers?: Record<string, string[] | null> }>('status').then(s => setWorkers(s.workers ?? null)).catch(() => setWorkers(null)); }, [app.id]);
-  return <>
-    <section className="panel-glass"><div className="section-head"><h2>Durum</h2><span className={`badge-status ${summary.statusKind}`}>{summary.statusText}</span></div>
-      {summary.errorText && <p className="error" role="alert">{summary.errorText}</p>}
-      {summary.checks.length > 0 && <ul className="checks">{summary.checks.map((check, i) => <li key={i} className={check.ok ? 'ok' : 'bad'}><span aria-hidden="true">{check.ok ? '\u2713' : '\u2715'}</span> {check.name}{check.detail ? ` \u2014 ${check.detail}` : ''}</li>)}</ul>}
-      {summary.capabilities.length > 0 && <ul className="capabilities" aria-label="Yetenekler">{summary.capabilities.map(c => <li key={c}>{c}</li>)}</ul>}</section>
-    {app.id === 'orchestrator' && <OverviewPanel runs={eco.runs} workers={workers} onOpenTasks={() => go('runs')} />}
-  </>;
+  if (app.id === 'orchestrator') return <OverviewPanel runs={eco.runs} workers={workers} onOpenTasks={() => go('runs')} />;
+  return <section className="panel-glass"><h2>Neler yapabilirsiniz?</h2>
+    <div className="app-cards">{app.pages.filter(page => BRAIN_ABOUT[page.id]).map(page => <button key={page.id} className="app-card" onClick={() => go(page.id)}><span className="app-card-body"><strong>{page.label}</strong><small>{BRAIN_ABOUT[page.id]}</small></span></button>)}</div></section>;
 }
 
 // Real engine data only; both calls degrade to honest empty states on failure.
@@ -95,7 +93,7 @@ function SettingsPage({ app }: { app: AppDef }) {
   </>;
 }
 
-export default function AppWorkspace({ appId, page, eco, go }: { appId: string; page: string; eco: Ecosystem; go: (page: string) => void }) {
+export default function AppWorkspace({ appId, page, eco, go, onStatus }: { appId: string; page: string; eco: Ecosystem; go: (page: string) => void; onStatus: () => void }) {
   const app = APPS.find(item => item.id === appId);
   if (!app) return <div className="page"><p className="error">Uygulama bulunamadı.</p></div>;
   const view = mountFor(app.id, page);
@@ -103,7 +101,7 @@ export default function AppWorkspace({ appId, page, eco, go }: { appId: string; 
   return <div className={`page accent-${app.accent}`}>
     <header className="ws-banner"><Weave /><Emblem app={app.id} />
       <div className="ws-title"><span className="eyebrow">Çalışma alanı</span><h1>{app.name}</h1><p>{app.tagline}</p>
-        <span className={`badge-status ${runtime.loading ? 'unreachable' : summary.statusKind}`}><span className={`dot ${runtime.loading ? '' : summary.statusKind}`} aria-hidden="true" />{runtime.loading ? 'Kontrol ediliyor…' : summary.statusText}{summary.version ? ` · v${summary.version}` : ''}</span></div>
+        <span className="ws-meta">{summary.version ? <span className="ver">v{summary.version}</span> : null}{!runtime.loading && summary.statusKind !== 'ok' && <button className="link-btn" onClick={onStatus}>Ürün bir sorun bildiriyor: Ürün durumunu aç</button>}</span></div>
       <div className="ws-tabs" role="tablist" aria-label={`${app.name} bölümleri`}>{app.pages.map(item => <button key={item.id} role="tab" aria-selected={view === mountFor(app.id, item.id)} className="tab" onClick={() => go(item.id)}>{item.label}</button>)}</div>
     </header>
     {view === 'overview' && <Overview app={app} eco={eco} go={go} />}
