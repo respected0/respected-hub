@@ -24,7 +24,7 @@ pub async fn rpp_request(app: tauri::AppHandle, product: String, op: String, pay
 #[tauri::command]
 pub async fn product_status(app: tauri::AppHandle) -> Result<Value, String> {
     let settings = resolved_settings(&app)?;
-    let brain = settings.brain_exe.as_ref().map_or(false, |exe| exe.is_file()) || (trust::dev_enabled() && settings.brain_root.join("src/respectedbrain/__init__.py").is_file());
+    let brain = settings.brain_exe.as_ref().map_or(false, |exe| exe.is_file()) || (trust::dev_enabled() && settings.brain_root.join("src/respected_brain/__init__.py").is_file());
     let orchestrator = settings.orchestrator_exe.as_ref().map_or(false, |exe| exe.is_file()) || (trust::dev_enabled() && settings.orchestrator_root.join("src/respected_orchestrator/__main__.py").is_file());
     let cli = rpp::orchestrator_cli_line(&settings);
     let engine = tauri::async_runtime::spawn_blocking(move || call_engine(settings, "status", None, None)).await.map_err(|e| e.to_string())?;

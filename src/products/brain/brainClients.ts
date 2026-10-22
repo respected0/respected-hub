@@ -1,4 +1,4 @@
-// AI clients SecondBrain can connect to. `hooks`: captures sessions and gets the memory rules/skills (Sources);
+// AI clients Brain can connect to. `hooks`: captures sessions and gets the memory rules/skills (Sources);
 // `mcp`: gets the memory MCP server entry (Permissions). The product validates every id again.
 interface ClientDef { id: string; label: string; hooks: boolean; mcp: boolean; }
 export const CLIENTS: ClientDef[] = [
@@ -33,14 +33,14 @@ export function fromCurrent(current: Record<string, unknown>): Selection {
   return { sources: list('global', 'clients', 'hooks'), mcp: list('mcp', 'mcp_clients', 'mcp'), schedule: current.schedule === true, shortcut: current.shortcut === true };
 }
 
-/** The same choice as SecondBrain settings (`integrations.*`), what its installer (`/SET=`) and `settings.apply` take. */
+/** The same choice as Brain settings (`integrations.*`), what its installer (`/SET=`) and `settings.apply` take. */
 export function toSettings(selection: Selection): Record<string, boolean | string> {
   return { 'integrations.global': selection.sources.length > 0, 'integrations.clients': [...selection.sources].sort().join(','),
     'integrations.mcp': selection.mcp.length > 0, 'integrations.mcp_clients': [...selection.mcp].sort().join(','),
     'integrations.schedule': selection.schedule, 'integrations.shortcut': selection.shortcut };
 }
 
-/** Selection from SecondBrain's settings readback (an empty client list means "every client"). */
+/** Selection from Brain's settings readback (an empty client list means "every client"). */
 export function fromSettings(settings: Record<string, unknown>): Selection {
   const list = (value: unknown) => typeof value === 'string' && value ? value.split(',').filter(Boolean) : undefined;
   return fromCurrent({ global: settings['integrations.global'], mcp: settings['integrations.mcp'], schedule: settings['integrations.schedule'],

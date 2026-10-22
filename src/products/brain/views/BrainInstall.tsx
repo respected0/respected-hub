@@ -9,8 +9,8 @@ import ClientPicker from './ClientPicker.tsx';
 const STEPS = ['Kimlik', 'Hafıza', 'Kaynaklar', 'İzinler', 'Onay'];
 const PROVIDERS: [string, string][] = [['auto', 'Otomatik (kurulu olanı seç)'], ['claude', 'Claude'], ['codex', 'Codex'], ['gemini', 'Gemini'], ['antigravity', 'Antigravity'], ['cursor', 'Cursor']];
 
-// First installation of SecondBrain through its own installer: Identity -> Memory -> Sources -> Permissions -> Finish.
-// Every answer is one of SecondBrain's own settings, handed to its installer exactly as a script would (`/VAULT=`, `/SET=key=value`).
+// First installation of Brain through its own installer: Identity -> Memory -> Sources -> Permissions -> Finish.
+// Every answer is one of Brain's own settings, handed to its installer exactly as a script would (`/VAULT=`, `/SET=key=value`).
 export default function BrainInstall({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
@@ -37,7 +37,7 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
     if (step < 4 || !vaultPath) return;
     let active = true;
     setPlanning(true); setPlanError('');
-    void lifecyclePlan('secondbrain', 'install', params).then(reply => {
+    void lifecyclePlan('brain', 'install', params).then(reply => {
       if (!active) return;
       setPlanning(false);
       if (reply.ok) setPlan(reply.result); else { setPlan(null); setPlanError(describeLifecycleError(reply.error)); }
@@ -53,7 +53,7 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
 
   async function install() {
     setBusy(true); setError('');
-    const reply = await lifecycleApply('secondbrain', 'install', params);
+    const reply = await lifecycleApply('brain', 'install', params);
     setBusy(false);
     if (!reply.ok) { setError(describeLifecycleError(reply.error)); return; }
     onDone();
@@ -65,8 +65,8 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
 
   return <div className="wizard panel-glass">
     <ol className="steps" aria-label="Kurulum adımları">{STEPS.map((label, index) => <li key={label} className={index === step ? 'current' : index < step ? 'past' : ''} aria-current={index === step ? 'step' : undefined}><span>{index + 1}</span>{label}</li>)}</ol>
-    {step === 0 && <div className="step-body"><h2>SecondBrain'i kuralım</h2>
-      <p>Hub, SecondBrain'in kendi imzalı kurucusunu çalıştırır ve buradaki cevapları ona iletir: program, not kasan ve istediğin AI araç bağlantıları kurulur. Aynı ayarları sonradan Hub'dan, kurucudan ya da "respectedbrain config" ile değiştirebilirsin.</p>
+    {step === 0 && <div className="step-body"><h2>Brain'i kuralım</h2>
+      <p>Hub, Brain'in kendi imzalı kurucusunu çalıştırır ve buradaki cevapları ona iletir: program, not kasan ve istediğin AI araç bağlantıları kurulur. Aynı ayarları sonradan Hub'dan, kurucudan ya da "respected-brain config" ile değiştirebilirsin.</p>
       <label>Adın <small>İsteğe bağlı. Kasa şablonundaki kişiselleştirme için kullanılır.</small><input value={name} maxLength={40} placeholder="ör. Ayşe" onChange={event => setName(event.target.value)} /></label>
       <label>Asistanının adı <small>İsteğe bağlı. Kasadaki asistan kimliği ve AI araçlarına verilen hafıza araçları bu adı kullanır (ör. Jarvis).</small><input value={assistant} maxLength={40} placeholder="ör. Jarvis" onChange={event => setAssistant(event.target.value)} /></label>
       <label>Kısa tanıtım <small>İsteğe bağlı. Kasa şablonunda seni tanıtan satıra yazılır.</small><input value={bio} maxLength={200} placeholder="ör. Yazılım geliştirici" onChange={event => setBio(event.target.value)} /></label></div>}
@@ -84,7 +84,7 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
     {step === 2 && <div className="step-body"><h2>Kaynaklar</h2>
       <p className="muted">Hangi AI araçlarının oturumları hafızaya yakalansın? Seçtiğin araçlara hafıza kuralları ve becerileri eklenir. Hepsi varsayılan olarak kapalıdır; başka araçların ve senin ayarların korunur.</p>
       <ClientPicker kind="hooks" selected={selection.sources} detected={null} onChange={sources => setSelection({ ...selection, sources })} />
-      <p className="muted">Yalnızca bu bilgisayarda bulunan araçlara yazılır; kurulumdan sonra SecondBrain › Ayarlar'da tam olarak neyin değişeceğini görerek düzenleyebilirsin.</p></div>}
+      <p className="muted">Yalnızca bu bilgisayarda bulunan araçlara yazılır; kurulumdan sonra Brain › Ayarlar'da tam olarak neyin değişeceğini görerek düzenleyebilirsin.</p></div>}
     {step === 3 && <div className="step-body"><h2>İzinler</h2>
       <p className="muted">Hangi araçlar hafızayı MCP sunucusu olarak kullanabilsin? Her izin istediğin zaman Hub'dan geri alınabilir.</p>
       <ClientPicker kind="mcp" selected={selection.mcp} detected={null} onChange={mcp => setSelection({ ...selection, mcp })} />
@@ -101,7 +101,7 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
         <li><span>Sürüm</span><strong>{plan?.to_version ? `v${plan.to_version}` : '—'}</strong></li></ul>
       {planning && <p className="muted" role="status">Kurucu indiriliyor ve doğrulanıyor…</p>}
       {planError ? <p className="error" role="alert">{planError}</p> : <ol className="plan-steps">{plan?.plan.steps.map(item => <li key={item.id}>{item.summary}{!item.reversible && <em className="pill"> {item.irreversible_reason}</em>}</li>)}</ol>}
-      <p className="muted">Kurulum SecondBrain'in kendi kurucusuyla yapılır ve 1-2 dakika sürebilir. Hata olursa ürün kendi değişikliklerini geri alır.</p></div>}
+      <p className="muted">Kurulum Brain'in kendi kurucusuyla yapılır ve 1-2 dakika sürebilir. Hata olursa ürün kendi değişikliklerini geri alır.</p></div>}
     {error && <p className="error" role="alert">{error}</p>}
     <div className="wizard-actions">
       <button type="button" disabled={step === 0 || busy} onClick={() => setStep(step - 1)}>Geri</button>

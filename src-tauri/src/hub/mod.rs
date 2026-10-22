@@ -21,7 +21,7 @@ pub fn standard_roots() -> lifecycle::Roots {
 /// Point settings at the installed products' own programs.
 pub fn overlay(settings: &mut Settings) {
     if let Some(i) = installed::product("orchestrator").and_then(|p| p.installed()) { settings.orchestrator_exe = Some(i.exe); }
-    if let Some(i) = installed::product("secondbrain").and_then(|p| p.installed()) { settings.brain_exe = Some(i.exe); }
+    if let Some(i) = installed::product("brain").and_then(|p| p.installed()) { settings.brain_exe = Some(i.exe); }
 }
 
 /// The product's own word on its installation (its manifest): a damaged program reports `repair-needed`.

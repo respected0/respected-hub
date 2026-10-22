@@ -23,7 +23,7 @@ export function visibleApps(lifecycle: LifecycleOverview | null, native: boolean
 }
 
 export const APPS: AppDef[] = [
-  { id: 'secondbrain', name: 'Respected SecondBrain', rpp: 'secondbrain', accent: 'violet',
+  { id: 'brain', name: 'Respected Brain', rpp: 'brain', accent: 'violet',
     tagline: 'Ajanlar de\u011fi\u015fir; ortak haf\u0131za kasan\u0131zda kal\u0131r.',
     pages: [{ id: 'overview', label: 'Genel bak\u0131\u015f' }, { id: 'memory', label: 'Hafıza' }, { id: 'setup', label: 'Kurulum' }, { id: 'settings', label: 'Ayarlar' }] },
   { id: 'orchestrator', name: 'Respected Orchestrator', rpp: 'orchestrator', accent: 'blue',

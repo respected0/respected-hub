@@ -1,6 +1,6 @@
 ﻿"""Build a signed catalog bundle of a product's own Windows installer.
 
-    python release/tools/build/build_bundle.py orchestrator|secondbrain [--out DIR] [--key FILE] [--force]
+    python release/tools/build/build_bundle.py orchestrator|brain [--out DIR] [--key FILE] [--force]
 
 The product's own tool (`packaging/build_installer.py` in its repository) builds `dist/<Product>-Windows-Setup.exe`; it is
 reused while no source or packaging file is newer (``--force`` always rebuilds). The bundle is
@@ -19,7 +19,7 @@ from common.ecosystem_root import ECO
 # product -> (repository, installer file, distribution folder its build leaves beside it)
 PRODUCTS = {
     "orchestrator": ("respected-orchestrator", "RespectedOrchestrator-Windows-Setup.exe", "RespectedOrchestrator"),
-    "secondbrain": ("respected-secondbrain", "RespectedSecondBrain-Windows-Setup.exe", "RespectedBrain"),
+    "brain": ("respected-brain", "RespectedBrain-Windows-Setup.exe", "RespectedBrain"),
 }
 
 

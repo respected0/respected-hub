@@ -7,7 +7,7 @@ type SaveState = 'idle' | 'saving' | 'applied' | 'verified' | 'failed';
 const fields: { key: keyof Settings; label: string; help: string }[] = [
   { key: 'python', label: 'Python programı', help: 'Geliştirme kaynaklarını çalıştırmak için kullanılır.' },
   { key: 'orchestrator_root', label: 'Orchestrator kaynak klasörü', help: 'Hub’ın geliştirme sürümünde Orchestrator’ı arayacağı klasör.' },
-  { key: 'brain_root', label: 'SecondBrain kaynak klasörü', help: 'Hub’ın geliştirme sürümünde SecondBrain’ı arayacağı klasör.' },
+  { key: 'brain_root', label: 'Brain kaynak klasörü', help: 'Hub’ın geliştirme sürümünde Brain’ı arayacağı klasör.' },
   { key: 'data_root', label: 'Görev verisi klasörü', help: 'Orchestrator görevlerinin durumlarını sakladığı klasör.' },
 ];
 

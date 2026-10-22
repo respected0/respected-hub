@@ -16,9 +16,9 @@ mod tests {
     #[test]
     fn only_known_products_and_actions_become_an_intent() {
         let args = |list: &[&str]| list.iter().map(|s| s.to_string()).collect::<Vec<_>>().into_iter();
-        assert_eq!(intent(args(&["hub.exe", "--install=secondbrain"])), Some(json!({ "action": "install", "product": "secondbrain" })));
+        assert_eq!(intent(args(&["hub.exe", "--install=brain"])), Some(json!({ "action": "install", "product": "brain" })));
         assert_eq!(intent(args(&["hub.exe", "--manage=orchestrator"])), Some(json!({ "action": "manage", "product": "orchestrator" })));
-        assert_eq!(intent(args(&["hub.exe", "--uninstall=secondbrain"])), None, "removal is the product's own uninstaller's");
+        assert_eq!(intent(args(&["hub.exe", "--uninstall=brain"])), None, "removal is the product's own uninstaller's");
         assert_eq!(intent(args(&["hub.exe", "--install=notes"])), None);
     }
 }

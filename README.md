@@ -1,9 +1,9 @@
 # Respected Hub
 
-Respected ekosisteminin masaüstü uygulaması (Tauri 2 + Rust + React/TypeScript). İmzalı katalogdan **SecondBrain** ve
+Respected ekosisteminin masaüstü uygulaması (Tauri 2 + Rust + React/TypeScript). İmzalı katalogdan **Brain** ve
 **Orchestrator**'ın kendi kurucularını indirir ve çalıştırır (kur, güncelle, onar, kaldır); ürünlerin ayarlarını,
 AI araçlarıyla bağlantılarını ve birbirleriyle bağlantısını görsel olarak yönetir; her ürüne bir çalışma alanı verir
-(Orchestrator görevleri ve kanıtları, SecondBrain hafıza sayfası).
+(Orchestrator görevleri ve kanıtları, Brain hafıza sayfası).
 
 Hub yalnızca kolaylıktır. Yaptığı her işin Hub'sız bir karşılığı vardır (kurucuyu çalıştırmak ya da ürünün komutu) ve
 Hub o karşılığı çağırır. Ürün hakkında hiçbir şey saklamaz: kurulu olanı, sürümü, ayarları ve sağlığı her seferinde
@@ -31,8 +31,8 @@ sürümün kurucusunu çalıştırmaktır; Hub güncellemesi doğrulanmış Hub 
 | Ürün durumu | Ürünlerin sağlık yanıtları |
 | Etkinlik | Hub'ın yaptığı kurulum işlemleri |
 | Ayarlar | Kanal (beta/kararlı), güncellemeleri denetle; geliştirme sürümünde kaynak bağlantıları |
-| SecondBrain | Genel bakış, Hafıza (arama, okuma, hızlı not, sabah özeti), Kurulum sihirbazı, Ayarlar (şemadan form, AI aracı bağlantıları, anlamsal arama) |
-| Orchestrator | Görevler, kampanyalar, kanıt, ajanlar; Ayarlar (şemadan form, SecondBrain hafıza erişimi, AI araçlarına MCP kaydı) |
+| Brain | Genel bakış, Hafıza (arama, okuma, hızlı not, sabah özeti), Kurulum sihirbazı, Ayarlar (şemadan form, AI aracı bağlantıları, anlamsal arama) |
+| Orchestrator | Görevler, kampanyalar, kanıt, ajanlar; Ayarlar (şemadan form, Brain hafıza erişimi, AI araçlarına MCP kaydı) |
 
 ## Geliştirme
 
@@ -63,7 +63,7 @@ node tests/native/hub_native_e2e.mjs src-tauri/target/debug/respected-hub.exe
 derlenmiş Hub'ı WebView2'nin hata ayıklama portundan tıklayarak sürer (PATH'te Python yokken): iki ürünü kurar, sihirbazı
 doldurur, ayar değiştirir, bağlantıları açıp kapatır, not yakalar ve arar, bozulmuş programı onarır, kaldırır. Ürünler
 sahte bir kullanıcı klasörüne kurulur; gerçek makinede yalnızca Yüklü uygulamalar girdisi oluşur ve sonunda silinir.
-Rapor ve ekran görüntüleri `.build-cache/hub-native/` altına yazılır. `--intent=secondbrain|orchestrator` ürün kurucusunun
+Rapor ve ekran görüntüleri `.build-cache/hub-native/` altına yazılır. `--intent=brain|orchestrator` ürün kurucusunun
 Hub'ı açtığı yolu dener; `--remote-catalog` indirme yolunu; `--real-semantic` anlamsal aramanın gerçek indirmesini.
 
 ## Düzen
@@ -71,7 +71,7 @@ Hub'ı açtığı yolu dener; `--remote-catalog` indirme yolunu; `--real-semanti
 | Yol | İçerik |
 |---|---|
 | `src/shell/` | Uygulama çerçevesi, gezinme, Ana Sayfa, Uygulamalarım, Etkinlik, Ayarlar, kurulum düğmeleri |
-| `src/products/secondbrain/`, `src/products/orchestrator/` | Ürün çalışma alanları ve saf modelleri |
+| `src/products/brain/`, `src/products/orchestrator/` | Ürün çalışma alanları ve saf modelleri |
 | `src/shared/` | RPP istemcisi, yerel köprü, tasarım sistemi |
 | `src-tauri/src/hub/` | Kurulu ürünleri bulma, kurucuyu çalıştırma, açılış niyetleri |
 | `src-tauri/src/lifecycle/` | Katalog, indirme, paket imzası, işlem günlüğü |

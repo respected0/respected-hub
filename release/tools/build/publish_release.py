@@ -1,6 +1,6 @@
 """Build, sign and publish a Respected release on GitHub Releases (the Hub downloads products from there).
 
-    python publish_release.py build --key VAULT [--only hub,secondbrain,orchestrator] [--skip-hub-build]
+    python publish_release.py build --key VAULT [--only hub,brain,orchestrator] [--skip-hub-build]
         -> <ecosystem>/dist/release/: signed product archives (each holds the product's own installer), the installers, entries.json
     python publish_release.py catalog --key VAULT [--channel beta|stable] [--base FILE|URL] [--min-hub VERSION]
         -> dist/release/catalog.json + catalog.json.sig, merged into the index that is published now
@@ -10,7 +10,7 @@
 
 Layout on GitHub (the Hub reads only the catalog URL; everything else is named by the signed catalog):
     respected0/respected-hub          tag v<hub version>   RespectedHub-Windows-Setup.exe
-    respected0/respected-secondbrain  tag v<version>       secondbrain-<version>.zip, RespectedSecondBrain-Windows-Setup.exe
+    respected0/respected-brain  tag v<version>       brain-<version>.zip, RespectedBrain-Windows-Setup.exe
     respected0/respected-orchestrator tag v<version>       orchestrator-<version>.zip, RespectedOrchestrator-Windows-Setup.exe
     respected0/respected-hub          tag catalog          catalog.json + catalog.json.sig (replaced on every release)
 An archive is one signed bundle folder (bundle.json + payload/<Product>-Windows-Setup.exe) zipped at its root; the same installer is
@@ -31,8 +31,8 @@ STAGE = ECO / ".build-cache" / "release-bundles"
 OWNER = "respected0"
 INDEX_URL = f"https://github.com/{OWNER}/respected-hub/releases/download/catalog/catalog.json"
 DOMAIN = b"respected-catalog-v1\n"
-REPOS = {"hub": "respected-hub", "secondbrain": "respected-secondbrain", "orchestrator": "respected-orchestrator"}
-PRODUCT_INSTALLERS = {"hub": "RespectedHub", "secondbrain": "RespectedSecondBrain", "orchestrator": "RespectedOrchestrator"}
+REPOS = {"hub": "respected-hub", "brain": "respected-brain", "orchestrator": "respected-orchestrator"}
+PRODUCT_INSTALLERS = {"hub": "RespectedHub", "brain": "RespectedBrain", "orchestrator": "RespectedOrchestrator"}
 
 
 def run(command, **kwargs):
@@ -52,7 +52,7 @@ def sha256(path: Path) -> str:
 
 def installer_path(name: str) -> Path:
     """Where `name`'s Windows installer was built: the Hub's in <ecosystem>/dist, a product's in its own repository's dist."""
-    repo = {"RespectedHub": ECO / "dist", "RespectedSecondBrain": ECO / REPOS["secondbrain"] / "dist", "RespectedOrchestrator": ECO / REPOS["orchestrator"] / "dist"}[name]
+    repo = {"RespectedHub": ECO / "dist", "RespectedBrain": ECO / REPOS["brain"] / "dist", "RespectedOrchestrator": ECO / REPOS["orchestrator"] / "dist"}[name]
     return repo / f"{name}-Windows-Setup.exe"
 
 
@@ -98,12 +98,12 @@ def build(args) -> None:
             run(py + [str(TOOLS / "build" / "build_hub_installer.py"), "--release-key", str(args.key)])
         shutil.copyfile(installer_path("RespectedHub"), OUT / "RespectedHub-Windows-Setup.exe")
         entries["hub"] = entry(OUT / "RespectedHub-Windows-Setup.exe", source_version("hub"), REPOS["hub"], hub_tag)
-    for product in ("orchestrator", "secondbrain"):
+    for product in ("orchestrator", "brain"):
         if product not in only:
             continue
         # a release is always built from the current source (--force): never a cached build of older code
         run(py + [str(TOOLS / "build" / "build_bundle.py"), product, "--force", "--out", str(STAGE), *key])
-        name = {"orchestrator": "RespectedOrchestrator", "secondbrain": "RespectedSecondBrain"}[product]
+        name = {"orchestrator": "RespectedOrchestrator", "brain": "RespectedBrain"}[product]
         shutil.copyfile(installer_path(name), OUT / f"{name}-Windows-Setup.exe")
         bundle = next(STAGE.glob(f"{product}-*"))
         archive = OUT / f"{product}-{bundle_version(bundle)}.zip"

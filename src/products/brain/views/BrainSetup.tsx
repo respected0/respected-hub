@@ -6,8 +6,8 @@ import type { RppResponse, SettingsSchema } from '../../../shared/rpp.ts';
 import { changedSettings, formFromSchema, parseFieldValue, verifyReadback } from '../../../shared/productsModel.ts';
 import type { FormField } from '../../../shared/productsModel.ts';
 
-// Installed SecondBrain's settings, drawn from its own schema (labels and help come from the product). The same settings
-// exist without the Hub: `respectedbrain config set <key>=<value>` or the installer's "Ayarları değiştir".
+// Installed Brain's settings, drawn from its own schema (labels and help come from the product). The same settings
+// exist without the Hub: `respected-brain config set <key>=<value>` or the installer's "Ayarları değiştir".
 const GROUPS: [string, (key: string) => boolean][] = [
   ['Kimlik', key => ['user_name', 'assistant_name', 'user_bio'].includes(key)],
   ['Hafıza', key => !key.startsWith('integrations.') && !['user_name', 'assistant_name', 'user_bio'].includes(key)],
@@ -34,7 +34,7 @@ export default function BrainSetup({ onDone }: { onDone: () => void }) {
     let active = true;
     (async () => {
       try {
-        const [schemaResponse, readback, manifest] = await Promise.all([rppCall('secondbrain', 'settings.schema'), rppCall('secondbrain', 'settings.readback'), rppCall('secondbrain', 'manifest')]);
+        const [schemaResponse, readback, manifest] = await Promise.all([rppCall('brain', 'settings.schema'), rppCall('brain', 'settings.readback'), rppCall('brain', 'manifest')]);
         if (!active) return;
         if (manifest.ok) setVault(((manifest.result as { roots?: { vault?: string | null } }).roots?.vault) ?? null);
         if (!schemaResponse.ok || !readback.ok) { setError(failure(schemaResponse) || failure(readback)); setState('failed'); return; }
@@ -54,15 +54,15 @@ export default function BrainSetup({ onDone }: { onDone: () => void }) {
   async function apply() {
     setBusy(true); setError(''); setDone('');
     try {
-      const applied = await rppCall('secondbrain', 'settings.apply', { settings: pending }, crypto.randomUUID());
+      const applied = await rppCall('brain', 'settings.apply', { settings: pending }, crypto.randomUUID());
       if (!applied.ok) { setError(failure(applied)); return; }
-      const readback = await rppCall('secondbrain', 'settings.readback');
+      const readback = await rppCall('brain', 'settings.readback');
       if (!readback.ok) { setError(`Uygulandı ama geri okunamadı. ${failure(readback)}`); return; }
       const current = (readback.result as { settings?: Record<string, unknown> }).settings ?? {};
       const verdict = verifyReadback(pending, current);
       if (!verdict.verified) { setError(`Geri okuma farklı: ${verdict.mismatches.map(m => m.key).join(', ')}`); return; }
       setOriginal(current); setFields(formFromSchema(schema, current));
-      setDone('Ayarlar SecondBrain tarafından kaydedildi ve geri okunarak doğrulandı.');
+      setDone('Ayarlar Brain tarafından kaydedildi ve geri okunarak doğrulandı.');
       onDone();
     } catch (reason) { setError(String(reason)); } finally { setBusy(false); }
   }
@@ -76,11 +76,11 @@ export default function BrainSetup({ onDone }: { onDone: () => void }) {
         : <input value={String(item.value)} onChange={event => set(item.key, event.target.value)} />}
   </label>;
 
-  if (state === 'loading') return <div className="panel-glass"><p className="muted">Ayarlar SecondBrain'den okunuyor…</p></div>;
-  if (state === 'failed') return <div className="panel-glass"><p className="error" role="alert">{error}</p><p className="muted">SecondBrain'e ulaşılamadı; kurulu değilse Uygulamalarım'dan kurun, kuruluysa onarın.</p></div>;
+  if (state === 'loading') return <div className="panel-glass"><p className="muted">Ayarlar Brain'den okunuyor…</p></div>;
+  if (state === 'failed') return <div className="panel-glass"><p className="error" role="alert">{error}</p><p className="muted">Brain'e ulaşılamadı; kurulu değilse Uygulamalarım'dan kurun, kuruluysa onarın.</p></div>;
 
   return <div className="panel-glass">
-    <div className="step-body"><h2>SecondBrain ayarları</h2>
+    <div className="step-body"><h2>Brain ayarları</h2>
       <p className="muted">Not kasası: {vault ? <strong className="mono">{vault}</strong> : 'kayıtlı değil'} <small>(kasayı kurucu oluşturur; Hub kasaya dokunmaz)</small></p>
       {GROUPS.map(([title, inGroup]) => <section key={title}><h3>{title}</h3>{fields.filter(item => inGroup(item.key)).map(control)}</section>)}
       {error && <p className="error" role="alert">{error}</p>}

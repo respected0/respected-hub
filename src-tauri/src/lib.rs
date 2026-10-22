@@ -7,8 +7,8 @@ pub mod rpp;
 pub mod settings;
 pub mod trust;
 
-// product modules keep their short paths (crate::secondbrain, respected_hub_lib::orchestrator, ...)
-pub use products::{orchestrator, secondbrain};
+// product modules keep their short paths (crate::brain, respected_hub_lib::orchestrator, ...)
+pub use products::{orchestrator, brain};
 pub use orchestrator::{call_engine, list_campaigns, valid_campaign_id};
 pub use hub::{hub_apply, hub_plan, hub_status, overlay, standard_roots};
 pub use settings::{get_settings, Settings};

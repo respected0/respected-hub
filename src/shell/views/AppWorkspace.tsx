@@ -4,14 +4,14 @@ import { engine, loadSettings, native, type Run, type Settings } from '../../sha
 import { listCampaigns } from '../../products/orchestrator/campaigns.ts';
 import { rppTry } from '../../shared/productClient.ts';
 import type { Ecosystem } from '../useEcosystem.ts';
-import BrainSetup from '../../products/secondbrain/views/BrainSetup.tsx';
-import BrainInstall from '../../products/secondbrain/views/BrainInstall.tsx';
+import BrainSetup from '../../products/brain/views/BrainSetup.tsx';
+import BrainInstall from '../../products/brain/views/BrainInstall.tsx';
 import Tasks from '../../products/orchestrator/views/Tasks.tsx';
 import { ProductPanel } from './Products.tsx';
 import Campaigns from '../../products/orchestrator/views/Campaigns.tsx';
-import MemoryAccess from '../../products/secondbrain/views/MemoryAccess.tsx';
-import MemoryIndex from '../../products/secondbrain/views/MemoryIndex.tsx';
-import MemoryWorkspace from '../../products/secondbrain/views/MemoryWorkspace.tsx';
+import MemoryAccess from '../../products/brain/views/MemoryAccess.tsx';
+import MemoryIndex from '../../products/brain/views/MemoryIndex.tsx';
+import MemoryWorkspace from '../../products/brain/views/MemoryWorkspace.tsx';
 import OrchestratorMcp from '../../products/orchestrator/views/OrchestratorMcp.tsx';
 import OverviewPanel from '../../products/orchestrator/views/OverviewPanel.tsx';
 import AgentsPanel from '../../products/orchestrator/views/AgentsPanel.tsx';
@@ -88,7 +88,7 @@ function DataRootSection() {
 function SettingsPage({ app }: { app: AppDef }) {
   return <>
     {app.rpp && <ProductPanel id={app.rpp} />}
-    {app.id === 'secondbrain' && <MemoryIndex />}
+    {app.id === 'brain' && <MemoryIndex />}
     {app.id === 'orchestrator' && <MemoryAccess />}
     {app.id === 'orchestrator' && <OrchestratorMcp />}
     {app.id === 'orchestrator' && <DataRootSection />}
@@ -107,7 +107,7 @@ export default function AppWorkspace({ appId, page, eco, go }: { appId: string; 
       <div className="ws-tabs" role="tablist" aria-label={`${app.name} bölümleri`}>{app.pages.map(item => <button key={item.id} role="tab" aria-selected={view === mountFor(app.id, item.id)} className="tab" onClick={() => go(item.id)}>{item.label}</button>)}</div>
     </header>
     {view === 'overview' && <Overview app={app} eco={eco} go={go} />}
-    {view === 'setup' && (() => { const lc = eco.lifecycle?.products.find(item => item?.product === 'secondbrain'); return lc?.install_state === 'absent' && lc.available
+    {view === 'setup' && (() => { const lc = eco.lifecycle?.products.find(item => item?.product === 'brain'); return lc?.install_state === 'absent' && lc.available
       ? <BrainInstall onDone={eco.refresh} />
       : <BrainSetup onDone={eco.refresh} />; })()}
     {view === 'runs' && <Tasks />}

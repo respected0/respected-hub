@@ -9,12 +9,12 @@ test('every orchestrator page id has a mount', () => {
   }
 });
 
-test('secondbrain mounts stay overview/setup/settings', () => {
-  assert.equal(mountFor('secondbrain', 'overview'), 'overview');
-  assert.equal(mountFor('secondbrain', 'setup'), 'setup');
-  assert.equal(mountFor('secondbrain', 'memory'), 'memory');
-  assert.equal(mountFor('secondbrain', 'settings'), 'settings');
-  assert.equal(mountFor('secondbrain', 'agents'), 'none');
+test('brain mounts stay overview/setup/settings', () => {
+  assert.equal(mountFor('brain', 'overview'), 'overview');
+  assert.equal(mountFor('brain', 'setup'), 'setup');
+  assert.equal(mountFor('brain', 'memory'), 'memory');
+  assert.equal(mountFor('brain', 'settings'), 'settings');
+  assert.equal(mountFor('brain', 'agents'), 'none');
 });
 
 test('unknown app or page has no mount', () => {

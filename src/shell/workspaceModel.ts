@@ -24,7 +24,7 @@ export function mountFor(appId: string, page: string): WorkspaceMount {
   if (appId === 'orchestrator') {
     return (ORCHESTRATOR_PAGES.some(candidate => candidate.id === page) ? page : 'none') as WorkspaceMount;
   }
-  if (appId === 'secondbrain') {
+  if (appId === 'brain') {
     if (page === 'overview' || page === 'settings' || page === 'memory') return page;
     if (page === 'setup') return 'setup';
   }

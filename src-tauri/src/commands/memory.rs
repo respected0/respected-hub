@@ -1,6 +1,6 @@
-//! SecondBrain memory commands: access grant, index, semantic search, capture and the workspace calls.
+//! Brain memory commands: access grant, index, semantic search, capture and the workspace calls.
 use super::resolved_settings;
-use crate::secondbrain::{memory_index, memory_semantic};
+use crate::brain::{memory_index, memory_semantic};
 use crate::{rpp, Settings};
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -9,11 +9,11 @@ fn memory_reply(result: Result<Value, String>) -> Value {
     match result {
         Ok(value) => json!({ "ok": true, "result": value, "error": Value::Null }),
         Err(message) => json!({ "ok": false, "result": Value::Null,
-            "error": { "code": "MEMORY_ACCESS", "message": message, "hint": "SecondBrain ve Orchestrator'ın kurulu ve güncel olduğunu denetleyin." } }),
+            "error": { "code": "MEMORY_ACCESS", "message": message, "hint": "Brain ve Orchestrator'ın kurulu ve güncel olduğunu denetleyin." } }),
     }
 }
 
-/// One Orchestrator memory operation (`memory.connect|disconnect|status`): the Orchestrator asks SecondBrain for the grant
+/// One Orchestrator memory operation (`memory.connect|disconnect|status`): the Orchestrator asks Brain for the grant
 /// itself, exactly as `respected-orchestrator memory connect` does without the Hub.
 fn memory_link(settings: &Settings, op: &str, payload: Option<Value>) -> Value {
     let reply = rpp::rpp_call_trusted(settings, "orchestrator", op, payload, Some(rpp::generate_operation_id()));
@@ -43,7 +43,7 @@ fn index_reply(result: Result<Value, String>) -> Value {
     match result {
         Ok(value) => json!({ "ok": true, "result": value, "error": Value::Null }),
         Err(message) => json!({ "ok": false, "result": Value::Null,
-            "error": { "code": "MEMORY_INDEX", "message": message, "hint": "SecondBrain'in kurulu ve güncel olduğunu denetleyin." } }),
+            "error": { "code": "MEMORY_INDEX", "message": message, "hint": "Brain'in kurulu ve güncel olduğunu denetleyin." } }),
     }
 }
 
@@ -103,7 +103,7 @@ pub async fn memory_capture_run(app: tauri::AppHandle) -> Result<Value, String> 
     tauri::async_runtime::spawn_blocking(move || {
         // Summarising sessions runs the user's AI CLI; it can take many minutes.
         let call = |p: &str, o: &str, pl: Option<Value>, id: Option<String>| rpp::rpp_call_trusted_timeout(&settings, p, o, pl, id, Duration::from_secs(30 * 60));
-        let reply = call("secondbrain", "memory.capture.run", Some(json!({ "confirm": true })), Some(rpp::generate_operation_id()));
+        let reply = call("brain", "memory.capture.run", Some(json!({ "confirm": true })), Some(rpp::generate_operation_id()));
         if reply["ok"] == true { return json!({ "ok": true, "result": reply["result"], "error": Value::Null }); }
         index_reply(Err(format!("{}: {}", reply["error"]["code"].as_str().unwrap_or("UNKNOWN"), reply["error"]["message"].as_str().unwrap_or("yanıt yok"))))
     }).await.map_err(|e| e.to_string())
@@ -114,7 +114,7 @@ async fn workspace_call(app: tauri::AppHandle, op: &'static str, payload: Value,
     let settings = resolved_settings(&app)?;
     tauri::async_runtime::spawn_blocking(move || {
         let id = with_id.then(rpp::generate_operation_id);
-        let reply = rpp::rpp_call_trusted_timeout(&settings, "secondbrain", op, Some(payload), id, timeout);
+        let reply = rpp::rpp_call_trusted_timeout(&settings, "brain", op, Some(payload), id, timeout);
         json!({ "ok": reply["ok"] == true, "result": reply["result"], "error": reply["error"] })
     }).await.map_err(|e| e.to_string())
 }

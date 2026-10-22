@@ -14,9 +14,9 @@ const failure = (response: RppResponse) => {
   return plain.hint ? `${plain.message} ${plain.hint}` : plain.message;
 };
 
-// Installed SecondBrain: choose, per AI client, where memory is captured (Sources) and who may use it over MCP (Permissions).
+// Installed Brain: choose, per AI client, where memory is captured (Sources) and who may use it over MCP (Permissions).
 // The product shows exactly what would change (`integrations.plan`, read-only) and applies the choice as its own settings
-// (`integrations.*`), the same keys `respectedbrain config set` and its installer take.
+// (`integrations.*`), the same keys `respected-brain config set` and its installer take.
 export default function BrainIntegrations({ settings, onApplied }: { settings: Record<string, unknown>; onApplied: () => void }) {
   const [selection, setSelection] = useState<Selection>(() => fromSettings(settings));
   const [saved, setSaved] = useState<string>(() => JSON.stringify(toSettings(fromSettings(settings))));
@@ -32,7 +32,7 @@ export default function BrainIntegrations({ settings, onApplied }: { settings: R
   useEffect(() => {
     let active = true;
     setPlanError('');
-    void rppCall('secondbrain', 'integrations.plan', { target: { desired } }).then(reply => {
+    void rppCall('brain', 'integrations.plan', { target: { desired } }).then(reply => {
       if (!active) return;
       if (!reply.ok) { setPlan(null); setPlanError(failure(reply)); return; }
       const result = reply.result as IntegrationPlan;
@@ -49,15 +49,15 @@ export default function BrainIntegrations({ settings, onApplied }: { settings: R
 
   async function apply() {
     setBusy(true); setError(''); setDone('');
-    const reply = await rppCall('secondbrain', 'settings.apply', { settings: toSettings(selection) }, crypto.randomUUID());
+    const reply = await rppCall('brain', 'settings.apply', { settings: toSettings(selection) }, crypto.randomUUID());
     setBusy(false);
-    if (reply.ok) { setSaved(JSON.stringify(toSettings(selection))); setDone('Bağlantılar SecondBrain tarafından uygulandı.'); onApplied(); } else setError(failure(reply));
+    if (reply.ok) { setSaved(JSON.stringify(toSettings(selection))); setDone('Bağlantılar Brain tarafından uygulandı.'); onApplied(); } else setError(failure(reply));
   }
 
   const detected = plan?.clients ? Object.fromEntries(plan.clients.map(item => [item.id, item.detected])) : null;
   const changes = (plan?.changes ?? []).filter(change => change.action !== 'unchanged');
   return <div className="step-body"><h2>AI araç bağlantıları</h2>
-    <p className="muted">Değişiklikleri SecondBrain kendisi yapar: yalnızca Respected'a ait kayıtlar yönetilir, diğer araçların ve senin ayarların korunur, bir aracı kapatınca onun dosyaları eski haline döner.</p>
+    <p className="muted">Değişiklikleri Brain kendisi yapar: yalnızca Respected'a ait kayıtlar yönetilir, diğer araçların ve senin ayarların korunur, bir aracı kapatınca onun dosyaları eski haline döner.</p>
     <h3>Kaynaklar <small className="muted">oturumları hafızaya yakalanan araçlar</small></h3>
     <ClientPicker kind="hooks" selected={selection.sources} detected={detected} onChange={sources => setSelection({ ...selection, sources })} />
     <h3>İzinler <small className="muted">hafızayı MCP ile kullanabilen araçlar</small></h3>

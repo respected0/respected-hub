@@ -9,7 +9,7 @@ import type { FormField } from '../../shared/productsModel.ts';
 
 const PRODUCTS: { id: RppProduct; name: string; description: string }[] = [
   { id: 'orchestrator', name: 'Respected Orchestrator', description: 'Bağımsız görev motoru.' },
-  { id: 'secondbrain', name: 'RespectedBrain', description: 'AI hafıza motoru.' },
+  { id: 'brain', name: 'RespectedBrain', description: 'AI hafıza motoru.' },
 ];
 
 async function call(product: RppProduct, op: string, payload?: Record<string, unknown>, operationId?: string): Promise<RppResponse | null> {

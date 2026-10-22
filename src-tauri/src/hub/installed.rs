@@ -15,7 +15,7 @@ pub struct Product {
 
 pub const PRODUCTS: [Product; 2] = [
     Product { id: "orchestrator", name: "Orchestrator", folder: "RespectedOrchestrator", exe: "respected-orchestrator.exe", record: "app/.respected/install.json" },
-    Product { id: "secondbrain", name: "SecondBrain", folder: "RespectedBrain", exe: "respectedbrain.exe", record: "data/install-manifest.json" },
+    Product { id: "brain", name: "Brain", folder: "RespectedBrain", exe: "respected-brain.exe", record: "data/install-manifest.json" },
 ];
 
 pub fn product(id: &str) -> Option<&'static Product> { PRODUCTS.iter().find(|p| p.id == id) }
@@ -53,12 +53,12 @@ mod tests {
     #[test]
     fn a_product_counts_as_installed_only_with_program_build_manifest_and_its_own_record() {
         let root = std::env::temp_dir().join(format!("hub-installed-{}-{}", std::process::id(), crate::lifecycle::stamp()));
-        let brain = product("secondbrain").unwrap();
+        let brain = product("brain").unwrap();
         let at = |p: &str| root.join("RespectedBrain").join(p);
         assert!(brain.installed_in(&root).is_none());
         fs::create_dir_all(at("app")).unwrap();
         fs::create_dir_all(at("data")).unwrap();
-        fs::write(at("app/respectedbrain.exe"), b"exe").unwrap();
+        fs::write(at("app/respected-brain.exe"), b"exe").unwrap();
         fs::write(at("app/distribution.json"), br#"{"version": "0.1.0b1"}"#).unwrap();
         assert!(brain.installed_in(&root).is_none(), "no install record: the product's own setup never finished");
         fs::write(at("data/install-manifest.json"), b"{}").unwrap();

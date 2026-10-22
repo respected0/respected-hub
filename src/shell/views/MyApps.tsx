@@ -22,7 +22,7 @@ export default function MyApps({ eco, go, ask, onAsked }: { eco: Ecosystem; go: 
           {summary.checks.length > 0 && <ul className="checks compact" aria-label="Sağlık kontrolleri">{summary.checks.map(check => <li key={check.name} className={check.ok ? 'ok' : 'bad'}><span aria-hidden="true">{check.ok ? '✓' : '✕'}</span>{check.name}{check.detail ? ` — ${check.detail}` : ''}</li>)}</ul>}
           {summary.errorText && <p className="error" role="alert">{summary.errorText}</p>}
           {installed && app.id === 'orchestrator' && <p className="muted">Orchestrator'ın ayrı bir penceresi yoktur: burada, "Çalışma alanını aç" ile görev ve ajanları yönetirsiniz. AI araçlarınızdan kullanmak için çalışma alanında MCP erişimini açın.</p>}
-          <LifecycleControls name={app.name} lc={lc} onChanged={eco.refresh} onWizard={app.id === 'secondbrain' ? () => go({ app: app.id, page: 'setup' }) : undefined}
+          <LifecycleControls name={app.name} lc={lc} onChanged={eco.refresh} onWizard={app.id === 'brain' ? () => go({ app: app.id, page: 'setup' }) : undefined}
             autoAction={ask?.product === app.id ? ask.action : undefined} onAutoDone={onAsked} /></div>
         {installed && <div className="lib-actions">
           <button className="cta" onClick={() => go({ app: app.id, page: 'overview' })}>Çalışma alanını aç</button>

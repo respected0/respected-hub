@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fromCurrent, toDesired, toggle, summarize } from '../../src/products/secondbrain/brainClients.ts';
+import { fromCurrent, toDesired, toggle, summarize } from '../../src/products/brain/brainClients.ts';
 
 test('toDesired: flags follow the per-client lists', () => {
   const desired = toDesired({ sources: ['codex', 'claude'], mcp: [], schedule: true, shortcut: false });

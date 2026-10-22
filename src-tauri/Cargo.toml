@@ -43,7 +43,7 @@ path = "tests/lifecycle/trust_catalog_e2e.rs"
 
 [[test]]
 name = "memory_index_e2e"
-path = "tests/secondbrain/memory_index_e2e.rs"
+path = "tests/brain/memory_index_e2e.rs"
 
 [[test]]
 name = "campaign_e2e"

@@ -8,7 +8,7 @@ Windows betasını derleyen, imzalayan ve yayınlayan her şey bu klasördedir. 
 
 ```text
 git clone https://github.com/respected0/respected-hub.git
-git clone https://github.com/respected0/respected-secondbrain.git
+git clone https://github.com/respected0/respected-brain.git
 git clone https://github.com/respected0/respected-orchestrator.git
 ```
 
@@ -24,7 +24,7 @@ ve insanlar yeni Hub'ı elle indirmek zorunda kalır. Anahtar kimliği `dabcb526
 
 | Betik | Ne yapar |
 |---|---|
-| `tools/build/build_bundle.py orchestrator\|secondbrain [--out DİZİN] [--key DOSYA] [--force]` | Ürünün kendi `packaging/build_installer.py`'si ile `<Ürün>-Windows-Setup.exe` üretir (kaynak değişmediyse yeniden kullanır) ve onu imzalı katalog paketine sarar: `<ürün>-<sürüm>/bundle.json` + `payload/<Ürün>-Windows-Setup.exe`. Anahtar verilmezse yerel geliştirme anahtarıyla imzalar. |
+| `tools/build/build_bundle.py orchestrator\|brain [--out DİZİN] [--key DOSYA] [--force]` | Ürünün kendi `packaging/build_installer.py`'si ile `<Ürün>-Windows-Setup.exe` üretir (kaynak değişmediyse yeniden kullanır) ve onu imzalı katalog paketine sarar: `<ürün>-<sürüm>/bundle.json` + `payload/<Ürün>-Windows-Setup.exe`. Anahtar verilmezse yerel geliştirme anahtarıyla imzalar. |
 | `tools/build/build_hub_installer.py [--skip-app] [--release-key DOSYA]` | Hub kurucusu. Varsayılan GELİŞTİRME kurucusudur (yerel geliştirme anahtarına güvenir, dağıtılmaz); `--release-key` ile ÜRETİM kurucusu (dev-trust yok, geliştirme anahtarı yok). |
 | `tools/build/publish_release.py build\|catalog\|upload\|local-catalog` | Yayın (aşağıda); `local-catalog` testler için file:// adresli, geliştirme imzalı katalog. |
 | `tools/build/release_package.py build\|verify` | İndirme klasörü: kurucular + `SHA256SUMS.txt` + `SHA256SUMS.sig` + `BETA_NOTICE.txt`. |
@@ -37,7 +37,7 @@ ve insanlar yeni Hub'ı elle indirmek zorunda kalır. Anahtar kimliği `dabcb526
 ## 3. Sürüm
 
 Her şey için tek sürüm (`0.1.0-beta.1`). Değiştirilecek yerler: `respected-hub/src-tauri/tauri.conf.json`, `Cargo.toml`,
-`package.json`, `packaging/windows/hub_setup.iss` varsayılanı; `respected-secondbrain/pyproject.toml`;
+`package.json`, `packaging/windows/hub_setup.iss` varsayılanı; `respected-brain/pyproject.toml`;
 `respected-orchestrator/pyproject.toml` ve `respected_orchestrator/__init__.py`. Sonra iki ürünü düzenlenebilir olarak
 yeniden kurun (`pip install -e`). Sürümler SemVer'dir; "beta" sürümün parçasıdır (`0.1.0-beta.2`, `0.1.0-rc.1`, `0.1.0`).
 Bir yayın her zaman iki ürünü güncel kaynaktan yeniden dondurur.
@@ -55,7 +55,7 @@ python respected-hub\release\tools\build\publish_release.py upload              
 Remove-Item Env:\RESPECTED_VAULT_PASSPHRASE
 ```
 
-- `build --only secondbrain` yalnızca bir ürünü yayınlar; katalog diğerlerini yayındaki haliyle tutar.
+- `build --only brain` yalnızca bir ürünü yayınlar; katalog diğerlerini yayındaki haliyle tutar.
 - `catalog --channel stable` kararlı kanala yayınlar; `--min-hub X` eski Hub'ların önce kendini güncellemesini ister.
 - Yükleme sırası: önce ürünler, en son katalog (katalog hiçbir zaman olmayan bir dosyayı göstermez).
 - Anahtarsız derleme GELİŞTİRMEdir ve asla yayınlanmaz.
@@ -65,7 +65,7 @@ GitHub'daki düzen (Hub yalnızca katalog adresini bilir; gerisini imzalı katal
 | Depo | Etiket | Dosyalar |
 |---|---|---|
 | `respected0/respected-hub` | `v<sürüm>` | `RespectedHub-Windows-Setup.exe` |
-| `respected0/respected-secondbrain` | `v<sürüm>` | `secondbrain-<sürüm>.zip` (katalog paketi), `RespectedSecondBrain-Windows-Setup.exe` (Hub'sız kuranlar için) |
+| `respected0/respected-brain` | `v<sürüm>` | `brain-<sürüm>.zip` (katalog paketi), `RespectedBrain-Windows-Setup.exe` (Hub'sız kuranlar için) |
 | `respected0/respected-orchestrator` | `v<sürüm>` | `orchestrator-<sürüm>.zip`, `RespectedOrchestrator-Windows-Setup.exe` |
 | `respected0/respected-hub` | `catalog` | `catalog.json` + `catalog.json.sig` (her yayında değişir) |
 
@@ -77,7 +77,7 @@ Her şey kullanıcı başınadır, yönetici izni gerekmez. `%LOCALAPPDATA%` = `
 |---|---|---|
 | Hub kurucusu | `Respected\RespectedHub\app\` (`respected-hub.exe`, kaldırıcı), Başlat ve masaüstü kısayolu, Yüklü uygulamalar: Respected Hub | — |
 | Hub'ın ilk açılışı | `%LOCALAPPDATA%\com.respected.hub\` (WebView2, pencere), `%APPDATA%\com.respected.hub\`, `RespectedHub\managed\catalog-index.json` (+ `.sig`) | — |
-| Ürün kurulumu (kurucuyla ya da Hub'dan) | `Respected\<Ürün>\app\` (program, `distribution.json`, kaldırıcı), `Respected\<Ürün>\data\`, Yüklü uygulamalar girdisi; SecondBrain'de seçilen kasa ve yalnızca seçilen AI araçlarındaki girdiler, isteğe bağlı zamanlanmış görev ve kısayol; Hub'dan kurulduysa `managed\catalog\<ürün>-<sürüm>\` (çevrimdışı onarım için) | — |
+| Ürün kurulumu (kurucuyla ya da Hub'dan) | `Respected\<Ürün>\app\` (program, `distribution.json`, kaldırıcı), `Respected\<Ürün>\data\`, Yüklü uygulamalar girdisi; Brain'de seçilen kasa ve yalnızca seçilen AI araçlarındaki girdiler, isteğe bağlı zamanlanmış görev ve kısayol; Hub'dan kurulduysa `managed\catalog\<ürün>-<sürüm>\` (çevrimdışı onarım için) | — |
 | Ürün güncellemesi | yeni kurucu programı yerinde değiştirir, ürün `repair` çalıştırır | eski programın dosyaları, eski kurucu önbelleği |
 | Ürünü kaldırma | — | program, Yüklü uygulamalar girdisi, ürünün AI araçlarındaki ve zamanlayıcıdaki kendi girdileri, kurulum kaydı; "Evet"/`/PURGE=1` ile ayarlar ve çalışma verisi. **Kasa hiçbir zaman.** |
 | Hub'ı kaldırma | — | Hub'ın programı ve kendi klasörleri. **Ürünlere dokunulmaz;** Hub'ı yeniden kurmak onları olduğu gibi bulur. |
