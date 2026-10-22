@@ -1,33 +1,42 @@
+import { useEffect, useState } from 'react';
 import { APPS } from '../apps.ts';
+import { native } from '../../shared/api.ts';
 import type { Ecosystem } from '../useEcosystem.ts';
 import { Emblem, Icon, Weave } from '../../shared/ui.tsx';
 import type { Go } from './Home.tsx';
 import InstallFacts from './InstallFacts.tsx';
-import type { FactSubject } from '../installFacts.ts';
 import LifecycleControls from './LifecycleControls.tsx';
 import { STATE_LABEL, type LifecycleAction } from '../lifecycle.ts';
+import type { FactSubject } from '../installFacts.ts';
 
 const STATE_TONE: Record<keyof typeof STATE_LABEL, string> = { absent: '', installed: 'ok', 'update-available': 'warn', 'repair-needed': 'error' };
 
-// The library: one card per product. The card shows the state and the actions; health checks and "what does this install" fold away.
+// The library: only what is installed. A card shows the install state and the actions; health lives in Settings > Product status,
+// so a card only points there when something is wrong. Not-yet-installed products are installed from Discover.
 export default function MyApps({ eco, go, ask, onAsked }: { eco: Ecosystem; go: Go; ask?: { product: string; action: LifecycleAction } | null; onAsked?: () => void }) {
+  // a product removed on this page keeps its card until the person leaves, so the result of the removal stays readable
+  const [seen, setSeen] = useState<string[]>([]);
+  useEffect(() => {
+    const installed = (eco.lifecycle?.products ?? []).filter(item => item?.installed).map(item => item!.product);
+    setSeen(before => installed.every(id => before.includes(id)) ? before : [...new Set([...before, ...installed])]);
+  }, [eco.lifecycle]);
+  const apps = APPS.filter(app => !native || seen.includes(app.id) || !!eco.lifecycle?.products.find(item => item?.product === app.id)?.installed);
   return <div className="page">
-    <div className="page-head"><div><span className="eyebrow">Uygulamalarım</span><h1>Kütüphane</h1><p>Hub'a bağlı ürünler. Durum, sürüm ve yetenekler ürünün kendi sağlık yanıtından okunur.</p></div><button onClick={eco.refresh}><Icon name="refresh" />Durumu yenile</button></div>
-    <div className="lib-list">{APPS.map(app => { const runtime = eco.apps[app.id]; const summary = runtime.summary;
+    <div className="page-head"><div><span className="eyebrow">Uygulamalarım</span><h1>Kütüphane</h1><p>Bu bilgisayara kurulu Respected uygulamaları. Yeni uygulama kurmak için Keşfet'e bakın.</p></div><button onClick={eco.refresh}><Icon name="refresh" />Durumu yenile</button></div>
+    {native && !eco.lifecycle && <p className="muted" role="status">Kurulu uygulamalar okunuyor…</p>}
+    {native && eco.lifecycle && apps.length === 0 && <section className="card"><h2>Henüz kurulu uygulama yok</h2><p style={{ margin: '8px 0 16px' }}>Brain ve Orchestrator'ı Keşfet sayfasından kurabilirsiniz.</p><button className="cta" onClick={() => go('discover')}>Keşfet'e git<Icon name="arrow" /></button></section>}
+    <div className="lib-list">{apps.map(app => { const runtime = eco.apps[app.id]; const summary = runtime.summary;
       const lc = eco.lifecycle?.products.find(item => item?.product === app.id) ?? null;
-      const installed = eco.lifecycle ? !!lc?.installed : true;   // before the lifecycle answer arrives, do not hide anything
+      const installed = native ? !!lc?.installed : true;
+      const problem = !runtime.loading && summary.statusKind !== 'ok';
       return <article key={app.id} className={`lib-item accent-${app.accent}`}>
         <div className="lib-art"><Weave /><Emblem app={app.id} />{lc && <span className={`lib-state ${STATE_TONE[lc.install_state]}`}>{STATE_LABEL[lc.install_state]}</span>}</div>
         <div className="lib-body"><h2>{app.name}</h2><p className="muted">{app.tagline}</p>
-          <p className="meta"><span className={`badge-status ${runtime.loading ? 'unreachable' : summary.statusKind}`}><span className={`dot ${runtime.loading ? '' : summary.statusKind}`} aria-hidden="true" />{runtime.loading ? 'Kontrol ediliyor…' : summary.statusText}</span>
-            {summary.version && <span className="ver">v{summary.version}</span>}</p>
-          {summary.errorText && <p className="error" role="alert">{summary.errorText}</p>}
+          {lc?.version && <p className="meta"><span className="ver">Kurulu sürüm v{lc.version}</span></p>}
+          {installed && problem && <p className="notice" role="status">Ürün bir sorun bildiriyor. <button className="link-btn" onClick={() => go('connections')}>Ürün durumunu aç</button></p>}
           {installed && app.id === 'orchestrator' && <p className="muted">Orchestrator'ın ayrı bir penceresi yoktur: "Çalışma alanını aç" ile görev ve ajanları yönetirsiniz. AI araçlarınızdan kullanmak için çalışma alanında MCP erişimini açın.</p>}
           <LifecycleControls name={app.name} lc={lc} onChanged={eco.refresh} onWizard={app.id === 'brain' ? () => go({ app: app.id, page: 'setup' }) : undefined}
             autoAction={ask?.product === app.id ? ask.action : undefined} onAutoDone={onAsked} />
-          {(summary.capabilities.length > 0 || summary.checks.length > 0) && <details className="lib-more"><summary>Yetenekler ve sağlık kontrolleri</summary>
-            {summary.capabilities.length > 0 && <ul className="capabilities" aria-label="Yetenekler">{summary.capabilities.map(cap => <li key={cap}>{cap}</li>)}</ul>}
-            {summary.checks.length > 0 && <ul className="checks compact" aria-label="Sağlık kontrolleri">{summary.checks.map(check => <li key={check.name} className={check.ok ? 'ok' : 'bad'}><span aria-hidden="true">{check.ok ? '✓' : '✕'}</span>{check.name}{check.detail ? ` — ${check.detail}` : ''}</li>)}</ul>}</details>}
           <InstallFacts subject={app.id as FactSubject} /></div>
         {installed && <div className="lib-actions">
           <button className="cta" onClick={() => go({ app: app.id, page: 'overview' })}>Çalışma alanını aç</button>

@@ -32,7 +32,8 @@ function settingsFrom(response: RppResponse | null): Record<string, unknown> {
   return typeof settings === 'object' && settings !== null && !Array.isArray(settings) ? settings as Record<string, unknown> : {};
 }
 
-function ProductCard({ product }: { product: { id: RppProduct; name: string; description: string } }) {
+// `status`: health, version and capabilities (Settings > Product status, the only place health is shown). `settings`: the product's settings form (its workspace).
+function ProductCard({ product, part }: { product: { id: RppProduct; name: string; description: string }; part: 'status' | 'settings' }) {
   const [manifest, setManifest] = useState<RppResponse | null>(null);
   const [health, setHealth] = useState<RppResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -56,7 +57,7 @@ function ProductCard({ product }: { product: { id: RppProduct; name: string; des
     } finally { setLoading(false); }
   }, [product.id]);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => { if (part === 'status') void refresh(); }, [refresh, part]);
 
   const loadSettings = useCallback(async () => {
     setSettingsState('loading');
@@ -129,22 +130,12 @@ function ProductCard({ product }: { product: { id: RppProduct; name: string; des
     finally { setBusy(false); }
   }
 
+  useEffect(() => { if (part === 'settings' && settingsState === 'idle') void loadSettings(); }, [part, settingsState, loadSettings]);
+
   const summary = summarizeProduct(manifest, health);
   const settingsBusy = busy || settingsState !== 'ready';
 
-  return <article className="card">
-    <div className="card-head">
-      <div><h2>{summary.title || product.name}</h2><p>{product.description}</p></div>
-      <span className={`badge-status ${summary.statusKind}`}>{summary.statusText}</span>
-    </div>
-    <p aria-live="polite" className="status-line" role="status">{summary.statusText}{summary.version ? ` · Sürüm ${summary.version}` : ''}</p>
-    <div className="card-actions"><button type="button" disabled={loading} onClick={() => { setSettingsState('idle'); void refresh(); }}>{loading ? 'Yükleniyor…' : 'Yenile'}</button></div>
-    {summary.checks.length > 0 && <ul className="checks">{summary.checks.map((check, index) => <li key={`${check.name}-${index}`} className={check.ok ? 'ok' : 'bad'}><span aria-hidden="true">{check.ok ? '✓' : '✕'}</span><span><strong>{check.name}</strong>{check.detail ? `: ${check.detail}` : ''}</span></li>)}</ul>}
-    {summary.capabilities.length > 0 && <ul className="capabilities" aria-label="Yetenekler">{summary.capabilities.map((capability) => <li key={capability}>{capability}</li>)}</ul>}
-    {summary.errorText && <p className="error" role="alert">{summary.errorText}</p>}
-
-    <details className="settings-block" onToggle={(event) => { if ((event.target as HTMLDetailsElement).open && settingsState === 'idle') void loadSettings(); }}>
-      <summary>Ayarlar</summary>
+  const settingsForm = <>
       {settingsState === 'loading' && <p className="muted">Ayarlar yükleniyor…</p>}
       {settingsState === 'failed' && <p className="error" role="alert">{settingsLoadError}</p>}
       {settingsState === 'ready' && <>
@@ -170,13 +161,26 @@ function ProductCard({ product }: { product: { id: RppProduct; name: string; des
         {settingsError && <p className="error" role="alert">{settingsError}</p>}
         <p className="muted">Uygulama sonrası ayarlar motordan her zaman geri okunur; başarı yalnızca geri okuma eşleşirse bildirilir.</p>
       </>}
-    </details>
+  </>;
+
+  if (part === 'settings') return <article className="card"><div className="card-head"><div><h2>{product.name} ayarları</h2><p>Değerler ürünün kendi şemasıyla doğrulanır ve uygulandıktan sonra geri okunur.</p></div></div>{settingsForm}</article>;
+
+  return <article className="card">
+    <div className="card-head">
+      <div><h2>{summary.title || product.name}</h2><p>{product.description}</p></div>
+      <span className={`badge-status ${summary.statusKind}`}>{summary.statusText}</span>
+    </div>
+    <p aria-live="polite" className="status-line" role="status">{summary.statusText}{summary.version ? ` · Sürüm ${summary.version}` : ''}</p>
+    <div className="card-actions"><button type="button" disabled={loading} onClick={() => void refresh()}>{loading ? 'Yükleniyor…' : 'Yenile'}</button></div>
+    {summary.checks.length > 0 && <ul className="checks">{summary.checks.map((check, index) => <li key={`${check.name}-${index}`} className={check.ok ? 'ok' : 'bad'}><span aria-hidden="true">{check.ok ? '✓' : '✕'}</span><span><strong>{check.name}</strong>{check.detail ? `: ${check.detail}` : ''}</span></li>)}</ul>}
+    {summary.capabilities.length > 0 && <ul className="capabilities" aria-label="Yetenekler">{summary.capabilities.map((capability) => <li key={capability}>{capability}</li>)}</ul>}
+    {summary.errorText && <p className="error" role="alert">{summary.errorText}</p>}
   </article>;
 }
 
 export default function Products() {
   if (!native) return <div className="notice warning">Ürün durumunu ve ayarları görmek için Tauri masaüstü uygulaması gerekli. Tarayıcı önizlemesinde gerçek ürün verisi gösterilmez.</div>;
-  return <section aria-label="Ürünler" className="products-view">{PRODUCTS.map((product) => <ProductCard key={product.id} product={product} />)}</section>;
+  return <section aria-label="Ürünler" className="products-view">{PRODUCTS.map((product) => <ProductCard key={product.id} product={product} part="status" />)}</section>;
 }
 
 
@@ -184,5 +188,5 @@ export default function Products() {
 export function ProductPanel({ id }: { id: RppProduct }) {
   const product = PRODUCTS.find(item => item.id === id);
   if (!native) return <div className="notice warning">Ayarlar için Tauri masaüstü uygulaması gerekli.</div>;
-  return product ? <ProductCard product={product} /> : null;
+  return product ? <ProductCard product={product} part="settings" /> : null;
 }

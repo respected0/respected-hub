@@ -32,7 +32,7 @@ export default function App() {
   const openIntent = (wanted: StartupIntent | null) => {
     if (!wanted) return;
     if (wanted.action === 'install' && wanted.product === 'brain') { setRoute({ kind: 'app', app: 'brain', page: 'setup' }); return; }
-    setRoute({ kind: 'apps' });
+    setRoute({ kind: wanted.action === 'install' ? 'discover' : 'apps' });   // a product is installed from Discover, removed from the Library
     if (wanted.action === 'uninstall' || (wanted.action === 'install' && wanted.product === 'orchestrator')) setAsk({ product: wanted.product, action: wanted.action });
   };
   // A product installer or an Installed-apps entry started while the Hub is already open forwards its choice here instead of opening a second window.
@@ -117,9 +117,9 @@ export default function App() {
             <button onClick={() => postpone(`${item!.product}@${item!.available!.version}`)}>Sonra</button></span></div></div>)}
         {route.kind === 'home' && <Home eco={eco} go={go} />}
         {route.kind === 'apps' && <MyApps eco={eco} go={go} ask={ask} onAsked={() => setAsk(null)} />}
-        {route.kind === 'discover' && <Discover eco={eco} go={go} />}
+        {route.kind === 'discover' && <Discover eco={eco} go={go} ask={ask} onAsked={() => setAsk(null)} />}
         {route.kind === 'settings' && <SettingsHub tab={route.tab} onTab={tab => setRoute({ kind: 'settings', tab })} eco={eco} go={go} onCatalogChanged={() => { readHubUpdate(); eco.refresh(); }} />}
-        {route.kind === 'app' && <AppWorkspace appId={route.app} page={route.page} eco={eco} go={page => setRoute({ kind: 'app', app: route.app, page })} />}
+        {route.kind === 'app' && <AppWorkspace appId={route.app} page={route.page} eco={eco} go={page => setRoute({ kind: 'app', app: route.app, page })} onStatus={() => setRoute({ kind: 'settings', tab: 'status' })} />}
       </main>
     </div>
   </div>;

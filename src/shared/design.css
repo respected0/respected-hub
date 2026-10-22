@@ -319,3 +319,5 @@ details.facts { border-top: 1px solid var(--line-soft); }
 }
 @media (max-width: 760px) { main.content { padding: var(--s-5) var(--s-4) var(--s-6); } .topbar { padding: 0 var(--s-4); } .metrics, .settings-fields, .columns { grid-template-columns: 1fr; } .products-view { grid-template-columns: 1fr; } .page-head, .section-head { flex-direction: column; align-items: flex-start; } .hero h1 { font-size: var(--t-2xl); } .step-body, .steps, .wizard-actions { padding-left: var(--s-5); padding-right: var(--s-5); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+
+.ws-meta { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
