@@ -450,3 +450,7 @@ main.content:has(.lib-shell) { padding: 0; }
 .hero-notes { width: 100%; }
 .win-controls button { color: #fff; }
 .win-controls button .ico { color: inherit; }
+
+/* Brand marks bring their own tile (rounded square with a border line), so the generic emblem tile steps aside. */
+.emblem-tile.brand { background: none; border: none; border-radius: 22%; overflow: hidden; }
+.emblem-tile.brand img { display: block; width: 100%; height: 100%; }

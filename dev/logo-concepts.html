@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Respected logo taslakları</title>
+<style>
+  /* Design sketches only (not part of the app). Flat colours, no gradients, no glass. */
+  :root { --bg: #161e29; --tile: #11161d; --line: #243243; --text: #f2f4f8; --muted: #8f98a0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px; min-width: 900px; background: var(--bg); color: var(--text); font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  h1 { margin: 0 0 4px; font-size: 24px; } h2 { margin: 40px 0 4px; font-size: 18px; } p { margin: 0 0 16px; color: var(--muted); max-width: 760px; }
+  .row { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
+  figure { margin: 0; text-align: center; } figcaption { margin-top: 8px; color: var(--muted); font-size: 13px; }
+  .tile { display: block; border-radius: 22%; background: var(--tile); border: 2px solid var(--line); }
+  .small { display: flex; gap: 16px; align-items: center; padding: 16px 20px; border-radius: 12px; background: var(--tile); width: fit-content; }
+  .light { background: #ffffff; }
+</style>
+</head>
+<body>
+<h1>Respected: logo taslakları</h1>
+<p>İki farklı yön. Her yönde tek bir ana şekil var, üç ürün o şeklin varyasyonu: Hub ana şekil (nötr beyaz), Brain mor, Orchestrator mavi. Her şey düz renk; 16 px'te de okunuyor mu diye küçük boyutlar ve açık zemin altta.</p>
+
+<!-- ============ YÖN A: KAPI ============ -->
+<h2>C. Kapılı R</h2>
+<p>Fikir: Respected'ın "R" harfi kalın ve iki tonlu çizilir; harfin iç boşluğu (karnı) bir kapıdır. Marka adı harfte, "AI araçlarına açılan kapı" hikâyesi iç boşlukta. Brain'de kapının içinde hafıza noktası, Orchestrator'da şeritler. Bacak daha koyu tonda (düz renk, gradyan değil).</p>
+<div class="row" id="C"></div>
+<h2>A. Kapı</h2>
+<p>Fikir: Hub, AI araçlarına açılan kapıdır. Brain'de kapının içinde bir hafıza noktası, Orchestrator'da paralel şeritler var. Tek bir kemer silueti: İlk bakışta tanınır, harf ya da şema değil.</p>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- outer arch with the doorway cut out (even-odd) -->
+    <g id="doorway"><path fill-rule="evenodd" d="M60 214 V114 A68 68 0 0 1 196 114 V214 Z M100 182 V122 A28 28 0 0 1 156 122 V182 Z"/></g>
+  </defs>
+</svg>
+<div class="row" id="A"></div>
+
+<!-- ============ YÖN B: R İZİ ============ -->
+<h2>B. R izi</h2>
+<p>Fikir: Respected'ın baş harfi tek bir kesintisiz çizgiyle çizilir. Hub düz R. Brain'de gövde bir hafıza halkasına döner (içinde nokta), Orchestrator'da bacak üç şeride ayrılır.</p>
+<div class="row" id="B"></div>
+
+<h2>Küçük boyutlar ve açık zemin</h2>
+<p>Görev çubuğu, pencere köşesi ve GitHub (açık tema) gibi yerlerde nasıl durduğu.</p>
+<div id="small"></div>
+
+<script>
+const NAVY = '#11161d', WHITE = '#f2f4f8', VIOLET = '#9d7dff', BLUE = '#4c9aff';
+const svg = (inner, size, tile = true, bg = NAVY) => `<svg class="tile" width="${size}" height="${size}" viewBox="0 0 256 256" style="${tile ? '' : 'background:none;border:none'}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+
+// ---- A: doorway
+const door = color => `<path fill="${color}" fill-rule="evenodd" d="M60 214 V114 A68 68 0 0 1 196 114 V214 Z M100 182 V122 A28 28 0 0 1 156 122 V182 Z"/>`;
+const A = {
+  Hub: door(WHITE),
+  Brain: door(VIOLET) + `<circle cx="128" cy="150" r="11" fill="${WHITE}"/>`,
+  Orchestrator: door(BLUE) + [113, 128, 143].map(x => `<rect x="${x - 3.5}" y="134" width="7" height="48" rx="3.5" fill="${WHITE}"/>`).join(''),
+};
+// ---- B: single stroke R
+const stroke = (d, color, extra = '') => `<g fill="none" stroke="${color}" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/>${extra}</g>`;
+const B = {
+  Hub: stroke('M90 204 V54 H138 A47 47 0 0 1 138 148 H90 M138 148 L188 204', WHITE),
+  Brain: stroke('M90 204 V54', VIOLET) + `<circle cx="140" cy="101" r="47" fill="none" stroke="${VIOLET}" stroke-width="26"/><circle cx="140" cy="101" r="12" fill="${WHITE}"/>` + stroke('M140 148 L188 204', VIOLET),
+  Orchestrator: stroke('M90 204 V54 H138 A47 47 0 0 1 138 148 H90', BLUE) + stroke('M138 148 L172 204 M138 148 L196 190 M138 148 L150 204', BLUE).replace('stroke-width="26"', 'stroke-width="16"'),
+};
+
+// ---- C: bold two-tone R whose counter is a doorway
+const rLetter = (main, leg, inside = '') => `
+  <path fill="${leg}" d="M122 166 H176 L222 214 H168 Z"/>
+  <path fill="${main}" fill-rule="evenodd" d="M62 40 H150 A66 66 0 0 1 150 172 H108 V214 H62 Z M108 140 V102 A29 29 0 0 1 166 102 V140 Z"/>${inside}`;
+const C = {
+  Hub: rLetter(WHITE, '#8f98a0'),
+  // Brain: a memory dot with neurons reaching out to nodes
+  Brain: rLetter(VIOLET, '#6c52c4', (() => {
+    const c = [137, 114], ends = [[121, 96], [153, 96], [137, 90], [122, 128], [152, 128]];
+    return ends.map(([x, y]) => `<line x1="${c[0]}" y1="${c[1]}" x2="${x}" y2="${y}" stroke="${WHITE}" stroke-width="4.5" stroke-linecap="round"/><circle cx="${x}" cy="${y}" r="4.6" fill="${WHITE}"/>`).join('')
+      + `<circle cx="${c[0]}" cy="${c[1]}" r="8.5" fill="${WHITE}"/>`;
+  })()),
+  // Orchestrator: one line forks into two and merges into one
+  Orchestrator: rLetter(BLUE, '#2d6bb8', `<g fill="none" stroke="${WHITE}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M137 138 V126 C137 116 120 116 120 106 V100 C120 90 137 92 137 82 M137 126 C137 116 154 116 154 106 V100 C154 90 137 92 137 82 M137 82 V76"/><circle cx="137" cy="138" r="2" fill="#ffffff" stroke="none"/></g>`),
+};
+
+function fill(id, set, size = 200) {
+  const root = document.getElementById(id);
+  for (const [name, inner] of Object.entries(set)) root.insertAdjacentHTML('beforeend', `<figure>${svg(inner, size)}<figcaption>${name}</figcaption></figure>`);
+}
+fill('C', C, 240); fill('A', A); fill('B', B);
+
+const small = document.getElementById('small');
+for (const [label, set] of [['C', C], ['A', A], ['B', B]]) {
+  for (const bg of ['', 'light']) {
+    const box = document.createElement('div'); box.className = 'small ' + bg; box.style.marginBottom = '12px';
+    box.innerHTML = `<b style="color:${bg ? '#161e29' : '#f2f4f8'};width:24px">${label}</b>` + Object.values(set).map(inner => [64, 32, 16].map(s => svg(inner, s)).join('')).join('<span style="width:12px"></span>');
+    small.appendChild(box);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/brand/hub.svg" width="128" alt="Respected Hub logosu"></p>
+
 # Respected Hub
 
 Respected ekosisteminin masaüstü uygulaması (Tauri 2 + Rust + React/TypeScript). İmzalı katalogdan **Brain** ve
