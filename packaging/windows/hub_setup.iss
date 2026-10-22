@@ -29,6 +29,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayIcon={app}\respected-hub.exe
 CloseApplications=yes
+SetupLogging=yes
 WizardStyle=modern
 InfoBeforeFile={#StageDir}\BETA_NOTICE.txt
 

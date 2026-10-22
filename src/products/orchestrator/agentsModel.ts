@@ -27,11 +27,14 @@ interface AgentsModel {
   note: string;
 }
 
-// The three roles the orchestrator engine defines internally. Hub shows them
-// read-only; it never invents extra roles.
+// The roles the orchestrator engine runs (engine/runner.py `_explicit_roles`).
+// Hub shows them read-only; it never invents extra roles.
 export const AGENT_ROLES: AgentRole[] = [
+  { id: 'planner', name: 'Planlayıcı', description: 'plan komutunda proje taslağını çıkaran ajan.' },
   { id: 'implementer', name: 'Uygulayıcı', description: 'Şeritteki işi kodlayan ajan.' },
   { id: 'reviewer', name: 'Bağımsız inceleyici', description: 'Uygulayıcıdan bağımsız olarak değişikliği inceleyen ajan.' },
+  { id: 'deep_reviewer', name: 'Derin inceleyici', description: 'Her görevde ayrıntılı incelemeyi yapan ajan; atanmazsa inceleyici kullanılır.' },
+  { id: 'debugger', name: 'Hata ayıklayıcı', description: 'Atandıysa düzeltme turlarını yürüten ajan.' },
   { id: 'master', name: 'Son onaycı (master)', description: 'Tüm şeritler bittiğinde son incelemeyi yapan ajan.' },
 ];
 
