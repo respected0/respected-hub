@@ -1,10 +1,15 @@
 ﻿import test from 'node:test';
 import assert from 'node:assert/strict';
-import { APPS, HUB_NAV } from '../../src/shell/apps.ts';
+import { APPS, HUB_NAV, SETTINGS_TABS } from '../../src/shell/apps.ts';
 
-test('hub navigation exposes exactly the six product pages in order', () => {
-  assert.deepEqual(HUB_NAV.map(item => item.id), ['home', 'apps', 'discover', 'connections', 'activity', 'settings']);
-  assert.deepEqual(HUB_NAV.map(item => item.label), ['Ana Sayfa', 'Uygulamalar\u0131m', 'Ke\u015ffet', '\u00dcr\u00fcn durumu', 'Etkinlik', 'Ayarlar']);
+test('hub navigation is Home, Discover, Library, Settings', () => {
+  assert.deepEqual(HUB_NAV.map(item => item.id), ['home', 'discover', 'apps', 'settings']);
+  assert.deepEqual(HUB_NAV.map(item => item.label), ['Ana Sayfa', 'Keşfet', 'Kütüphane', 'Ayarlar']);
+});
+
+test('product status and activity live inside Settings', () => {
+  assert.deepEqual(SETTINGS_TABS.map(tab => tab.id), ['general', 'status', 'activity']);
+  assert.deepEqual(SETTINGS_TABS.map(tab => tab.label), ['Genel', 'Ürün durumu', 'Etkinlik']);
 });
 
 test('orchestrator exposes the mounted workspace pages in order', () => {

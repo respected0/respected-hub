@@ -112,6 +112,7 @@ const setInput = (selector, value) => ev(`(()=>{const el=${selector};const set=O
 const labelled = (scope, text) => `[...${scope}.querySelectorAll('label')].find(l=>l.textContent.includes(${JSON.stringify(text)})).querySelector('input,select')`;
 const rail = label => clickText(label, 'document.querySelector(".rail")');
 const tab = label => clickText(label, 'document.querySelector(".ws-tabs")');
+const settingsTab = label => clickText(label, 'document.querySelector(".tabs")');
 const refresh = () => ev(`document.querySelector('button[aria-label="Durumu yenile"]').click()`);
 const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
 const homeEnv = { USERPROFILE: dirs.home, HOME: dirs.home, LOCALAPPDATA: join(dirs.home, 'AppData', 'Local'), APPDATA: join(dirs.home, 'AppData', 'Roaming') };
@@ -125,15 +126,15 @@ try {
   await send('Page.enable'); await send('Runtime.enable');
   await waitFor(`document.body.innerText.includes('Respected')`, 'app window renders');
   if (intent) { // a product installer's "Hub ile devam et": the Hub must open on that product's install page, then stop.
-    await waitFor(`document.querySelector('.crumbs')?.textContent.includes(${JSON.stringify(intent === 'brain' ? 'Kurulum' : 'Uygulamalarım')})`, `${intent} hand-over opens its install page`, 30000);
+    await waitFor(`document.querySelector('.crumbs')?.textContent.includes(${JSON.stringify(intent === 'brain' ? 'Kurulum' : 'Kütüphane')})`, `${intent} hand-over opens its install page`, 30000);
     await shot('intent-' + intent);
     throw new Error('done'); // the intent run ends here; `finally` reports
   }
   check('running as the native desktop app', await ev(`'__TAURI_INTERNALS__' in window`));
   check('Python is not on the PATH of this Hub', !spawnSync('python', ['--version'], { env, encoding: 'utf8' }).stdout);
 
-  await rail('Uygulamalarım');
-  await waitFor(`document.querySelector('.page-head h1')?.textContent==='Uygulamalarım'&&document.querySelectorAll('article.lib-item').length===2`, 'My Apps lists both products');
+  await rail('Kütüphane');
+  await waitFor(`document.querySelector('.page-head h1')?.textContent==='Kütüphane'&&document.querySelectorAll('article.lib-item').length===2`, 'My Apps lists both products');
   await waitFor(`${cardHas('Brain', 'Kurulu değil')}&&${cardHas('Orchestrator', 'Kurulu değil')}`, 'both products start not installed');
   await shot('01-my-apps-before');
 
@@ -269,7 +270,7 @@ try {
   check('MCP entry removed again, foreign entry intact', !readJson(join(dirs.home, '.claude.json')).mcpServers?.['respected-orchestrator'] && !!readJson(join(dirs.home, '.claude.json')).mcpServers?.['someone-elses']);
 
   // Repair: a changed program file is reported by the product; the Hub runs the installer again, which restores it.
-  await rail('Uygulamalarım');
+  await rail('Kütüphane');
   for (const [name, p] of [['Brain', product.brain], ['Orchestrator', product.orch]]) {
     const file = dataFileOf(dirname(p.exe));
     const original = readFileSync(file);
@@ -301,7 +302,7 @@ try {
   await waitFor(cardHas('Orchestrator', 'Kurulu değil'), 'Orchestrator removed', 420000);
   await sleep(3000); // the uninstaller's own copy finishes a moment later
   check('purged: the whole Orchestrator folder and its Installed-apps entry are gone', !existsSync(product.orch.folder) && !registered(product.orch.key));
-  await rail('Etkinlik');
+  await rail('Ayarlar'); await settingsTab('Etkinlik');
   await waitFor(`document.body.innerText.includes('Kurulum işlemleri')&&document.body.innerText.includes('kaldırıldı')&&document.body.innerText.includes('onarıldı')&&document.body.innerText.includes('kuruldu')`, 'Activity lists the Hub\'s own operations');
   await shot('10-activity');
 } catch (error) {

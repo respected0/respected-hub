@@ -4,6 +4,7 @@ import { describeLifecycleError, lifecycleApply, lifecyclePlan } from '../../../
 import type { LifecyclePlan } from '../../../shell/lifecycle.ts';
 import { EMPTY_SELECTION, summarize, toSettings } from '../brainClients.ts';
 import type { Selection } from '../brainClients.ts';
+import InstallFacts from '../../../shell/views/InstallFacts.tsx';
 import ClientPicker from './ClientPicker.tsx';
 
 const STEPS = ['Kimlik', 'Hafıza', 'Kaynaklar', 'İzinler', 'Onay'];
@@ -101,6 +102,7 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
         <li><span>Sürüm</span><strong>{plan?.to_version ? `v${plan.to_version}` : '—'}</strong></li></ul>
       {planning && <p className="muted" role="status">Kurucu indiriliyor ve doğrulanıyor…</p>}
       {planError ? <p className="error" role="alert">{planError}</p> : <ol className="plan-steps">{plan?.plan.steps.map(item => <li key={item.id}>{item.summary}{!item.reversible && <em className="pill"> {item.irreversible_reason}</em>}</li>)}</ol>}
+      <InstallFacts subject="brain" only="install" />
       <p className="muted">Kurulum Brain'in kendi kurucusuyla yapılır ve 1-2 dakika sürebilir. Hata olursa ürün kendi değişikliklerini geri alır.</p></div>}
     {error && <p className="error" role="alert">{error}</p>}
     <div className="wizard-actions">

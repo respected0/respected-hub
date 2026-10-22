@@ -31,7 +31,7 @@ Giriş: [README.md](../README.md). Yayın: [release/RELEASE.md](../release/RELEA
 4. **Önbellek:** yalnızca şu an kurulu sürümün kurucusu kalır (çevrimdışı onarım için); kaldırınca hiçbiri kalmaz.
 
 Hub geri alma tutmaz: kurucu programı yerinde değiştirir, kaldırıcı siler; tutarlılık ürünün işidir. Her eylem
-`managed\journal\` altına bir kayıt yazar (Etkinlik ekranı). Hub bir işlemin ortasında kapanırsa o kayıt bir sonraki
+`managed\journal\` altına bir kayıt yazar (Ayarlar › Etkinlik). Hub bir işlemin ortasında kapanırsa o kayıt bir sonraki
 açılışta "başarısız" olarak kapatılır; ürün meşgul görünüp kalmaz. Aynı ürün için ikinci bir işlem, birincisi bitmeden
 başlamaz.
 

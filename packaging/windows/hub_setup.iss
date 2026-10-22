@@ -36,6 +36,11 @@ InfoBeforeFile={#StageDir}\BETA_NOTICE.txt
 [Languages]
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 
+[Messages]
+; the ready page's button is "Kur", not "Sonraki"
+turkish.ReadyLabel2a=Kuruluma devam etmek için Kur düğmesine, ayarları gözden geçirmek ya da değiştirmek için Önceki düğmesine tıklayın.
+turkish.ReadyLabel2b=Kuruluma başlamak için Kur düğmesine tıklayın.
+
 [UninstallDelete]
 ; everything the Hub keeps is its own: the window data, the download cache and its activity journal
 Type: filesandordirs; Name: "{localappdata}\com.respected.hub"

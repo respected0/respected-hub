@@ -77,7 +77,7 @@ export default function BrainSetup({ onDone }: { onDone: () => void }) {
   </label>;
 
   if (state === 'loading') return <div className="panel-glass"><p className="muted">Ayarlar Brain'den okunuyor…</p></div>;
-  if (state === 'failed') return <div className="panel-glass"><p className="error" role="alert">{error}</p><p className="muted">Brain'e ulaşılamadı; kurulu değilse Uygulamalarım'dan kurun, kuruluysa onarın.</p></div>;
+  if (state === 'failed') return <div className="panel-glass"><p className="error" role="alert">{error}</p><p className="muted">Brain'e ulaşılamadı; kurulu değilse Kütüphane'den kurun, kuruluysa onarın.</p></div>;
 
   return <div className="panel-glass">
     <div className="step-body"><h2>Brain ayarları</h2>
