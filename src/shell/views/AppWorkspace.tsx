@@ -4,10 +4,15 @@ import { engine, loadSettings, native, type Run, type Settings } from '../../sha
 import { listCampaigns } from '../../products/orchestrator/campaigns.ts';
 import { rppTry } from '../../shared/productClient.ts';
 import type { Ecosystem } from '../useEcosystem.ts';
+import type { LifecycleAction } from '../lifecycle.ts';
+import LifecycleControls from './LifecycleControls.tsx';
 import BrainSetup from '../../products/brain/views/BrainSetup.tsx';
 import BrainInstall from '../../products/brain/views/BrainInstall.tsx';
 import Tasks from '../../products/orchestrator/views/Tasks.tsx';
 import { ProductPanel, ProductStatusPanel } from './Products.tsx';
+import InstallFacts from './InstallFacts.tsx';
+import Hello from './Hello.tsx';
+import BrainOverview from '../../products/brain/views/BrainOverview.tsx';
 import Campaigns from '../../products/orchestrator/views/Campaigns.tsx';
 import MemoryAccess from '../../products/brain/views/MemoryAccess.tsx';
 import MemoryIndex from '../../products/brain/views/MemoryIndex.tsx';
@@ -20,18 +25,34 @@ import { dataRootSummary, mountFor } from '../workspaceModel.ts';
 import { Emblem, Weave } from '../../shared/ui.tsx';
 import '../../products/orchestrator/views/settings.css';
 
-const BRAIN_ABOUT: Record<string, string> = { memory: 'Notlarda ara, oku, hızlı not ekle, sabah özetini gör.', setup: 'AI araç bağlantıları, MCP izinleri ve not kasası.', settings: 'Ürün ayarları, arama dizini ve anlamsal arama.' };
+// How each product works, in three steps (Orchestrator has no window of its own; Brain works through the AI tools the person already uses).
+const HOW: Record<string, [string, string][]> = {
+  brain: [
+    ['AI araçlarınızı bağlayın', 'Ayarlar sayfasında hangi AI araçlarının (Claude, Codex…) oturumlarının hafızaya yakalanacağını seçersiniz.'],
+    ['Oturumlar notlara dönüşür', 'Bir oturum bitince konuşma sır maskelemesinden geçer, AI aracınızla özetlenir ve kasanızdaki günlüğe yazılır.'],
+    ['Sonraki oturumlar hatırlar', 'AI aracınız hafızada arayıp ilgili notları getirir. Her şey kendi bilgisayarınızdaki kasada kalır.'],
+  ],
+  orchestrator: [
+    ['Görev verin', 'Görevler sayfasından ya da MCP açıksa AI aracınızdan (Claude, Codex…) bir iş tarif edersiniz.'],
+    ['Model izole çalışır', 'İş, projenizin ayrı bir kopyasında yapılır; gerçek dosyalarınıza dokunulmaz. Ayrı bir model sonucu inceler.'],
+    ['Siz karar verirsiniz', 'Kanıtlar sayfasında ne değiştiğini görürsünüz. Yama yalnızca sizin onayınızla gerçek projeye uygulanır.'],
+  ],
+};
 
-// The Overview is where product health lives (it is shown nowhere else): status, checks and capabilities, then what the product offers.
+// The Overview opens with a greeting and the product's state, then what it did lately, how it works, what was checked and what it installs.
 function Overview({ app, eco, go }: { app: AppDef; eco: Ecosystem; go: (page: string) => void }) {
   const [workers, setWorkers] = useState<Record<string, string[] | null> | null>(null);
   useEffect(() => { if (native && app.id === 'orchestrator') engine<{ workers?: Record<string, string[] | null> }>('status').then(s => setWorkers(s.workers ?? null)).catch(() => setWorkers(null)); }, [app.id]);
+  const runtime = eco.apps[app.id];
   return <>
-    {app.rpp && <ProductStatusPanel id={app.rpp} />}
-    {app.id === 'orchestrator'
-      ? <OverviewPanel runs={eco.runs} workers={workers} onOpenTasks={() => go('runs')} />
-      : <section className="panel-glass"><div className="section-head"><h2>Neler yapabilirsiniz?</h2></div>
-          <div className="app-cards">{app.pages.filter(page => BRAIN_ABOUT[page.id]).map(page => <button key={page.id} className="app-card" onClick={() => go(page.id)}><span className="app-card-body"><strong>{page.label}</strong><small>{BRAIN_ABOUT[page.id]}</small></span></button>)}</div></section>}
+    <Hello app={app.id} product={app.name.replace('Respected ', '')} kind={runtime.summary.statusKind} loading={runtime.loading} version={runtime.summary.version}>
+      {app.id === 'orchestrator' && workers && Object.keys(workers).length > 0 && <ul className="capabilities" aria-label="Çalışan araçlar">{Object.entries(workers).map(([name, found]) => <li key={name} className={found?.length ? '' : 'off'}>{name}{found?.length ? '' : ' · bulunamadı'}</li>)}</ul>}
+    </Hello>
+    {app.id === 'orchestrator' ? <OverviewPanel runs={eco.runs} workers={workers} onOpenTasks={() => go('runs')} /> : <BrainOverview openMemory={() => go('memory')} />}
+    <section className="panel-glass"><div className="section-head"><h2>Nasıl çalışır?</h2></div>
+      <ol className="plan-steps">{HOW[app.id]?.map(([title, text]) => <li key={title}><strong>{title}.</strong> {text}</li>)}</ol></section>
+    {app.rpp && <ProductStatusPanel id={app.rpp} summary={runtime.summary} />}
+    {(app.id === 'brain' || app.id === 'orchestrator') && <section className="panel-glass"><InstallFacts subject={app.id} /></section>}
   </>;
 }
 
@@ -89,39 +110,41 @@ function DataRootSection() {
 
 function SettingsPage({ app }: { app: AppDef }) {
   return <>
-    {app.rpp && <ProductPanel id={app.rpp} />}
-    {app.id === 'brain' && <MemoryIndex />}
+    {app.id === 'orchestrator' && <ProductPanel id="orchestrator" />}
     {app.id === 'orchestrator' && <MemoryAccess />}
     {app.id === 'orchestrator' && <OrchestratorMcp />}
     {app.id === 'orchestrator' && <DataRootSection />}
   </>;
 }
 
-export default function AppWorkspace({ appId, page, eco, go }: { appId: string; page: string; eco: Ecosystem; go: (page: string) => void }) {
+export default function AppWorkspace({ appId, page, eco, go, ask, onAsked }: { appId: string; page: string; eco: Ecosystem; go: (page: string) => void; ask?: { product: string; action: LifecycleAction } | null; onAsked?: () => void }) {
   const app = APPS.find(item => item.id === appId);
   if (!app) return <div className="page"><p className="error">Uygulama bulunamadı.</p></div>;
   const view = mountFor(app.id, page);
   const runtime = eco.apps[app.id]; const summary = runtime.summary;
   const pageInfo = app.pages.find(item => item.id === page);
-  return <div className={`page accent-${app.accent}`}>
+  const lc = eco.lifecycle?.products.find(item => item?.product === app.id) ?? null;
+  return <div className={`lib-pane accent-${app.accent}`}>
     <header className="ws-banner"><Weave /><Emblem app={app.id} />
-      <div className="ws-title"><span className="eyebrow">Çalışma alanı</span><h1>{app.name}</h1><p>{app.tagline}</p>
-        <span className="ws-meta">{summary.version ? <span className="ver">v{summary.version}</span> : null}{!runtime.loading && summary.statusKind !== 'ok' && view !== 'overview' && <button className="link-btn" onClick={() => go('overview')}>Ürün bir sorun bildiriyor: Genel bakışı aç</button>}</span></div>
+      <div className="ws-title"><h1>{app.name}</h1><p>{app.tagline}</p>
+        {!runtime.loading && summary.statusKind !== 'ok' && view !== 'overview' && <span className="ws-meta"><button className="link-btn" onClick={() => go('overview')}>Ürün bir sorun bildiriyor: Genel bakışı aç</button></span>}
+</div>
+      <LifecycleControls name={app.name} lc={lc} onChanged={eco.refresh} onWizard={app.id === 'brain' ? () => go('settings') : undefined} autoAction={ask?.product === app.id ? ask.action : undefined} onAutoDone={onAsked} />
       <div className="ws-tabs" role="tablist" aria-label={`${app.name} bölümleri`}>{app.pages.map(item => <button key={item.id} role="tab" aria-selected={view === mountFor(app.id, item.id)} className="tab" onClick={() => go(item.id)}>{item.label}</button>)}</div>
     </header>
     <section className="ws-page" aria-label={pageInfo?.label}>
       <div className="ws-head"><h2>{pageInfo?.label}</h2><p className="muted">{pageInfo?.description}</p></div>
       <div className="ws-stack">
       {view === 'overview' && <Overview app={app} eco={eco} go={go} />}
-      {view === 'setup' && (() => { const lc = eco.lifecycle?.products.find(item => item?.product === 'brain'); return lc?.install_state === 'absent' && lc.available
+      {view === 'settings' && app.id === 'brain' && (() => { const lc = eco.lifecycle?.products.find(item => item?.product === 'brain'); return lc?.install_state === 'absent' && lc.available
         ? <BrainInstall onDone={eco.refresh} />
         : <BrainSetup onDone={eco.refresh} />; })()}
       {view === 'runs' && <Tasks />}
       {view === 'campaigns' && <Campaigns />}
       {view === 'agents' && <AgentsPage />}
       {view === 'evidence' && <EvidencePage runs={eco.runs} />}
-      {view === 'memory' && <MemoryWorkspace />}
-      {view === 'settings' && <SettingsPage app={app} />}
+      {view === 'memory' && <><MemoryWorkspace /><MemoryIndex /></>}
+      {view === 'settings' && app.id !== 'brain' && <SettingsPage app={app} />}
       </div>
     </section>
   </div>;

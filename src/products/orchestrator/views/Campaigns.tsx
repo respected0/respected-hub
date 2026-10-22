@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { onReturn } from '../../../shared/focus.ts';
 import { loadSettings, native } from '../../../shared/api.ts';
 import { campaignStatus, listCampaigns, startCampaign, summarizeCampaign } from '../campaigns.ts';
 import './campaigns.css';
@@ -91,8 +92,9 @@ export default function Campaigns() {
   const selectedRef = useRef<string | null>(null);
   selectedRef.current = selected;
 
-  const loadList = useCallback(async () => {
-    setListState('loading'); setListError('');
+  const loadList = useCallback(async (quiet = false) => {
+    if (!quiet) setListState('loading');
+    setListError('');
     try {
       setNames(await listCampaigns());
       setListState('ready');
@@ -121,7 +123,7 @@ export default function Campaigns() {
   const summary = status ? summarizeCampaign(status) : null;
   const running = status !== null && (status.supervisor_alive === true || summarizeCampaign(status).phase === 'running');
 
-  useEffect(() => { if (native) void loadList(); }, [loadList]);
+  useEffect(() => { if (!native) return; void loadList(); return onReturn(() => void loadList(true)); }, [loadList]);
 
   // The campaign folder is the user's configured Hub data root; shown read-only here.
   useEffect(() => {
@@ -158,10 +160,7 @@ export default function Campaigns() {
   return <div className="campaigns-view ws-stack" aria-label="Kampanyalar">
     <div className="campaign-grid">
       <section className="panel-glass campaign-list-col" aria-label="Kampanya listesi">
-        <div className="section-head"><div><h2>Kampanyalar</h2><p className="muted" role="note">Veri klasörü: <code className="campaign-id">{dataRoot || 'ayarlı değil'}</code></p></div>
-          <button type="button" onClick={() => { void loadList(); if (selected) void loadStatus(selected); }} disabled={listState === 'loading'}>
-            {listState === 'loading' ? 'Yükleniyor…' : 'Yenile'}
-          </button></div>
+        <div className="section-head"><div><h2>Kampanyalar</h2><p className="muted" role="note">Veri klasörü: <code className="campaign-id">{dataRoot || 'ayarlı değil'}</code></p></div></div>
         {listState === 'loading' && <p className="muted">Kampanyalar yükleniyor…</p>}
         {listState === 'failed' && <p className="error" role="alert">{listError}</p>}
         {listState === 'ready' && names.length === 0 && <p className="empty-note">Henüz kampanya yok. Seçili veri klasöründe kampanya bulunamadı; klasörü Ayarlar bölümünden değiştirebilirsiniz. Aşağıdaki gelişmiş bölümden bir kampanya spec'i gönderebilirsiniz.</p>}

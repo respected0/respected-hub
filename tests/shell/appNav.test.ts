@@ -26,5 +26,5 @@ test('orchestrator exposes the mounted workspace pages in order', () => {
 test('brain pages are unchanged', () => {
   const brain = APPS.find(app => app.id === 'brain');
   assert.ok(brain, 'brain app is missing');
-  assert.deepEqual(brain.pages.map(page => page.id), ['overview', 'memory', 'setup', 'settings']);
+  assert.deepEqual(brain.pages.map(page => page.id), ['overview', 'memory', 'settings']);
 });

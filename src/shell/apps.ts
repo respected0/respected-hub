@@ -31,9 +31,8 @@ export const APPS: AppDef[] = [
     tagline: 'Ajanlar de\u011fi\u015fir; ortak haf\u0131za kasan\u0131zda kal\u0131r.',
     pages: [
       { id: 'overview', label: 'Genel bakış', description: 'Ürünün sağlığı ve nereden başlayacağınız.' },
-      { id: 'memory', label: 'Hafıza', description: 'Notlarda arayın, okuyun, hızlı not yakalayın, sabah özetini görün.' },
-      { id: 'setup', label: 'Kurulum', description: 'AI araç bağlantıları, MCP izinleri ve not kasası.' },
-      { id: 'settings', label: 'Ayarlar', description: 'Brain ayarları, hafıza dizini ve anlamsal arama.' }] },
+      { id: 'memory', label: 'Hafıza', description: 'Notlarda arayın, okuyun, hızlı not yakalayın; arama dizinini ve anlamsal aramayı yönetin.' },
+      { id: 'settings', label: 'Ayarlar', description: 'Ad, asistan, hafıza yakalama, AI araç bağlantıları, MCP izinleri ve not kasası.' }] },
   { id: 'orchestrator', name: 'Respected Orchestrator', rpp: 'orchestrator', accent: 'blue',
     tagline: '\u00c7ok ajanl\u0131 g\u00f6rev motoru: izole \u00e7al\u0131\u015ft\u0131r, do\u011frula, incele.',
     pages: ORCHESTRATOR_PAGES },

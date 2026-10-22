@@ -9,9 +9,9 @@ test('every orchestrator page id has a mount', () => {
   }
 });
 
-test('brain mounts stay overview/setup/settings', () => {
+test('brain mounts stay overview/memory/settings', () => {
   assert.equal(mountFor('brain', 'overview'), 'overview');
-  assert.equal(mountFor('brain', 'setup'), 'setup');
+  assert.equal(mountFor('brain', 'setup'), 'none');
   assert.equal(mountFor('brain', 'memory'), 'memory');
   assert.equal(mountFor('brain', 'settings'), 'settings');
   assert.equal(mountFor('brain', 'agents'), 'none');

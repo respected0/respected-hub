@@ -9,6 +9,12 @@ const PATHS: Record<string, string> = {
   settings: 'M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6',
   refresh: 'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7',
   arrow: 'M5 12h14M13 6l6 6-6 6',
+  check: 'M5 12.5l4.5 4.5L19 7.5',
+  minimize: 'M6 12h12',
+  filter: 'M4 7h16M7 12h10M10 17h4',
+  maximize: 'M6 6h12v12H6z',
+  restore: 'M9 9V6h9v9h-3M6 9h9v9H6z',
+  x: 'M6 6l12 12M18 6L6 18',
   info: 'M12 8h.01M11 12h1v5h1M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z',
   shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
   download: 'M12 4v11M7 11l5 5 5-5M5 20h14',
@@ -17,7 +23,7 @@ const PATHS: Record<string, string> = {
   trash: 'M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13',
 };
 export function Icon({ name }: { name: string }) {
-  return <svg className="ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={PATHS[name] ?? PATHS.apps} /></svg>;
+  return <svg className={`ico ${name}`} viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={PATHS[name] ?? PATHS.apps} /></svg>;
 }
 
 // Brain: a small memory graph. Orchestrator: lanes that fork and merge.

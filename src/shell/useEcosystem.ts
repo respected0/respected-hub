@@ -5,6 +5,8 @@ import { APPS } from './apps.ts';
 import { rppTry } from '../shared/productClient.ts';
 import { activityList, lifecycleStatus, type JournalEntry, type LifecycleOverview } from './lifecycle.ts';
 import { summarizeProduct, type ProductSummary } from '../shared/productsModel.ts';
+import { onReturn } from '../shared/focus.ts';
+import { terminal } from '../products/orchestrator/tasks.ts';
 
 interface AppRuntime { loading: boolean; summary: ProductSummary; }
 export interface Ecosystem { apps: Record<string, AppRuntime>; runs: Run[]; lifecycle: LifecycleOverview | null; journal: JournalEntry[]; refresh: () => void; }
@@ -20,34 +22,52 @@ export function useEcosystem(): Ecosystem {
   // one refresh at a time (each spawns several engine processes); a request made meanwhile reruns once afterwards
   const inFlight = useRef(false);
   const rerun = useRef(false);
+  // The manifest only changes with the installed version, so it is asked again only then (Orchestrator's takes ~570 ms).
+  const manifests = useRef<Record<string, { version: string | null; response: Awaited<ReturnType<typeof rppTry>> }>>({});
   const load = useCallback(async () => {
     if (!native) { setApps(Object.fromEntries(APPS.map(app => [app.id, { ...pending, loading: false }]))); return; }
-    const [overview, history] = await Promise.all([lifecycleStatus(), activityList(50)]);
-    const absent = new Set((overview.ok ? overview.result.products : []).filter(item => item?.install_state === 'absent').map(item => item!.product));
-    const entries = await Promise.all(APPS.map(async app => {
-      if (!app.rpp) return [app.id, { ...pending, loading: false }] as const;
+    // every part is shown as soon as it is read: the slow product calls never hold back the install state, and one product never waits for the other
+    const runsDone = engine<{ runs: Run[] }>('list').then(reply => setRuns(reply.runs)).catch(() => setRuns([]));
+    const history = activityList(50).then(reply => setJournal(reply.ok ? reply.result : []));
+    const overview = await lifecycleStatus();
+    setLifecycle(overview.ok ? overview.result : null);
+    const products = overview.ok ? overview.result.products : [];
+    const absent = new Set(products.filter(item => item?.install_state === 'absent').map(item => item!.product));
+    await Promise.all(APPS.map(async app => {
+      if (!app.rpp) { setApps(before => ({ ...before, [app.id]: { ...pending, loading: false } })); return; }
       // not installed: nothing to poll, so no error banner for a product that was never there
-      if (absent.has(app.id)) return [app.id, { loading: false, summary: { ...summarizeProduct(null, null), statusText: 'Kurulu değil', errorText: undefined } }] as const;
-      const [manifest, health] = await Promise.all([rppTry(app.rpp, 'manifest'), rppTry(app.rpp, 'health')]);
-      return [app.id, { loading: false, summary: summarizeProduct(manifest, health) }] as const;
+      if (absent.has(app.id)) { setApps(before => ({ ...before, [app.id]: { loading: false, summary: { ...summarizeProduct(null, null), statusText: 'Kurulu değil', errorText: undefined } } })); return; }
+      const version = products.find(item => item?.product === app.id)?.version ?? null;
+      const known = manifests.current[app.id];
+      const [manifest, health] = await Promise.all([
+        known && known.version === version && known.response?.ok ? known.response : rppTry(app.rpp, 'manifest'),
+        rppTry(app.rpp, 'health')]);
+      manifests.current[app.id] = { version, response: manifest };
+      setApps(before => ({ ...before, [app.id]: { loading: false, summary: summarizeProduct(manifest, health) } }));
     }));
-    setApps(Object.fromEntries(entries));
-    try { setRuns((await engine<{ runs: Run[] }>('list')).runs); } catch { setRuns([]); }
-    setLifecycle(overview.ok ? overview.result : null); setJournal(history.ok ? history.result : []);
+    await Promise.all([runsDone, history]);
   }, []);
 
+  // a refresh that nobody asked for (window focus, a timer) is skipped when the last one finished moments ago
+  const lastDone = useRef(0);
   const refresh = useCallback(async (force = true) => {
     if (inFlight.current) { if (force) rerun.current = true; return; }
-    inFlight.current = true;
-    try { await load(); } finally { inFlight.current = false; }
-    if (rerun.current) { rerun.current = false; await refresh(false); }
+    if (!force && Date.now() - lastDone.current < 2500) return;
+    do {
+      rerun.current = false; inFlight.current = true;
+      try { await load(); } finally { inFlight.current = false; lastDone.current = Date.now(); }
+    } while (rerun.current);
   }, [load]);
 
+  // Read on open and whenever the person returns to the window (installers and command lines change things outside the Hub);
+  // a timer runs only while a task is in flight, because that state moves on its own.
+  useEffect(() => { void refresh(); return onReturn(() => void refresh(false)); }, [refresh]);
+  const working = runs.some(run => !terminal(run.status));
   useEffect(() => {
-    void refresh();
-    const timer = window.setInterval(() => void refresh(false), 8000);
+    if (!working) return;
+    const timer = window.setInterval(() => void refresh(false), 3000);
     return () => window.clearInterval(timer);
-  }, [refresh]);
+  }, [working, refresh]);
 
   return { apps, runs, lifecycle, journal, refresh: () => void refresh() };
 }

@@ -26,8 +26,8 @@ sürümün kurucusunu çalıştırmaktır; Hub güncellemesi doğrulanmış Hub 
 | Ekran | Ne var |
 |---|---|
 | Ana Sayfa | İlk açılışta karşılama; sonra ürünlerin gerçek durumu |
-| Keşfet | Katalogdaki ürünler |
-| Kütüphane | Her ürünün kartı: durum, sürüm, Kur / Güncelle / Onar / Kaldır (planı ve "neler değişecek" bilgisini gösterir, onayla çalışır); her kartta kurulumda, kullanırken, güncellemede ve kaldırmada neler olduğu |
+| Keşfet | Katalogdaki uygulamalar: ad, kısa tanıtım, sürüm; Kur ya da kuruluysa Kütüphanede |
+| Kütüphane | Solda kurulu uygulamalar; sağda seçilenin kurulum durumu ve Güncelle / Onar / Kaldır düğmeleri, altında kendi sayfaları (Genel bakış, ürün sağlığı, neler kurulur dahil) |
 | Ayarlar | İki sekme: **Genel** (kanal, güncellemeleri denetle, Hub'ın neler kurduğu; geliştirme sürümünde kaynak yolları) ve **Etkinlik** (Hub'dan yapılan kurulum işlemleri, ürünlerin son kurulum kaydı, görev geçmişi) |
 | Brain | Genel bakış (ürün sağlığı burada, başka yerde değil), Hafıza (arama, okuma, hızlı not, sabah özeti), Kurulum sihirbazı, Ayarlar (şemadan form, AI aracı bağlantıları, anlamsal arama) |
 | Orchestrator | Görevler, kampanyalar, kanıt, ajanlar; Ayarlar (şemadan form, Brain hafıza erişimi, AI araçlarına MCP kaydı) |
@@ -46,6 +46,7 @@ npm run tauri -- dev                              # geliştirme penceresi
 ```
 
 `npm run dev` yalnızca tarayıcı önizlemesidir: yerel köprü yoktur, motor işlemleri kapalıdır (taklit edilmez).
+`npm run preview:update` tasarım içindir: uygulamaya girmeyen `dev/preview-update.html` sayfası, Brain'in güncellemesi varmış gibi ekranları gösterir; içindeki her veri uydurmadır ve hiçbir şey kurmaz.
 Geliştirme sürümü kardeş ürünlerin kaynağını Python ile çalıştırabilir (Ayarlar › Ürün durumu); üretim sürümü yalnızca
 kurulu ürünleri çalıştırır.
 
