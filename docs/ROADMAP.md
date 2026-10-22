@@ -13,7 +13,7 @@
 
 ## Yayın
 
-- [ ] Üretim anahtarıyla gerçek bir yayın, temiz bir makinede ilk kurulum ve Hub'ın kendini güncellemesi henüz bir kişi
+- [ ] Temiz bir makinede ilk kurulum ve Hub'ın kendini güncellemesi henüz bir kişi
   tarafından denenmedi.
 - [ ] Kurucuyu Authenticode ile imzalamak (SmartScreen uyarısı).
 - [ ] macOS / Linux: doğrulanmadı.

@@ -86,6 +86,6 @@ Hiçbir adım PATH'i değiştirmez, servis kurmaz, sistem Python'u istemez.
 
 ## 6. Açık kapılar
 
-Kanıt gerektirenler: üretim anahtarıyla gerçek bir yayın, temiz bir Windows makinesinde ilk kurulum, Hub'ın kendini
+Kanıt gerektirenler: temiz bir Windows makinesinde ilk kurulum, Hub'ın kendini
 güncellemesi, Yüklü uygulamalar'dan kaldırma ve değiştirme. Authenticode sertifikası yok. macOS/Linux doğrulanmadı.
 Yükleme yalnızca kullanıcının onayıyla yapılır.
