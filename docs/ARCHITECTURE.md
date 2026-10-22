@@ -135,6 +135,6 @@ yanıt. Ağ dinleyicisi, servis ya da kabuk yoktur.
 ## 9. Açık sınırlar
 
 - Kurucular Authenticode ile imzalı değil; SmartScreen uyarır. Yalnızca Windows.
-- Üretim anahtarıyla gerçek yayın, temiz makinede ilk kurulum, Hub'ın kendini güncellemesi ve Yüklü uygulamalar'dan
+- Temiz makinede ilk kurulum, Hub'ın kendini güncellemesi ve Yüklü uygulamalar'dan
   kaldırma bir kişi tarafından denenmedi (kod ve uçtan uca testlerle kapsanıyor).
 - Ürünler bir kez internetten indirilir; kurumsal vekil sunucular Windows'un `curl.exe`'sinin desteklediği kadardır.
