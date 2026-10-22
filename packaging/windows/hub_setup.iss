@@ -80,3 +80,51 @@ function RelaunchAfterUpdate(): Boolean;
 begin
   Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
 end;
+
+{ ---- already installed: repair / update or remove (the Hub's own silent update skips this page) ---- }
+
+const
+  UninstallKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{5C0F6A1E-3B7D-4E2A-9D55-7A1C2F0E8B31}_is1';
+
+var
+  MaintenancePage: TInputOptionWizardPage;
+  Leaving: Boolean;
+
+function InstalledVersion(): String;
+begin
+  if not RegQueryStringValue(HKCU, UninstallKey, 'DisplayVersion', Result) then Result := '';
+end;
+
+procedure InitializeWizard;
+begin
+  if InstalledVersion() = '' then Exit;
+  MaintenancePage := CreateInputOptionPage(wpWelcome, 'Respected Hub kurulu', 'Ne yapmak istersin?',
+    'Kurulu sürüm: v' + InstalledVersion() + '. Bu kurucu: v{#AppVersion}. Ürünlere ve kasana dokunulmaz.', True, False);
+  MaintenancePage.Add('Onar / güncelle: Hub''ı bu kurucudaki sürümle (v{#AppVersion}) yenile');
+  MaintenancePage.Add('Kaldır');
+  MaintenancePage.SelectedValueIndex := 0;
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := (MaintenancePage <> nil) and (PageID = MaintenancePage.ID) and WizardSilent;
+end;
+
+procedure CancelButtonClick(CurPageID: Integer; var Cancel, Confirm: Boolean);
+begin
+  if Leaving then Confirm := False;
+end;
+
+function NextButtonClick(CurPageID: Integer): Boolean;
+var
+  Uninstaller: String;
+  Code: Integer;
+begin
+  Result := True;
+  if (MaintenancePage = nil) or (CurPageID <> MaintenancePage.ID) or (MaintenancePage.SelectedValueIndex <> 1) then Exit;
+  if RegQueryStringValue(HKCU, UninstallKey, 'UninstallString', Uninstaller) then
+    Exec(RemoveQuotes(Uninstaller), '', '', SW_SHOWNORMAL, ewNoWait, Code);
+  Result := False;
+  Leaving := True;
+  WizardForm.Close;
+end;
