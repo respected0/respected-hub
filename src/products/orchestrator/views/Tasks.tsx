@@ -60,7 +60,7 @@ export default function Tasks() {
     {error && <p role="alert" className="error">{error}</p>}
     {message && <p role="status" className="message">{message}</p>}
       <div className="workspace">
-        <section className="panel"><h2>Yeni görev</h2><form onSubmit={event => { event.preventDefault(); void action(submit); }}>
+        <section className="panel-glass"><h2>Yeni görev</h2><form onSubmit={event => { event.preventDefault(); void action(submit); }}>
           <label>Git projesi<div className="input-row"><input value={form.projectRoot} onChange={e => field('projectRoot', e.target.value)} placeholder="Mutlak proje yolu" required /><button type="button" disabled={!native || busy} onClick={() => void action(async () => { const directory = await open({ directory: true, multiple: false }); if (typeof directory === 'string') field('projectRoot', directory); })}>Seç</button></div></label>
           <label>Görev<textarea value={form.task} onChange={e => field('task', e.target.value)} placeholder="Hangi sonuca ulaşılmalı?" required rows={3} /></label>
           <div className="columns"><label>Worker<select value={form.worker} onChange={e => field('worker', e.target.value)}>{['codex', 'claude', 'gemini', 'antigravity', 'cursor', 'custom'].map(worker => <option key={worker} value={worker}>{worker}{catalog?.engine.workers && worker !== 'custom' && !catalog.engine.workers[worker] ? ' · bulunamadı' : ''}</option>)}</select></label>
@@ -73,7 +73,7 @@ export default function Tasks() {
           <p className="muted">Worker ayrı worktree'de çalışır; ana projeye otomatik apply yapılmaz. CLI'nin kendi izinleri geçerlidir.</p>
           <button className="primary" type="submit" disabled={!native || busy}>{busy ? 'İşleniyor…' : 'Görevi çalıştır'}</button>
         </form></section>
-        <section className="panel"><h2>Görevler <span className="count">{runs.length}</span></h2>
+        <section className="panel-glass"><h2>Görevler <span className="count">{runs.length}</span></h2>
           {!runs.length && <p className="empty">Henüz bir görev yok. İlk sonucu burada takip edebilirsin.</p>}
           <div className="run-list">{runs.map(run => <button className={`run ${selectedId === run.run_id ? 'selected' : ''}`} key={run.run_id} onClick={() => { setSelected(null); setSelectedId(run.run_id); }}><span>{run.request?.task ?? run.run_id}</span><small>{run.request?.worker} · <span className={`status ${run.status}`}>{run.status}</span></small></button>)}</div>
           {selected && <div className="detail"><h3>{selected.request?.task ?? selected.run_id}</h3><p><span className={`status ${selected.status}`}>{selected.status}</span> {selected.phase ?? selected.reason ?? ''}</p><small>{selected.run_id}</small>

@@ -16,7 +16,7 @@ const HOME: Route = { kind: 'home' };
 // A route saved by an older Hub: product status and activity are Settings tabs now.
 const restore = (saved: { kind?: unknown; tab?: unknown } | null): Route => {
   if (!saved || typeof saved.kind !== 'string') return HOME;
-  if (saved.kind === 'connections') return { kind: 'settings', tab: 'status' };
+  if (saved.kind === 'connections') return { kind: 'settings', tab: 'general' };   // product status moved into each product's Overview
   if (saved.kind === 'activity') return { kind: 'settings', tab: 'activity' };
   if (saved.kind === 'settings') return { kind: 'settings', tab: SETTINGS_TABS.some(item => item.id === saved.tab) ? saved.tab as SettingsTab : 'general' };
   return saved as Route;
@@ -73,7 +73,7 @@ export default function App() {
   }
   const [spin, setSpin] = useState(false);
   const eco = useEcosystem();
-  const go: Go = target => setRoute(typeof target !== 'string' ? { kind: 'app', ...target } : target === 'connections' ? { kind: 'settings', tab: 'status' } : target === 'activity' ? { kind: 'settings', tab: 'activity' } : { kind: target });
+  const go: Go = target => setRoute(typeof target !== 'string' ? { kind: 'app', ...target } : target === 'activity' ? { kind: 'settings', tab: 'activity' } : { kind: target });
   const app = route.kind === 'app' ? APPS.find(item => item.id === route.app) : undefined;
   const shown = visibleApps(eco.lifecycle, native);
   const kinds = shown.map(item => eco.apps[item.id]?.summary.statusKind ?? 'unreachable' as const);
@@ -119,7 +119,7 @@ export default function App() {
         {route.kind === 'apps' && <MyApps eco={eco} go={go} ask={ask} onAsked={() => setAsk(null)} />}
         {route.kind === 'discover' && <Discover eco={eco} go={go} ask={ask} onAsked={() => setAsk(null)} />}
         {route.kind === 'settings' && <SettingsHub tab={route.tab} onTab={tab => setRoute({ kind: 'settings', tab })} eco={eco} go={go} onCatalogChanged={() => { readHubUpdate(); eco.refresh(); }} />}
-        {route.kind === 'app' && <AppWorkspace appId={route.app} page={route.page} eco={eco} go={page => setRoute({ kind: 'app', app: route.app, page })} onStatus={() => setRoute({ kind: 'settings', tab: 'status' })} />}
+        {route.kind === 'app' && <AppWorkspace appId={route.app} page={route.page} eco={eco} go={page => setRoute({ kind: 'app', app: route.app, page })} />}
       </main>
     </div>
   </div>;

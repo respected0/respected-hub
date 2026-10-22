@@ -7,9 +7,9 @@ test('hub navigation is Home, Discover, Library, Settings', () => {
   assert.deepEqual(HUB_NAV.map(item => item.label), ['Ana Sayfa', 'Keşfet', 'Kütüphane', 'Ayarlar']);
 });
 
-test('product status and activity live inside Settings', () => {
-  assert.deepEqual(SETTINGS_TABS.map(tab => tab.id), ['general', 'status', 'activity']);
-  assert.deepEqual(SETTINGS_TABS.map(tab => tab.label), ['Genel', 'Ürün durumu', 'Etkinlik']);
+test('Settings holds the Hub settings and the activity history', () => {
+  assert.deepEqual(SETTINGS_TABS.map(tab => tab.id), ['general', 'activity']);
+  assert.deepEqual(SETTINGS_TABS.map(tab => tab.label), ['Genel', 'Etkinlik']);
 });
 
 test('orchestrator exposes the mounted workspace pages in order', () => {

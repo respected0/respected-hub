@@ -155,21 +155,13 @@ export default function Campaigns() {
     return <div className="notice warning">Kampanyaları izlemek ve başlatmak için Tauri masaüstü uygulaması gerekli. Tarayıcı önizlemesinde gerçek kampanya verisi gösterilmez.</div>;
   }
 
-  return <section className="campaigns-view" aria-label="Kampanyalar">
-    <div className="section-head">
-      <div>
-        <span className="eyebrow">Kampanyalar</span>
-        <h1>Kampanya takibi</h1>
-        <p className="muted">Şeritlerin durumu, olay akışı ve süpervizör canlılığı doğrudan motordan okunur.</p>
-        <p className="muted" role="note">Veri klasörü: <code className="campaign-id">{dataRoot || 'ayarlı değil'}</code> — Ayarlar bölümünden değiştirilir.</p>
-      </div>
-      <button type="button" onClick={() => { void loadList(); if (selected) void loadStatus(selected); }} disabled={listState === 'loading'}>
-        {listState === 'loading' ? 'Yükleniyor…' : 'Yenile'}
-      </button>
-    </div>
-
+  return <div className="campaigns-view ws-stack" aria-label="Kampanyalar">
     <div className="campaign-grid">
-      <div className="campaign-list-col" aria-label="Kampanya listesi">
+      <section className="panel-glass campaign-list-col" aria-label="Kampanya listesi">
+        <div className="section-head"><div><h2>Kampanyalar</h2><p className="muted" role="note">Veri klasörü: <code className="campaign-id">{dataRoot || 'ayarlı değil'}</code></p></div>
+          <button type="button" onClick={() => { void loadList(); if (selected) void loadStatus(selected); }} disabled={listState === 'loading'}>
+            {listState === 'loading' ? 'Yükleniyor…' : 'Yenile'}
+          </button></div>
         {listState === 'loading' && <p className="muted">Kampanyalar yükleniyor…</p>}
         {listState === 'failed' && <p className="error" role="alert">{listError}</p>}
         {listState === 'ready' && names.length === 0 && <p className="empty-note">Henüz kampanya yok. Seçili veri klasöründe kampanya bulunamadı; klasörü Ayarlar bölümünden değiştirebilirsiniz. Aşağıdaki gelişmiş bölümden bir kampanya spec'i gönderebilirsiniz.</p>}
@@ -180,7 +172,7 @@ export default function Campaigns() {
             </button>
           </li>)}
         </ul>
-      </div>
+      </section>
 
       <div className="campaign-detail">
         {!selected && <p className="empty-note">Ayrıntıyı görmek için soldan bir kampanya seçin.</p>}
@@ -205,5 +197,5 @@ export default function Campaigns() {
       {startMessage && <p className="message" role="status">{startMessage}</p>}
       {startError && <p className="error" role="alert">{startError}</p>}
     </details>
-  </section>;
+  </div>;
 }

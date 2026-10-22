@@ -266,7 +266,7 @@ details.facts { border-top: 1px solid var(--line-soft); }
 .tab[aria-selected="true"]::after { content: ""; position: absolute; left: var(--s-4); right: var(--s-4); bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--accent); }
 
 /* ---------- Wizards (Brain install / setup) ---------- */
-.wizard.panel-glass { max-width: 880px; width: 100%; padding: 0; overflow: hidden; box-shadow: var(--shadow); }
+.wizard.panel-glass { width: 100%; padding: 0; overflow: hidden; box-shadow: var(--shadow); }
 .steps { display: flex; align-items: center; list-style: none; margin: 0; padding: var(--s-5) var(--s-6); border-bottom: 1px solid var(--line-soft); background: var(--surface-2); counter-reset: step; }
 .steps li { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 13px; font-weight: 600; color: var(--faint); white-space: nowrap; }
 .steps li:not(:last-child)::after { content: ""; flex: 1; min-width: 12px; height: 2px; margin: 0 var(--s-3) 0 2px; border-radius: 2px; background: var(--line-strong); }
@@ -321,3 +321,7 @@ details.facts { border-top: 1px solid var(--line-soft); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
 
 .ws-meta { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+/* One shell for every workspace page: a heading and one vertical stack of cards, full width, left-aligned */
+.ws-page { display: flex; flex-direction: column; gap: var(--s-5); min-width: 0; }
+.ws-head h2 { margin: 0 0 4px; font-size: var(--t-xl); } .ws-head p { margin: 0; max-width: 760px; }
+.ws-stack { display: flex; flex-direction: column; gap: var(--s-5); min-width: 0; }

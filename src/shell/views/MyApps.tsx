@@ -33,7 +33,7 @@ export default function MyApps({ eco, go, ask, onAsked }: { eco: Ecosystem; go: 
         <div className="lib-art"><Weave /><Emblem app={app.id} />{lc && <span className={`lib-state ${STATE_TONE[lc.install_state]}`}>{STATE_LABEL[lc.install_state]}</span>}</div>
         <div className="lib-body"><h2>{app.name}</h2><p className="muted">{app.tagline}</p>
           {lc?.version && <p className="meta"><span className="ver">Kurulu sürüm v{lc.version}</span></p>}
-          {installed && problem && <p className="notice" role="status">Ürün bir sorun bildiriyor. <button className="link-btn" onClick={() => go('connections')}>Ürün durumunu aç</button></p>}
+          {installed && problem && <p className="notice" role="status">Ürün bir sorun bildiriyor. <button className="link-btn" onClick={() => go({ app: app.id, page: 'overview' })}>Genel bakışı aç</button></p>}
           {installed && app.id === 'orchestrator' && <p className="muted">Orchestrator'ın ayrı bir penceresi yoktur: "Çalışma alanını aç" ile görev ve ajanları yönetirsiniz. AI araçlarınızdan kullanmak için çalışma alanında MCP erişimini açın.</p>}
           <LifecycleControls name={app.name} lc={lc} onChanged={eco.refresh} onWizard={app.id === 'brain' ? () => go({ app: app.id, page: 'setup' }) : undefined}
             autoAction={ask?.product === app.id ? ask.action : undefined} onAutoDone={onAsked} />

@@ -7,7 +7,7 @@ import type { Ecosystem } from '../useEcosystem.ts';
 import BrainSetup from '../../products/brain/views/BrainSetup.tsx';
 import BrainInstall from '../../products/brain/views/BrainInstall.tsx';
 import Tasks from '../../products/orchestrator/views/Tasks.tsx';
-import { ProductPanel } from './Products.tsx';
+import { ProductPanel, ProductStatusPanel } from './Products.tsx';
 import Campaigns from '../../products/orchestrator/views/Campaigns.tsx';
 import MemoryAccess from '../../products/brain/views/MemoryAccess.tsx';
 import MemoryIndex from '../../products/brain/views/MemoryIndex.tsx';
@@ -22,13 +22,17 @@ import '../../products/orchestrator/views/settings.css';
 
 const BRAIN_ABOUT: Record<string, string> = { memory: 'Notlarda ara, oku, hızlı not ekle, sabah özetini gör.', setup: 'AI araç bağlantıları, MCP izinleri ve not kasası.', settings: 'Ürün ayarları, arama dizini ve anlamsal arama.' };
 
-// No health here: product health is shown once, in Settings > Product status.
+// The Overview is where product health lives (it is shown nowhere else): status, checks and capabilities, then what the product offers.
 function Overview({ app, eco, go }: { app: AppDef; eco: Ecosystem; go: (page: string) => void }) {
   const [workers, setWorkers] = useState<Record<string, string[] | null> | null>(null);
   useEffect(() => { if (native && app.id === 'orchestrator') engine<{ workers?: Record<string, string[] | null> }>('status').then(s => setWorkers(s.workers ?? null)).catch(() => setWorkers(null)); }, [app.id]);
-  if (app.id === 'orchestrator') return <OverviewPanel runs={eco.runs} workers={workers} onOpenTasks={() => go('runs')} />;
-  return <section className="panel-glass"><h2>Neler yapabilirsiniz?</h2>
-    <div className="app-cards">{app.pages.filter(page => BRAIN_ABOUT[page.id]).map(page => <button key={page.id} className="app-card" onClick={() => go(page.id)}><span className="app-card-body"><strong>{page.label}</strong><small>{BRAIN_ABOUT[page.id]}</small></span></button>)}</div></section>;
+  return <>
+    {app.rpp && <ProductStatusPanel id={app.rpp} />}
+    {app.id === 'orchestrator'
+      ? <OverviewPanel runs={eco.runs} workers={workers} onOpenTasks={() => go('runs')} />
+      : <section className="panel-glass"><div className="section-head"><h2>Neler yapabilirsiniz?</h2></div>
+          <div className="app-cards">{app.pages.filter(page => BRAIN_ABOUT[page.id]).map(page => <button key={page.id} className="app-card" onClick={() => go(page.id)}><span className="app-card-body"><strong>{page.label}</strong><small>{BRAIN_ABOUT[page.id]}</small></span></button>)}</div></section>}
+  </>;
 }
 
 // Real engine data only; both calls degrade to honest empty states on failure.
@@ -93,26 +97,32 @@ function SettingsPage({ app }: { app: AppDef }) {
   </>;
 }
 
-export default function AppWorkspace({ appId, page, eco, go, onStatus }: { appId: string; page: string; eco: Ecosystem; go: (page: string) => void; onStatus: () => void }) {
+export default function AppWorkspace({ appId, page, eco, go }: { appId: string; page: string; eco: Ecosystem; go: (page: string) => void }) {
   const app = APPS.find(item => item.id === appId);
   if (!app) return <div className="page"><p className="error">Uygulama bulunamadı.</p></div>;
   const view = mountFor(app.id, page);
   const runtime = eco.apps[app.id]; const summary = runtime.summary;
+  const pageInfo = app.pages.find(item => item.id === page);
   return <div className={`page accent-${app.accent}`}>
     <header className="ws-banner"><Weave /><Emblem app={app.id} />
       <div className="ws-title"><span className="eyebrow">Çalışma alanı</span><h1>{app.name}</h1><p>{app.tagline}</p>
-        <span className="ws-meta">{summary.version ? <span className="ver">v{summary.version}</span> : null}{!runtime.loading && summary.statusKind !== 'ok' && <button className="link-btn" onClick={onStatus}>Ürün bir sorun bildiriyor: Ürün durumunu aç</button>}</span></div>
+        <span className="ws-meta">{summary.version ? <span className="ver">v{summary.version}</span> : null}{!runtime.loading && summary.statusKind !== 'ok' && view !== 'overview' && <button className="link-btn" onClick={() => go('overview')}>Ürün bir sorun bildiriyor: Genel bakışı aç</button>}</span></div>
       <div className="ws-tabs" role="tablist" aria-label={`${app.name} bölümleri`}>{app.pages.map(item => <button key={item.id} role="tab" aria-selected={view === mountFor(app.id, item.id)} className="tab" onClick={() => go(item.id)}>{item.label}</button>)}</div>
     </header>
-    {view === 'overview' && <Overview app={app} eco={eco} go={go} />}
-    {view === 'setup' && (() => { const lc = eco.lifecycle?.products.find(item => item?.product === 'brain'); return lc?.install_state === 'absent' && lc.available
-      ? <BrainInstall onDone={eco.refresh} />
-      : <BrainSetup onDone={eco.refresh} />; })()}
-    {view === 'runs' && <Tasks />}
-    {view === 'campaigns' && <Campaigns />}
-    {view === 'agents' && <AgentsPage />}
-    {view === 'evidence' && <EvidencePage runs={eco.runs} />}
-    {view === 'memory' && <MemoryWorkspace />}
-    {view === 'settings' && <SettingsPage app={app} />}
+    <section className="ws-page" aria-label={pageInfo?.label}>
+      <div className="ws-head"><h2>{pageInfo?.label}</h2><p className="muted">{pageInfo?.description}</p></div>
+      <div className="ws-stack">
+      {view === 'overview' && <Overview app={app} eco={eco} go={go} />}
+      {view === 'setup' && (() => { const lc = eco.lifecycle?.products.find(item => item?.product === 'brain'); return lc?.install_state === 'absent' && lc.available
+        ? <BrainInstall onDone={eco.refresh} />
+        : <BrainSetup onDone={eco.refresh} />; })()}
+      {view === 'runs' && <Tasks />}
+      {view === 'campaigns' && <Campaigns />}
+      {view === 'agents' && <AgentsPage />}
+      {view === 'evidence' && <EvidencePage runs={eco.runs} />}
+      {view === 'memory' && <MemoryWorkspace />}
+      {view === 'settings' && <SettingsPage app={app} />}
+      </div>
+    </section>
   </div>;
 }
