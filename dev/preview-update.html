@@ -20,6 +20,11 @@
       : [product('brain', state === 'installed' ? 'installed' : 'update-available', '0.1.0b2', state === 'installed' ? '0.1.0b2' : '0.1.0b3'), product('orchestrator', 'installed', '0.1.0b2', '0.1.0b2')] };
     const gone = { rpp: '1', ok: false, operation_id: null, result: null, error: { code: 'ENGINE_NOT_FOUND', message: 'The product engine is not installed.', hint: 'Install the product from the Hub.' } };
     const journal = [];
+    // sample tasks so the Orchestrator pages can be looked at with something in them
+    const runs = [
+      { run_id: 'run-20261023010000-aaaa1111', status: 'completed', request: { task: 'Giriş formundaki doğrulamayı düzelt', worker: 'claude', project_root: 'C:\\Projeler\\ornek' } },
+      { run_id: 'run-20261023011500-bbbb2222', status: 'running', request: { task: 'README örneklerini güncelle', worker: 'codex', project_root: 'C:\\Projeler\\ornek' } },
+      { run_id: 'run-20261023012000-cccc3333', status: 'failed', reason: 'doğrulama komutu başarısız', request: { task: 'Bağımlılıkları yükselt', worker: 'claude', project_root: 'C:\\Projeler\\ornek' } }];
     const brain = () => lifecycle.products[0];
     window.__TAURI_INTERNALS__ = { transformCallback: () => 1, unregisterCallback() {}, convertFileSrc: x => x,
       invoke: async (cmd, args) => {
@@ -42,7 +47,13 @@
         if (cmd === 'hub_update_install') return { ok: true, result: null, error: null };
         if (cmd === 'engine_request' && state === 'absent') throw 'The orchestrator engine is not installed.';
         if (cmd === 'rpp_request' && state === 'absent') return gone;
-        if (cmd === 'engine_request') return args.action === 'status' ? { workers: { claude: ['claude'], codex: ['codex'] } } : { runs: [] };
+        if (cmd === 'engine_request' && args.action === 'status') return { workers: { claude: ['claude'], codex: ['codex'] } };
+        if (cmd === 'engine_request' && args.action === 'list') return { runs };
+        if (cmd === 'engine_request' && args.action === 'inspect') return { run_id: args.runId, status: 'completed', changed_files: ['src/ornek.ts', 'tests/ornek.test.ts'],
+          reviews: [{ stage: 'inceleme', profile: 'claude', decision: 'approved', reason: 'Testler geçti, kapsam içinde.' }], tokens: { input: 1200, output: 340 } };
+        if (cmd === 'engine_request' && args.action === 'campaign-status') return { campaign_id: args.runId, status: 'LANES_NEED_REVIEW', supervisor_alive: false,
+          result: { lanes: { onyuz: { status: 'MASTER_APPROVED' }, arka: { status: 'HUMAN_APPROVAL_REQUIRED', reason: 'elle onay' } } }, events: [{ at: '2026-10-23T01:10:00Z', text: 'Şerit onyuz onaylandı' }] };
+        if (cmd === 'engine_request') return { runs: [] };
         if (cmd === 'rpp_request') {
           if (args.op === 'manifest') return ok({ rpp: '1', product_id: 'respected-' + args.product, product_version: lifecycle.products[args.product === 'brain' ? 0 : 1].version, capabilities: [] });
           if (args.op === 'health') return ok({ status: 'healthy', checks: checks[args.product] });
@@ -50,7 +61,7 @@
           return fail;
         }
         if (cmd === 'memory_note_read') return { ok: false, result: null, error: { code: 'NOT_FOUND', message: 'Önizlemede not yok.' } };
-        if (cmd === 'campaign_list') return [];
+        if (cmd === 'campaign_list') return ['proje-20261023-ornek'];
         return null;
       } };
   </script></head>
