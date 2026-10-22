@@ -1,4 +1,4 @@
-//! Real end-to-end proof that the Hub drives the real Orchestrator and SecondBrain engines over RPP 1. The products choose
+//! Real end-to-end proof that the Hub drives the real Orchestrator and Brain engines over RPP 1. The products choose
 //! their folders themselves (RESPECTED_APP_DIR / RESPECTED_DATA_DIR, the one override every product shares): this test points
 //! them once at a disposable folder, so no user data is touched.
 use respected_hub_lib::rpp::rpp_call;
@@ -10,7 +10,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 mod common;
 use common::{ecosystem, Temp};
 
-const PRODUCTS: [&str; 2] = ["orchestrator", "secondbrain"];
+const PRODUCTS: [&str; 2] = ["orchestrator", "brain"];
 
 /// One disposable product folder for the whole test binary (the variables are process-wide).
 fn isolated() {
@@ -23,7 +23,7 @@ fn isolated() {
 fn settings_for(ecosystem: &Path) -> Settings {
     isolated();
     Settings { python: "python".into(), orchestrator_root: ecosystem.join("respected-orchestrator"),
-        brain_root: ecosystem.join("respected-secondbrain"), brain_exe: None, orchestrator_exe: None }
+        brain_root: ecosystem.join("respected-brain"), brain_exe: None, orchestrator_exe: None }
 }
 
 fn call(settings: &Settings, product: &str, op: &str, payload: Option<Value>, operation_id: Option<String>) -> Value {
@@ -78,7 +78,7 @@ fn validate_rejects_an_unknown_key_for_both_products() {
 #[test]
 fn apply_readback_and_idempotent_replay_for_both_products() {
     let settings = settings_for(&ecosystem());
-    for (product, key, value) in [("orchestrator", "default_timeout_seconds", json!(1200)), ("secondbrain", "summary_provider", json!("codex"))] {
+    for (product, key, value) in [("orchestrator", "default_timeout_seconds", json!(1200)), ("brain", "summary_provider", json!("codex"))] {
         let payload = json!({ "settings": { key: value } });
         let operation_id = unique_id(product);
         let first = call(&settings, product, "settings.apply", Some(payload.clone()), Some(operation_id.clone()));
@@ -103,7 +103,7 @@ fn unknown_op_is_rejected_locally_for_both_products() {
 fn missing_engine_root_reports_engine_not_found() {
     let data = Temp::new("missing");
     let missing: PathBuf = data.0.clone();
-    let settings = Settings { python: "python".into(), orchestrator_root: missing.join("no-orchestrator"), brain_root: missing.join("no-secondbrain"),
+    let settings = Settings { python: "python".into(), orchestrator_root: missing.join("no-orchestrator"), brain_root: missing.join("no-brain"),
         brain_exe: None, orchestrator_exe: None };
     for product in PRODUCTS {
         assert_eq!(call(&settings, product, "manifest", None, None)["error"]["code"], "ENGINE_NOT_FOUND", "{product}");

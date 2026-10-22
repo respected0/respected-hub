@@ -20,13 +20,13 @@ type Checker<'a> = &'a dyn Fn(&Installed) -> Result<(), String>;
 fn err(code: &'static str, message: impl Into<String>, hint: impl Into<String>) -> LifecycleError { LifecycleError { code, message: message.into(), hint: hint.into() } }
 
 fn product(id: &str) -> Result<&'static Product, LifecycleError> {
-    installed::product(id).ok_or_else(|| err("BAD_REQUEST", format!("Bilinmeyen ürün: {id}."), "orchestrator veya secondbrain kullanın."))
+    installed::product(id).ok_or_else(|| err("BAD_REQUEST", format!("Bilinmeyen ürün: {id}."), "orchestrator veya brain kullanın."))
 }
 
 /// The newest installer bundle of `product` in the catalog cache.
 pub fn newest(roots: &Roots, product: &str) -> Option<Bundle> { lifecycle::installers(roots, product).0.into_iter().next() }
 
-/// The installer's own switches for what the person chose: `/VAULT=` (SecondBrain's notes folder), one `/SET=key=value` per
+/// The installer's own switches for what the person chose: `/VAULT=` (Brain's notes folder), one `/SET=key=value` per
 /// product setting, `/PURGE=1` for a removal that also deletes settings and data. Anything else is refused, never passed on.
 fn switches(product: &str, action: &str, params: &Value) -> Result<Vec<String>, LifecycleError> {
     let bad = |m: &str| err("BAD_REQUEST", m.to_string(), "Seçimleri gözden geçirip yeniden deneyin.");
@@ -42,7 +42,7 @@ fn switches(product: &str, action: &str, params: &Value) -> Result<Vec<String>, 
     }
     if action != "install" { return Ok(out); } // update and repair keep everything the person set; the installer only replaces the program
     if let Some(vault) = map.get("vault_path") {
-        let vault = vault.as_str().filter(|v| product == "secondbrain" && Path::new(v).is_absolute() && !v.contains('"'))
+        let vault = vault.as_str().filter(|v| product == "brain" && Path::new(v).is_absolute() && !v.contains('"'))
             .ok_or_else(|| bad("Not kasası mutlak bir klasör yolu olmalı."))?;
         out.push(format!("/VAULT={vault}"));
     }
@@ -203,7 +203,7 @@ mod tests {
             call.extend(args.iter().cloned());
             calls.borrow_mut().push(call);
             let app = installed::product(id).unwrap().app_dir_in(&root);
-            let record = if id == "secondbrain" { app.parent().unwrap().join("data").join("install-manifest.json") } else { app.join(".respected").join("install.json") };
+            let record = if id == "brain" { app.parent().unwrap().join("data").join("install-manifest.json") } else { app.join(".respected").join("install.json") };
             if exe.ends_with("unins000.exe") {
                 let (app, record) = (app.clone(), record.clone());
                 std::thread::spawn(move || { std::thread::sleep(Duration::from_millis(300)); let _ = fs::remove_file(record); let _ = fs::remove_dir_all(app); });
@@ -212,7 +212,7 @@ mod tests {
             assert!(exe.is_file(), "the staged installer exists while it runs");
             fs::create_dir_all(record.parent().unwrap()).unwrap();
             fs::create_dir_all(&app).unwrap();
-            fs::write(app.join(if id == "secondbrain" { "respectedbrain.exe" } else { "respected-orchestrator.exe" }), b"exe").unwrap();
+            fs::write(app.join(if id == "brain" { "respected-brain.exe" } else { "respected-orchestrator.exe" }), b"exe").unwrap();
             fs::write(app.join("unins000.exe"), b"unins").unwrap();
             fs::write(app.join("distribution.json"), json!({ "version": version }).to_string()).unwrap();
             fs::write(&record, b"{}").unwrap();
@@ -224,35 +224,35 @@ mod tests {
 
     #[test]
     fn install_passes_the_persons_choices_as_installer_switches_then_update_and_uninstall_follow_the_product() {
-        let roots = fixture("secondbrain", "RespectedSecondBrain-Windows-Setup.exe", "0.2.0");
+        let roots = fixture("brain", "RespectedBrain-Windows-Setup.exe", "0.2.0");
         let root = temp("products");
         let calls = Rc::new(RefCell::new(Vec::new()));
-        let run = fake_run(&root, "secondbrain", "0.2.0", &calls);
+        let run = fake_run(&root, "brain", "0.2.0", &calls);
         let params = json!({ "vault_path": "C:\\Notlar\\RespectedOS", "settings": { "assistant_name": "Jarvis", "integrations.mcp": true, "transcript_retention_days": 7 } });
-        let applied = apply_in(&roots, &root, "secondbrain", "install", &params, "op-install-1", &run, &ok).unwrap();
+        let applied = apply_in(&roots, &root, "brain", "install", &params, "op-install-1", &run, &ok).unwrap();
         assert_eq!((applied["status"].as_str(), applied["to_version"].as_str()), (Some("applied"), Some("0.2.0")));
-        assert_eq!(calls.borrow()[0], ["RespectedSecondBrain-Windows-Setup.exe", "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/VAULT=C:\\Notlar\\RespectedOS",
+        assert_eq!(calls.borrow()[0], ["RespectedBrain-Windows-Setup.exe", "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/VAULT=C:\\Notlar\\RespectedOS",
             "/SET=assistant_name=Jarvis", "/SET=integrations.mcp=true", "/SET=transcript_retention_days=7"]);
         assert!(!roots.managed.join("installer-staging").read_dir().map_or(false, |mut d| d.next().is_some()), "the staged copy is removed");
-        assert_eq!(apply_in(&roots, &root, "secondbrain", "install", &params, "op-install-1", &run, &ok).unwrap()["status"], "applied", "same id replays");
+        assert_eq!(apply_in(&roots, &root, "brain", "install", &params, "op-install-1", &run, &ok).unwrap()["status"], "applied", "same id replays");
         assert_eq!(calls.borrow().len(), 1);
-        assert_eq!(apply_in(&roots, &root, "secondbrain", "install", &params, "op-install-2", &run, &ok).unwrap_err().code, "LIFECYCLE_CONFLICT", "already installed");
-        assert_eq!(apply_in(&roots, &root, "secondbrain", "update", &Value::Null, "op-update-1", &run, &ok).unwrap_err().code, "LIFECYCLE_CONFLICT", "same version is not an update");
+        assert_eq!(apply_in(&roots, &root, "brain", "install", &params, "op-install-2", &run, &ok).unwrap_err().code, "LIFECYCLE_CONFLICT", "already installed");
+        assert_eq!(apply_in(&roots, &root, "brain", "update", &Value::Null, "op-update-1", &run, &ok).unwrap_err().code, "LIFECYCLE_CONFLICT", "same version is not an update");
 
-        let removed = apply_in(&roots, &root, "secondbrain", "uninstall", &json!({ "purge": true }), "op-remove-1", &run, &ok).unwrap();
+        let removed = apply_in(&roots, &root, "brain", "uninstall", &json!({ "purge": true }), "op-remove-1", &run, &ok).unwrap();
         assert_eq!(removed["status"], "applied");
         assert_eq!(calls.borrow().last().unwrap()[1..], ["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/PURGE=1"]);
-        assert!(installed::product("secondbrain").unwrap().installed_in(&root).is_none());
+        assert!(installed::product("brain").unwrap().installed_in(&root).is_none());
     }
 
     #[test]
     fn choices_that_could_reach_beyond_the_installer_switches_are_refused() {
         for params in [json!({ "vault_path": "relative" }), json!({ "settings": { "a b": "x" } }), json!({ "settings": { "user_bio": "say \"hi\"" } }),
                        json!({ "settings": { "x": { "nested": 1 } } }), json!({ "argv": ["/DIR=C:\\"] }), json!("text")] {
-            assert_eq!(switches("secondbrain", "install", &params).unwrap_err().code, "BAD_REQUEST", "{params}");
+            assert_eq!(switches("brain", "install", &params).unwrap_err().code, "BAD_REQUEST", "{params}");
         }
-        assert_eq!(switches("orchestrator", "install", &json!({ "vault_path": "C:\\x" })).unwrap_err().code, "BAD_REQUEST", "only SecondBrain has a vault");
-        assert_eq!(switches("secondbrain", "update", &json!({ "settings": { "user_name": "x" } })).unwrap(), SILENT.map(String::from), "update keeps the settings");
+        assert_eq!(switches("orchestrator", "install", &json!({ "vault_path": "C:\\x" })).unwrap_err().code, "BAD_REQUEST", "only Brain has a vault");
+        assert_eq!(switches("brain", "update", &json!({ "settings": { "user_name": "x" } })).unwrap(), SILENT.map(String::from), "update keeps the settings");
     }
 
     #[test]

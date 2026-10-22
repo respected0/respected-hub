@@ -20,9 +20,9 @@ export function Icon({ name }: { name: string }) {
   return <svg className="ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={PATHS[name] ?? PATHS.apps} /></svg>;
 }
 
-// SecondBrain: a small memory graph. Orchestrator: lanes that fork and merge.
+// Brain: a small memory graph. Orchestrator: lanes that fork and merge.
 const GLYPHS: Record<string, React.ReactElement> = {
-  secondbrain: <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="2.6" fill="currentColor" /><circle cx="5" cy="6" r="1.8" /><circle cx="19" cy="7" r="1.8" /><circle cx="6" cy="19" r="1.8" /><circle cx="19" cy="18" r="1.8" /><path d="M10 10.5L6.2 7.3M14 10.8l3.4-2.6M10.2 13.8l-3 3.8M14 13.6l3.6 3" /></g>,
+  brain: <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="2.6" fill="currentColor" /><circle cx="5" cy="6" r="1.8" /><circle cx="19" cy="7" r="1.8" /><circle cx="6" cy="19" r="1.8" /><circle cx="19" cy="18" r="1.8" /><path d="M10 10.5L6.2 7.3M14 10.8l3.4-2.6M10.2 13.8l-3 3.8M14 13.6l3.6 3" /></g>,
   orchestrator: <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="2" fill="currentColor" /><circle cx="19" cy="5" r="1.8" /><circle cx="19" cy="12" r="1.8" /><circle cx="19" cy="19" r="1.8" /><path d="M7 12h3c3 0 3-7 7-7M10 12h7M10 12c3 0 3 7 7 7" /></g>,
 };
 export function Emblem({ app, className = '' }: { app: string; className?: string }) {

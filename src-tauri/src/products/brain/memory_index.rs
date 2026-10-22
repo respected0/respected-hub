@@ -1,5 +1,5 @@
-// SecondBrain memory search index: read its state and refresh it. Only the user's click may start a refresh;
-// SecondBrain writes nothing but its own search index.
+// Brain memory search index: read its state and refresh it. Only the user's click may start a refresh;
+// Brain writes nothing but its own search index.
 use super::CallFn;
 use crate::rpp::generate_operation_id;
 use serde_json::{json, Value};
@@ -14,8 +14,8 @@ fn failure(reply: &Value, what: &str) -> String {
 }
 
 fn supports_index(call: CallFn, problems: &mut Vec<String>) -> bool {
-    let manifest = call("secondbrain", "manifest", None, None);
-    if !is_ok(&manifest) { problems.push(failure(&manifest, "SecondBrain bildirimi")); return false; }
+    let manifest = call("brain", "manifest", None, None);
+    if !is_ok(&manifest) { problems.push(failure(&manifest, "Brain bildirimi")); return false; }
     super::offers(&manifest, "memory.index.status")
 }
 
@@ -25,7 +25,7 @@ pub fn status(call: CallFn) -> Value {
     let mut shown = json!({ "supported": supported, "state": "unsupported", "indexed_files": 0, "changed_files": 0,
         "vault_id": Value::Null, "last_refresh": Value::Null, "problems": [] });
     if supported {
-        let reply = call("secondbrain", "memory.index.status", Some(json!({})), None);
+        let reply = call("brain", "memory.index.status", Some(json!({})), None);
         if is_ok(&reply) {
             let result = &reply["result"];
             shown["state"] = result["index"]["state"].as_str().unwrap_or("unknown").into();
@@ -47,12 +47,12 @@ pub fn status(call: CallFn) -> Value {
 pub fn refresh(call: CallFn, force: bool) -> Result<Value, String> {
     let mut problems = Vec::new();
     if !supports_index(call, &mut problems) {
-        return Err(problems.into_iter().next().unwrap_or_else(|| "Bu SecondBrain sürümü dizin yenilemeyi desteklemiyor.".into()));
+        return Err(problems.into_iter().next().unwrap_or_else(|| "Bu Brain sürümü dizin yenilemeyi desteklemiyor.".into()));
     }
-    let reply = call("secondbrain", "memory.index.refresh", Some(json!({ "confirm": true, "force": force })), Some(generate_operation_id()));
+    let reply = call("brain", "memory.index.refresh", Some(json!({ "confirm": true, "force": force })), Some(generate_operation_id()));
     if !is_ok(&reply) {
         return Err(match code_of(&reply) {
-            "INDEX_BUSY" => "Dizin başka bir SecondBrain işlemi tarafından kullanılıyor; birazdan tekrar deneyin.".to_string(),
+            "INDEX_BUSY" => "Dizin başka bir Brain işlemi tarafından kullanılıyor; birazdan tekrar deneyin.".to_string(),
             "NO_VAULT" => "Kayıtlı bir kasa yok.".to_string(),
             _ => failure(&reply, "Dizin yenilenemedi"),
         });
@@ -156,7 +156,7 @@ mod tests {
 
     #[test]
     fn refresh_errors_are_turkish_by_code() {
-        for (code, text) in [("INDEX_BUSY", "Dizin başka bir SecondBrain işlemi tarafından kullanılıyor; birazdan tekrar deneyin."),
+        for (code, text) in [("INDEX_BUSY", "Dizin başka bir Brain işlemi tarafından kullanılıyor; birazdan tekrar deneyin."),
             ("NO_VAULT", "Kayıtlı bir kasa yok."), ("BAD_REQUEST", "Dizin yenilenemedi: BAD_REQUEST — ileti")] {
             let mut fake = Fake::new(Some("details"));
             fake.refresh = err(code);

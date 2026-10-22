@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { KNOWN_NOTES, describeSearchMode, describeWorkspaceError } from '../../src/products/secondbrain/memoryWorkspace.ts';
+import { KNOWN_NOTES, describeSearchMode, describeWorkspaceError } from '../../src/products/brain/memoryWorkspace.ts';
 
 test('known notes resolve to the engine-maintained paths, today substituted', () => {
   const paths = KNOWN_NOTES.map(note => note.path('2026-10-16'));

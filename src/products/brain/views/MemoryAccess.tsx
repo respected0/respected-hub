@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { describeMemoryError, describeMemoryStatus, memoryAccessDisable, memoryAccessEnable, memoryAccessStatus } from '../memoryAccess.ts';
 import type { MemoryStatus } from '../memoryAccess.ts';
 
-// Enable/disable SecondBrain memory access. The grant token never reaches this component.
+// Enable/disable Brain memory access. The grant token never reaches this component.
 export default function MemoryAccess() {
   const [status, setStatus] = useState<MemoryStatus | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -25,19 +25,19 @@ export default function MemoryAccess() {
   }
 
   const info = status ? describeMemoryStatus(status) : null;
-  return <section className="panel-glass" aria-label="SecondBrain hafıza erişimi">
-    <div className="section-head"><h2>SecondBrain hafıza erişimi</h2>{info && <span className={`badge-status ${info.state === 'on' ? 'ok' : info.state === 'pending-revoke' ? 'warn' : 'unreachable'}`}>{info.title}</span>}</div>
+  return <section className="panel-glass" aria-label="Brain hafıza erişimi">
+    <div className="section-head"><h2>Brain hafıza erişimi</h2>{info && <span className={`badge-status ${info.state === 'on' ? 'ok' : info.state === 'pending-revoke' ? 'warn' : 'unreachable'}`}>{info.title}</span>}</div>
     {info && <p className="muted" role="status">{info.detail}</p>}
-    {status?.pending_revoke && <p className="error" role="alert">Erişim iptali SecondBrain'e ulaşmadı; izin hâlâ geçerli olabilir.</p>}
+    {status?.pending_revoke && <p className="error" role="alert">Erişim iptali Brain'e ulaşmadı; izin hâlâ geçerli olabilir.</p>}
     {error && <p className="error" role="alert">{error}</p>}
     {confirming && <div role="note">
       <p><strong>Paylaşılacaklar</strong></p>
       <ul>
         <li>Yalnızca hafızayı kullanan görevlerde, görev başına en fazla 5 kısa not özeti okunur.</li>
-        <li>{write ? 'Yazma açık: yalnızca kasadaki “Inbox/Orchestrator” klasörüne yeni not eklenir; mevcut notlarınıza dokunulmaz, notlar geri alınabilir.' : 'Erişim salt okunurdur; SecondBrain hiçbir şey yazmaz.'}</li>
+        <li>{write ? 'Yazma açık: yalnızca kasadaki “Inbox/Orchestrator” klasörüne yeni not eklenir; mevcut notlarınıza dokunulmaz, notlar geri alınabilir.' : 'Erişim salt okunurdur; Brain hiçbir şey yazmaz.'}</li>
         <li>İzni istediğiniz zaman iptal edebilirsiniz.</li>
       </ul>
-      {<label className="choice"><span><strong>Notları SecondBrain’e yazmasına da izin ver</strong><small>İsteğe bağlı; Orchestrator yalnızca siz istediğinizde yeniden kullanılabilir bir not ekleyebilir.</small></span>
+      {<label className="choice"><span><strong>Notları Brain’e yazmasına da izin ver</strong><small>İsteğe bağlı; Orchestrator yalnızca siz istediğinizde yeniden kullanılabilir bir not ekleyebilir.</small></span>
         <input type="checkbox" checked={write} disabled={busy} onChange={event => setWrite(event.target.checked)} /></label>}
     </div>}
     <div className="actions">

@@ -12,7 +12,7 @@ use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub const PRODUCTS: [&str; 2] = ["orchestrator", "secondbrain"];
+pub const PRODUCTS: [&str; 2] = ["orchestrator", "brain"];
 pub const ACTIONS: [&str; 4] = ["install", "update", "repair", "uninstall"];
 const MAX_FILES: usize = 1;
 const MAX_TOTAL_BYTES: u64 = 512 * 1024 * 1024;
@@ -303,11 +303,11 @@ mod tests {
     #[test]
     fn an_interrupted_entry_is_closed_and_the_product_is_idle_again() {
         let roots = Roots { managed: std::env::temp_dir().join(format!("hub-journal-{}-{}", std::process::id(), stamp())), catalog: PathBuf::new() };
-        begin(&roots, "op-journal-1", "secondbrain", "install", Value::Null, Value::Null).unwrap();
-        assert!(!is_idle(&roots, "secondbrain") && is_idle(&roots, "orchestrator"));
+        begin(&roots, "op-journal-1", "brain", "install", Value::Null, Value::Null).unwrap();
+        assert!(!is_idle(&roots, "brain") && is_idle(&roots, "orchestrator"));
         close_interrupted(&roots);
         assert_eq!(read_journal(&roots, "op-journal-1").unwrap()["status"], "failed");
-        assert!(is_idle(&roots, "secondbrain"));
+        assert!(is_idle(&roots, "brain"));
         let _ = fs::remove_dir_all(&roots.managed);
     }
 }

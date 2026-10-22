@@ -5,7 +5,7 @@ import { describeSemantic, semanticDisable, semanticEnable, semanticStatus } fro
 import type { SemanticStatus } from '../memorySemantic.ts';
 import { memoryCaptureRun } from '../memoryIndex.ts';
 
-// Shows SecondBrain's search index state and refreshes it after explicit confirmation.
+// Shows Brain's search index state and refreshes it after explicit confirmation.
 export default function MemoryIndex() {
   const [status, setStatus] = useState<IndexStatus | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -49,14 +49,14 @@ export default function MemoryIndex() {
 
   const info = status ? describeIndexStatus(status) : null;
   const blocked = !info || info.state === 'unsupported' || info.state === 'no-vault';
-  return <section className="panel-glass" aria-label="SecondBrain hafıza dizini">
-    <div className="section-head"><h2>SecondBrain hafıza dizini</h2>{info && <span className={`badge-status ${info.state === 'fresh' ? 'ok' : info.state === 'stale' || info.state === 'invalid' ? 'warn' : 'unreachable'}`}>{info.title}</span>}</div>
+  return <section className="panel-glass" aria-label="Brain hafıza dizini">
+    <div className="section-head"><h2>Brain hafıza dizini</h2>{info && <span className={`badge-status ${info.state === 'fresh' ? 'ok' : info.state === 'stale' || info.state === 'invalid' ? 'warn' : 'unreachable'}`}>{info.title}</span>}</div>
     {info && <p className="muted" role="status">{info.detail}</p>}
     {status?.last_refresh && <p className="muted">Son yenileme: {new Date(status.last_refresh.at).toLocaleString()}</p>}
     {message && <p role="status">{message}</p>}
     {error && <p className="error" role="alert">{error}</p>}
     {confirming && <div role="note">
-      <p>SecondBrain kasa notlarını okuyup yalnızca kendi arama dizinini günceller; kasa değiştirilmez. Büyük kasalarda bu işlem dakikalar sürebilir.</p>
+      <p>Brain kasa notlarını okuyup yalnızca kendi arama dizinini günceller; kasa değiştirilmez. Büyük kasalarda bu işlem dakikalar sürebilir.</p>
     </div>}
     <div className="actions">
       {!confirming && <button type="button" className="cta" disabled={busy || blocked} onClick={() => setConfirming(true)}>{busy ? 'Yenileniyor…' : 'Dizini yenile'}</button>}

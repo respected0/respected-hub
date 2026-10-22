@@ -124,7 +124,7 @@ mod tests {
     #[test]
     fn the_signature_is_bound_to_product_version_kind_and_digest() {
         let d = doc(good());
-        for (product, kind, version, digest) in [("secondbrain", "source", "0.1.0", DIGEST), ("orchestrator", "distribution", "0.1.0", DIGEST),
+        for (product, kind, version, digest) in [("brain", "source", "0.1.0", DIGEST), ("orchestrator", "distribution", "0.1.0", DIGEST),
                                                   ("orchestrator", "source", "0.1.1", DIGEST), ("orchestrator", "source", "0.1.0", "cd".repeat(32).as_str())] {
             assert!(verify_with(&keys(), &[], &d, product, kind, version, digest, false).is_err(), "{product} {kind} {version}");
         }
@@ -157,7 +157,7 @@ mod tests {
         let mut command = std::process::Command::new("x");
         crate::rpp::apply_test_home(&mut command);
         assert!(command.get_envs().next().is_none(), "the test home must not reach product processes");
-        assert_eq!(crate::hub::installed::product("secondbrain").unwrap().app_dir(), std::path::PathBuf::from(std::env::var_os("LOCALAPPDATA").unwrap_or_else(|| std::env::temp_dir().into())).join("Respected").join("RespectedBrain").join("app"));
+        assert_eq!(crate::hub::installed::product("brain").unwrap().app_dir(), std::path::PathBuf::from(std::env::var_os("LOCALAPPDATA").unwrap_or_else(|| std::env::temp_dir().into())).join("Respected").join("RespectedBrain").join("app"));
         assert!(verify(&doc(Value::Null), "orchestrator", "source", "0.1.0", DIGEST).is_err());
     }
 

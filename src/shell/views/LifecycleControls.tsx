@@ -25,7 +25,7 @@ export default function LifecycleControls({ name, lc, onChanged, onWizard, autoA
   if (!lc) return <p className="muted">Kurulum durumu okunamadı.</p>;
 
   async function preview(action: LifecycleAction) {
-    // SecondBrain's install needs a vault and its first settings: the setup wizard collects them and runs the plan.
+    // Brain's install needs a vault and its first settings: the setup wizard collects them and runs the plan.
     if (action === 'install' && onWizard) { onWizard(); return; }
     setBusy(true); setError(''); setDone(null); setNote(''); setPurge(false);
     const reply = await lifecyclePlan(lc!.product, action);

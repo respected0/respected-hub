@@ -255,7 +255,7 @@ fieldset { border: none; padding: 0; margin: 0 0 var(--s-4); min-width: 0; } leg
 .tab[aria-selected="true"] { color: #fff; }
 .tab[aria-selected="true"]::after { content: ""; position: absolute; left: var(--s-4); right: var(--s-4); bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--accent); }
 
-/* ---------- Wizards (SecondBrain install / setup) ---------- */
+/* ---------- Wizards (Brain install / setup) ---------- */
 .wizard.panel-glass { max-width: 880px; width: 100%; padding: 0; overflow: hidden; box-shadow: var(--shadow); }
 .steps { display: flex; align-items: center; list-style: none; margin: 0; padding: var(--s-5) var(--s-6); border-bottom: 1px solid var(--line-soft); background: var(--surface-2); counter-reset: step; }
 .steps li { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 13px; font-weight: 600; color: var(--faint); white-space: nowrap; }

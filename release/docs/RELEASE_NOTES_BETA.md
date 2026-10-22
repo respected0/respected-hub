@@ -1,6 +1,6 @@
 # Respected Windows Beta 0.1.0-beta.1
 
-**SecondBrain** AI araçlarınızın ortak hafızasıdır; notlar kendi kasanızda durur. **Orchestrator** çok ajanlı bir görev
+**Brain** AI araçlarınızın ortak hafızasıdır; notlar kendi kasanızda durur. **Orchestrator** çok ajanlı bir görev
 motorudur. **Respected Hub** ikisini kurar, günceller ve görsel olarak yönetir. Windows 10/11, kullanıcı başına kurulum,
 yönetici izni gerekmez.
 
@@ -9,7 +9,7 @@ yönetici izni gerekmez.
 | Dosya | Ne yapar |
 |---|---|
 | `RespectedHub-Windows-Setup.exe` | Hub'ı kurar; ürünleri Hub'ın içinden kurarsınız |
-| `RespectedSecondBrain-Windows-Setup.exe` | SecondBrain'i kurar; "Respected Hub ile devam et" seçilirse Hub'ı da kurar |
+| `RespectedBrain-Windows-Setup.exe` | Brain'i kurar; "Respected Hub ile devam et" seçilirse Hub'ı da kurar |
 | `RespectedOrchestrator-Windows-Setup.exe` | Orchestrator'ı kurar; aynı seçenekle |
 
 Her ürün Hub olmadan da kurulur, ayarlanır, onarılır ve kaldırılır. Hub'dan kurarken ürünün kurucusu bir kez

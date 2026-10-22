@@ -51,11 +51,11 @@ try:
     archive = work / "orchestrator-0.1.0-beta.2.zip"
     pr.zip_bundle(bundle, archive)
     assert sorted(zipfile.ZipFile(archive).namelist()) == ["bundle.json", "payload/src/a.py"]
-    base = {"schema": 1, "sequence": 99999999999999, "hub": {"stable": {"version": "0.1.0"}}, "products": {"secondbrain": {"beta": {"version": "0.1.0-beta.1"}}}}
+    base = {"schema": 1, "sequence": 99999999999999, "hub": {"stable": {"version": "0.1.0"}}, "products": {"brain": {"beta": {"version": "0.1.0-beta.1"}}}}
     entries = {"orchestrator": pr.entry(archive, "0.1.0-beta.2", "respected-orchestrator", "v0.1.0-beta.2")}
     index = pr.merged_catalog(base, entries, "beta", "0.1.0-beta.1")
     assert index["sequence"] == base["sequence"] + 1, "sequence always grows"
-    assert index["products"]["secondbrain"] == base["products"]["secondbrain"] and index["hub"] == base["hub"], "unreleased parts are kept"
+    assert index["products"]["brain"] == base["products"]["brain"] and index["hub"] == base["hub"], "unreleased parts are kept"
     release = index["products"]["orchestrator"]["beta"]
     assert release["url"] == "https://github.com/respected0/respected-orchestrator/releases/download/v0.1.0-beta.2/orchestrator-0.1.0-beta.2.zip"
     assert release["min_hub"] == "0.1.0-beta.1" and release["size"] == archive.stat().st_size

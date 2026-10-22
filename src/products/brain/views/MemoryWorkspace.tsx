@@ -11,7 +11,7 @@ function localToday(): string {
 
 const stripMarks = (s: string) => s.replace(/>>>|<<</g, '');
 
-// SecondBrain memory page: search, read, quick capture and on-demand briefing.
+// Brain memory page: search, read, quick capture and on-demand briefing.
 export default function MemoryWorkspace() {
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);

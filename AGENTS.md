@@ -6,7 +6,7 @@ Bu, Respected Hub'dır: Tauri 2, Rust, React ve TypeScript. Belgeler: `README.md
 
 ## Yasaklar
 
-- Global araç kurma, kişinin AI araçlarının gerçek ayarlarını ya da gerçek SecondBrain verisini değiştirme.
+- Global araç kurma, kişinin AI araçlarının gerçek ayarlarını ya da gerçek Brain verisini değiştirme.
 - Kullanıcı istemedikçe commit, push ya da paralel ajan yok.
 - Genel bir komut satırı arayüzü ekleme, görsel giriş noktasını değiştirme, IPC'yi sahte başarılı görevlerle değiştirme,
   genel kabuk çalıştırma. Yalnızca açıkça izin verilen motor işlemleri sunulur.
@@ -16,7 +16,7 @@ Bu, Respected Hub'dır: Tauri 2, Rust, React ve TypeScript. Belgeler: `README.md
 
 - Hub ürün hakkında hiçbir şey saklamaz: kurulu olanı ürünlerden okur; kurar, günceller, onarır ve kaldırırken yalnızca
   ürünün kendi imzalı kurucusunu ya da kaldırıcısını çalıştırır (`hub/installer.rs`, `kind: installer` katalog paketleri);
-  ayarları ürünün şemasıyla değiştirir; Orchestrator'ı SecondBrain'e Orchestrator'ın `memory.connect`'i ile bağlar.
+  ayarları ürünün şemasıyla değiştirir; Orchestrator'ı Brain'e Orchestrator'ın `memory.connect`'i ile bağlar.
   Yönetilen kopya, Hub'ın yazdığı Yüklü uygulamalar girdisi, ürünlere geçirilen veri klasörü yok. RPP yalnızca `"1"`.
 - Orchestrator çalışmaları Hub kapansa da sürer; görev durumu ve iptal motorundadır.
 - Kardeş depoların kaynağını bulmak yalnızca geliştirme sürümündedir. Yayın imzası ve gerçek makinede kabul ayrı

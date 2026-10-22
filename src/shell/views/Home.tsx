@@ -18,7 +18,7 @@ export default function Home({ eco, go }: { eco: Ecosystem; go: Go }) {
   const [assistant, setAssistant] = useState('');
   useEffect(() => {
     let active = true;
-    rppCall('secondbrain', 'settings.readback').then(response => {
+    rppCall('brain', 'settings.readback').then(response => {
       const name = response.ok ? (response.result as { settings?: { assistant_name?: unknown } }).settings?.assistant_name : '';
       if (active && typeof name === 'string') setAssistant(name.trim());
     }).catch(() => { /* optional personalization */ });
@@ -31,7 +31,7 @@ export default function Home({ eco, go }: { eco: Ecosystem; go: Go }) {
   const hero = {
     preview: { eyebrow: 'Tarayıcı önizlemesi', title: 'Gerçek durum masaüstünde görünür', body: 'Bu önizlemede ürünlere bağlanılamaz; hiçbir durum uydurulmaz. Gerçek ekosistem durumunu görmek için Tauri masaüstü uygulamasını çalıştır.', cta: null },
     loading: { eyebrow: 'Kontrol ediliyor', title: 'Ekosistem durumu okunuyor…', body: 'Ürünlerin sağlık bilgisi alınıyor.', cta: null },
-    'first-launch': { eyebrow: 'Hoş geldin', title: 'Respected ekosistemini birlikte kuralım', body: "Henüz çalışan bir ürün bulunamadı. SecondBrain ve Orchestrator'ı Uygulamalarım sayfasından kurabilir veya Bağlantılar bölümünde mevcut bir kaynağı gösterebilirsin.", cta: { label: 'Ürünleri kur', run: () => go('apps') } },
+    'first-launch': { eyebrow: 'Hoş geldin', title: 'Respected ekosistemini birlikte kuralım', body: "Henüz çalışan bir ürün bulunamadı. Brain ve Orchestrator'ı Uygulamalarım sayfasından kurabilir veya Bağlantılar bölümünde mevcut bir kaynağı gösterebilirsin.", cta: { label: 'Ürünleri kur', run: () => go('apps') } },
     attention: { eyebrow: 'Dikkat gerekiyor', title: `${problems.length} ürün sağlıklı değil`, body: 'Ürünü açıp kontrolleri ve ayarları inceleyebilirsin.', cta: problems[0] ? { label: `${problems[0].name.replace('Respected ', '')} ürününü aç`, run: () => go({ app: problems[0].id, page: 'overview' }) } : null },
     active: { eyebrow: 'Ekosistem hazır', title: assistant ? `${assistant} ve ekosistemin hazır` : 'Ekosistemin hazır', body: running.length ? `${running.length} görev şu anda çalışıyor.` : 'Çalışan görev yok; yeni bir görevi Orchestrator çalışma alanından başlatabilirsin.', cta: running.length ? { label: 'Çalışan görevleri gör', run: () => go('activity') } : { label: 'Görev başlat', run: () => go({ app: 'orchestrator', page: 'runs' }) } },
   }[mode];

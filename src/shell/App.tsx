@@ -24,7 +24,7 @@ export default function App() {
   const [ask, setAsk] = useState<{ product: string; action: LifecycleAction } | null>(null);
   const openIntent = (wanted: StartupIntent | null) => {
     if (!wanted) return;
-    if (wanted.action === 'install' && wanted.product === 'secondbrain') { setRoute({ kind: 'app', app: 'secondbrain', page: 'setup' }); return; }
+    if (wanted.action === 'install' && wanted.product === 'brain') { setRoute({ kind: 'app', app: 'brain', page: 'setup' }); return; }
     setRoute({ kind: 'apps' });
     if (wanted.action === 'uninstall' || (wanted.action === 'install' && wanted.product === 'orchestrator')) setAsk({ product: wanted.product, action: wanted.action });
   };
@@ -75,7 +75,7 @@ export default function App() {
   const pageLabel = app ? app.pages.find(page => page.id === (route as { page: string }).page)?.label : undefined;
   const navItem = (id: string, label: string, active: boolean) => <button key={id} className={`nav-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined} title={label} onClick={() => setRoute({ kind: id as HubRoute })}><Icon name={id} /><span className="nav-text">{label}</span></button>;
   const refresh = () => { eco.refresh(); setSpin(true); window.setTimeout(() => setSpin(false), 800); };
-  const names: Record<string, string> = { secondbrain: 'SecondBrain', orchestrator: 'Orchestrator' };
+  const names: Record<string, string> = { brain: 'Brain', orchestrator: 'Orchestrator' };
   const productUpdates = (eco.lifecycle?.products ?? []).filter(item => item?.install_state === 'update-available' && item.available && !later.includes(`${item.product}@${item.available.version}`));
   const hubOffer = hubUpdate?.available && !later.includes(`hub@${hubUpdate.available.version}`) ? hubUpdate.available : null;
 

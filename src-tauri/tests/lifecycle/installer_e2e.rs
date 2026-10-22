@@ -26,7 +26,7 @@ fn the_hub_installs_and_removes_each_product_through_its_own_installer() {
     let eco = ecosystem();
     let (managed, catalog, vault) = (Temp::new("managed"), Temp::new("catalog"), Temp::new("vault"));
     let roots = Roots { managed: managed.0.clone(), catalog: catalog.0.clone() };
-    for product in ["orchestrator", "secondbrain"] {
+    for product in ["orchestrator", "brain"] {
         let made = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build").join("build_bundle.py"))
             .arg(product).arg("--out").arg(&catalog.0).status().expect("python");
         assert!(made.success(), "{product} installer bundle build failed");
@@ -35,7 +35,7 @@ fn the_hub_installs_and_removes_each_product_through_its_own_installer() {
     let outcome = std::panic::catch_unwind(|| {
         let notes = vault.0.join("RespectedOS");
         for (product, params) in [("orchestrator", json!({ "settings": { "default_timeout_seconds": 1200 } })),
-                                  ("secondbrain", json!({ "vault_path": notes.to_string_lossy(), "settings": { "assistant_name": "Jarvis", "user_name": "Ada" } }))] {
+                                  ("brain", json!({ "vault_path": notes.to_string_lossy(), "settings": { "assistant_name": "Jarvis", "user_name": "Ada" } }))] {
             let planned = hub_plan(&roots, product, "install", &params).unwrap_or_else(|e| panic!("{product} plan: {}", e.message));
             assert_eq!(planned["plan"]["steps"].as_array().unwrap().len(), 3, "{planned}");
             let done = hub_apply(&roots, settings(), product, "install", &params, &format!("e2e-install-{product}")).unwrap_or_else(|e| panic!("{product} install: {} {}", e.message, e.hint));
@@ -45,13 +45,13 @@ fn the_hub_installs_and_removes_each_product_through_its_own_installer() {
             assert_eq!(hub_plan(&roots, product, "install", &params).unwrap_err().code, "LIFECYCLE_CONFLICT", "already installed");
         }
         // what the person chose arrived as the products' own settings
-        let readback = respected_hub_lib::rpp::rpp_call(&settings(), "secondbrain", "settings.readback", None, None);
+        let readback = respected_hub_lib::rpp::rpp_call(&settings(), "brain", "settings.readback", None, None);
         assert_eq!((readback["result"]["settings"]["assistant_name"].as_str(), readback["result"]["settings"]["user_name"].as_str()), (Some("Jarvis"), Some("Ada")), "{readback}");
         assert!(notes.join(".respected.json").is_file(), "the vault was created where the person chose");
         let status = hub_status(&roots, &settings());
         assert!(status["result"]["products"].as_array().unwrap().iter().all(|p| p["installed"] == true), "{status}");
 
-        for product in ["orchestrator", "secondbrain"] {
+        for product in ["orchestrator", "brain"] {
             let removed = hub_apply(&roots, settings(), product, "uninstall", &json!({ "purge": true }), &format!("e2e-remove-{product}")).unwrap_or_else(|e| panic!("{product} uninstall: {} {}", e.message, e.hint));
             assert_eq!(removed["status"], "applied", "{removed}");
             assert!(installed::product(product).unwrap().installed().is_none(), "the product's own uninstaller removed it");

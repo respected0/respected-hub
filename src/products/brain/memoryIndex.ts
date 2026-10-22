@@ -1,4 +1,4 @@
-// SecondBrain memory search index: status and user-confirmed refresh. Calls go through trusted Rust commands only.
+// Brain memory search index: status and user-confirmed refresh. Calls go through trusted Rust commands only.
 import { invoke } from '@tauri-apps/api/core';
 import { native } from '../../shared/api.ts';
 import type { LifecycleError } from '../../shell/lifecycle.ts';
@@ -27,8 +27,8 @@ interface IndexDescription { state: IndexState; title: string; detail: string; }
 export function describeIndexStatus(status: IndexStatus): IndexDescription {
   const state = status.supported ? status.state : 'unsupported';
   switch (state) {
-    case 'unsupported': return { state, title: 'Desteklenmiyor', detail: 'Kurulu SecondBrain hafıza dizinini (memory_index) desteklemiyor. SecondBrain’i güncelleyin.' };
-    case 'no-vault': return { state, title: 'Kasa yok', detail: 'SecondBrain’de ayarlı bir kasa yok. Önce kasayı kurun.' };
+    case 'unsupported': return { state, title: 'Desteklenmiyor', detail: 'Kurulu Brain hafıza dizinini (memory_index) desteklemiyor. Brain’i güncelleyin.' };
+    case 'no-vault': return { state, title: 'Kasa yok', detail: 'Brain’de ayarlı bir kasa yok. Önce kasayı kurun.' };
     case 'missing': return { state, title: 'Dizin yok', detail: 'Arama dizini henüz oluşturulmadı. Dizini yenileyerek oluşturabilirsiniz.' };
     case 'invalid': return { state, title: 'Dizin geçersiz', detail: 'Arama dizini okunamadı veya bozuk. Dizini yenileyerek yeniden oluşturun.' };
     case 'fresh': return { state, title: 'Güncel', detail: `Dizin kasayla uyumlu (${status.indexed_files} dosya dizinli).` };

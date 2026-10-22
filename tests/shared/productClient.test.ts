@@ -24,7 +24,7 @@ test('rppCallVia parses object replies and generates an apply operation id', asy
     return { rpp: '1', ok: false, operation_id: invocation.operationId, result: null,
       error: { code: 'INVALID_SETTINGS', message: 'bad', hint: 'fix' } };
   };
-  const response = await rppCallVia(transport, 'secondbrain', 'settings.apply', { settings: {} });
+  const response = await rppCallVia(transport, 'brain', 'settings.apply', { settings: {} });
   assert.match(operationId as string, /^[A-Za-z0-9_-]{8,64}$/);
   assert.equal(response.ok, false);
   if (!response.ok) { assert.equal(response.error.code, 'INVALID_SETTINGS'); assert.equal(response.error.hint, 'fix'); }
@@ -49,11 +49,11 @@ test('rppCallVia maps malformed replies to BAD_RESPONSE without throwing', async
 test('native IPC entry points reject outside the desktop app', async () => {
   assert.equal(native, false);
   await assert.rejects(() => engine('list'), /Tauri/);
-  await assert.rejects(() => rppCall('secondbrain', 'manifest'), /Tauri/);
+  await assert.rejects(() => rppCall('brain', 'manifest'), /Tauri/);
   await assert.rejects(() => listCampaigns(), /Tauri/);
   await assert.rejects(() => campaignStatus('campaign-x'), /Tauri/);
 });
 
 test('rppTry reports an unreachable product as null instead of throwing', async () => {
-  assert.equal(await rppTry('secondbrain', 'health'), null);
+  assert.equal(await rppTry('brain', 'health'), null);
 });

@@ -17,7 +17,7 @@ from signing import bundle_signing as bs
 from signing.release_keys import TRUST_FILE
 
 DIST = bs.ROOT / "dist"
-INSTALLERS = ("RespectedHub", "RespectedOrchestrator", "RespectedSecondBrain")
+INSTALLERS = ("RespectedHub", "RespectedOrchestrator", "RespectedBrain")
 DOMAIN = b"respected-release-v1\n"
 
 

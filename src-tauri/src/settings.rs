@@ -10,7 +10,7 @@ pub struct Settings {
     pub python: String,
     pub orchestrator_root: PathBuf,
     pub brain_root: PathBuf,
-    /// The installed SecondBrain program; absent means run the source with Python (development builds).
+    /// The installed Brain program; absent means run the source with Python (development builds).
     #[serde(default)]
     pub brain_exe: Option<PathBuf>,
     /// The installed Orchestrator program; absent means the source checkout on Python (development builds).
@@ -37,7 +37,7 @@ pub fn get_settings(app: tauri::AppHandle) -> Result<Settings, String> {
         app.path().app_local_data_dir().map_err(|e| e.to_string())?.join("no-source-checkout")
     };
     Ok(Settings { python: "python".into(), orchestrator_root: siblings.join("respected-orchestrator"),
-        brain_root: siblings.join("respected-secondbrain"), brain_exe: None, orchestrator_exe: None })
+        brain_root: siblings.join("respected-brain"), brain_exe: None, orchestrator_exe: None })
 }
 
 fn validate(settings: &Settings) -> Result<(), String> {
@@ -52,7 +52,7 @@ fn validate(settings: &Settings) -> Result<(), String> {
 
 #[tauri::command]
 pub fn save_settings(app: tauri::AppHandle, settings: Settings) -> Result<(), String> {
-    // These fields choose which programs the Hub starts (Python, source checkouts, SecondBrain launcher): only a development build
+    // These fields choose which programs the Hub starts (Python, source checkouts, Brain launcher): only a development build
     // lets them be edited, never a webview of an installed product.
     if !trust::dev_enabled() { return Err("Ürün kaynak bağlantıları yalnızca geliştirme derlemelerinde değiştirilir.".into()); }
     validate(&settings)?;

@@ -5,7 +5,7 @@ import { native } from './api.ts';
 import { buildRequest, parseResponse } from './rpp.ts';
 import type { RppResponse } from './rpp.ts';
 
-export type RppProduct = 'secondbrain' | 'orchestrator';
+export type RppProduct = 'brain' | 'orchestrator';
 
 type RppInvocation = {
   product: RppProduct;

@@ -1,4 +1,4 @@
-// Optional local semantic search of SecondBrain. Off by default; FTS search works in every state.
+// Optional local semantic search of Brain. Off by default; FTS search works in every state.
 import { invoke } from '@tauri-apps/api/core';
 import { native } from '../../shared/api.ts';
 import type { LifecycleError } from '../../shell/lifecycle.ts';
@@ -19,8 +19,8 @@ export const semanticDisable = () => call('memory_semantic_disable');
 
 export function describeSemantic(s: SemanticStatus): { title: string; detail: string; tone: 'ok' | 'warn' | 'unreachable' } {
   switch (s.state) {
-    case 'unsupported': return { title: 'Desteklenmiyor', detail: 'Kurulu SecondBrain anlamsal aramayı desteklemiyor. SecondBrain’i güncelleyin.', tone: 'unreachable' };
-    case 'no-vault': return { title: 'Kasa yok', detail: 'Önce SecondBrain kasasını kurun.', tone: 'unreachable' };
+    case 'unsupported': return { title: 'Desteklenmiyor', detail: 'Kurulu Brain anlamsal aramayı desteklemiyor. Brain’i güncelleyin.', tone: 'unreachable' };
+    case 'no-vault': return { title: 'Kasa yok', detail: 'Önce Brain kasasını kurun.', tone: 'unreachable' };
     case 'off': return { title: 'Kapalı', detail: 'Normal (tam metin) arama çalışıyor. Anlamsal arama, anlamca yakın notları da bulur; isteğe bağlıdır.', tone: 'unreachable' };
     case 'provider_missing': return { title: 'Yerel servis yok', detail: 'Seçili Ollama servisine ulaşılamıyor. Hub’ın kendi çalışma zamanına geçmek için kapatıp yeniden etkinleştirin. Normal arama sürer.', tone: 'warn' };
     case 'model_missing': return { title: 'Model indirilmemiş', detail: `Yerel model ve çalışma zamanı (yaklaşık ${s.download_mb ?? 460} MB) henüz indirilmedi. Normal arama sürer.`, tone: 'warn' };

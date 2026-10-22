@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 const RPP_VERSION: &str = "1";
-const PRODUCTS: [&str; 2] = ["orchestrator", "secondbrain"];
+const PRODUCTS: [&str; 2] = ["orchestrator", "brain"];
 const OPS: [&str; 24] = ["manifest", "health", "settings.schema", "settings.validate", "settings.apply", "settings.readback",
     "integrations.plan", "integrations.apply", "integrations.rollback",
     "memory.connect", "memory.disconnect", "memory.status", "memory.index.status", "memory.index.refresh",
@@ -130,7 +130,7 @@ impl Drop for GateGuard<'_> {
 
 pub static ENGINE_GATE: Gate = Gate::new();
 
-/// SecondBrain served by its own frozen launcher: no Python and no source tree involved.
+/// Brain served by its own frozen launcher: no Python and no source tree involved.
 fn frozen_brain_command(settings: &Settings) -> Option<Command> {
     let exe = settings.brain_exe.as_ref().filter(|path| path.is_file())?;
     let mut command = Command::new(exe);
@@ -187,13 +187,13 @@ fn engine_command(settings: &Settings, product: &str) -> Option<Command> {
     if let Some(command) = frozen_brain_command(settings) { return Some(command); }
     if !crate::trust::dev_enabled() { return None; }
     let source = settings.brain_root.join("src");
-    let package = source.join("respectedbrain");
-    if !(package.join("__main__.py").is_file() || package.join("__init__.py").is_file() || source.join("respectedbrain.py").is_file()) { return None; }
+    let package = source.join("respected_brain");
+    if !(package.join("__main__.py").is_file() || package.join("__init__.py").is_file() || source.join("respected_brain.py").is_file()) { return None; }
     let mut command = Command::new(&settings.python);
     apply_test_home(&mut command);
     isolate_python(&mut command);
     command.current_dir(neutral_cwd()).env("PYTHONPATH", source).env("PYTHONDONTWRITEBYTECODE", "1")
-        .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).args(["-m", "respectedbrain", "rpp"]);
+        .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).args(["-m", "respected_brain", "rpp"]);
     Some(command)
 }
 
@@ -241,7 +241,7 @@ fn dispatch(settings: &Settings, product: &str, op: &str, payload: Option<Value>
     let rpp_version = RPP_VERSION;
     if !PRODUCTS.contains(&product) {
         return err_envelope(rpp_version, operation_id, "INVALID_PRODUCT", &format!("Unknown product '{product}'."),
-            "Allowed products: orchestrator, secondbrain.");
+            "Allowed products: orchestrator, brain.");
     }
     if !OPS.contains(&op) {
         return err_envelope(rpp_version, operation_id, "INVALID_OP", &format!("Unknown operation '{op}'."),
@@ -323,7 +323,7 @@ mod tests {
     #[test]
     fn missing_engine_source_reports_engine_not_found() {
         let settings = settings("python", "/missing-hub-orchestrator", "/missing-hub-brain");
-        for product in ["orchestrator", "secondbrain"] {
+        for product in ["orchestrator", "brain"] {
             let response = rpp_call(&settings, product, "manifest", None, None);
             assert_eq!(response["ok"], false, "{product}");
             assert_eq!(response["error"]["code"], "ENGINE_NOT_FOUND", "{product}");
@@ -387,7 +387,7 @@ mod tests {
             assert!(forbidden_call(op, None).is_none(), "{op}");
         }
         for op in ["lifecycle.apply", "lifecycle.plan", "operation.receipt", "memory.grant"] {
-            assert_eq!(rpp_call_trusted(&settings, "secondbrain", op, None, None)["error"]["code"], "INVALID_OP", "{op}: no protocol op installs or grants");
+            assert_eq!(rpp_call_trusted(&settings, "brain", op, None, None)["error"]["code"], "INVALID_OP", "{op}: no protocol op installs or grants");
         }
     }
 

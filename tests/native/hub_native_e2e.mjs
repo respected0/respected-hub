@@ -1,7 +1,7 @@
 // Real desktop end-to-end drive of a built Hub (dev build) through WebView2's DevTools port, on the installer model
 // (docs/PRODUCT_CONTRACT.md in the ecosystem root): the Hub installs, repairs and removes each product by running the
 // product's OWN signed installer.
-//   node tests/native/hub_native_e2e.mjs <hub.exe> [--remote-catalog] [--intent=secondbrain|orchestrator] [--real-semantic [--seed-semantic DIR]] [--report DIR]
+//   node tests/native/hub_native_e2e.mjs <hub.exe> [--remote-catalog] [--intent=brain|orchestrator] [--real-semantic [--seed-semantic DIR]] [--report DIR]
 // Safety: the Hub hands installers and products a FAKE user home, and Windows derives the per-user folders from it, so the
 // programs, their data and every AI-client configuration land inside that disposable home. Only the Installed-apps entries are
 // real (HKCU), so the run refuses to start when one of them exists and removes its own at the end. The real AI-client
@@ -36,7 +36,7 @@ const dirs = { catalog: join(work, 'catalog'), managed: join(work, 'managed'), h
 // where the installers put the products under the fake home (its AppData\Local), and where the Hub is told to look
 const respected = join(dirs.home, 'AppData', 'Local', 'Respected');
 const product = {
-  brain: { folder: join(respected, 'RespectedBrain'), exe: join(respected, 'RespectedBrain', 'app', 'respectedbrain.exe'), key: keys.brain },
+  brain: { folder: join(respected, 'RespectedBrain'), exe: join(respected, 'RespectedBrain', 'app', 'respected-brain.exe'), key: keys.brain },
   orch: { folder: join(respected, 'RespectedOrchestrator'), exe: join(respected, 'RespectedOrchestrator', 'app', 'respected-orchestrator.exe'), key: keys.orch },
 };
 Object.values(dirs).forEach(d => mkdirSync(d, { recursive: true }));
@@ -52,7 +52,7 @@ const py = (...a) => { const r = spawnSync('python', ['-B', ...a], { encoding: '
 // both products as their own signed installers, exactly as a release ships them (built once, then reused)
 if (!intent) {
   py(join(tools, 'build', 'build_bundle.py'), 'orchestrator', '--out', dirs.catalog);
-  py(join(tools, 'build', 'build_bundle.py'), 'secondbrain', '--out', dirs.catalog);
+  py(join(tools, 'build', 'build_bundle.py'), 'brain', '--out', dirs.catalog);
 }
 const served = join(work, 'served');
 if (remote) py(join(tools, 'build', 'publish_release.py'), 'local-catalog', ...readdirSync(dirs.catalog).flatMap(name => ['--bundle', join(dirs.catalog, name)]), '--out', served);
@@ -125,7 +125,7 @@ try {
   await send('Page.enable'); await send('Runtime.enable');
   await waitFor(`document.body.innerText.includes('Respected')`, 'app window renders');
   if (intent) { // a product installer's "Hub ile devam et": the Hub must open on that product's install page, then stop.
-    await waitFor(`document.querySelector('.crumbs')?.textContent.includes(${JSON.stringify(intent === 'secondbrain' ? 'Kurulum' : 'Uygulamalarım')})`, `${intent} hand-over opens its install page`, 30000);
+    await waitFor(`document.querySelector('.crumbs')?.textContent.includes(${JSON.stringify(intent === 'brain' ? 'Kurulum' : 'Uygulamalarım')})`, `${intent} hand-over opens its install page`, 30000);
     await shot('intent-' + intent);
     throw new Error('done'); // the intent run ends here; `finally` reports
   }
@@ -134,7 +134,7 @@ try {
 
   await rail('Uygulamalarım');
   await waitFor(`document.querySelector('.page-head h1')?.textContent==='Uygulamalarım'&&document.querySelectorAll('article.lib-item').length===2`, 'My Apps lists both products');
-  await waitFor(`${cardHas('SecondBrain', 'Kurulu değil')}&&${cardHas('Orchestrator', 'Kurulu değil')}`, 'both products start not installed');
+  await waitFor(`${cardHas('Brain', 'Kurulu değil')}&&${cardHas('Orchestrator', 'Kurulu değil')}`, 'both products start not installed');
   await shot('01-my-apps-before');
 
   // Orchestrator through its own installer: the plan names the installer, the product answers afterwards.
@@ -148,9 +148,9 @@ try {
   await waitFor(`(()=>{const a=${card('Orchestrator')};return !!a&&!a.textContent.includes('Ürüne ulaşılamadı')&&/v0\\.1\\.0/.test(a.textContent)})()`, 'Orchestrator answers over RPP from its installed program', 60000);
   await shot('03-orchestrator-installed');
 
-  // SecondBrain: the wizard collects identity, vault and connections; its installer gets them as /VAULT= and /SET=.
-  await inCard('SecondBrain', 'Kur');
-  await waitFor(`document.querySelector('.wizard .steps li.current')?.textContent.includes('Kimlik')&&document.body.innerText.includes('SecondBrain\\'i kuralım')`, 'install wizard opens at Identity');
+  // Brain: the wizard collects identity, vault and connections; its installer gets them as /VAULT= and /SET=.
+  await inCard('Brain', 'Kur');
+  await waitFor(`document.querySelector('.wizard .steps li.current')?.textContent.includes('Kimlik')&&document.body.innerText.includes('Brain\\'i kuralım')`, 'install wizard opens at Identity');
   check('wizard steps are Identity, Memory, Sources, Permissions, Finish', await ev(`[...document.querySelectorAll('.wizard .steps li')].map(l=>l.textContent.replace(/^\\d/,'')).join('|')`) === 'Kimlik|Hafıza|Kaynaklar|İzinler|Onay');
   await setInput(`document.querySelector('.wizard input[placeholder="ör. Ayşe"]')`, 'Test');
   await setInput(`document.querySelector('.wizard input[placeholder="ör. Jarvis"]')`, 'Jarvis');
@@ -171,9 +171,9 @@ try {
   check('nothing was written before approval', readFileSync(join(dirs.home, '.claude.json'), 'utf8') === foreign && !existsSync(vault) && !existsSync(product.brain.folder));
   await shot('04-approval');
   await clickText('Onayla ve kur');
-  await waitFor(`document.body.innerText.includes('SecondBrain ayarları')&&document.body.innerText.includes('Brain Vault')`, 'SecondBrain installed; its settings page follows', 420000);
+  await waitFor(`document.body.innerText.includes('Brain ayarları')&&document.body.innerText.includes('Brain Vault')`, 'Brain installed; its settings page follows', 420000);
   await shot('05-brain-installed');
-  check('SecondBrain is in its own folder with its own Installed-apps entry', existsSync(product.brain.exe) && registered(product.brain.key));
+  check('Brain is in its own folder with its own Installed-apps entry', existsSync(product.brain.exe) && registered(product.brain.key));
   check('vault created where the person chose, with the template', existsSync(join(vault, '.respected.json')));
   const settings = cli(product.brain.exe, 'config');
   check('the wizard answers arrived as the product\'s own settings', settings.user_name === 'Test' && settings.assistant_name === 'Jarvis' && settings.capture_mode === 'manual'
@@ -186,19 +186,19 @@ try {
   // Settings page: a schema field changes through the product, and the connection panel switches the MCP entry off.
   await setInput(labelled(`document.querySelector('.panel-glass')`, 'Sabah özeti saati'), '07:30');
   await clickText('Değişiklikleri kaydet');
-  await waitFor(`document.body.innerText.includes('geri okunarak doğrulandı')`, 'a SecondBrain setting is saved and read back', 120000);
+  await waitFor(`document.body.innerText.includes('geri okunarak doğrulandı')`, 'a Brain setting is saved and read back', 120000);
   check('the product holds the new value', cli(product.brain.exe, 'config', 'get', 'briefing_time').briefing_time === '07:30');
   await waitFor(`${hooks}?.querySelector('[data-client="claude"] input').checked&&!${hooks}.querySelector('[data-client="gemini"] input').checked`, 'connection panel shows the stored per-client choice', 90000);
   await ev(`${mcpList}.querySelector('[data-client="claude"] input').click()`);
   await waitFor(`!!document.querySelector('.plan-changes')`, 'switch-off preview listed', 90000);
   await clickText('Bağlantıları uygula');
-  await waitFor(`document.body.innerText.includes('Bağlantılar SecondBrain tarafından uygulandı')`, 'connection change applied by the product', 300000);
+  await waitFor(`document.body.innerText.includes('Bağlantılar Brain tarafından uygulandı')`, 'connection change applied by the product', 300000);
   const after = readJson(join(dirs.home, '.claude.json'));
   check('MCP entry removed, foreign entry intact', !after.mcpServers?.['respected-vault'] && !!after.mcpServers?.['someone-elses']);
   await shot('06-brain-settings');
 
   // Memory page: quick capture -> search finds it -> reader opens it; the note is a new file in the Dump inbox.
-  await rail('SecondBrain'); await tab('Hafıza');
+  await rail('Brain'); await tab('Hafıza');
   await waitFor(`!!document.querySelector('[aria-label="Hızlı not yakala"]')`, 'Memory page shows search, capture and briefing sections', 60000);
   await ev(`(()=>{const el=document.querySelector('[aria-label="Not içeriği"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(el,'NATIVE-MARMALADE-77 ilk kahvaltı notu');el.dispatchEvent(new Event('input',{bubbles:true}));return true})()`);
   await clickText('Kaydet', `document.querySelector('[aria-label="Hızlı not yakala"]')`);
@@ -215,7 +215,7 @@ try {
   if (args.includes('--real-semantic')) { // optional: runtime + model download into the product's own data folder, then off again
     const sem = `document.querySelector('[aria-label="Anlamsal arama (isteğe bağlı)"]')`;
     const runtime = join(product.brain.folder, 'data', 'semantic-runtime');
-    await rail('SecondBrain'); await tab('Ayarlar');
+    await rail('Brain'); await tab('Ayarlar');
     await waitFor(`!!${sem}&&${sem}.textContent.includes('Kapalı')`, 'semantic panel shows Off (FTS stays the default)', 90000);
     await clickText('Etkinleştir', sem);
     await waitFor(`${sem}.textContent.includes('460 MB')&&${sem}.textContent.includes('Notlarınız bilgisayarınızdan çıkmaz')`, 'semantic confirmation explains size and privacy');
@@ -231,7 +231,7 @@ try {
     }
   }
 
-  // Orchestrator: a schema setting, the SecondBrain memory link and its MCP registration, all through the product.
+  // Orchestrator: a schema setting, the Brain memory link and its MCP registration, all through the product.
   await rail('Orchestrator'); await tab('Ayarlar');
   await waitFor(`document.querySelector('details.settings-block summary')!==null`, 'Orchestrator settings panel');
   await ev(`document.querySelector('details.settings-block summary').click()`);
@@ -240,11 +240,11 @@ try {
   await clickText('Uygula', 'document.querySelector(".settings-block")');
   await waitFor(`document.body.innerText.includes('geri okunarak doğrulandı')`, 'Orchestrator settings applied and read back', 60000);
   check('the Orchestrator holds the new value', cli(product.orch.exe, 'config', 'get', 'default_timeout_seconds').default_timeout_seconds === 1234);
-  const memory = `document.querySelector('[aria-label="SecondBrain hafıza erişimi"]')`;
+  const memory = `document.querySelector('[aria-label="Brain hafıza erişimi"]')`;
   await waitFor(`!!${memory}&&[...${memory}.querySelectorAll('button')].some(b=>b.textContent.includes('Erişimi aç'))`, 'memory access offers to connect');
   await clickText('Erişimi aç', memory);
   await clickText('Onayla ve aç', memory);
-  await waitFor(`${memory}.textContent.includes('Açık')`, 'Orchestrator connected to SecondBrain memory', 120000);
+  await waitFor(`${memory}.textContent.includes('Açık')`, 'Orchestrator connected to Brain memory', 120000);
   check('the Orchestrator itself reports the link', cli(product.orch.exe, 'memory', 'status').connected === true);
   await clickText('Erişimi kapat ve iptal et', memory);
   await waitFor(`${memory}.textContent.includes('Kapalı')`, 'memory link closed and revoked', 120000);
@@ -270,7 +270,7 @@ try {
 
   // Repair: a changed program file is reported by the product; the Hub runs the installer again, which restores it.
   await rail('Uygulamalarım');
-  for (const [name, p] of [['SecondBrain', product.brain], ['Orchestrator', product.orch]]) {
+  for (const [name, p] of [['Brain', product.brain], ['Orchestrator', product.orch]]) {
     const file = dataFileOf(dirname(p.exe));
     const original = readFileSync(file);
     writeFileSync(file, Buffer.concat([original, Buffer.from('\n')]));
@@ -285,12 +285,12 @@ try {
   check('repair kept the settings', cli(product.brain.exe, 'config', 'get', 'briefing_time').briefing_time === '07:30');
   await shot('09-repaired');
 
-  // Removal through each product's own uninstaller: SecondBrain keeps its settings, the Orchestrator is purged.
+  // Removal through each product's own uninstaller: Brain keeps its settings, the Orchestrator is purged.
   writeFileSync(join(dirs.home, '.claude.json'), foreign); // the person's own file, compared byte for byte below
-  await inCard('SecondBrain', 'Kaldır');
-  await waitFor(cardHas('SecondBrain', 'Ayarlar ve çalışma verileri de silinsin'), 'removal asks about settings and data');
-  await inCard('SecondBrain', 'Onayla ve uygula', false);
-  await waitFor(cardHas('SecondBrain', 'Kurulu değil'), 'SecondBrain removed', 420000);
+  await inCard('Brain', 'Kaldır');
+  await waitFor(cardHas('Brain', 'Ayarlar ve çalışma verileri de silinsin'), 'removal asks about settings and data');
+  await inCard('Brain', 'Onayla ve uygula', false);
+  await waitFor(cardHas('Brain', 'Kurulu değil'), 'Brain removed', 420000);
   check('program and Installed-apps entry gone, settings and vault kept, AI configs restored', !existsSync(product.brain.exe) && !registered(product.brain.key)
     && existsSync(join(product.brain.folder, 'data', 'config.json')) && existsSync(join(vault, '.respected.json'))
     && readFileSync(join(dirs.home, '.claude.json'), 'utf8') === foreign && !existsSync(join(dirs.home, '.claude', 'settings.json')));

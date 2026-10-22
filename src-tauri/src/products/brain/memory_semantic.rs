@@ -1,4 +1,4 @@
-// Optional local semantic search of SecondBrain: status, enable (confirm -> model download -> vector build) and disable.
+// Optional local semantic search of Brain: status, enable (confirm -> model download -> vector build) and disable.
 // FTS search keeps working in every state. The download goes through the user's local embedding service only.
 use super::CallFn;
 use crate::rpp::generate_operation_id;
@@ -12,11 +12,11 @@ fn failure(reply: &Value, what: &str) -> String {
     format!("{what}: {} — {}{hint}", reply["error"]["code"].as_str().unwrap_or("UNKNOWN"), reply["error"]["message"].as_str().unwrap_or("yanıt yok"))
 }
 
-fn supported(call: CallFn) -> bool { super::offers(&call("secondbrain", "manifest", None, None), "memory.semantic.status") }
+fn supported(call: CallFn) -> bool { super::offers(&call("brain", "manifest", None, None), "memory.semantic.status") }
 
 pub fn status(call: CallFn) -> Value {
     if !supported(call) { return json!({ "supported": false, "state": "unsupported" }); }
-    let reply = call("secondbrain", "memory.semantic.status", Some(json!({})), None);
+    let reply = call("brain", "memory.semantic.status", Some(json!({})), None);
     if !is_ok(&reply) {
         let state = if reply["error"]["code"] == "NO_VAULT" { "no-vault" } else { "unknown" };
         return json!({ "supported": true, "state": state, "problem": failure(&reply, "Anlamsal arama durumu okunamadı") });
@@ -27,7 +27,7 @@ pub fn status(call: CallFn) -> Value {
 }
 
 pub fn enable(call: CallFn) -> Result<Value, String> {
-    if !supported(call) { return Err("Kurulu SecondBrain anlamsal aramayı desteklemiyor; önce güncelleyin.".into()); }
+    if !supported(call) { return Err("Kurulu Brain anlamsal aramayı desteklemiyor; önce güncelleyin.".into()); }
     let steps: [(&str, Value, &str); 3] = [
         ("memory.semantic.configure", json!({ "confirm": true, "enabled": true }), "Anlamsal arama açılamadı"),
         ("memory.semantic.pull", json!({ "confirm": true }), "Model indirilemedi"),
@@ -35,14 +35,14 @@ pub fn enable(call: CallFn) -> Result<Value, String> {
     ];
     for (op, payload, what) in steps {
         let id = (op == "memory.index.refresh").then(generate_operation_id);
-        let reply = call("secondbrain", op, Some(payload), id);
+        let reply = call("brain", op, Some(payload), id);
         if !is_ok(&reply) { return Err(failure(&reply, what)); }
     }
     Ok(status(call))
 }
 
 pub fn disable(call: CallFn) -> Result<Value, String> {
-    let reply = call("secondbrain", "memory.semantic.configure", Some(json!({ "confirm": true, "enabled": false })), None);
+    let reply = call("brain", "memory.semantic.configure", Some(json!({ "confirm": true, "enabled": false })), None);
     if !is_ok(&reply) { return Err(failure(&reply, "Anlamsal arama kapatılamadı")); }
     Ok(status(call))
 }
@@ -82,7 +82,7 @@ mod tests {
     }
 
     #[test]
-    fn an_old_secondbrain_is_reported_unsupported() {
+    fn an_old_brain_is_reported_unsupported() {
         let call = |_: &str, _: &str, _: Option<Value>, _: Option<String>| json!({ "ok": true, "result": { "capabilities": [] }, "error": Value::Null });
         assert_eq!(status(&call)["state"], "unsupported");
         assert!(enable(&call).is_err());

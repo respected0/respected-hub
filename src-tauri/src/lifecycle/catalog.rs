@@ -236,7 +236,7 @@ mod tests {
     fn index() -> Value {
         let release = |v: &str| json!({ "version": v, "url": "https://example.invalid/x.zip", "sha256": "ab".repeat(32), "size": 10 });
         json!({ "schema": 1, "sequence": 3, "hub": { "stable": release("0.1.0"), "beta": release("0.2.0-beta.1") },
-                "products": { "orchestrator": { "stable": Value::Null, "beta": release("0.1.0-beta.2") }, "secondbrain": { "stable": release("0.1.0"), "beta": release("0.1.0-beta.3") } } })
+                "products": { "orchestrator": { "stable": Value::Null, "beta": release("0.1.0-beta.2") }, "brain": { "stable": release("0.1.0"), "beta": release("0.1.0-beta.3") } } })
     }
 
     #[test]
@@ -246,7 +246,7 @@ mod tests {
         assert_eq!(entry(&i, "hub", "stable").unwrap().version, "0.1.0");
         assert_eq!(entry(&i, "orchestrator", "beta").unwrap().version, "0.1.0-beta.2");
         assert!(entry(&i, "orchestrator", "stable").is_none(), "a beta-only product is not offered on the stable channel");
-        assert_eq!(entry(&i, "secondbrain", "beta").unwrap().version, "0.1.0", "a final release outranks its own betas");
+        assert_eq!(entry(&i, "brain", "beta").unwrap().version, "0.1.0", "a final release outranks its own betas");
         assert!(entry(&i, "runtime", "beta").is_none());
     }
 

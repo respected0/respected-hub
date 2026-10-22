@@ -9,7 +9,7 @@ use common::{ecosystem, product_folders, Temp};
 
 fn settings_for(ecosystem: &Path) -> Settings {
     Settings { python: "python".into(), orchestrator_root: ecosystem.join("respected-orchestrator"),
-        brain_root: ecosystem.join("respected-secondbrain"), brain_exe: None, orchestrator_exe: None }
+        brain_root: ecosystem.join("respected-brain"), brain_exe: None, orchestrator_exe: None }
 }
 
 fn campaign_folder(data_root: &Path, id: &str) -> PathBuf {

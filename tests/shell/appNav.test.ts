@@ -18,8 +18,8 @@ test('orchestrator exposes the mounted workspace pages in order', () => {
   assert.equal(orchestrator.pages.find(page => page.id === 'runs')?.label, 'G\u00f6revler');
 });
 
-test('secondbrain pages are unchanged', () => {
-  const secondbrain = APPS.find(app => app.id === 'secondbrain');
-  assert.ok(secondbrain, 'secondbrain app is missing');
-  assert.deepEqual(secondbrain.pages.map(page => page.id), ['overview', 'memory', 'setup', 'settings']);
+test('brain pages are unchanged', () => {
+  const brain = APPS.find(app => app.id === 'brain');
+  assert.ok(brain, 'brain app is missing');
+  assert.deepEqual(brain.pages.map(page => page.id), ['overview', 'memory', 'setup', 'settings']);
 });

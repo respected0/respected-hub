@@ -47,7 +47,7 @@ indirilir.
 |---|---|
 | Katalog adresi | `https://github.com/respected0/respected-hub/releases/download/catalog/catalog.json` (+ `.sig`) |
 | Katalog imzası | Ed25519 yayın anahtarı, `b"respected-catalog-v1\n"` + dosyanın tam baytları üzerinde; `.sig` = `<anahtar_kimliği> <base64>` |
-| Katalog şeması 1 | `{schema, sequence, published, hub:{stable,beta}, products:{secondbrain,orchestrator:{stable,beta}}}`; bir sürüm `{version, url, sha256, size, min_hub?}` |
+| Katalog şeması 1 | `{schema, sequence, published, hub:{stable,beta}, products:{brain,orchestrator:{stable,beta}}}`; bir sürüm `{version, url, sha256, size, min_hub?}` |
 | Geri gitme | Önbellektekinden küçük `sequence` reddedilir |
 | Arşiv | Kökünde tek imzalı paket klasörü (`bundle.json` + `payload/<Ürün>-Windows-Setup.exe`) olan zip |
 | Sürüm sırası | SemVer (`0.1.0-beta.1 < 0.1.0-rc.1 < 0.1.0 < 0.1.1-beta.1`); PEP 440 yazımları eşittir (`0.1.0b1`) |
@@ -106,7 +106,7 @@ yanıt. Ağ dinleyicisi, servis ya da kabuk yoktur.
 - Süreç doğrudan (`Command`, kabuksuz), açık argümanlarla, zaman aşımı ve öldürme ile, çıktı sınırıyla başlatılır. Adı sır
   gibi görünen ortam değişkenleri (key, token, secret, passw, credential, auth, cookie, session) alt sürece geçmez.
 - Yerel hatalar da yanıt zarfı olur: `ENGINE_NOT_FOUND`, `ENGINE_UNAVAILABLE`, `ENGINE_TIMEOUT`, `BAD_RESPONSE`.
-- Ürünler (`orchestrator`, `secondbrain`) ve işlemler izin listesindedir; liste dışı istek süreç başlatılmadan reddedilir.
+- Ürünler (`orchestrator`, `brain`) ve işlemler izin listesindedir; liste dışı istek süreç başlatılmadan reddedilir.
   `settings.apply`, `integrations.apply` ve `integrations.rollback` işlem kimliği ister (yoksa üretilir).
 - **Web görünümü** yalnızca `rpp_request` ile okuma ve ayar işlemlerini yapabilir. Köprüde yasak olanlar: bütün `memory.*`
   işlemleri, `integrations.apply|rollback` ve `memory_` ile başlayan ayar anahtarları. Bunları yalnızca onay ekranı olan
@@ -115,10 +115,10 @@ yanıt. Ağ dinleyicisi, servis ya da kabuk yoktur.
 
 ## 7. Ürünleri birbirine bağlama
 
-- **SecondBrain bağlantıları** (hangi AI aracı yakalanır, MCP, zamanlayıcı, kısayol): önce SecondBrain'in salt okunur
+- **Brain bağlantıları** (hangi AI aracı yakalanır, MCP, zamanlayıcı, kısayol): önce Brain'in salt okunur
   `integrations.plan` önizlemesi gösterilir, onay sonrası `settings.apply`. Ürün kendi kayıtlarını aynı işlemde günceller.
-- **Orchestrator'ın SecondBrain hafızası:** Orchestrator'ın `memory.connect` / `memory.disconnect` işlemi (komut satırındaki
-  `memory connect` ile aynı kod). İzni SecondBrain verir, Orchestrator saklar; Hub anahtarı hiç görmez.
+- **Orchestrator'ın Brain hafızası:** Orchestrator'ın `memory.connect` / `memory.disconnect` işlemi (komut satırındaki
+  `memory connect` ile aynı kod). İzni Brain verir, Orchestrator saklar; Hub anahtarı hiç görmez.
 - **Orchestrator'ın AI araçlarına MCP kaydı:** Orchestrator'ın `integrations.plan` / `apply`; girdi kurulu programı gösterir
   (`...\RespectedOrchestrator\app\respected-orchestrator.exe mcp`), Hub'ın hiçbir dosyasını değil. Başka girdiler korunur.
 

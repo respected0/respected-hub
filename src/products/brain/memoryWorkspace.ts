@@ -1,4 +1,4 @@
-// SecondBrain memory workspace: the user's own note search, note reader, quick capture and briefing. Calls go through trusted Rust commands.
+// Brain memory workspace: the user's own note search, note reader, quick capture and briefing. Calls go through trusted Rust commands.
 import { invoke } from '@tauri-apps/api/core';
 import { native } from '../../shared/api.ts';
 import type { LifecycleError } from '../../shell/lifecycle.ts';
@@ -24,7 +24,7 @@ export const readNote = (path: string) => call<NoteContent>('memory_note_read', 
 export const captureNote = (content: string, title?: string) => call<CaptureResult>('memory_capture_note', { title: title?.trim() || null, content });
 export const runBriefing = () => call<BriefingResult>('memory_briefing_run');
 
-/** Notes the SecondBrain engine itself maintains; shown as one-click reads next to the search. */
+/** Notes the Brain engine itself maintains; shown as one-click reads next to the search. */
 export const KNOWN_NOTES: { label: string; path: (today: string) => string }[] = [
   { label: 'Son oturum', path: () => '🔮 850-Companion/Last-Session.md' },
   { label: 'Açık konular', path: () => '🔮 850-Companion/Threads.md' },
