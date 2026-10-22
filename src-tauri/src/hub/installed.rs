@@ -25,7 +25,8 @@ pub fn respected_root() -> PathBuf {
     std::env::var_os("LOCALAPPDATA").map(PathBuf::from).unwrap_or_else(std::env::temp_dir).join("Respected")
 }
 
-pub struct Installed { pub version: String, pub app_dir: PathBuf, pub exe: PathBuf }
+/// `recorded_at`: when the product last wrote its install record (epoch milliseconds), by whoever ran its installer or `setup`/`repair`, the Hub or not.
+pub struct Installed { pub version: String, pub app_dir: PathBuf, pub exe: PathBuf, pub recorded_at: Option<String> }
 
 impl Product {
     pub fn folder(&self) -> PathBuf { respected_root().join(self.folder) }
@@ -42,7 +43,9 @@ impl Product {
         if !exe.is_file() || !folder.join(self.record).is_file() { return None; }
         let document: serde_json::Value = serde_json::from_slice(&fs::read(app_dir.join("distribution.json")).ok()?).ok()?;
         let version = document["version"].as_str().filter(|v| crate::lifecycle::valid_version(v))?.to_string();
-        Some(Installed { version, app_dir, exe })
+        let recorded_at = fs::metadata(folder.join(self.record)).and_then(|m| m.modified()).ok()
+            .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok()).map(|elapsed| elapsed.as_millis().to_string());
+        Some(Installed { version, app_dir, exe, recorded_at })
     }
 }
 

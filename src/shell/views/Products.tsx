@@ -178,15 +178,16 @@ function ProductCard({ product, part }: { product: { id: RppProduct; name: strin
   </article>;
 }
 
-export default function Products() {
-  if (!native) return <div className="notice warning">Ürün durumunu ve ayarları görmek için Tauri masaüstü uygulaması gerekli. Tarayıcı önizlemesinde gerçek ürün verisi gösterilmez.</div>;
-  return <section aria-label="Ürünler" className="products-view">{PRODUCTS.map((product) => <ProductCard key={product.id} product={product} part="status" />)}</section>;
-}
-
-
-// One product's status and settings, for use inside that app's own workspace.
+// One product's settings form, for use inside that app's own workspace.
 export function ProductPanel({ id }: { id: RppProduct }) {
   const product = PRODUCTS.find(item => item.id === id);
   if (!native) return <div className="notice warning">Ayarlar için Tauri masaüstü uygulaması gerekli.</div>;
   return product ? <ProductCard product={product} part="settings" /> : null;
+}
+
+// One product's health, version and capabilities: the workspace Overview is the only place they are shown.
+export function ProductStatusPanel({ id }: { id: RppProduct }) {
+  const product = PRODUCTS.find(item => item.id === id);
+  if (!native) return <div className="notice warning">Ürün durumunu görmek için Tauri masaüstü uygulaması gerekli. Tarayıcı önizlemesinde gerçek ürün verisi gösterilmez.</div>;
+  return product ? <ProductCard product={product} part="status" /> : null;
 }

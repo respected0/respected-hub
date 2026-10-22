@@ -97,15 +97,8 @@ export default function EvidencePanel({ runs, campaignIds }: { runs: Run[]; camp
     : evidence ? evidence.headline
     : 'Bir çalışma veya kampanya seçin.';
 
-  return <section className="page evidence-view" aria-label="İnceleme ve kanıtlar">
-    <div className="section-head">
-      <div>
-        <span className="eyebrow">İnceleme</span>
-        <h1>Kanıt ve onaylar</h1>
-        <p className="muted">Motorun verdiği kanıtlar ve inceleme kararları burada gösterilir. Hub onay vermez ve patch uygulamaz; gereken komut bir terminalde sizin tarafınızdan çalıştırılır.</p>
-      </div>
-    </div>
-
+  return <div className="ws-stack" aria-label="İnceleme ve kanıtlar">
+    <section className="panel-glass"><div className="section-head"><h2>Kanıt kaynağı</h2></div>
     <div className="evidence-choices">
       <label htmlFor="evidence-run">Çalışma seç
         <select id="evidence-run" value={selectedRun} disabled={state === 'loading'}
@@ -123,8 +116,8 @@ export default function EvidencePanel({ runs, campaignIds }: { runs: Run[]; camp
       </label>
     </div>
 
-    <p className={state === 'failed' ? 'error' : 'muted'} role="status" aria-live="polite">{statusText}</p>
+    <p className={state === 'failed' ? 'error' : 'muted'} role="status" aria-live="polite">{statusText}</p></section>
 
     {evidence && state === 'ready' && <EvidenceCard evidence={evidence} />}
-  </section>;
+  </div>;
 }

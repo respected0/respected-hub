@@ -18,7 +18,7 @@ export default function AgentsPanel({ workers, settings, loading, error }: Agent
 
   const model = deriveAgentsModel(workers, settings);
 
-  return <section aria-label="Ajanlar ve modeller" className="agents-view">
+  return <div aria-label="Ajanlar ve modeller" className="ws-stack">
     {error && <p className="error" role="alert">{error}</p>}
 
     <div className="panel-glass">
@@ -50,5 +50,5 @@ export default function AgentsPanel({ workers, settings, loading, error }: Agent
     </div>
 
     <p className="muted" role="note">{model.note}</p>
-  </section>;
+  </div>;
 }

@@ -1,13 +1,11 @@
 import { SETTINGS_TABS, type SettingsTab } from '../apps.ts';
 import type { Ecosystem } from '../useEcosystem.ts';
 import Activity from './Activity.tsx';
-import Connections from './Connections.tsx';
 import type { Go } from './Home.tsx';
 import Settings from './Settings.tsx';
 
 const INTRO: Record<SettingsTab, string> = {
   general: 'Hub\'ın güncelleme kanalı; Hub ve ürünlerin bilgisayarınıza neler kurduğu.',
-  status: 'Hub kurulu her ürünle kendi protokolü (RPP) üzerinden konuşur. Bir şey çalışmıyorsa nedenini buradan okuyun; ürün kurmak ya da kaldırmak için Kütüphane\'yi kullanın.',
   activity: 'Kurulum işlemleri ve Orchestrator motorunun gerçek görev kayıtları.',
 };
 
@@ -19,7 +17,6 @@ export default function SettingsHub({ tab, onTab, eco, go, onCatalogChanged }: {
       <button key={item.id} role="tab" className="tab" aria-selected={tab === item.id} onClick={() => onTab(item.id)}>{item.label}</button>)}</div>
     <div className="tab-panel" role="tabpanel">
       {tab === 'general' && <Settings onCatalogChanged={onCatalogChanged} />}
-      {tab === 'status' && <Connections />}
       {tab === 'activity' && <Activity eco={eco} go={go} />}
     </div>
   </div>;

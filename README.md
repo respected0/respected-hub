@@ -28,8 +28,8 @@ sürümün kurucusunu çalıştırmaktır; Hub güncellemesi doğrulanmış Hub 
 | Ana Sayfa | İlk açılışta karşılama; sonra ürünlerin gerçek durumu |
 | Keşfet | Katalogdaki ürünler |
 | Kütüphane | Her ürünün kartı: durum, sürüm, Kur / Güncelle / Onar / Kaldır (planı ve "neler değişecek" bilgisini gösterir, onayla çalışır); her kartta kurulumda, kullanırken, güncellemede ve kaldırmada neler olduğu |
-| Ayarlar | Üç sekme: **Genel** (kanal, güncellemeleri denetle, Hub'ın neler kurduğu; geliştirme sürümünde kaynak yolları), **Ürün durumu** (ürünlerin sağlık yanıtları), **Etkinlik** (kurulum işlemleri ve görev geçmişi) |
-| Brain | Genel bakış, Hafıza (arama, okuma, hızlı not, sabah özeti), Kurulum sihirbazı, Ayarlar (şemadan form, AI aracı bağlantıları, anlamsal arama) |
+| Ayarlar | İki sekme: **Genel** (kanal, güncellemeleri denetle, Hub'ın neler kurduğu; geliştirme sürümünde kaynak yolları) ve **Etkinlik** (Hub'dan yapılan kurulum işlemleri, ürünlerin son kurulum kaydı, görev geçmişi) |
+| Brain | Genel bakış (ürün sağlığı burada, başka yerde değil), Hafıza (arama, okuma, hızlı not, sabah özeti), Kurulum sihirbazı, Ayarlar (şemadan form, AI aracı bağlantıları, anlamsal arama) |
 | Orchestrator | Görevler, kampanyalar, kanıt, ajanlar; Ayarlar (şemadan form, Brain hafıza erişimi, AI araçlarına MCP kaydı) |
 
 ## Geliştirme

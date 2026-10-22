@@ -7,7 +7,7 @@ import type { Ecosystem } from '../useEcosystem.ts';
 import { Emblem, Icon, Weave, statusLabel, statusTone } from '../../shared/ui.tsx';
 import { rppCall } from '../../shared/productClient.ts';
 
-export type Go = (target: 'apps' | 'connections' | 'discover' | 'activity' | { app: string; page: string }) => void;
+export type Go = (target: 'apps' | 'discover' | 'activity' | { app: string; page: string }) => void;
 
 export default function Home({ eco, go }: { eco: Ecosystem; go: Go }) {
   const APPS = visibleApps(eco.lifecycle, native);

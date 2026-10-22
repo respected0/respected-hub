@@ -45,6 +45,7 @@ fn product_status(roots: &lifecycle::Roots, settings: &Settings, product: &insta
     let mut status = json!({
         "product": product.id, "installed": current.is_some(), "install_state": state, "version": current.as_ref().map(|i| i.version.clone()),
         "root": current.as_ref().map(|i| i.app_dir.to_string_lossy().to_string()),
+        "recorded_at": current.as_ref().and_then(|i| i.recorded_at.clone()),
         "available": newest.map(|b| json!({ "version": b.version, "signed": b.signed, "trust": b.trust })), "catalog_skipped": skipped,
     });
     catalog::overlay_status(roots, &mut status);

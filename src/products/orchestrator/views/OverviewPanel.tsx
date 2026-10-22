@@ -27,7 +27,7 @@ export default function OverviewPanel({ runs, workers, onOpenTasks, onOpenRun }:
   const { runCounts } = model;
   const total = runCounts.active + runCounts.succeeded + runCounts.failed + runCounts.other;
 
-  return <section aria-label="Genel bakış" className="overview-view">
+  return <div aria-label="Genel bakış" className="ws-stack">
     <div className="panel-glass">
       <h2>Görev durumu</h2>
       <ul className="overview-counts" aria-label="Görev sayıları">
@@ -66,5 +66,5 @@ export default function OverviewPanel({ runs, workers, onOpenTasks, onOpenRun }:
       <ul className="overview-warnings notice warning" role="status" aria-live="polite" aria-label="Uyarılar">
         {model.warnings.map((warning) => <li key={warning}>{warning}</li>)}
       </ul>}
-  </section>;
+  </div>;
 }
