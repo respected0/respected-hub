@@ -17,3 +17,8 @@
   tarafından denenmedi.
 - [ ] Kurucuyu Authenticode ile imzalamak (SmartScreen uyarısı).
 - [ ] macOS / Linux: doğrulanmadı.
+- [ ] Ürün açıkken güncelleme denenmedi: Claude Code/Codex'te Brain MCP sunucusu (ya da çalışan bir Orchestrator
+  kampanyası) `app\` dosyalarını kilitliyken sessiz kurucu (`CloseApplications=yes`) onları kapatabiliyor mu?
+- [ ] Hub'sız kullanıcı yeni sürümden haberdar olmuyor: ürünlerde sürüm denetimi yok.
+- [ ] Aynı sürüm numarasıyla düzeltilmiş yayın: Hub önbellekteki eski kurucuyla onarabilir ve "Güncelleme var" göstermez;
+  kurmuş olanlar düzeltmeyi kurucuyu elle çalıştırarak alır.

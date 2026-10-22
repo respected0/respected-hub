@@ -35,7 +35,7 @@ test('deriveProfiles: absent, empty or malformed settings yield nothing', () => 
 test('deriveAgentsModel: roles are the fixed engine roles and never invented', () => {
   const model = deriveAgentsModel({ codex: 'C:/bin/codex.exe' }, { default_worker: 'codex' });
   assert.equal(model.roles, AGENT_ROLES);
-  assert.deepEqual(model.roles.map((role) => role.id), ['implementer', 'reviewer', 'master']);
+  assert.deepEqual(model.roles.map((role) => role.id), ['planner', 'implementer', 'reviewer', 'deep_reviewer', 'debugger', 'master']);
   assert.equal(model.workers.length, 1);
   assert.equal(model.profiles.length, 1);
   assert.equal(model.note, ROLE_NOTE);
@@ -45,6 +45,6 @@ test('deriveAgentsModel: no real data means empty lists with an honest note', ()
   const model = deriveAgentsModel(null, null);
   assert.deepEqual(model.workers, []);
   assert.deepEqual(model.profiles, []);
-  assert.equal(model.roles.length, 3);
+  assert.equal(model.roles.length, 6);
   assert.ok(model.note.includes('kampanya spec'));
 });
