@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { loadSettings, native, products, saveSettings, type Settings } from '../../shared/api.ts';
+import { developmentBuild, loadSettings, native, saveSettings, type Settings } from '../../shared/api.ts';
 import InstallFacts from './InstallFacts.tsx';
 import { catalogRefresh, catalogSetChannel, describeLifecycleError, hubUpdateInstall, hubUpdateStatus, lifecycleStatus, type Channel, type HubUpdate } from '../lifecycle.ts';
 
@@ -67,7 +67,7 @@ export default function Settings({ onCatalogChanged }: { onCatalogChanged?: () =
   useEffect(() => { if (native) void lifecycleStatus().then(reply => { if (reply.ok) setManaged(reply.result.products.filter(item => item?.installed).map(item => item!.product)); }); }, []);
   const [error, setError] = useState('');
   const [development, setDevelopment] = useState(false);   // source search paths only mean something in a development build
-  useEffect(() => { if (native) products().then(p => setDevelopment(p.development)).catch(() => setDevelopment(false)); }, []);
+  useEffect(() => { if (native) developmentBuild().then(setDevelopment).catch(() => setDevelopment(false)); }, []);
 
   useEffect(() => {
     if (!native) return;
@@ -92,7 +92,6 @@ export default function Settings({ onCatalogChanged }: { onCatalogChanged?: () =
 
   return <div className="settings-stack">
     <Updates onCatalogChanged={onCatalogChanged} />
-    <section className="card settings-card" aria-label="Hub'ın kurduğu şeyler"><InstallFacts subject="hub" /></section>
     {development && <section className="card settings-card" aria-labelledby="settings-sources">
       <h2 id="settings-sources">Kaynak arama yolları</h2>
       <p>Bu ayarlar Hub’ın geliştirme sürümünde ürün kaynaklarını nerede arayacağını belirler. Canlı AI yapılandırmalarına dokunmaz.</p>
@@ -119,5 +118,6 @@ export default function Settings({ onCatalogChanged }: { onCatalogChanged?: () =
       {error && <p className="error" role="alert">{error}</p>}
       <p className="muted">Kaydetme işlemi önce doğrulama kurallarını çalıştırır, sonra ayarları yeniden okuyarak sonucu kontrol eder.</p>
     </section>}
+    <section className="card settings-card" aria-label="Hub'ın kurduğu şeyler"><InstallFacts subject="hub" /></section>
   </div>;
 }

@@ -18,3 +18,4 @@ export const saveSettings = (settings: Settings) => invoke<void>('save_settings'
 export interface Products { development: boolean; brain_available: boolean; orchestrator_available: boolean; orchestrator_cli: string | null;
   hub_version: string; engine: { version?: string; workers?: Record<string, string[] | null>; error?: string } }
 export const products = () => invoke<Products>('product_status');
+export const developmentBuild = () => invoke<boolean>('development_build');

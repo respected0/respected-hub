@@ -21,6 +21,10 @@ pub async fn rpp_request(app: tauri::AppHandle, product: String, op: String, pay
     tauri::async_runtime::spawn_blocking(move || rpp::rpp_call(&settings, &product, &op, payload, operation_id)).await.map_err(|e| e.to_string())
 }
 
+/// Development builds only: whether source search paths mean anything. No product is started to answer.
+#[tauri::command]
+pub fn development_build() -> bool { trust::dev_enabled() }
+
 #[tauri::command]
 pub async fn product_status(app: tauri::AppHandle) -> Result<Value, String> {
     let settings = resolved_settings(&app)?;
