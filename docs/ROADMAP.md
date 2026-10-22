@@ -17,9 +17,6 @@
   tarafından denenmedi.
 - [ ] Kurucuyu Authenticode ile imzalamak (SmartScreen uyarısı). Kod imzalama sertifikası gerekir; yok.
 - [ ] macOS / Linux: doğrulanmadı. Bu geliştirme makinesi Windows.
-- [ ] Hub'ın kendi güncellemesi sırasında Hub açıkken kurucunun davranışı denenmedi (ürünler için denendi: Brain kurucusu,
-  AI araçlarının MCP sunucuları açıkken kendi program klasöründeki süreçleri durdurup güncelliyor; Hub'ın kurucusu bu
-  adımı içermiyor).
 - [ ] Hub'sız kullanıcı yeni sürümden haberdar olmuyor: ürünlerde sürüm denetimi yok.
 - [ ] Aynı sürüm numarasıyla düzeltilmiş yayın: Hub önbellekteki eski kurucuyla onarabilir ve "Güncelleme var" göstermez;
   kurmuş olanlar düzeltmeyi kurucuyu elle çalıştırarak alır.
