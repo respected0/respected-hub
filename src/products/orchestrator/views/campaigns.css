@@ -12,7 +12,7 @@
 .campaign-lanes li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--line-soft); font-size: 13px; } .campaign-lanes li strong { min-width: 72px; }
 .campaign-timeline li { display: grid; grid-template-columns: 170px 1fr; gap: 12px; padding: 9px 12px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--line-soft); font-size: 13px; } .campaign-timeline time { color: var(--muted); font-size: 12px; }
 .chain-note p { margin: 0; font-size: 13px; }
-.campaign-final { white-space: pre-wrap; word-break: break-word; background: #080c15; border: 1px solid var(--line-soft); border-radius: var(--r-md); padding: 12px; font-size: 12.5px; margin: 0; }
+.campaign-final { white-space: pre-wrap; word-break: break-word; background: #121b27; border: 1px solid var(--line-soft); border-radius: var(--r-md); padding: 12px; font-size: 12.5px; margin: 0; }
 .campaign-advanced summary { font-weight: 600; } .campaign-advanced label { margin: 14px 0 6px; color: var(--muted); }
 .campaign-advanced textarea { font-family: var(--font-mono); font-size: 12.5px; }
 .campaign-actions { display: flex; justify-content: flex-end; margin-top: 12px; }

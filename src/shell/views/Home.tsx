@@ -8,7 +8,8 @@ import { Emblem, Icon, Weave, statusLabel, statusTone } from '../../shared/ui.ts
 import { knownIdentity, readIdentity } from '../identity.ts';
 import BrainOverview from '../../products/brain/views/BrainOverview.tsx';
 
-export type Go = (target: 'apps' | 'discover' | 'activity' | 'settings' | { app: string; page: string }) => void;
+// `{ store }`: the store (Keşfet) with that product selected
+export type Go = (target: 'apps' | 'discover' | 'activity' | 'settings' | { app: string; page: string } | { store: string }) => void;
 
 export default function Home({ eco, go, hub }: { eco: Ecosystem; go: Go; hub?: { version: string; current: string } | null }) {
   const APPS = visibleApps(eco.lifecycle, native);
@@ -61,7 +62,7 @@ export default function Home({ eco, go, hub }: { eco: Ecosystem; go: Go; hub?: {
       <div className="hero-art" aria-hidden="true"><span className="emblem-tile"><span className="mark" /></span></div>
     </section>
     {live && <section className="quick" aria-label="Uygulamalar">{CATALOG.map(app => { const installed = has(app.id);
-      return <button key={app.id} className={`quick-card accent-${app.accent}`} onClick={() => go(installed ? { app: app.id, page: 'overview' } : 'discover')}>
+      return <button key={app.id} className={`quick-card accent-${app.accent}`} onClick={() => go(installed ? { app: app.id, page: 'overview' } : { store: app.id })}>
         <Emblem app={app.id} /><span><strong>{app.name.replace('Respected ', '')}</strong><small>{app.tagline}</small></span><Icon name="arrow" /></button>; })}</section>}
     <div className="home-stack">
       {live && has('brain') && <section className="side-card" aria-label="Hafızadan"><h2>Hafızadan <button className="link-btn" onClick={() => go({ app: 'brain', page: 'memory' })}>Hafıza</button></h2>
