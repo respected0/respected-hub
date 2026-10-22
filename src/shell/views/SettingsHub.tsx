@@ -6,7 +6,7 @@ import type { Go } from './Home.tsx';
 import Settings from './Settings.tsx';
 
 const INTRO: Record<SettingsTab, string> = {
-  general: 'Hub\'ın güncelleme kanalı ve kaynak yolları; Hub ve ürünlerin bilgisayarınıza neler kurduğu.',
+  general: 'Hub\'ın güncelleme kanalı; Hub ve ürünlerin bilgisayarınıza neler kurduğu.',
   status: 'Hub kurulu her ürünle kendi protokolü (RPP) üzerinden konuşur. Bir şey çalışmıyorsa nedenini buradan okuyun; ürün kurmak ya da kaldırmak için Kütüphane\'yi kullanın.',
   activity: 'Kurulum işlemleri ve Orchestrator motorunun gerçek görev kayıtları.',
 };

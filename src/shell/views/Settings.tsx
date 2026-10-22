@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { loadSettings, native, saveSettings, type Settings } from '../../shared/api.ts';
+import { loadSettings, native, products, saveSettings, type Settings } from '../../shared/api.ts';
 import InstallFacts from './InstallFacts.tsx';
 import { catalogRefresh, catalogSetChannel, describeLifecycleError, hubUpdateStatus, lifecycleStatus, type Channel, type HubUpdate } from '../lifecycle.ts';
 
@@ -57,6 +57,8 @@ export default function Settings({ onCatalogChanged }: { onCatalogChanged?: () =
   const [managed, setManaged] = useState<string[]>([]);
   useEffect(() => { if (native) void lifecycleStatus().then(reply => { if (reply.ok) setManaged(reply.result.products.filter(item => item?.installed).map(item => item!.product)); }); }, []);
   const [error, setError] = useState('');
+  const [development, setDevelopment] = useState(false);   // source search paths only mean something in a development build
+  useEffect(() => { if (native) products().then(p => setDevelopment(p.development)).catch(() => setDevelopment(false)); }, []);
 
   useEffect(() => {
     if (!native) return;
@@ -84,7 +86,7 @@ export default function Settings({ onCatalogChanged }: { onCatalogChanged?: () =
     <section className="card settings-card" aria-labelledby="settings-facts"><h2 id="settings-facts">Hub bilgisayarınıza neler kurar?</h2>
       <p>Hub ve ürünler ayrı programlardır; her birinin kurduğu, güncellediği ve sildiği şeyler Kütüphane'de ürün kartında da listelenir.</p>
       <InstallFacts subject="hub" /></section>
-    <section className="card settings-card" aria-labelledby="settings-sources">
+    {development && <section className="card settings-card" aria-labelledby="settings-sources">
       <h2 id="settings-sources">Kaynak arama yolları</h2>
       <p>Bu ayarlar Hub’ın geliştirme sürümünde ürün kaynaklarını nerede arayacağını belirler. Canlı AI yapılandırmalarına dokunmaz.</p>
       {managed.length > 0 && <div className="notice" role="note">Kurulu ürünler ({managed.join(', ')}) kendi programlarından çalışır; aşağıdaki kaynak klasörleri bu ürünler için kullanılmaz.</div>}
@@ -109,6 +111,6 @@ export default function Settings({ onCatalogChanged }: { onCatalogChanged?: () =
       </form>}
       {error && <p className="error" role="alert">{error}</p>}
       <p className="muted">Kaydetme işlemi önce doğrulama kurallarını çalıştırır, sonra ayarları yeniden okuyarak sonucu kontrol eder.</p>
-    </section>
+    </section>}
   </div>;
 }

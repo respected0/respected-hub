@@ -1,7 +1,7 @@
 import type { IntegrationPlan } from '../../../shell/lifecycle.ts';
 
 const KIND: Record<string, string> = { file: 'Dosya', mcp: 'MCP kaydı', task: 'Zamanlanmış görev', shortcut: 'Kısayol', registry: 'Kayıt' };
-const ACTION: Record<string, string> = { create: 'Oluşturulur', modify: 'Değiştirilir', restore: 'Eski haline döner', unchanged: 'Aynı' };
+const ACTION: Record<string, string> = { create: 'Eklenir', modify: 'Güncellenir', restore: 'Kaldırılır', unchanged: 'Aynı' };
 
 // The product's read-only plan: what is found, exactly what would change, and what is never touched.
 export default function IntegrationPreview({ plan, hideUnchanged = false }: { plan: IntegrationPlan; hideUnchanged?: boolean }) {
