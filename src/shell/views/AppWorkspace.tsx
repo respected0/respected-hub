@@ -42,11 +42,12 @@ const HOW: Record<string, [string, string][]> = {
 // The Overview opens with a greeting and the product's state, then what it did lately, how it works, what was checked and what it installs.
 function Overview({ app, eco, go }: { app: AppDef; eco: Ecosystem; go: (page: string) => void }) {
   const [workers, setWorkers] = useState<Record<string, string[] | null> | null>(null);
-  useEffect(() => { if (native && app.id === 'orchestrator') engine<{ workers?: Record<string, string[] | null> }>('status').then(s => setWorkers(s.workers ?? null)).catch(() => setWorkers(null)); }, [app.id]);
+  const [workersLoading, setWorkersLoading] = useState(native && app.id === 'orchestrator');
+  useEffect(() => { if (native && app.id === 'orchestrator') engine<{ workers?: Record<string, string[] | null> }>('status').then(s => setWorkers(s.workers ?? null)).catch(() => setWorkers(null)).finally(() => setWorkersLoading(false)); }, [app.id]);
   const runtime = eco.apps[app.id];
   return <>
     <Hello app={app.id} product={app.name.replace('Respected ', '')} kind={runtime.summary.statusKind} loading={runtime.loading} />
-    {app.id === 'orchestrator' ? <OverviewPanel runs={eco.runs} workers={workers} onOpenTasks={() => go('runs')} /> : <BrainOverview openMemory={() => go('memory')} />}
+    {app.id === 'orchestrator' ? <OverviewPanel runs={eco.runs} workers={workers} workersLoading={workersLoading} onOpenTasks={() => go('runs')} /> : <BrainOverview openMemory={() => go('memory')} />}
     <section className="panel-glass"><div className="section-head"><h2>Nasıl çalışır?</h2></div>
       <ol className="plan-steps">{HOW[app.id]?.map(([title, text]) => <li key={title}><strong>{title}.</strong> {text}</li>)}</ol></section>
     {app.rpp && <ProductStatusPanel id={app.rpp} summary={runtime.summary} />}
