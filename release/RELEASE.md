@@ -38,7 +38,7 @@ ve insanlar yeni Hub'ı elle indirmek zorunda kalır. Anahtar kimliği `dabcb526
 
 Her şey için tek sürüm (`0.1.0-beta.1`). Değiştirilecek yerler: `respected-hub/src-tauri/tauri.conf.json`, `Cargo.toml`,
 `package.json`, `packaging/windows/hub_setup.iss` varsayılanı; `respected-brain/pyproject.toml`;
-`respected-orchestrator/pyproject.toml` ve `respected_orchestrator/__init__.py`. Sonra iki ürünü düzenlenebilir olarak
+`respected-orchestrator/pyproject.toml`; ayrıca iki ürünün `__init__.py` dosyasındaki `__version__` (PEP 440 yazımı, ör. `0.1.0b2`; paket bilgisinden okunmaz çünkü her çağrıda ~200 ms tutuyordu, iki depodaki sürüm testi uyuşmazlığı yakalar). Sonra iki ürünü düzenlenebilir olarak
 yeniden kurun (`pip install -e`). Sürümler SemVer'dir; "beta" sürümün parçasıdır (`0.1.0-beta.2`, `0.1.0-rc.1`, `0.1.0`).
 Bir yayın her zaman iki ürünü güncel kaynaktan yeniden dondurur.
 

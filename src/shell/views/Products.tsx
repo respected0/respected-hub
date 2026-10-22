@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { native } from '../../shared/api.ts';
+import { Icon } from '../../shared/ui.tsx';
+import { plainCheck } from '../../shared/healthText.ts';
 import { rppCall } from '../../shared/productClient.ts';
 import type { RppProduct } from '../../shared/productClient.ts';
 import { describeError, SECRET_REDACTED } from '../../shared/rpp.ts';
 import type { RppResponse, SettingsSchema, SettingsValidation } from '../../shared/rpp.ts';
-import { changedSettings, formFromSchema, parseFieldValue, summarizeProduct, verifyReadback } from '../../shared/productsModel.ts';
+import { changedSettings, formFromSchema, parseFieldValue, verifyReadback } from '../../shared/productsModel.ts';
+import type { ProductSummary } from '../../shared/productsModel.ts';
 import type { FormField } from '../../shared/productsModel.ts';
 
-const PRODUCTS: { id: RppProduct; name: string; description: string }[] = [
-  { id: 'orchestrator', name: 'Respected Orchestrator', description: 'Bağımsız görev motoru.' },
-  { id: 'brain', name: 'RespectedBrain', description: 'AI hafıza motoru.' },
+// `scope` says what the Hub's quick checks cover, so the list is not mistaken for a check of the product's content.
+const PRODUCTS: { id: RppProduct; name: string; description: string; short: string; scope: string }[] = [
+  { id: 'orchestrator', name: 'Respected Orchestrator', description: 'Bağımsız görev motoru.', short: 'Orchestrator', scope: 'Hub, Orchestrator\'a şu hızlı kontrolleri yapar: veri klasörü, git, çalışan araçlar ve motor anahtarı hazır mı. Görevlerin sonuçlarını denetlemez; onlar Kanıtlar sayfasındadır.' },
+  { id: 'brain', name: 'RespectedBrain', description: 'AI hafıza motoru.', short: 'Brain', scope: 'Hub, Brain\'e şu hızlı kontrolleri yapar: ulaşılıyor mu, ayarlar ve veri klasörü okunuyor mu, not kasası bağlı mı. Notlarınızın içeriğini denetlemez; onun için brain-doktor becerisi var.' },
 ];
 
 async function call(product: RppProduct, op: string, payload?: Record<string, unknown>, operationId?: string): Promise<RppResponse | null> {
@@ -32,12 +36,8 @@ function settingsFrom(response: RppResponse | null): Record<string, unknown> {
   return typeof settings === 'object' && settings !== null && !Array.isArray(settings) ? settings as Record<string, unknown> : {};
 }
 
-// `status`: health, version and capabilities (Settings > Product status, the only place health is shown). `settings`: the product's settings form (its workspace).
-function ProductCard({ product, part }: { product: { id: RppProduct; name: string; description: string }; part: 'status' | 'settings' }) {
-  const [manifest, setManifest] = useState<RppResponse | null>(null);
-  const [health, setHealth] = useState<RppResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-
+// The product's settings form (its workspace Settings page).
+function ProductCard({ product }: { product: (typeof PRODUCTS)[number] }) {
   const [schema, setSchema] = useState<SettingsSchema | null>(null);
   const [fields, setFields] = useState<FormField[]>([]);
   const [original, setOriginal] = useState<Record<string, unknown>>({});
@@ -47,17 +47,6 @@ function ProductCard({ product, part }: { product: { id: RppProduct; name: strin
   const [busy, setBusy] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState('');
   const [settingsError, setSettingsError] = useState('');
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [manifestResponse, healthResponse] = await Promise.all([call(product.id, 'manifest'), call(product.id, 'health')]);
-      setManifest(manifestResponse);
-      setHealth(healthResponse);
-    } finally { setLoading(false); }
-  }, [product.id]);
-
-  useEffect(() => { if (part === 'status') void refresh(); }, [refresh, part]);
 
   const loadSettings = useCallback(async () => {
     setSettingsState('loading');
@@ -130,9 +119,8 @@ function ProductCard({ product, part }: { product: { id: RppProduct; name: strin
     finally { setBusy(false); }
   }
 
-  useEffect(() => { if (part === 'settings' && settingsState === 'idle') void loadSettings(); }, [part, settingsState, loadSettings]);
+  useEffect(() => { if (settingsState === 'idle') void loadSettings(); }, [settingsState, loadSettings]);
 
-  const summary = summarizeProduct(manifest, health);
   const settingsBusy = busy || settingsState !== 'ready';
 
   const settingsForm = <>
@@ -163,17 +151,16 @@ function ProductCard({ product, part }: { product: { id: RppProduct; name: strin
       </>}
   </>;
 
-  if (part === 'settings') return <article className="card"><div className="card-head"><div><h2>{product.name} ayarları</h2><p>Değerler ürünün kendi şemasıyla doğrulanır ve uygulandıktan sonra geri okunur.</p></div></div>{settingsForm}</article>;
+  return <article className="card"><div className="card-head"><div><h2>{product.name} ayarları</h2><p>Değerler ürünün kendi şemasıyla doğrulanır ve uygulandıktan sonra geri okunur.</p></div></div>{settingsForm}</article>;
+}
 
+function StatusCard({ product, summary }: { product: (typeof PRODUCTS)[number]; summary: ProductSummary }) {
+  // the Overview greeting already says how the product is doing; this card lists what was checked, in plain words
   return <article className="card">
-    <div className="card-head">
-      <div><h2>{summary.title || product.name}</h2><p>{product.description}</p></div>
-      <span className={`badge-status ${summary.statusKind}`}>{summary.statusText}</span>
-    </div>
-    <p aria-live="polite" className="status-line" role="status">{summary.statusText}{summary.version ? ` · Sürüm ${summary.version}` : ''}</p>
-    <div className="card-actions"><button type="button" disabled={loading} onClick={() => void refresh()}>{loading ? 'Yükleniyor…' : 'Yenile'}</button></div>
-    {summary.checks.length > 0 && <ul className="checks">{summary.checks.map((check, index) => <li key={`${check.name}-${index}`} className={check.ok ? 'ok' : 'bad'}><span aria-hidden="true">{check.ok ? '✓' : '✕'}</span><span><strong>{check.name}</strong>{check.detail ? `: ${check.detail}` : ''}</span></li>)}</ul>}
-    {summary.capabilities.length > 0 && <ul className="capabilities" aria-label="Yetenekler">{summary.capabilities.map((capability) => <li key={capability}>{capability}</li>)}</ul>}
+    <div className="card-head"><div><h2>{product.short} çalışma durumu</h2><p>{product.scope}</p></div></div>
+    {summary.checks.length > 0 && <p className="status-line">{summary.checks.filter(check => check.ok).length} / {summary.checks.length} kontrol geçti.</p>}
+    {summary.checks.length > 0 && <ul className="checks">{summary.checks.map((check, index) => { const plain = plainCheck(check.name, check.ok, check.detail);
+      return <li key={`${check.name}-${index}`} className={check.ok ? 'ok' : 'bad'}><Icon name={check.ok ? 'check' : 'x'} /><span><strong>{plain.label}</strong>{plain.text ? `: ${plain.text}` : ''}</span></li>; })}</ul>}
     {summary.errorText && <p className="error" role="alert">{summary.errorText}</p>}
   </article>;
 }
@@ -182,12 +169,12 @@ function ProductCard({ product, part }: { product: { id: RppProduct; name: strin
 export function ProductPanel({ id }: { id: RppProduct }) {
   const product = PRODUCTS.find(item => item.id === id);
   if (!native) return <div className="notice warning">Ayarlar için Tauri masaüstü uygulaması gerekli.</div>;
-  return product ? <ProductCard product={product} part="settings" /> : null;
+  return product ? <ProductCard product={product} /> : null;
 }
 
-// One product's health, version and capabilities: the workspace Overview is the only place they are shown.
-export function ProductStatusPanel({ id }: { id: RppProduct }) {
+// One product's health checks, from the summary the shell already read (no second call to the product).
+export function ProductStatusPanel({ id, summary }: { id: RppProduct; summary: ProductSummary }) {
   const product = PRODUCTS.find(item => item.id === id);
   if (!native) return <div className="notice warning">Ürün durumunu görmek için Tauri masaüstü uygulaması gerekli. Tarayıcı önizlemesinde gerçek ürün verisi gösterilmez.</div>;
-  return product ? <ProductCard product={product} part="status" /> : null;
+  return product ? <StatusCard product={product} summary={summary} /> : null;
 }

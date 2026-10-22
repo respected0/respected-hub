@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { loadSettings, native, products, saveSettings, type Settings } from '../../shared/api.ts';
 import InstallFacts from './InstallFacts.tsx';
-import { catalogRefresh, catalogSetChannel, describeLifecycleError, hubUpdateStatus, lifecycleStatus, type Channel, type HubUpdate } from '../lifecycle.ts';
+import { catalogRefresh, catalogSetChannel, describeLifecycleError, hubUpdateInstall, hubUpdateStatus, lifecycleStatus, type Channel, type HubUpdate } from '../lifecycle.ts';
 
 type SaveState = 'idle' | 'saving' | 'applied' | 'verified' | 'failed';
 
@@ -26,8 +26,15 @@ function Updates({ onCatalogChanged }: { onCatalogChanged?: () => void }) {
     setBusy(false);
     if (!reply.ok) { setMessage(describeLifecycleError(reply.error)); return; }
     setInfo(reply.result);
-    setMessage(reply.result.available ? `Respected Hub ${reply.result.available.version} hazır; üstteki bildirimden güncelleyebilirsiniz.` : 'Katalog güncel; ürün güncellemeleri Kütüphane’de görünür.');
+    setMessage(reply.result.available ? `Respected Hub ${reply.result.available.version} hazır.` : 'Katalog güncel; ürün güncellemeleri Kütüphane’de görünür.');
     onCatalogChanged?.();
+  }
+  // Downloads and verifies the signed installer; the Hub then closes and reopens by itself.
+  async function install() {
+    setBusy(true); setMessage('Hub güncellemesi indiriliyor ve doğrulanıyor…');
+    const reply = await hubUpdateInstall();
+    setBusy(false);
+    setMessage(reply.ok ? 'Güncelleme başlatıldı; Hub kapanıp yeniden açılacak.' : describeLifecycleError(reply.error));
   }
   async function choose(channel: Channel) {
     const reply = await catalogSetChannel(channel);
@@ -46,6 +53,8 @@ function Updates({ onCatalogChanged }: { onCatalogChanged?: () => void }) {
         </select>
         <small>Kararlıya geçmek kurulu sürümü geri almaz; bir sonraki kararlı sürüm geldiğinde güncelleme önerilir.</small></label>
     </div>}
+    {native && info?.available && <div className="notice" role="status"><span>Respected Hub {info.available.version} hazır (şu an {info.current}).</span>
+      <span className="actions"><button className="cta" disabled={busy} onClick={() => void install()}>Hub'ı güncelle</button></span></div>}
     {native && <div className="settings-actions"><button className="button primary" disabled={busy} onClick={() => void check()}>{busy ? 'Denetleniyor…' : 'Güncellemeleri denetle'}</button>
       {message && <output className="toast" role="status">{message}</output>}</div>}
   </section>;
@@ -83,9 +92,7 @@ export default function Settings({ onCatalogChanged }: { onCatalogChanged?: () =
 
   return <div className="settings-stack">
     <Updates onCatalogChanged={onCatalogChanged} />
-    <section className="card settings-card" aria-labelledby="settings-facts"><h2 id="settings-facts">Hub bilgisayarınıza neler kurar?</h2>
-      <p>Hub ve ürünler ayrı programlardır; her birinin kurduğu, güncellediği ve sildiği şeyler Kütüphane'de ürün kartında da listelenir.</p>
-      <InstallFacts subject="hub" /></section>
+    <section className="card settings-card" aria-label="Hub'ın kurduğu şeyler"><InstallFacts subject="hub" /></section>
     {development && <section className="card settings-card" aria-labelledby="settings-sources">
       <h2 id="settings-sources">Kaynak arama yolları</h2>
       <p>Bu ayarlar Hub’ın geliştirme sürümünde ürün kaynaklarını nerede arayacağını belirler. Canlı AI yapılandırmalarına dokunmaz.</p>
