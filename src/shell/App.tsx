@@ -10,7 +10,7 @@ import WindowControls from './WindowControls.tsx';
 import Discover from './views/Discover.tsx';
 import SettingsHub from './views/SettingsHub.tsx';
 
-type Route = { kind: Exclude<HubRoute, 'settings'> } | { kind: 'settings'; tab: SettingsTab } | { kind: 'app'; app: string; page: string };
+type Route = { kind: Exclude<HubRoute, 'settings' | 'discover'> } | { kind: 'discover'; app?: string } | { kind: 'settings'; tab: SettingsTab } | { kind: 'app'; app: string; page: string };
 const HOME: Route = { kind: 'home' };
 // A route saved by an older Hub: product status and activity are Settings tabs now.
 const restore = (saved: { kind?: unknown; tab?: unknown } | null): Route => {
@@ -66,7 +66,7 @@ export default function App() {
   const eco = useEcosystem();
   // the greeting's name is ready before the first Brain page opens
   useEffect(() => { void readIdentity().catch(() => undefined); }, []);
-  const go: Go = target => setRoute(typeof target !== 'string' ? { kind: 'app', ...target } : target === 'activity' ? { kind: 'settings', tab: 'activity' } : target === 'settings' ? { kind: 'settings', tab: 'general' } : { kind: target });
+  const go: Go = target => setRoute(typeof target !== 'string' ? ('store' in target ? { kind: 'discover', app: target.store } : { kind: 'app', ...target }) : target === 'activity' ? { kind: 'settings', tab: 'activity' } : target === 'settings' ? { kind: 'settings', tab: 'general' } : { kind: target });
   const navItem = (id: string, label: string, active: boolean) => <button key={id} className={`nav-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined} onClick={() => setRoute(id === 'settings' ? { kind: 'settings', tab: 'general' } : { kind: id as Exclude<HubRoute, 'settings'> })}>{label}</button>;
   const hubOffer = hubUpdate?.available ?? null;
 
@@ -79,7 +79,7 @@ export default function App() {
     <main className="content">
         {!native && <div className="page" style={{ marginBottom: 20 }}><div className="notice warning">Tarayıcı önizlemesi: gerçek ürün ve görev verisi için Tauri masaüstü sürümünü çalıştır. Burada hiçbir durum uydurulmaz.</div></div>}
         {route.kind === 'home' && <Home eco={eco} go={go} hub={hubOffer ? { version: hubOffer.version, current: hubUpdate!.current } : null} />}
-        {route.kind === 'discover' && <Discover eco={eco} go={go} ask={ask} onAsked={() => setAsk(null)} />}
+        {route.kind === 'discover' && <Discover key={route.app ?? ''} appId={route.app} eco={eco} go={go} ask={ask} onAsked={() => setAsk(null)} />}
         {route.kind === 'settings' && <SettingsHub tab={route.tab} onTab={tab => setRoute({ kind: 'settings', tab })} eco={eco} go={go} onCatalogChanged={() => { readHubUpdate(); eco.refresh(); }} />}
         {(route.kind === 'apps' || route.kind === 'app') && <Library eco={eco} appId={route.kind === 'app' ? route.app : undefined} page={route.kind === 'app' ? route.page : 'overview'} select={(appId, page = 'overview') => setRoute({ kind: 'app', app: appId, page })} go={go} ask={ask} onAsked={() => setAsk(null)} />}
     </main>

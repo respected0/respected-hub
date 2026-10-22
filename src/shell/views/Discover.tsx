@@ -8,8 +8,8 @@ import LifecycleControls from './LifecycleControls.tsx';
 
 // Discover is the store: one featured app with its introduction and version, and the whole catalog as a strip below it.
 // Install here; an installed app opens in the Library. A product page per app can grow from the featured panel later.
-export default function Discover({ eco, go, ask, onAsked }: { eco: Ecosystem; go: Go; ask?: { product: string; action: LifecycleAction } | null; onAsked?: () => void }) {
-  const [picked, setPicked] = useState(ask?.product ?? APPS[0]?.id);
+export default function Discover({ eco, go, ask, onAsked, appId }: { eco: Ecosystem; go: Go; appId?: string; ask?: { product: string; action: LifecycleAction } | null; onAsked?: () => void }) {
+  const [picked, setPicked] = useState(appId ?? ask?.product ?? APPS[0]?.id);
   const featured = APPS.find(app => app.id === picked) ?? APPS[0];
   const lifecycleOf = (id: string) => eco.lifecycle?.products.find(item => item?.product === id) ?? null;
   const lc = lifecycleOf(featured.id); const installed = !!lc?.installed;
