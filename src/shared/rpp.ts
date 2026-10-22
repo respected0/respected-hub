@@ -1,4 +1,4 @@
-// Respected Product Protocol (RPP) 1 - shared TypeScript contract (docs/PRODUCT_CONTRACT.md in the ecosystem root).
+// Respected Product Protocol (RPP) 1 - shared TypeScript contract (docs/PRODUCT_CONTRACT.md).
 // One JSON request in, one JSON response line out. RPP is not MCP and not a daemon.
 
 export const RPP_VERSION = '1';

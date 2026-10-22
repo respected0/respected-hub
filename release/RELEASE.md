@@ -2,7 +2,7 @@
 
 Windows betasını derleyen, imzalayan ve yayınlayan her şey bu klasördedir. Betikler üç deponun yan yana durduğunu varsayar
 (`release/tools/common/ecosystem_root.py` üst klasörü bulur; ya da `RESPECTED_ECOSYSTEM_ROOT`). Çıktı `<ekosistem>/dist`,
-önbellek `<ekosistem>/.build-cache`. Geliştirme ortamının kurulumu: ekosistem kökündeki `README.md`.
+önbellek `<ekosistem>/.build-cache`. Geliştirme ortamının kurulumu: [../docs/ECOSYSTEM.md](../docs/ECOSYSTEM.md).
 
 ## 1. Sıfırdan başlamak
 
