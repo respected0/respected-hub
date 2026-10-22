@@ -1,5 +1,5 @@
 // Real desktop end-to-end drive of a built Hub (dev build) through WebView2's DevTools port, on the installer model
-// (docs/PRODUCT_CONTRACT.md in the ecosystem root): the Hub installs, repairs and removes each product by running the
+// (docs/PRODUCT_CONTRACT.md): the Hub installs, repairs and removes each product by running the
 // product's OWN signed installer.
 //   node tests/native/hub_native_e2e.mjs <hub.exe> [--remote-catalog] [--intent=brain|orchestrator] [--real-semantic [--seed-semantic DIR]] [--report DIR]
 // Safety: the Hub hands installers and products a FAKE user home, and Windows derives the per-user folders from it, so the

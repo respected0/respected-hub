@@ -1,8 +1,8 @@
 # Hub mimarisi
 
 Hub'ın ürünleri nasıl bulduğu, kurucuları nasıl indirip çalıştırdığı, neye güvendiği ve web görünümüne neyi yasakladığı.
-Giriş: [README.md](../README.md). Yayın: [release/RELEASE.md](../release/RELEASE.md). Ortak kurallar ekosistem kökündeki
-`docs/PRODUCT_CONTRACT.md` dosyasındadır; burada tekrarlanmaz.
+Giriş: [README.md](../README.md). Yayın: [release/RELEASE.md](../release/RELEASE.md). Ortak kurallar
+[PRODUCT_CONTRACT.md](PRODUCT_CONTRACT.md) dosyasındadır; burada tekrarlanmaz.
 
 ## 1. Ürünleri bulma ve durum
 

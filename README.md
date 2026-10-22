@@ -7,8 +7,8 @@ AI araçlarıyla bağlantılarını ve birbirleriyle bağlantısını görsel ol
 
 Hub yalnızca kolaylıktır. Yaptığı her işin Hub'sız bir karşılığı vardır (kurucuyu çalıştırmak ya da ürünün komutu) ve
 Hub o karşılığı çağırır. Ürün hakkında hiçbir şey saklamaz: kurulu olanı, sürümü, ayarları ve sağlığı her seferinde
-ürünün kendisinden okur. Hub kaldırılınca ürünler olduğu gibi çalışmaya devam eder. Kurallar: ekosistem kökündeki
-`docs/PRODUCT_CONTRACT.md`. İç yapı: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+ürünün kendisinden okur. Hub kaldırılınca ürünler olduğu gibi çalışmaya devam eder. Kurallar:
+[docs/PRODUCT_CONTRACT.md](docs/PRODUCT_CONTRACT.md); ekosistem ve geliştirme ortamı: [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md). İç yapı: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Kurulum ve kaldırma
 
@@ -37,7 +37,7 @@ sürümün kurucusunu çalıştırmaktır; Hub güncellemesi doğrulanmış Hub 
 ## Geliştirme
 
 Node 22.12+, Rust/Cargo ve [Tauri gereksinimleri](https://v2.tauri.app/start/prerequisites/). Uçtan uca testler kardeş
-ürünleri derler; üç depo yan yana durmalıdır (ekosistem kökündeki `README.md`).
+ürünleri derler; üç depo yan yana durmalıdır ([docs/ECOSYSTEM.md](docs/ECOSYSTEM.md)).
 
 ```powershell
 npm ci
