@@ -17,9 +17,10 @@ export default function Home({ eco, go, hub }: { eco: Ecosystem; go: Go; hub?: {
   const running = eco.runs.filter(run => !terminal(run.status));
   const recent = eco.runs.filter(run => terminal(run.status)).slice(0, 4);
   const [assistant, setAssistant] = useState(() => knownIdentity()?.assistant ?? '');
+  const [named, setNamed] = useState(() => knownIdentity() !== undefined);   // the title waits for the name, so it is drawn once
   useEffect(() => {
     let active = true;
-    readIdentity().then(identity => { if (active) setAssistant(identity.assistant); }).catch(() => { /* optional personalization */ });
+    readIdentity().then(identity => { if (active) setAssistant(identity.assistant); }).catch(() => { /* optional personalization */ }).finally(() => { if (active) setNamed(true); });
     return () => { active = false; };
   }, []);
   const problems = APPS.filter(app => { const kind = eco.apps[app.id]?.summary.statusKind; return kind && kind !== 'ok'; });
@@ -35,9 +36,9 @@ export default function Home({ eco, go, hub }: { eco: Ecosystem; go: Go; hub?: {
   const hero = {
     preview: { eyebrow: 'Tarayıcı önizlemesi', title: 'Gerçek durum masaüstünde görünür', body: 'Bu önizlemede ürünlere bağlanılamaz; hiçbir durum uydurulmaz. Gerçek ekosistem durumunu görmek için Tauri masaüstü uygulamasını çalıştır.', cta: null },
     loading: { eyebrow: 'Kontrol ediliyor', title: 'Ekosistem durumu okunuyor…', body: 'Ürünlerin sağlık bilgisi alınıyor.', cta: null },
-    'first-launch': { eyebrow: 'Hoş geldin', title: 'Respected ekosistemini birlikte kuralım', body: "Henüz çalışan bir ürün bulunamadı. Brain ve Orchestrator'ı Kütüphane sayfasından kurabilir veya Bağlantılar bölümünde mevcut bir kaynağı gösterebilirsin.", cta: { label: 'Ürünleri kur', run: () => go('apps') } },
+    'first-launch': { eyebrow: 'Hoş geldin', title: 'Respected ekosistemini birlikte kuralım', body: "Henüz kurulu bir ürün yok. Brain ve Orchestrator'ı Keşfet sayfasından kurabilirsin.", cta: { label: 'Ürünleri keşfet', run: () => go('discover') } },
     attention: { eyebrow: 'Dikkat gerekiyor', title: `${problems.length} ürün sağlıklı değil`, body: 'Ürünü açıp kontrolleri ve ayarları inceleyebilirsin.', cta: problems[0] ? { label: `${problems[0].name.replace('Respected ', '')} ürününü aç`, run: () => go({ app: problems[0].id, page: 'overview' }) } : null },
-    active: { eyebrow: 'Ekosistem hazır', title: assistant ? `${assistant} ve ekosistemin hazır` : 'Ekosistemin hazır', body: running.length ? `${running.length} görev şu anda çalışıyor.` : 'Çalışan görev yok.', cta: running.length ? { label: 'Çalışan görevleri gör', run: () => go('activity') } : { label: 'Ürünleri keşfet', run: () => go('discover') } },
+    active: { eyebrow: '', title: assistant ? `${assistant} ve ekosistemin hazır` : 'Ekosistemin hazır', body: running.length ? `${running.length} görev şu anda çalışıyor.` : '', cta: running.length ? { label: 'Çalışan görevleri gör', run: () => go('activity') } : { label: 'Ürünleri keşfet', run: () => go('discover') } },
   }[mode];
 
   const updates = (eco.lifecycle?.products ?? []).filter(item => item?.installed && item.install_state === 'update-available' && item.available);
@@ -52,7 +53,7 @@ export default function Home({ eco, go, hub }: { eco: Ecosystem; go: Go; hub?: {
 
   return <div className="page home">
     <section className={`hero hero-${mode} ${live ? 'hero-compact' : ''}`} aria-label="Durum özeti"><Weave />
-      <div><span className="eyebrow">{hero.eyebrow}</span><h1>{hero.title}</h1><p>{hero.body}</p>
+      <div>{hero.eyebrow && <span className="eyebrow">{hero.eyebrow}</span>}<h1 className={mode === 'active' && !named ? 'pending' : ''}>{hero.title}</h1>{hero.body && <p>{hero.body}</p>}
         <div className="hero-actions">{hero.cta && <button className="cta" onClick={hero.cta.run}>{hero.cta.label}<Icon name="arrow" /></button>}</div></div>
       {live && <div className="hero-notes" role="status"><h2>Dikkat gerekenler</h2>
         {notes.length === 0 ? <p>Her şey yolunda: güncelleme ve sorun yok.</p>
@@ -63,15 +64,15 @@ export default function Home({ eco, go, hub }: { eco: Ecosystem; go: Go; hub?: {
       return <button key={app.id} className={`quick-card accent-${app.accent}`} onClick={() => go(installed ? { app: app.id, page: 'overview' } : 'discover')}>
         <Emblem app={app.id} /><span><strong>{app.name.replace('Respected ', '')}</strong><small>{app.tagline}</small></span><Icon name="arrow" /></button>; })}</section>}
     <div className="home-stack">
-      <section className="side-card" aria-label="Görevler"><h2>Görevler {running.length > 0 && <span className="badge tone-live">{running.length} çalışıyor</span>}<button className="link-btn" onClick={() => go('activity')}>Tüm geçmiş</button></h2>
+      {live && has('brain') && <section className="side-card" aria-label="Hafızadan"><h2>Hafızadan <button className="link-btn" onClick={() => go({ app: 'brain', page: 'memory' })}>Hafıza</button></h2>
+        <BrainOverview flat openMemory={() => go({ app: 'brain', page: 'memory' })} /></section>}
+      {has('orchestrator') && <section className="side-card" aria-label="Görevler"><h2>Görevler {running.length > 0 && <span className="badge tone-live">{running.length} çalışıyor</span>}<button className="link-btn" onClick={() => go('activity')}>Tüm geçmiş</button></h2>
         {!live ? <p className="muted">Görev verisi masaüstü uygulamasında görünür.</p>
           : running.length + recent.length === 0 ? <p className="muted">Henüz görev yok. Orchestrator'da başlattığınız görevler burada görünür.</p>
           : <>{running.slice(0, 5).map(taskRow)}{recent.map(taskRow)}</>}
         {live && eco.runs.length > 0 && <><div className="runbar" role="img" aria-label={split.map(part => `${part.label}: ${part.n}`).join(', ')}>{split.filter(part => part.n).map(part => <i key={part.key} className={`tone-${part.key}`} style={{ flex: part.n }} />)}</div>
           <div className="runbar-legend">{split.filter(part => part.n).map(part => <span key={part.key}><i className={`tone-${part.key}`} />{part.label} {part.n}</span>)}</div></>}
-      </section>
-      {live && has('brain') && <section className="side-card" aria-label="Hafızadan"><h2>Hafızadan <button className="link-btn" onClick={() => go({ app: 'brain', page: 'memory' })}>Hafıza</button></h2>
-        <BrainOverview flat openMemory={() => go({ app: 'brain', page: 'memory' })} /></section>}
+      </section>}
     </div>
   </div>;
 }

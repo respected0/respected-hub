@@ -435,3 +435,7 @@ main.content:has(.lib-shell) { padding: 0; }
 .lifecycle .meta { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; margin: 0; }
 .lib-upd { display: inline-grid; color: var(--warn); } .lib-upd .ico { width: 15px; height: 15px; }
 .ws-banner .lifecycle.wide .meta { justify-content: flex-start; }
+
+.hero h1.pending { visibility: hidden; }
+.store-open { font-size: 12.5px; font-weight: 600; color: var(--accent); }
+.store-panel .lifecycle .badge-status.unreachable { display: none; }
