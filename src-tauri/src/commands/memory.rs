@@ -1,6 +1,6 @@
 //! SecondBrain memory commands: access grant, index, semantic search, capture and the workspace calls.
 use super::resolved_settings;
-use crate::secondbrain::{memory_access, memory_index, memory_semantic};
+use crate::secondbrain::{memory_index, memory_semantic};
 use crate::{rpp, Settings};
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -13,34 +13,30 @@ fn memory_reply(result: Result<Value, String>) -> Value {
     }
 }
 
+/// One Orchestrator memory operation (`memory.connect|disconnect|status`): the Orchestrator asks SecondBrain for the grant
+/// itself, exactly as `respected-orchestrator memory connect` does without the Hub.
+fn memory_link(settings: &Settings, op: &str, payload: Option<Value>) -> Value {
+    let reply = rpp::rpp_call_trusted(settings, "orchestrator", op, payload, Some(rpp::generate_operation_id()));
+    if reply["ok"] == true { return json!({ "ok": true, "result": reply["result"], "error": Value::Null }); }
+    memory_reply(Err(reply["error"]["message"].as_str().unwrap_or("Orchestrator yanıt vermedi.").to_string()))
+}
+
 #[tauri::command]
 pub async fn memory_access_status(app: tauri::AppHandle) -> Result<Value, String> {
     let settings = resolved_settings(&app)?;
-    tauri::async_runtime::spawn_blocking(move || {
-        let call = |p: &str, o: &str, pl: Option<Value>, id: Option<String>| rpp::rpp_call_trusted(&settings, p, o, pl, id);
-        memory_reply(Ok(memory_access::status(&call)))
-    }).await.map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(move || memory_link(&settings, "memory.status", None)).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub async fn memory_access_enable(app: tauri::AppHandle, write: Option<bool>) -> Result<Value, String> {
     let settings = resolved_settings(&app)?;
-    tauri::async_runtime::spawn_blocking(move || {
-        let call = |p: &str, o: &str, pl: Option<Value>, id: Option<String>| rpp::rpp_call_trusted(&settings, p, o, pl, id);
-        memory_reply(match rpp::brain_rpp_command(&settings) {
-            Some(command) => memory_access::enable(&call, command, write.unwrap_or(false)),
-            None => Err("SecondBrain başlatma komutu bulunamadı; SecondBrain'i kurun.".to_string()),
-        })
-    }).await.map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(move || memory_link(&settings, "memory.connect", Some(json!({ "write": write.unwrap_or(false) })))).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub async fn memory_access_disable(app: tauri::AppHandle) -> Result<Value, String> {
     let settings = resolved_settings(&app)?;
-    tauri::async_runtime::spawn_blocking(move || {
-        let call = |p: &str, o: &str, pl: Option<Value>, id: Option<String>| rpp::rpp_call_trusted(&settings, p, o, pl, id);
-        memory_reply(memory_access::disable(&call))
-    }).await.map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(move || memory_link(&settings, "memory.disconnect", None)).await.map_err(|e| e.to_string())
 }
 
 fn index_reply(result: Result<Value, String>) -> Value {

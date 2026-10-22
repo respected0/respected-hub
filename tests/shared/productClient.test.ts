@@ -5,7 +5,7 @@ import { engine, native } from '../../src/shared/api.ts';
 import { listCampaigns, campaignStatus } from '../../src/products/orchestrator/campaigns.ts';
 
 const okEnvelope = JSON.stringify({
-  rpp: '1.0', ok: true, operation_id: 'op-1', result: { status: 'healthy' }, error: null,
+  rpp: '1', ok: true, operation_id: 'op-1', result: { status: 'healthy' }, error: null,
 });
 
 test('rppCallVia forwards product/op/payload/operationId to the transport', async () => {
@@ -21,7 +21,7 @@ test('rppCallVia parses object replies and generates an apply operation id', asy
   let operationId: string | null = null;
   const transport = async (invocation: { operationId: string | null }) => {
     operationId = invocation.operationId;
-    return { rpp: '1.0', ok: false, operation_id: invocation.operationId, result: null,
+    return { rpp: '1', ok: false, operation_id: invocation.operationId, result: null,
       error: { code: 'INVALID_SETTINGS', message: 'bad', hint: 'fix' } };
   };
   const response = await rppCallVia(transport, 'secondbrain', 'settings.apply', { settings: {} });
@@ -35,7 +35,7 @@ test('rppCallVia maps malformed replies to BAD_RESPONSE without throwing', async
     'not json',
     '[]',
     JSON.stringify({ rpp: '9.9', ok: true, operation_id: null, result: {}, error: null }),
-    JSON.stringify({ rpp: '1.0', ok: true, result: {}, error: null }),
+    JSON.stringify({ rpp: '1', ok: true, result: {}, error: null }),
   ];
   for (const reply of replies) {
     const response = await rppCallVia(async () => reply, 'orchestrator', 'manifest');

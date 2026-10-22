@@ -1,4 +1,4 @@
-// Respected Product Protocol (RPP) v1.0/v1.1 client for the Hub's native backend.
+// Respected Product Protocol (RPP) 1 client for the Hub's native backend.
 // One JSON request on stdin, one JSON response line on stdout. Never panics: every
 // failure becomes a protocol envelope so callers always get a typed answer.
 use crate::lifecycle::valid_operation_id;
@@ -8,22 +8,14 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
-const RPP_VERSION: &str = "1.0";
-const RPP_VERSION_V11: &str = "1.1";
+const RPP_VERSION: &str = "1";
 const PRODUCTS: [&str; 2] = ["orchestrator", "secondbrain"];
-const OPS: [&str; 26] = ["manifest", "health", "settings.schema", "settings.validate", "settings.apply", "settings.readback",
-    "lifecycle.plan", "lifecycle.apply", "lifecycle.status", "lifecycle.rollback", "operation.receipt", "integrations.plan",
-    "integrations.apply", "integrations.rollback",
-    "memory.grant", "memory.revoke", "memory.index.status", "memory.index.refresh",
+const OPS: [&str; 24] = ["manifest", "health", "settings.schema", "settings.validate", "settings.apply", "settings.readback",
+    "integrations.plan", "integrations.apply", "integrations.rollback",
+    "memory.connect", "memory.disconnect", "memory.status", "memory.index.status", "memory.index.refresh",
     "memory.semantic.status", "memory.semantic.configure", "memory.semantic.pull", "memory.capture.run",
-    "memory.search", "memory.note.read", "memory.capture.note", "memory.briefing.run"];
-// Ops introduced in v1.1; they are sent under rpp "1.1" and everything else stays on "1.0" so v1.0-only products keep working.
-const V11_OPS: [&str; 20] = ["lifecycle.plan", "lifecycle.apply", "lifecycle.status", "lifecycle.rollback", "operation.receipt", "integrations.plan",
-    "integrations.apply", "integrations.rollback",
-    "memory.grant", "memory.revoke", "memory.index.status", "memory.index.refresh",
-    "memory.semantic.status", "memory.semantic.configure", "memory.semantic.pull", "memory.capture.run",
-    "memory.search", "memory.note.read", "memory.capture.note", "memory.briefing.run"];
-const OPERATION_ID_REQUIRED_OPS: [&str; 5] = ["settings.apply", "lifecycle.apply", "lifecycle.rollback", "integrations.apply", "integrations.rollback"];
+    "memory.search", "memory.note.read", "memory.capture.note", "memory.briefing.run", "memory.recall", "memory.write"];
+const OPERATION_ID_REQUIRED_OPS: [&str; 3] = ["settings.apply", "integrations.apply", "integrations.rollback"];
 const SECRET_ENV_MARKERS: [&str; 8] = ["key", "token", "secret", "passw", "credential", "auth", "cookie", "session"];
 const ENGINE_TIMEOUT: Duration = Duration::from_secs(30);
 const MAX_OUTPUT: usize = 1024 * 1024;
@@ -37,26 +29,15 @@ fn err_envelope(version: &str, operation_id: Option<String>, code: &str, message
         "error": { "code": code, "message": message, "hint": hint } })
 }
 
-/// The generic IPC bridge may only reach the product lifecycle surface the Hub itself needs:
-/// read-only plan/status/receipt, and SecondBrain's first-vault creation. Anything that could
-/// write product files at a caller-chosen path (Orchestrator `lifecycle.apply`, any rollback) goes
-/// through the Hub's own journaled `lifecycle_*` commands instead.
-fn forbidden_lifecycle_call(product: &str, op: &str, payload: Option<&Value>) -> Option<(&'static str, &'static str)> {
-    const HINT: &str = "Kurulum işlemleri Hub'ın kendi yaşam döngüsü komutlarıyla yapılır.";
+/// What the webview's generic bridge may not do: memory grants/links and the Orchestrator's memory provider, and writing AI
+/// client configurations, all go through the Hub's own commands (which show the plan or ask first).
+fn forbidden_call(op: &str, payload: Option<&Value>) -> Option<(&'static str, &'static str)> {
+    const MEMORY_HINT: &str = "Bellek erişimi yalnızca Hub'ın kendi bellek komutlarıyla açılır veya kapatılır.";
     match op {
-        _ if op.starts_with("memory.") => Some(("Bellek izinleri köprü üzerinden yönetilemez.", "Bellek erişimi yalnızca Hub'ın kendi bellek komutlarıyla açılır veya kapatılır.")),
-        // memory grants and the Orchestrator's memory provider are set by the Hub's own native commands only
+        _ if op.starts_with("memory.") => Some(("Bellek işlemleri köprü üzerinden yapılamaz.", MEMORY_HINT)),
         "settings.apply" | "settings.validate" if payload.and_then(|p| p.get("settings")).and_then(Value::as_object).map_or(false, |s| s.keys().any(|k| k.starts_with("memory_"))) =>
-            Some(("Bellek ayarları köprü üzerinden değiştirilemez.", "Bellek erişimi yalnızca Hub'ın kendi bellek komutlarıyla açılır veya kapatılır.")),
-        "lifecycle.rollback" => Some(("Bu işlem köprü üzerinden yapılamaz.", HINT)),
+            Some(("Bellek ayarları köprü üzerinden değiştirilemez.", MEMORY_HINT)),
         "integrations.apply" | "integrations.rollback" => Some(("İstemci yapılandırması köprü üzerinden değiştirilemez.", "AI istemci kayıtları yalnızca onay ekranı olan Hub komutlarıyla değiştirilir.")),
-        "lifecycle.apply" => {
-            let target = payload.and_then(|p| p.get("target")).and_then(Value::as_object);
-            let allowed = product == "secondbrain"
-                && payload.and_then(|p| p.get("action")).and_then(Value::as_str) == Some("install")
-                && target.map(|t| t.get("vault_path").map_or(false, Value::is_string) && t.keys().all(|k| k == "vault_path" || k == "profile")).unwrap_or(false);
-            if allowed { None } else { Some(("Bu işlem köprü üzerinden yapılamaz.", HINT)) }
-        }
         _ => None,
     }
 }
@@ -78,7 +59,9 @@ fn is_secret_env(name: &str) -> bool {
 /// itself keeps its real profile (WebView2 needs it).
 pub fn apply_test_home(command: &mut Command) {
     if let Some(home) = crate::trust::dev_abs("RESPECTED_HUB_TEST_HOME") {
-        command.env("USERPROFILE", &home).env("HOME", &home);
+        // Windows derives the per-user folders from USERPROFILE (the installers' {localappdata} follows it), so all of them move together
+        command.env("USERPROFILE", &home).env("HOME", &home)
+            .env("LOCALAPPDATA", home.join("AppData").join("Local")).env("APPDATA", home.join("AppData").join("Roaming"));
     }
 }
 
@@ -101,11 +84,8 @@ fn build_request(op: &str, payload: Option<Value>, operation_id: Option<String>,
 }
 
 /// Engines never run with their program folder as working directory: on Windows that would lock the
-/// folder and make update/repair/uninstall of the managed copy fail while a health poll is running.
-pub fn neutral_cwd(settings: &Settings) -> std::path::PathBuf {
-    let _ = std::fs::create_dir_all(&settings.data_root);
-    if settings.data_root.is_dir() { settings.data_root.clone() } else { std::env::temp_dir() }
-}
+/// folder and make the product's installer fail while a health poll is running.
+pub fn neutral_cwd() -> std::path::PathBuf { std::env::temp_dir() }
 
 /// Writer-priority gate (std's RwLock lets steady polling starve a writer): many `read()` guards for status polls and
 /// wizard calls, one `write()` guard while a product installer changes its program folder.
@@ -155,17 +135,12 @@ fn frozen_brain_command(settings: &Settings) -> Option<Command> {
     let exe = settings.brain_exe.as_ref().filter(|path| path.is_file())?;
     let mut command = Command::new(exe);
     apply_test_home(&mut command);
-    command.current_dir(neutral_cwd(settings)).env("PYTHONDONTWRITEBYTECODE", "1").arg("rpp")
+    command.current_dir(neutral_cwd()).env("PYTHONDONTWRITEBYTECODE", "1").arg("rpp")
         .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
-    if let Some(app) = &settings.brain_app_dir { command.env("RESPECTED_APP_DIR", app); }
-    if let Some(data) = &settings.brain_data_root { command.env("RESPECTED_DATA_DIR", data).arg("--data-root").arg(data); }
     Some(command)
 }
 
-/// argv and env a process needs to speak RPP to SecondBrain, from the same facts as `frozen_brain_command`/`engine_command`.
-/// Never carries secret-looking environment.
-/// The Orchestrator starts SecondBrain from a command line it validates (argv[0] must be an existing file), so a bare
-/// program name such as "python" is resolved through PATH here; an unresolvable name is returned unchanged.
+/// A bare program name such as "python" resolved through PATH (development source runs); an unresolvable name is returned unchanged.
 pub fn resolve_program(name: &str) -> String {
     let path = std::path::Path::new(name);
     if path.is_absolute() || name.contains('/') || name.contains('\\') { return name.to_string(); }
@@ -181,41 +156,8 @@ pub fn resolve_program(name: &str) -> String {
     name.to_string()
 }
 
-pub fn brain_rpp_command(settings: &Settings) -> Option<(Vec<String>, serde_json::Map<String, Value>)> {
-    let text = |p: &std::path::Path| p.to_string_lossy().to_string();
-    let mut env = serde_json::Map::new();
-    env.insert("PYTHONDONTWRITEBYTECODE".into(), json!("1"));
-    let argv = if let Some(exe) = settings.brain_exe.as_ref().filter(|path| path.is_file()) {
-        let mut argv = vec![text(exe), "rpp".to_string()];
-        if let Some(app) = &settings.brain_app_dir { env.insert("RESPECTED_APP_DIR".into(), json!(text(app))); }
-        if let Some(data) = &settings.brain_data_root {
-            env.insert("RESPECTED_DATA_DIR".into(), json!(text(data)));
-            argv.extend(["--data-root".to_string(), text(data)]);
-        }
-        argv
-    } else {
-        if !crate::trust::dev_enabled() { return None; }
-        let source = settings.brain_root.join("src");
-        let package = source.join("respectedbrain");
-        if !(package.join("__main__.py").is_file() || package.join("__init__.py").is_file() || source.join("respectedbrain.py").is_file()) { return None; }
-        env.insert("PYTHONPATH".into(), json!(text(&source)));
-        // The Orchestrator starts SecondBrain with a minimal environment: pass on the dev Hub's own data roots so grant and recall agree.
-        for name in ["RESPECTED_APP_DIR", "RESPECTED_DATA_DIR"] {
-            if let Some(dir) = crate::trust::dev_abs(name) { env.insert(name.into(), json!(text(&dir))); }
-        }
-        let mut argv = vec![resolve_program(&settings.python), "-m".to_string(), "respectedbrain".to_string(), "rpp".to_string()];
-        if let Some(data) = &settings.brain_data_root { argv.extend(["--data-root".to_string(), text(data)]); }
-        argv
-    };
-    if let Some(home) = crate::trust::dev_abs("RESPECTED_HUB_TEST_HOME") {
-        env.insert("USERPROFILE".into(), json!(text(&home)));
-        env.insert("HOME".into(), json!(text(&home)));
-    }
-    Some((argv, env))
-}
-
-/// The Orchestrator engine with `args` after its data root: the packaged executable the Hub installed, or (development
-/// builds only reach this) the source checkout on Python. `None` when neither exists.
+/// The Orchestrator with `args`: its installed program, or (development builds only reach this) the source checkout on Python.
+/// `None` when neither exists. The product chooses its own data folder.
 pub fn orchestrator_command(settings: &Settings, args: &[&str]) -> Option<Command> {
     let mut command = match settings.orchestrator_exe.as_ref().filter(|exe| exe.is_file()) {
         Some(exe) => Command::new(exe),
@@ -228,16 +170,16 @@ pub fn orchestrator_command(settings: &Settings, args: &[&str]) -> Option<Comman
         }
     };
     apply_test_home(&mut command);
-    command.arg("--data-root").arg(&settings.data_root).args(args).current_dir(neutral_cwd(settings))
+    command.args(args).current_dir(neutral_cwd())
         .env("PYTHONDONTWRITEBYTECODE", "1").stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
     Some(command)
 }
 
-/// How the person starts the Orchestrator from a PowerShell prompt (manual approval and apply are never run by the Hub):
-/// the installed program with the data folder this Hub uses. `None` when no packaged Orchestrator is installed.
+/// How the person starts the Orchestrator from a PowerShell prompt (manual approval and apply are never run by the Hub).
+/// `None` when no Orchestrator is installed.
 pub fn orchestrator_cli_line(settings: &Settings) -> Option<String> {
     let exe = settings.orchestrator_exe.as_ref().filter(|exe| exe.is_file())?;
-    Some(format!("& \"{}\" --data-root \"{}\"", exe.display(), settings.data_root.display()))
+    Some(format!("& \"{}\"", exe.display()))
 }
 
 fn engine_command(settings: &Settings, product: &str) -> Option<Command> {
@@ -250,9 +192,8 @@ fn engine_command(settings: &Settings, product: &str) -> Option<Command> {
     let mut command = Command::new(&settings.python);
     apply_test_home(&mut command);
     isolate_python(&mut command);
-    command.current_dir(neutral_cwd(settings)).env("PYTHONPATH", source).env("PYTHONDONTWRITEBYTECODE", "1")
+    command.current_dir(neutral_cwd()).env("PYTHONPATH", source).env("PYTHONDONTWRITEBYTECODE", "1")
         .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).args(["-m", "respectedbrain", "rpp"]);
-    if let Some(data_root) = &settings.brain_data_root { command.arg("--data-root").arg(data_root); }
     Some(command)
 }
 
@@ -282,35 +223,31 @@ fn normalize(version: &str, response: Value) -> Result<Value, String> {
 }
 
 pub fn rpp_call(settings: &Settings, product: &str, op: &str, payload: Option<Value>, operation_id: Option<String>) -> Value {
-    
-    rpp_call_version(settings, product, op, payload, operation_id, if V11_OPS.contains(&op) { RPP_VERSION_V11 } else { RPP_VERSION })
+    dispatch(settings, product, op, payload, operation_id, false, ENGINE_TIMEOUT)
 }
 
-pub fn rpp_call_version(settings: &Settings, product: &str, op: &str, payload: Option<Value>, operation_id: Option<String>, rpp_version: &str) -> Value {
-    dispatch(settings, product, op, payload, operation_id, rpp_version, false, ENGINE_TIMEOUT)
-}
-
-/// For Hub code only (never reachable from the webview): skips the bridge filter so the Hub can record an
-/// install in a product's own manifest as part of its journaled lifecycle.
+/// For Hub code only (never reachable from the webview): skips the bridge filter for the Hub's own memory and
+/// integration commands.
 pub fn rpp_call_trusted(settings: &Settings, product: &str, op: &str, payload: Option<Value>, operation_id: Option<String>) -> Value {
     rpp_call_trusted_timeout(settings, product, op, payload, operation_id, ENGINE_TIMEOUT)
 }
 
 /// Like `rpp_call_trusted` with a caller-chosen timeout, for long operations such as a search index refresh.
 pub fn rpp_call_trusted_timeout(settings: &Settings, product: &str, op: &str, payload: Option<Value>, operation_id: Option<String>, timeout: Duration) -> Value {
-    dispatch(settings, product, op, payload, operation_id, if V11_OPS.contains(&op) { RPP_VERSION_V11 } else { RPP_VERSION }, true, timeout)
+    dispatch(settings, product, op, payload, operation_id, true, timeout)
 }
 
-fn dispatch(settings: &Settings, product: &str, op: &str, payload: Option<Value>, operation_id: Option<String>, rpp_version: &str, trusted: bool, timeout: Duration) -> Value {
+fn dispatch(settings: &Settings, product: &str, op: &str, payload: Option<Value>, operation_id: Option<String>, trusted: bool, timeout: Duration) -> Value {
+    let rpp_version = RPP_VERSION;
     if !PRODUCTS.contains(&product) {
         return err_envelope(rpp_version, operation_id, "INVALID_PRODUCT", &format!("Unknown product '{product}'."),
             "Allowed products: orchestrator, secondbrain.");
     }
     if !OPS.contains(&op) {
         return err_envelope(rpp_version, operation_id, "INVALID_OP", &format!("Unknown operation '{op}'."),
-            "Allowed operations: manifest, health, settings.*, lifecycle.plan/apply/status/rollback, operation.receipt.");
+            "Allowed operations: manifest, health, settings.*, integrations.*, memory.*.");
     }
-    if let Some((message, hint)) = forbidden_lifecycle_call(product, op, payload.as_ref()).filter(|_| !trusted) {
+    if let Some((message, hint)) = forbidden_call(op, payload.as_ref()).filter(|_| !trusted) {
         return err_envelope(rpp_version, operation_id, "PERMISSION_DENIED", message, hint);
     }
     let operation_id = if OPERATION_ID_REQUIRED_OPS.contains(&op) {
@@ -360,8 +297,7 @@ mod tests {
     use std::path::PathBuf;
 
     fn settings(python: &str, root: &str, brain: &str) -> Settings {
-        Settings { python: python.into(), orchestrator_root: PathBuf::from(root), brain_root: PathBuf::from(brain),
-            data_root: PathBuf::from("/tmp/hub-rpp-unit"), brain_data_root: None, brain_exe: None, brain_app_dir: None, orchestrator_exe: None }
+        Settings { python: python.into(), orchestrator_root: PathBuf::from(root), brain_root: PathBuf::from(brain), brain_exe: None, orchestrator_exe: None }
     }
 
     #[test]
@@ -439,32 +375,20 @@ mod tests {
     }
 
     #[test]
-    fn the_bridge_only_allows_read_only_lifecycle_and_first_vault_creation() {
-        let vault = json!({ "action": "install", "target": { "vault_path": "C:/v", "profile": {} } });
-        assert!(forbidden_lifecycle_call("secondbrain", "lifecycle.apply", Some(&vault)).is_none());
-        assert!(forbidden_lifecycle_call("orchestrator", "lifecycle.apply", Some(&vault)).is_some());
-        let files = json!({ "action": "install", "target": { "app_root": "C:/x", "files": [] } });
-        assert!(forbidden_lifecycle_call("orchestrator", "lifecycle.apply", Some(&files)).is_some());
-        assert!(forbidden_lifecycle_call("secondbrain", "lifecycle.apply", Some(&json!({ "action": "uninstall", "target": { "vault_path": "C:/v" } }))).is_some());
-        assert!(forbidden_lifecycle_call("secondbrain", "lifecycle.apply", Some(&json!({ "action": "install", "target": { "vault_path": "C:/v", "extra": 1 } }))).is_some());
-        assert!(forbidden_lifecycle_call("secondbrain", "lifecycle.apply", None).is_some());
-        assert!(forbidden_lifecycle_call("secondbrain", "lifecycle.rollback", None).is_some());
-        for op in ["lifecycle.plan", "lifecycle.status", "operation.receipt", "manifest", "settings.apply"] {
-            assert!(forbidden_lifecycle_call("orchestrator", op, None).is_none(), "{op}");
-        }
-    }
-
-    #[test]
-    fn memory_ops_are_denied_on_the_bridge_but_known_to_trusted_code() {
+    fn memory_and_client_configuration_ops_are_denied_on_the_bridge_but_known_to_trusted_code() {
         let settings = settings("python", "/missing-hub-orchestrator", "/missing-hub-brain");
-        for op in ["memory.grant", "memory.revoke", "memory.anything"] {
-            assert!(forbidden_lifecycle_call("secondbrain", op, None).is_some(), "{op}");
+        for op in ["memory.connect", "memory.disconnect", "memory.status", "memory.index.refresh", "memory.semantic.pull", "memory.search", "integrations.apply", "integrations.rollback"] {
+            assert!(forbidden_call(op, None).is_some(), "{op}");
+            assert_eq!(rpp_call(&settings, "orchestrator", op, Some(json!({})), None)["error"]["code"], "PERMISSION_DENIED", "{op}");
+            let trusted = rpp_call_trusted(&settings, "orchestrator", op, Some(json!({})), Some("trusted_id_1".into()));
+            assert_eq!((trusted["error"]["code"].as_str(), trusted["rpp"].as_str()), (Some("ENGINE_NOT_FOUND"), Some("1")), "{op}");
         }
-        let denied = rpp_call(&settings, "secondbrain", "memory.grant", Some(json!({ "label": "x" })), None);
-        assert_eq!(denied["error"]["code"], "PERMISSION_DENIED");
-        let trusted = rpp_call_trusted(&settings, "secondbrain", "memory.grant", Some(json!({ "label": "x" })), Some("trusted_id_1".into()));
-        assert_eq!(trusted["error"]["code"], "ENGINE_NOT_FOUND");
-        assert_eq!(trusted["rpp"], RPP_VERSION_V11);
+        for op in ["manifest", "health", "settings.schema", "settings.readback", "integrations.plan"] {
+            assert!(forbidden_call(op, None).is_none(), "{op}");
+        }
+        for op in ["lifecycle.apply", "lifecycle.plan", "operation.receipt", "memory.grant"] {
+            assert_eq!(rpp_call_trusted(&settings, "secondbrain", op, None, None)["error"]["code"], "INVALID_OP", "{op}: no protocol op installs or grants");
+        }
     }
 
     #[test]
@@ -489,10 +413,10 @@ mod tests {
         for op in ["settings.apply", "settings.validate"] {
             for key in ["memory_command", "memory_token", "memory_enabled", "memory_grant_id", "memory_write"] {
                 let payload = json!({ "settings": { key: "x" } });
-                assert!(forbidden_lifecycle_call("orchestrator", op, Some(&payload)).is_some(), "{op} {key}");
+                assert!(forbidden_call(op, Some(&payload)).is_some(), "{op} {key}");
             }
             let ordinary = json!({ "settings": { "auto_assign": true, "mcp_acceptance_allow": "[]" } });
-            assert!(forbidden_lifecycle_call("orchestrator", op, Some(&ordinary)).is_none(), "{op}");
+            assert!(forbidden_call(op, Some(&ordinary)).is_none(), "{op}");
         }
     }
 
@@ -506,77 +430,18 @@ mod tests {
         apply_test_home(&mut command);
         std::env::remove_var("RESPECTED_HUB_TEST_HOME");
         assert!(command.get_envs().any(|(k, v)| k == "USERPROFILE" && v == Some(home.as_os_str())));
+        let local = home.join("AppData").join("Local");
+        assert!(command.get_envs().any(|(k, v)| k == "LOCALAPPDATA" && v == Some(local.as_os_str())), "per-user folders move with the home");
     }
 
     #[test]
-    fn brain_rpp_command_mirrors_the_engine_command_facts() {
-        let dir = std::env::temp_dir().join(format!("hub-brain-cmd-{}", std::process::id()));
-        let package = dir.join("src").join("respectedbrain");
-        std::fs::create_dir_all(&package).unwrap();
-        std::fs::write(package.join("__init__.py"), "").unwrap();
-        let exe = std::env::current_exe().unwrap();
-
-        let mut source = settings("definitely-not-a-python", "/missing-hub-orchestrator", &dir.to_string_lossy());
-        source.brain_data_root = Some(PathBuf::from("/data/brain"));
-        let (argv, env) = brain_rpp_command(&source).unwrap();
-        assert_eq!(argv, ["definitely-not-a-python", "-m", "respectedbrain", "rpp", "--data-root", "/data/brain"]);
+    fn programs_are_found_on_path_and_products_get_no_data_root_from_the_hub() {
         assert!(std::path::Path::new(&resolve_program("cargo")).is_file() || !cfg!(windows) || resolve_program("cargo") == "cargo");
-        assert_eq!(env["PYTHONDONTWRITEBYTECODE"], "1");
-        assert_eq!(env["PYTHONPATH"], json!(dir.join("src").to_string_lossy().to_string()));
-
-        let mut frozen = source.clone();
-        frozen.brain_exe = Some(exe.clone());
-        frozen.brain_app_dir = Some(PathBuf::from("/app/brain"));
-        let (argv, env) = brain_rpp_command(&frozen).unwrap();
-        assert_eq!(argv, vec![exe.to_string_lossy().to_string(), "rpp".to_string(), "--data-root".to_string(), "/data/brain".to_string()]);
-        assert_eq!(env["RESPECTED_APP_DIR"], "/app/brain");
-        assert_eq!(env["RESPECTED_DATA_DIR"], "/data/brain");
-        assert!(!env.contains_key("PYTHONPATH"));
-        assert!(env.keys().all(|name| !is_secret_env(name)), "{env:?}");
-
-        assert!(brain_rpp_command(&settings("py", "/x", "/missing-hub-brain")).is_none());
-        let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn index_ops_are_denied_on_the_bridge_but_known_to_trusted_code() {
-        let settings = settings("python", "/missing-hub-orchestrator", "/missing-hub-brain");
-        for op in ["memory.index.status", "memory.index.refresh", "memory.semantic.status", "memory.semantic.pull"] {
-            assert!(forbidden_lifecycle_call("secondbrain", op, None).is_some(), "{op}");
-            let denied = rpp_call(&settings, "secondbrain", op, Some(json!({})), None);
-            assert_eq!(denied["error"]["code"], "PERMISSION_DENIED", "{op}");
-            let trusted = rpp_call_trusted(&settings, "secondbrain", op, Some(json!({})), Some("trusted_id_1".into()));
-            assert_eq!(trusted["error"]["code"], "ENGINE_NOT_FOUND", "{op}");
-            assert_eq!(trusted["rpp"], RPP_VERSION_V11, "{op}");
-            let timed = rpp_call_trusted_timeout(&settings, "secondbrain", op, Some(json!({})), Some("trusted_id_2".into()), Duration::from_secs(900));
-            assert_eq!(timed["error"]["code"], "ENGINE_NOT_FOUND", "{op}");
-        }
-    }
-
-    #[test]
-    fn source_mode_passes_on_the_hubs_own_absolute_data_roots_only() {
-        let dir = std::env::temp_dir().join(format!("hub-brain-env-{}", std::process::id()));
-        let package = dir.join("src").join("respectedbrain");
-        std::fs::create_dir_all(&package).unwrap();
-        std::fs::write(package.join("__init__.py"), "").unwrap();
-        let source = settings("py", "/x", &dir.to_string_lossy());
-        let absolute = std::env::temp_dir().join("hub-env-data");
-
-        std::env::remove_var("RESPECTED_APP_DIR");
-        std::env::remove_var("RESPECTED_DATA_DIR");
-        let (_, env) = brain_rpp_command(&source).unwrap();
-        assert!(!env.contains_key("RESPECTED_APP_DIR") && !env.contains_key("RESPECTED_DATA_DIR"), "{env:?}");
-
-        std::env::set_var("RESPECTED_APP_DIR", &absolute);
-        std::env::set_var("RESPECTED_DATA_DIR", "relative/data");
-        let (_, env) = brain_rpp_command(&source).unwrap();
-        assert_eq!(env["RESPECTED_APP_DIR"], json!(absolute.to_string_lossy().to_string()));
-        assert!(!env.contains_key("RESPECTED_DATA_DIR"), "relative paths are ignored");
-        assert!(env.keys().all(|name| !is_secret_env(name)), "{env:?}");
-
-        std::env::remove_var("RESPECTED_APP_DIR");
-        std::env::remove_var("RESPECTED_DATA_DIR");
-        let _ = std::fs::remove_dir_all(&dir);
+        let mut frozen = settings("py", "/x", "/y");
+        frozen.orchestrator_exe = Some(std::env::current_exe().unwrap());
+        let command = orchestrator_command(&frozen, &["rpp"]).unwrap();
+        assert_eq!(command.get_args().collect::<Vec<_>>(), ["rpp"], "the product chooses its own data folder");
+        assert!(command.get_envs().all(|(k, _)| k != "RESPECTED_DATA_DIR" && k != "RESPECTED_APP_DIR"));
     }
 
     #[test]

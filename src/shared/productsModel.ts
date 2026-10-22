@@ -52,18 +52,17 @@ export function summarizeProduct(
   const capabilities = negotiation.capabilities;
   const title = manifest && typeof manifest.product_id === 'string' ? manifest.product_id : '';
   const version = manifest && typeof manifest.product_version === 'string' ? manifest.product_version : '';
-  const range = manifest && manifest.protocol ? `${manifest.protocol.min}-${manifest.protocol.max}` : '';
   const protocolCheck: ProductCheck = {
     name: 'Protokol uyumluluğu',
     ok: negotiation.compatible,
-    detail: negotiation.compatible ? `RPP ${range} destekleniyor.` : (negotiation.reason ?? 'Protokol bilgisi yok.'),
+    detail: negotiation.compatible ? 'RPP 1 konuşuyor.' : (negotiation.reason ?? 'Protokol bilgisi yok.'),
   };
 
   if (!negotiation.compatible) {
     return {
       title, version, protocolOk: false, statusKind: 'error', statusText: 'Protokol uyumsuz.',
       checks: [protocolCheck], capabilities,
-      errorText: `${negotiation.reason ?? 'Ürün protokol aralığını bildirmedi.'} Hub bu protokol sürümüyle konuşamıyor; ürünü veya hub sürümünü güncelleyin.`,
+      errorText: `${negotiation.reason ?? 'Ürün protokol sürümünü bildirmedi.'} Hub bu ürünle konuşamıyor; ürünü veya Hub'ı güncelleyin.`,
     };
   }
 
@@ -110,6 +109,7 @@ export function summarizeProduct(
 export interface FormField {
   key: string;
   label: string;
+  help: string;
   type: SettingType;
   value: string | boolean;
   secret: boolean;
@@ -146,6 +146,7 @@ export function formFromSchema(
     const result: FormField = {
       key: field.key,
       label: typeof field.label === 'string' && field.label ? field.label : field.key,
+      help: typeof field.help === 'string' ? field.help : '',
       type, value, secret,
       options: Array.isArray(field.enum) ? field.enum.filter((option) => typeof option === 'string') : [],
     };

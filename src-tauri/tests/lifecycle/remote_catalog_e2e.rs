@@ -1,5 +1,5 @@
 //! The download path end to end: a catalog made by the real release tool (development key, file:// URLs) is fetched with
-//! curl, verified, and its archive unpacked into the catalog cache the lifecycle installs from. Tampered archives, tampered
+//! curl, verified, and its archive unpacked into the catalog cache the Hub runs installers from. Tampered archives, tampered
 //! indexes and older indexes are refused. Temporary roots only.
 use respected_hub_lib::lifecycle::{self, catalog, Roots};
 use std::path::{Path, PathBuf};
@@ -41,15 +41,15 @@ fn a_published_bundle_is_downloaded_verified_and_ready_to_install() {
     let index = catalog::refresh(&roots).expect("signed index accepted");
     assert_eq!(catalog::entry(&index, "orchestrator", "beta").unwrap().version, version);
     assert!(catalog::cached(&roots).is_some());
-    let mut status = lifecycle::status(&roots, "orchestrator").unwrap();
-    assert!(status["available"].is_null(), "nothing downloaded yet");
+    assert!(lifecycle::installers(&roots, "orchestrator").0.is_empty(), "nothing downloaded yet");
+    let mut status = serde_json::json!({ "product": "orchestrator", "install_state": "absent", "available": null });
     catalog::overlay_status(&roots, &mut status);
     assert_eq!(status["available"]["version"], version.as_str());
     assert_eq!(status["available"]["remote"], true);
 
     // archive: downloaded once, verified, unpacked into the cache the lifecycle reads; the zip itself is not kept
     catalog::ensure_bundle(&roots, "orchestrator", None).expect("download");
-    let (found, skipped) = lifecycle::catalog(&roots, "orchestrator");
+    let (found, skipped) = lifecycle::installers(&roots, "orchestrator");
     assert_eq!((found.len(), skipped.len()), (1, 0), "{skipped:?}");
     assert_eq!(found[0].version, version);
     assert!(std::fs::read_dir(managed.join("downloads")).unwrap().flatten().all(|e| !e.file_name().to_string_lossy().ends_with(".zip")));
@@ -70,7 +70,7 @@ fn a_published_bundle_is_downloaded_verified_and_ready_to_install() {
     bad[middle] ^= 0xff;
     std::fs::write(&archive, &bad).unwrap();
     assert_eq!(catalog::ensure_bundle(&roots, "orchestrator", None).unwrap_err().code, "VERIFY_FAILED");
-    assert!(lifecycle::catalog(&roots, "orchestrator").0.is_empty());
+    assert!(lifecycle::installers(&roots, "orchestrator").0.is_empty());
     std::fs::write(&archive, &original).unwrap();
 
     // a tampered index is refused; the cached verified one stays

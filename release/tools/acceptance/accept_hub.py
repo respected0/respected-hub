@@ -1,4 +1,5 @@
-"""Local acceptance gate for the Hub: cargo tests, TypeScript check and unit tests, guarded against real-environment drift.
+"""Local acceptance gate for the Hub: cargo tests, TypeScript check and unit tests and the shared product contract
+(<ecosystem>/conformance), guarded against real-environment drift.
 
     python release/tools/acceptance/accept_hub.py        # from respected-hub; serial, a few minutes
 
@@ -17,7 +18,8 @@ env = dict(os.environ, CARGO_TARGET_DIR=str(ECO / ".cargo-target-hub"), RESPECTE
 npm = shutil.which("npm") or "npm"
 steps = [(["cargo", "test", "--manifest-path", "src-tauri/Cargo.toml", "--no-fail-fast"], 3600),
          (["cargo", "test", "--release", "--manifest-path", "src-tauri/Cargo.toml", "--lib", "production_build"], 3600),  # no development keys
-         ([npm, "run", "check"], 600)]
+         ([npm, "run", "check"], 600),
+         ([sys.executable, "-m", "unittest", "discover", "-s", str(ECO / "conformance")], 900)]
 code = 0
 for command, limit in steps:
     done = subprocess.run(command, cwd=hub, env=env, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=limit)

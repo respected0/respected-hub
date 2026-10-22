@@ -5,19 +5,18 @@ import type { FormField } from '../../src/shared/productsModel.ts';
 import type { RppResponse, SettingsSchema } from '../../src/shared/rpp.ts';
 
 function ok(result: unknown): RppResponse {
-  return { rpp: '1.0', ok: true, operation_id: null, result, error: null };
+  return { rpp: '1', ok: true, operation_id: null, result, error: null };
 }
 
 function fail(code: string, message: string, hint?: string): RppResponse {
-  return { rpp: '1.0', ok: false, operation_id: null, result: null, error: hint ? { code, message, hint } : { code, message } };
+  return { rpp: '1', ok: false, operation_id: null, result: null, error: hint ? { code, message, hint } : { code, message } };
 }
 
 const manifest = {
   product_id: 'orchestrator',
   product_version: '2.3.0',
-  protocol: { min: '1.0', max: '1.0' },
+  rpp: '1',
   capabilities: ['tasks', 'settings'],
-  settings_supported: true,
 };
 
 test('summarizeProduct: no response is unreachable', () => {
@@ -46,10 +45,10 @@ test('summarizeProduct: healthy product is ok with capabilities and checks', () 
 });
 
 test('summarizeProduct: incompatible protocol fails with a clear reason', () => {
-  const summary = summarizeProduct(ok({ ...manifest, protocol: { min: '2.0', max: '2.0' } }), ok({ status: 'healthy', version: '2.0.0', checks: [] }));
+  const summary = summarizeProduct(ok({ ...manifest, rpp: '2' }), ok({ status: 'healthy', version: '2.0.0', checks: [] }));
   assert.equal(summary.statusKind, 'error');
   assert.equal(summary.protocolOk, false);
-  assert.ok(summary.errorText && summary.errorText.includes('Örtüşen protokol'));
+  assert.ok(summary.errorText && summary.errorText.includes('RPP 1 konuşmuyor'));
 });
 
 test('summarizeProduct: malformed manifest result fails negotiation', () => {

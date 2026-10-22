@@ -6,10 +6,10 @@ import { rppTry } from '../shared/productClient.ts';
 import { activityList, lifecycleStatus, type JournalEntry, type LifecycleOverview } from './lifecycle.ts';
 import { summarizeProduct, type ProductSummary } from '../shared/productsModel.ts';
 
-interface AppRuntime { loading: boolean; summary: ProductSummary; configSource: 'file' | 'defaults' | null; }
+interface AppRuntime { loading: boolean; summary: ProductSummary; }
 export interface Ecosystem { apps: Record<string, AppRuntime>; runs: Run[]; lifecycle: LifecycleOverview | null; journal: JournalEntry[]; refresh: () => void; }
 
-const pending: AppRuntime = { loading: true, summary: summarizeProduct(null, null), configSource: null };
+const pending: AppRuntime = { loading: true, summary: summarizeProduct(null, null) };
 
 export function useEcosystem(): Ecosystem {
   const [apps, setApps] = useState<Record<string, AppRuntime>>(() => Object.fromEntries(APPS.map(app => [app.id, pending])));
@@ -27,10 +27,9 @@ export function useEcosystem(): Ecosystem {
     const entries = await Promise.all(APPS.map(async app => {
       if (!app.rpp) return [app.id, { ...pending, loading: false }] as const;
       // not installed: nothing to poll, so no error banner for a product that was never there
-      if (absent.has(app.id)) return [app.id, { loading: false, summary: { ...summarizeProduct(null, null), statusText: 'Kurulu değil', errorText: undefined }, configSource: null }] as const;
-      const [manifest, health, readback] = await Promise.all([rppTry(app.rpp, 'manifest'), rppTry(app.rpp, 'health'), rppTry(app.rpp, 'settings.readback')]);
-      const source = readback?.ok && typeof readback.result === 'object' && readback.result ? (readback.result as { source?: string }).source : null;
-      return [app.id, { loading: false, summary: summarizeProduct(manifest, health), configSource: source === 'file' || source === 'defaults' ? source : null }] as const;
+      if (absent.has(app.id)) return [app.id, { loading: false, summary: { ...summarizeProduct(null, null), statusText: 'Kurulu değil', errorText: undefined } }] as const;
+      const [manifest, health] = await Promise.all([rppTry(app.rpp, 'manifest'), rppTry(app.rpp, 'health')]);
+      return [app.id, { loading: false, summary: summarizeProduct(manifest, health) }] as const;
     }));
     setApps(Object.fromEntries(entries));
     try { setRuns((await engine<{ runs: Run[] }>('list')).runs); } catch { setRuns([]); }

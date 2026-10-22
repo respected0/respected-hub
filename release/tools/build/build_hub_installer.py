@@ -1,4 +1,4 @@
-"""Build the Hub's Windows installers (not Authenticode-signed): dist/Respected{Hub,SecondBrain,Orchestrator}-Windows-Setup.exe.
+"""Build the Hub's Windows installer (not Authenticode-signed): dist/RespectedHub-Windows-Setup.exe. Each product ships its own.
 
     python respected-hub/release/tools/build_hub_installer.py [--release-key VAULT] [--skip-app]
 
@@ -68,7 +68,5 @@ if __name__ == "__main__":
             sys.exit(f"production executable still contains development overrides: {leaked}")
     version = json.loads((HUB / "src-tauri" / "tauri.conf.json").read_text("utf-8-sig"))["version"]
     (ECO / "dist").mkdir(exist_ok=True)
-    # One installer per download: the product installers are the same Hub; they only open the Hub on that product's install page.
-    for product, name in (("", "RespectedHub"), ("--install=orchestrator", "RespectedOrchestrator"), ("--install=secondbrain", "RespectedSecondBrain")):
-        run([inno(), f"/DAppVersion={version}", f"/DStageDir={STAGE}", f"/DOutputDir={ECO / 'dist'}", f"/DProduct={product}", f"/DOutputBase={name}-Windows-Setup", str(HUB / "packaging" / "windows" / "hub_setup.iss")])
+    run([inno(), f"/DAppVersion={version}", f"/DStageDir={STAGE}", f"/DOutputDir={ECO / 'dist'}", str(HUB / "packaging" / "windows" / "hub_setup.iss")])
     print(ECO / "dist" / "RespectedHub-Windows-Setup.exe")

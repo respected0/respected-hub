@@ -1,9 +1,9 @@
-// Hub-managed product lifecycle client (install / update / repair / uninstall / rollback).
+// Product lifecycle client: the Hub runs each product's own installer (install / update / repair) or uninstaller.
 // The native backend answers { ok, result, error:{code,message,hint} }; nothing here is simulated.
 import { invoke } from '@tauri-apps/api/core';
 import { native } from '../shared/api.ts';
 
-export type LifecycleAction = 'install' | 'update' | 'repair' | 'uninstall' | 'integrations';
+export type LifecycleAction = 'install' | 'update' | 'repair' | 'uninstall';
 type InstallState = 'absent' | 'installed' | 'update-available' | 'repair-needed';
 
 export interface LifecycleError { code: string; message: string; hint: string; }
@@ -14,27 +14,22 @@ export interface ProductLifecycle {
   installed: boolean;
   install_state: InstallState;
   version: string | null;
-  signed: boolean | null;
-  problems: string[];
   /** `remote`: listed in the downloaded catalog index, fetched from GitHub when the person installs or updates. */
-  available: { version: string; signed: boolean; trust?: 'production' | 'development' | 'unsigned'; files?: number; digest?: string; remote?: boolean; size?: number } | null;
-  previous_versions: string[];
+  available: { version: string; signed: boolean; trust?: 'production' | 'development' | 'unsigned'; remote?: boolean; size?: number } | null;
   catalog_skipped: string[];
-  removed_available: boolean;
   root: string | null;
-  engine_managed?: boolean;
 }
-export interface LifecycleOverview { products: (ProductLifecycle | null)[]; managed_root: string; catalog_root: string; }
+export interface LifecycleOverview { products: (ProductLifecycle | null)[]; catalog_root: string; }
 interface PlanStep { id: string; summary: string; reversible: boolean; irreversible_reason: string | null; }
 interface IntegrationChange { kind: string; target: string; action: 'create' | 'modify' | 'restore' | 'unchanged'; summary: string; size_after: number; }
 export interface IntegrationPlan { desired: Record<string, unknown>; current?: Record<string, unknown>; clients?: { id: string; detected: boolean }[]; launcher: string[]; discovered: { client_config: string; present: boolean }[]; changes: IntegrationChange[]; writes_nothing: boolean; external_effects: string[]; }
-export interface LifecyclePlan { product: string; action: LifecycleAction; from_version: string | null; to_version: string | null; plan: { steps: PlanStep[] }; integrations?: IntegrationPlan | null; engine_managed?: boolean; }
+export interface LifecyclePlan { product: string; action: LifecycleAction; from_version: string | null; to_version: string | null; plan: { steps: PlanStep[] }; }
 type LifecycleParams = Record<string, unknown>;
 export interface JournalEntry {
   operation_id: string; product: string; action: LifecycleAction;
-  status: 'staging' | 'verifying' | 'switching' | 'applied' | 'failed' | 'rolled_back';
+  status: 'staging' | 'verifying' | 'switching' | 'applied' | 'failed';
   from_version: string | null; to_version: string | null; started_at: string; finished_at: string | null;
-  error: LifecycleError | null; undo: unknown;
+  error: LifecycleError | null;
 }
 
 const unavailable = (): LifecycleReply<never> => ({ ok: false, result: null, error: { code: 'UNAVAILABLE', message: 'Bu işlem yalnızca masaüstü uygulamasında kullanılabilir.', hint: 'Tauri masaüstü sürümünü çalıştırın.' } });
@@ -49,8 +44,6 @@ export const lifecycleStatus = () => call<LifecycleOverview>('lifecycle_status')
 export const lifecyclePlan = (product: string, action: LifecycleAction, params?: LifecycleParams) => call<LifecyclePlan>('lifecycle_plan', { product, action, params: params ?? null });
 export const lifecycleApply = (product: string, action: LifecycleAction, params?: LifecycleParams, operationId = newOperationId(action)) =>
   call<JournalEntry>('lifecycle_apply', { product, action, operationId, params: params ?? null });
-export const lifecycleRollback = (operationId: string) => call<JournalEntry>('lifecycle_rollback', { operationId });
-export const lifecyclePurgeBackups = (product: string) => call<{ removed_entries: number }>('lifecycle_purge_backups', { product });
 export const activityList = (limit = 50) => call<JournalEntry[]>('activity_list', { limit });
 
 export type Channel = 'beta' | 'stable';
@@ -66,8 +59,8 @@ export function newOperationId(action: LifecycleAction): string {
   return `${action}-${crypto.randomUUID()}`.slice(0, 64);
 }
 
-export const ACTION_LABEL: Record<LifecycleAction, string> = { install: 'Kur', update: 'Güncelle', repair: 'Onar', uninstall: 'Kaldır', integrations: 'Entegrasyonları uygula' };
-export const ACTION_DONE: Record<LifecycleAction, string> = { install: 'kuruldu', update: 'güncellendi', repair: 'onarıldı', uninstall: 'kaldırıldı', integrations: 'entegrasyonları güncellendi' };
+export const ACTION_LABEL: Record<LifecycleAction, string> = { install: 'Kur', update: 'Güncelle', repair: 'Onar', uninstall: 'Kaldır' };
+export const ACTION_DONE: Record<LifecycleAction, string> = { install: 'kuruldu', update: 'güncellendi', repair: 'onarıldı', uninstall: 'kaldırıldı' };
 
 export const STATE_LABEL: Record<InstallState, string> = {
   absent: 'Kurulu değil', installed: 'Kurulu ve doğrulandı', 'update-available': 'Güncelleme var', 'repair-needed': 'Onarım gerekli',
@@ -77,8 +70,6 @@ const ERROR_TR: Record<string, string> = {
   LIFECYCLE_CONFLICT: 'Bu işlem şu an yapılamaz.',
   VERIFY_FAILED: 'Doğrulama başarısız oldu; hiçbir değişiklik uygulanmadı.',
   LIFECYCLE_PARTIAL: 'İşlem tamamlanamadı.',
-  ROLLBACK_UNAVAILABLE: 'Bu işlem geri alınamıyor.',
-  RECEIPT_NOT_FOUND: 'İşlem kaydı bulunamadı.',
   BAD_REQUEST: 'İstek geçersiz.',
   INTERNAL: 'Beklenmeyen bir hata oluştu.',
   CATALOG_UNAVAILABLE: 'Ürün kataloğuna ulaşılamadı.',
@@ -97,7 +88,7 @@ export function availableActions(state: InstallState, hasPackage: boolean): Life
     case 'absent': return hasPackage ? ['install'] : [];
     case 'update-available': return hasPackage ? ['update', 'uninstall'] : ['uninstall'];
     case 'repair-needed': return hasPackage ? ['repair', 'uninstall'] : ['uninstall'];
-    default: return ['uninstall'];
+    default: return hasPackage ? ['repair', 'uninstall'] : ['uninstall'];
   }
 }
 
@@ -110,15 +101,7 @@ export function journalSentence(entry: JournalEntry, productName: string): strin
   const what = `${productName} ${ACTION_DONE[entry.action] ?? entry.action}`;
   switch (entry.status) {
     case 'applied': return `${what}${entry.to_version ? ` (v${entry.to_version})` : ''}.`;
-    case 'rolled_back': return `${productName}: ${ACTION_LABEL[entry.action]?.toLowerCase()} işlemi geri alındı.`;
     case 'failed': return `${productName}: ${ACTION_LABEL[entry.action]?.toLowerCase()} başarısız. ${entry.error ? describeLifecycleError(entry.error) : ''}`.trim();
     default: return `${productName}: ${ACTION_LABEL[entry.action]?.toLowerCase()} sürüyor…`;
   }
 }
-
-/** Only the newest applied operation of a product can be undone (journal is newest first). */
-export const canRollback = (entry: JournalEntry, journal: JournalEntry[] = [entry]) =>
-  entry.status === 'applied' && entry.undo != null
-  && entry.action !== 'uninstall' // a removal also deletes the product's data and backups, so it is never offered as undoable
-  && entry.action !== 'update' // an update deletes the replaced version (no leftovers), so there is nothing to go back to
-  && !journal.some(other => other.product === entry.product && other.status === 'applied' && other.started_at > entry.started_at);

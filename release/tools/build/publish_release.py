@@ -1,7 +1,7 @@
 """Build, sign and publish a Respected release on GitHub Releases (the Hub downloads products from there).
 
     python publish_release.py build --key VAULT [--only hub,secondbrain,orchestrator] [--skip-hub-build]
-        -> <ecosystem>/dist/release/: signed product archives, the three Hub installers, entries.json
+        -> <ecosystem>/dist/release/: signed product archives (each holds the product's own installer), the installers, entries.json
     python publish_release.py catalog --key VAULT [--channel beta|stable] [--base FILE|URL] [--min-hub VERSION]
         -> dist/release/catalog.json + catalog.json.sig, merged into the index that is published now
     python publish_release.py upload [--yes]
@@ -9,11 +9,12 @@
     python publish_release.py local-catalog --bundle DIR [--bundle DIR ...] --out DIR    (tests: file:// URLs, development key)
 
 Layout on GitHub (the Hub reads only the catalog URL; everything else is named by the signed catalog):
-    respected0/respected-hub          tag v<hub version>   RespectedHub/-SecondBrain/-Orchestrator-Windows-Setup.exe
-    respected0/respected-secondbrain  tag v<version>       secondbrain-<version>.zip
-    respected0/respected-orchestrator tag v<version>       orchestrator-<version>.zip
+    respected0/respected-hub          tag v<hub version>   RespectedHub-Windows-Setup.exe
+    respected0/respected-secondbrain  tag v<version>       secondbrain-<version>.zip, RespectedSecondBrain-Windows-Setup.exe
+    respected0/respected-orchestrator tag v<version>       orchestrator-<version>.zip, RespectedOrchestrator-Windows-Setup.exe
     respected0/respected-hub          tag catalog          catalog.json + catalog.json.sig (replaced on every release)
-An archive is one signed bundle folder (bundle.json + payload/) zipped at its root. The index carries each archive's size and
+An archive is one signed bundle folder (bundle.json + payload/<Product>-Windows-Setup.exe) zipped at its root; the same installer is
+also attached on its own for people who install without the Hub. The index carries each archive's size and
 SHA-256 and is signed with the release key over b"respected-catalog-v1\\n" + the exact file bytes ("<key_id> <base64>" line).
 """
 import argparse, base64, hashlib, json, re, shutil, subprocess, sys, time, urllib.request, zipfile
@@ -31,7 +32,7 @@ OWNER = "respected0"
 INDEX_URL = f"https://github.com/{OWNER}/respected-hub/releases/download/catalog/catalog.json"
 DOMAIN = b"respected-catalog-v1\n"
 REPOS = {"hub": "respected-hub", "secondbrain": "respected-secondbrain", "orchestrator": "respected-orchestrator"}
-INSTALLERS = ("RespectedHub", "RespectedSecondBrain", "RespectedOrchestrator")
+PRODUCT_INSTALLERS = {"hub": "RespectedHub", "secondbrain": "RespectedSecondBrain", "orchestrator": "RespectedOrchestrator"}
 
 
 def run(command, **kwargs):
@@ -95,20 +96,15 @@ def build(args) -> None:
     if "hub" in only:
         if not args.skip_hub_build:
             run(py + [str(TOOLS / "build" / "build_hub_installer.py"), "--release-key", str(args.key)])
-        for name in INSTALLERS:  # the Hub installer is built beside the Hub; each product builds its own in its repository (see below)
-            shutil.copyfile(installer_path(name), OUT / f"{name}-Windows-Setup.exe")
+        shutil.copyfile(installer_path("RespectedHub"), OUT / "RespectedHub-Windows-Setup.exe")
         entries["hub"] = entry(OUT / "RespectedHub-Windows-Setup.exe", source_version("hub"), REPOS["hub"], hub_tag)
     for product in ("orchestrator", "secondbrain"):
         if product not in only:
             continue
-        # a release is always frozen from the current source (--force): never a cached build of older code
-        if product == "orchestrator":  # shipped as its own signed installer, which the Hub runs silently
-            repo = ECO / REPOS[product]
-            run(py + [str(repo / "packaging" / "build_installer.py")], cwd=repo)
-            run(py + [str(TOOLS / "build" / "build_bundle.py"), product, "--installer", str(repo / "dist" / "RespectedOrchestrator-Windows-Setup.exe"),
-                      "--dist", str(repo / "dist" / "RespectedOrchestrator"), "--out", str(STAGE), *key])
-        else:
-            run(py + [str(TOOLS / "build" / "build_bundle.py"), product, "--force", "--out", str(STAGE), *key])
+        # a release is always built from the current source (--force): never a cached build of older code
+        run(py + [str(TOOLS / "build" / "build_bundle.py"), product, "--force", "--out", str(STAGE), *key])
+        name = {"orchestrator": "RespectedOrchestrator", "secondbrain": "RespectedSecondBrain"}[product]
+        shutil.copyfile(installer_path(name), OUT / f"{name}-Windows-Setup.exe")
         bundle = next(STAGE.glob(f"{product}-*"))
         archive = OUT / f"{product}-{bundle_version(bundle)}.zip"
         zip_bundle(bundle, archive)
@@ -175,7 +171,7 @@ def upload(args) -> None:
     notes = TOOLS.parent / "docs" / "RELEASE_NOTES_BETA.md"
     releases: dict[tuple[str, str], list[Path]] = {}
     for name, row in entries.items():
-        files = [OUT / f"{n}-Windows-Setup.exe" for n in INSTALLERS] if name == "hub" else [OUT / row["file"]]
+        files = [OUT / f"{PRODUCT_INSTALLERS[name]}-Windows-Setup.exe"] + ([] if name == "hub" else [OUT / row["file"]])
         releases.setdefault((row["repo"], row["tag"]), []).extend(files)
     for (repo, tag), files in releases.items():  # products first: the catalog must never name a missing file
         exists = subprocess.run(["gh", "release", "view", tag, "-R", f"{OWNER}/{repo}"], capture_output=True).returncode == 0

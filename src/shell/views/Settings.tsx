@@ -83,8 +83,8 @@ export default function Settings({ onCatalogChanged }: { onCatalogChanged?: () =
     <Updates onCatalogChanged={onCatalogChanged} />
     <section className="card settings-card" aria-labelledby="settings-sources">
       <h2 id="settings-sources">Kaynak arama yolları</h2>
-      <p>Bu ayarlar Hub’ın geliştirme sürümünde ürün kaynaklarını nerede arayacağını ve görev verilerini nerede saklayacağını belirler. Canlı AI yapılandırmalarına dokunmaz.</p>
-      {managed.length > 0 && <div className="notice" role="note">Hub'dan kurulu ürünler ({managed.join(', ')}) yönetilen kopyalarından çalışır; aşağıdaki kaynak klasörleri bu ürünler için kullanılmaz.</div>}
+      <p>Bu ayarlar Hub’ın geliştirme sürümünde ürün kaynaklarını nerede arayacağını belirler. Canlı AI yapılandırmalarına dokunmaz.</p>
+      {managed.length > 0 && <div className="notice" role="note">Kurulu ürünler ({managed.join(', ')}) kendi programlarından çalışır; aşağıdaki kaynak klasörleri bu ürünler için kullanılmaz.</div>}
       {!native && <div className="empty-note">Ayarlar yalnızca masaüstü uygulamasında okunabilir ve uygulanabilir. Tarayıcı önizlemesinde değer uydurulmaz.</div>}
       {native && !settings && !error && <div className="settings-loading"><progress aria-label="Ayarlar okunuyor" /><p>Kayıtlı ayarlar okunuyor…</p></div>}
       {native && settings && <form onSubmit={event => { event.preventDefault(); void apply(); }}>

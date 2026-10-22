@@ -17,7 +17,7 @@ import OverviewPanel from '../../products/orchestrator/views/OverviewPanel.tsx';
 import AgentsPanel from '../../products/orchestrator/views/AgentsPanel.tsx';
 import EvidencePanel from '../../products/orchestrator/views/EvidencePanel.tsx';
 import { dataRootSummary, mountFor } from '../workspaceModel.ts';
-import { Emblem } from '../../shared/ui.tsx';
+import { Emblem, Weave } from '../../shared/ui.tsx';
 import '../../products/orchestrator/views/settings.css';
 
 function Overview({ app, eco, go }: { app: AppDef; eco: Ecosystem; go: (page: string) => void }) {
@@ -29,7 +29,6 @@ function Overview({ app, eco, go }: { app: AppDef; eco: Ecosystem; go: (page: st
       {summary.errorText && <p className="error" role="alert">{summary.errorText}</p>}
       {summary.checks.length > 0 && <ul className="checks">{summary.checks.map((check, i) => <li key={i} className={check.ok ? 'ok' : 'bad'}><span aria-hidden="true">{check.ok ? '\u2713' : '\u2715'}</span> {check.name}{check.detail ? ` \u2014 ${check.detail}` : ''}</li>)}</ul>}
       {summary.capabilities.length > 0 && <ul className="capabilities" aria-label="Yetenekler">{summary.capabilities.map(c => <li key={c}>{c}</li>)}</ul>}</section>
-    {app.id === 'secondbrain' && runtime.configSource === 'defaults' && <section className="panel-glass"><h2>Kurulum bekliyor</h2><p>Yapılandırma dosyası henüz yok.</p><button className="cta" onClick={() => go('setup')}>SecondBrain kurulumunu tamamla</button></section>}
     {app.id === 'orchestrator' && <OverviewPanel runs={eco.runs} workers={workers} onOpenTasks={() => go('runs')} />}
   </>;
 }
@@ -102,15 +101,15 @@ export default function AppWorkspace({ appId, page, eco, go }: { appId: string; 
   const view = mountFor(app.id, page);
   const runtime = eco.apps[app.id]; const summary = runtime.summary;
   return <div className={`page accent-${app.accent}`}>
-    <header className="ws-banner"><Emblem app={app.id} />
+    <header className="ws-banner"><Weave /><Emblem app={app.id} />
       <div className="ws-title"><span className="eyebrow">Çalışma alanı</span><h1>{app.name}</h1><p>{app.tagline}</p>
         <span className={`badge-status ${runtime.loading ? 'unreachable' : summary.statusKind}`}><span className={`dot ${runtime.loading ? '' : summary.statusKind}`} aria-hidden="true" />{runtime.loading ? 'Kontrol ediliyor…' : summary.statusText}{summary.version ? ` · v${summary.version}` : ''}</span></div>
       <div className="ws-tabs" role="tablist" aria-label={`${app.name} bölümleri`}>{app.pages.map(item => <button key={item.id} role="tab" aria-selected={view === mountFor(app.id, item.id)} className="tab" onClick={() => go(item.id)}>{item.label}</button>)}</div>
     </header>
     {view === 'overview' && <Overview app={app} eco={eco} go={go} />}
-    {view === 'setup' && (() => { const lc = eco.lifecycle?.products.find(item => item?.product === 'secondbrain'); return lc?.engine_managed && lc.install_state === 'absent' && lc.available
+    {view === 'setup' && (() => { const lc = eco.lifecycle?.products.find(item => item?.product === 'secondbrain'); return lc?.install_state === 'absent' && lc.available
       ? <BrainInstall onDone={eco.refresh} />
-      : <BrainSetup configured={eco.apps[app.id].configSource === 'file'} onDone={eco.refresh} engine={!!lc?.engine_managed && lc.installed} />; })()}
+      : <BrainSetup onDone={eco.refresh} />; })()}
     {view === 'runs' && <Tasks />}
     {view === 'campaigns' && <Campaigns />}
     {view === 'agents' && <AgentsPage />}

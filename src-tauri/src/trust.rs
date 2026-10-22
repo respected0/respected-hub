@@ -149,15 +149,15 @@ mod tests {
         assert!(!dev_enabled() && !allow_unsigned() && dev_keys().is_empty());
         // none of the development environment overrides exists in a production build, whatever the environment says
         let absolute = std::env::temp_dir().join("elsewhere");
-        for name in ["RESPECTED_HUB_TEST_HOME", "RESPECTED_HUB_MANAGED_ROOT", "RESPECTED_HUB_CATALOG_ROOT", "RESPECTED_HUB_BRAIN_APP_DIR",
-                     "RESPECTED_HUB_BRAIN_DATA_DIR", "RESPECTED_APP_DIR", "RESPECTED_DATA_DIR", "RESPECTED_ORCHESTRATOR_DATA_ROOT"] {
+        for name in ["RESPECTED_HUB_TEST_HOME", "RESPECTED_HUB_MANAGED_ROOT", "RESPECTED_HUB_CATALOG_ROOT", "RESPECTED_HUB_PRODUCTS_ROOT",
+                     "RESPECTED_APP_DIR", "RESPECTED_DATA_DIR"] {
             std::env::set_var(name, &absolute);
             assert!(dev_abs(name).is_none() && dev_env(name).is_none(), "{name}");
         }
         let mut command = std::process::Command::new("x");
         crate::rpp::apply_test_home(&mut command);
         assert!(command.get_envs().next().is_none(), "the test home must not reach product processes");
-        assert_eq!(crate::secondbrain::dirs().app, std::path::PathBuf::from(std::env::var_os("LOCALAPPDATA").unwrap_or_else(|| std::env::temp_dir().into())).join("Respected").join("RespectedBrain").join("app"));
+        assert_eq!(crate::hub::installed::product("secondbrain").unwrap().app_dir(), std::path::PathBuf::from(std::env::var_os("LOCALAPPDATA").unwrap_or_else(|| std::env::temp_dir().into())).join("Respected").join("RespectedBrain").join("app"));
         assert!(verify(&doc(Value::Null), "orchestrator", "source", "0.1.0", DIGEST).is_err());
     }
 

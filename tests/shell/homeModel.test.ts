@@ -3,15 +3,14 @@ import assert from 'node:assert/strict';
 import { homeMode } from '../../src/shell/homeModel.ts';
 import type { AppSnapshot } from '../../src/shell/homeModel.ts';
 
-const app = (kind: AppSnapshot['kind'], configSource: AppSnapshot['configSource'] = 'file', loading = false): AppSnapshot => ({ kind, configSource, loading });
+const app = (kind: AppSnapshot['kind'], loading = false): AppSnapshot => ({ kind, loading });
 
 test('home mode follows real ecosystem state', () => {
   assert.equal(homeMode(false, [app('ok')]), 'preview');
   assert.equal(homeMode(true, []), 'first-launch');
-  assert.equal(homeMode(true, [app('ok', 'file', true)]), 'loading');
-  assert.equal(homeMode(true, [app('unreachable', null), app('unreachable', null)]), 'first-launch');
-  assert.equal(homeMode(true, [app('ok'), app('unreachable', null)]), 'attention');
-  assert.equal(homeMode(true, [app('ok', 'defaults'), app('warn')]), 'attention');
-  assert.equal(homeMode(true, [app('ok', 'defaults'), app('ok')]), 'setup-incomplete');
-  assert.equal(homeMode(true, [app('ok'), app('ok')]), 'active');
+  assert.equal(homeMode(true, [app('ok', true)]), 'loading');
+  assert.equal(homeMode(true, [app('unreachable'), app('unreachable')]), 'first-launch');
+  assert.equal(homeMode(true, [app('ok'), app('unreachable')]), 'attention');
+  assert.equal(homeMode(true, [app('ok'), app('warn')]), 'attention');
+  assert.equal(homeMode(true, [app('ok'), app('ok')]), 'active', 'an installed product is set up: its installer ran its setup');
 });

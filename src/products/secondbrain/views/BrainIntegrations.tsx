@@ -1,37 +1,46 @@
 import { useEffect, useRef, useState } from 'react';
-import { describeLifecycleError, lifecycleApply, lifecyclePlan } from '../../../shell/lifecycle.ts';
-import type { LifecyclePlan } from '../../../shell/lifecycle.ts';
-import { fromCurrent, toDesired } from '../brainClients.ts';
+import { rppCall } from '../../../shared/productClient.ts';
+import { describeError } from '../../../shared/rpp.ts';
+import type { RppResponse } from '../../../shared/rpp.ts';
+import type { IntegrationPlan } from '../../../shell/lifecycle.ts';
+import { fromCurrent, fromSettings, toDesired, toSettings } from '../brainClients.ts';
 import type { Selection } from '../brainClients.ts';
 import ClientPicker from './ClientPicker.tsx';
 import IntegrationPreview from './IntegrationPreview.tsx';
 
-// Installed SecondBrain: choose, per AI client, where memory is captured (Sources) and who may use it over MCP (Permissions),
-// with an explicit, read-only preview first. `initial` are the stored on/off flags; the exact client lists come from the product.
-export default function BrainIntegrations({ initial, onApplied }: { initial: Record<string, boolean>; onApplied: () => void }) {
-  const [selection, setSelection] = useState<Selection>(() => fromCurrent(initial));
-  const [saved, setSaved] = useState<string>(() => JSON.stringify(toDesired(fromCurrent(initial))));
-  const [plan, setPlan] = useState<LifecyclePlan | null>(null);
+const failure = (response: RppResponse) => {
+  if (response.ok) return '';
+  const plain = describeError(response.error);
+  return plain.hint ? `${plain.message} ${plain.hint}` : plain.message;
+};
+
+// Installed SecondBrain: choose, per AI client, where memory is captured (Sources) and who may use it over MCP (Permissions).
+// The product shows exactly what would change (`integrations.plan`, read-only) and applies the choice as its own settings
+// (`integrations.*`), the same keys `respectedbrain config set` and its installer take.
+export default function BrainIntegrations({ settings, onApplied }: { settings: Record<string, unknown>; onApplied: () => void }) {
+  const [selection, setSelection] = useState<Selection>(() => fromSettings(settings));
+  const [saved, setSaved] = useState<string>(() => JSON.stringify(toSettings(fromSettings(settings))));
+  const [plan, setPlan] = useState<IntegrationPlan | null>(null);
   const [planError, setPlanError] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
   const adopted = useRef(false);
   const desired = toDesired(selection);
-  const changed = JSON.stringify(desired) !== saved;
+  const changed = JSON.stringify(toSettings(selection)) !== saved;
 
   useEffect(() => {
     let active = true;
     setPlanError('');
-    void lifecyclePlan('secondbrain', 'integrations', { desired }).then(reply => {
+    void rppCall('secondbrain', 'integrations.plan', { target: { desired } }).then(reply => {
       if (!active) return;
-      if (!reply.ok) { setPlan(null); setPlanError(describeLifecycleError(reply.error)); return; }
-      setPlan(reply.result);
-      const current = reply.result.integrations?.current;
-      if (!adopted.current && current) {  // first answer: show what the product really has stored, not the on/off guess
+      if (!reply.ok) { setPlan(null); setPlanError(failure(reply)); return; }
+      const result = reply.result as IntegrationPlan;
+      setPlan(result);
+      if (!adopted.current && result.current) {  // first answer: show what the product really has stored
         adopted.current = true;
-        const stored = fromCurrent(current);
-        setSaved(JSON.stringify(toDesired(stored)));
+        const stored = fromCurrent(result.current);
+        setSaved(JSON.stringify(toSettings(stored)));
         setSelection(stored);
       }
     });
@@ -40,15 +49,15 @@ export default function BrainIntegrations({ initial, onApplied }: { initial: Rec
 
   async function apply() {
     setBusy(true); setError(''); setDone('');
-    const reply = await lifecycleApply('secondbrain', 'integrations', { desired });
+    const reply = await rppCall('secondbrain', 'settings.apply', { settings: toSettings(selection) }, crypto.randomUUID());
     setBusy(false);
-    if (reply.ok) { setSaved(JSON.stringify(desired)); setDone('Entegrasyonlar uygulandı ve SecondBrain tarafından doğrulandı.'); onApplied(); } else setError(describeLifecycleError(reply.error));
+    if (reply.ok) { setSaved(JSON.stringify(toSettings(selection))); setDone('Bağlantılar SecondBrain tarafından uygulandı.'); onApplied(); } else setError(failure(reply));
   }
 
-  const detected = plan?.integrations?.clients ? Object.fromEntries(plan.integrations.clients.map(item => [item.id, item.detected])) : null;
-  const changes = (plan?.integrations?.changes ?? []).filter(change => change.action !== 'unchanged');
-  return <div className="step-body"><h2>AI araç entegrasyonları</h2>
-    <p className="muted">Değişiklikler SecondBrain'in kendi kurucusuyla yapılır. Yalnızca Respected'a ait kayıtlar yönetilir; diğer araçların ve senin ayarların korunur, bir aracı kapatınca onun dosyaları byte byte geri yüklenir.</p>
+  const detected = plan?.clients ? Object.fromEntries(plan.clients.map(item => [item.id, item.detected])) : null;
+  const changes = (plan?.changes ?? []).filter(change => change.action !== 'unchanged');
+  return <div className="step-body"><h2>AI araç bağlantıları</h2>
+    <p className="muted">Değişiklikleri SecondBrain kendisi yapar: yalnızca Respected'a ait kayıtlar yönetilir, diğer araçların ve senin ayarların korunur, bir aracı kapatınca onun dosyaları eski haline döner.</p>
     <h3>Kaynaklar <small className="muted">oturumları hafızaya yakalanan araçlar</small></h3>
     <ClientPicker kind="hooks" selected={selection.sources} detected={detected} onChange={sources => setSelection({ ...selection, sources })} />
     <h3>İzinler <small className="muted">hafızayı MCP ile kullanabilen araçlar</small></h3>
@@ -58,9 +67,9 @@ export default function BrainIntegrations({ initial, onApplied }: { initial: Rec
     <label className="choice"><span><strong>Masaüstü kısayolu</strong><small>Masaüstüne not kasası klasörünü açan bir kısayol koyar.</small></span>
       <input type="checkbox" role="switch" checked={selection.shortcut} onChange={event => setSelection({ ...selection, shortcut: event.target.checked })} /></label>
     {planError && <p className="error" role="alert">{planError}</p>}
-    {plan?.integrations && <IntegrationPreview plan={plan.integrations} hideUnchanged />}
+    {plan && <IntegrationPreview plan={plan} hideUnchanged />}
     {error && <p className="error" role="alert">{error}</p>}
     {done && <p className="message" role="status">{done}</p>}
-    <div className="actions"><button type="button" className="cta" disabled={busy || !!planError || (!changed && changes.length === 0)} onClick={() => void apply()}>{busy ? 'Uygulanıyor…' : 'Entegrasyonları uygula'}</button></div>
+    <div className="actions"><button type="button" className="cta" disabled={busy || !!planError || (!changed && changes.length === 0)} onClick={() => void apply()}>{busy ? 'Uygulanıyor…' : 'Bağlantıları uygula'}</button></div>
   </div>;
 }

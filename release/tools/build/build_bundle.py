@@ -1,12 +1,12 @@
-﻿"""Build a signed catalog bundle of a product's packaged (frozen) distribution.
+﻿"""Build a signed catalog bundle of a product's own Windows installer.
 
-    python release/tools/build/build_bundle.py orchestrator|secondbrain [--dist DIR] [--out DIR] [--key FILE] [--force]
+    python release/tools/build/build_bundle.py orchestrator|secondbrain [--out DIR] [--key FILE] [--force]
 
-Without --dist the product's own build tool freezes the current source into <ecosystem>/.build-cache/dist/<product>
-(reused while no source file is newer). The bundle is ``<out>/<product>-<version>/bundle.json`` + ``payload/<distribution>``;
-bundle.json lists every payload file with its size and sha256 and carries a digest over that list. Every bundle is signed
-(Ed25519, bundle_signing.py): with the local DEVELOPMENT key by default, with the release key when ``--key`` /
-``RESPECTED_SIGNING_KEY`` is given. The Hub accepts only signatures from keys it trusts.
+The product's own tool (`packaging/build_installer.py` in its repository) builds `dist/<Product>-Windows-Setup.exe`; it is
+reused while no source or packaging file is newer (``--force`` always rebuilds). The bundle is
+``<out>/<product>-<version>/bundle.json`` + ``payload/<Product>-Windows-Setup.exe``: one file with its size and sha256, a digest
+over that list and an Ed25519 signature (bundle_signing.py), with the local DEVELOPMENT key by default and the release key when
+``--key`` / ``RESPECTED_SIGNING_KEY`` is given. The Hub accepts only signatures from keys it trusts and runs the installer.
 """
 import argparse, hashlib, json, os, shutil, subprocess, sys
 from contextlib import contextmanager
@@ -16,10 +16,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from signing.bundle_signing import sign_manifest
 from common.ecosystem_root import ECO
 
-# product -> (repository, build command relative to it, distribution folder name, launcher)
+# product -> (repository, installer file, distribution folder its build leaves beside it)
 PRODUCTS = {
-    "orchestrator": ("respected-orchestrator", ["packaging/build_dist.py"], "RespectedOrchestrator", "respected-orchestrator.exe"),
-    "secondbrain": ("respected-secondbrain", ["packaging/build_dist.py", "--platform", "windows"], "RespectedBrain", "respectedbrain.exe"),
+    "orchestrator": ("respected-orchestrator", "RespectedOrchestrator-Windows-Setup.exe", "RespectedOrchestrator"),
+    "secondbrain": ("respected-secondbrain", "RespectedSecondBrain-Windows-Setup.exe", "RespectedBrain"),
 }
 
 
@@ -32,10 +32,10 @@ def sha256_file(path: Path) -> str:
 
 
 @contextmanager
-def build_lock(cache: Path):
-    """One build per cache at a time: parallel test threads may all ask for the same product."""
-    cache.mkdir(parents=True, exist_ok=True)
-    with open(cache / ".build.lock", "a+b") as handle:
+def build_lock(folder: Path):
+    """One build per product at a time: parallel test threads may all ask for the same installer."""
+    folder.mkdir(parents=True, exist_ok=True)
+    with open(folder / ".build.lock", "a+b") as handle:
         if os.name == "nt":
             import msvcrt
             while True:
@@ -55,53 +55,29 @@ def build_lock(cache: Path):
                 msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
 
 
-def frozen(product: str, force: bool = False) -> Path:
-    """The product's packaged distribution, rebuilt with its own tool when missing or older than its source."""
-    repo, command, name, launcher = PRODUCTS[product]
+def installer(product: str, force: bool = False) -> tuple[Path, Path]:
+    """The product's installer and the distribution it was built from, rebuilt with its own tool when missing or stale."""
+    repo, name, folder = PRODUCTS[product]
     source = ECO / repo
-    cache = ECO / ".build-cache" / "dist" / product
-    dist = cache / name
-    exe = dist / launcher
-    with build_lock(cache):
-        stale = force or not exe.is_file() or any(p.stat().st_mtime > exe.stat().st_mtime for p in (source / "src").rglob("*")
-                                                 if p.is_file() and "__pycache__" not in p.parts)
+    setup, dist = source / "dist" / name, source / "dist" / folder
+    with build_lock(ECO / ".build-cache" / "installers" / product):
+        inputs = [p for part in ("src", "packaging") for p in (source / part).rglob("*") if p.is_file() and "__pycache__" not in p.parts]
+        stale = force or not setup.is_file() or any(p.stat().st_mtime > setup.stat().st_mtime for p in inputs)
         if stale:
-            subprocess.run([sys.executable, *command, "--output", str(cache)], cwd=source, check=True)
-    return dist
+            subprocess.run([sys.executable, "-B", "packaging/build_installer.py"], cwd=source, check=True)
+    return setup, dist
 
 
-def build(product: str, dist: Path, out: Path, key: Path | None = None) -> Path:
-    version = json.loads((dist / "distribution.json").read_text("utf-8"))["version"]
-    target = out / f"{product}-{version}"
-    if target.exists():
-        shutil.rmtree(target)
-    files = []
-    for path in sorted(dist.rglob("*")):
-        if not path.is_file() or path.is_symlink():
-            continue
-        relative = path.relative_to(dist).as_posix()
-        destination = target / "payload" / relative
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(path, destination)
-        files.append({"path": relative, "size": destination.stat().st_size, "sha256": sha256_file(destination)})
-    digest = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
-    manifest = {"schema": 1, "product": product, "kind": "distribution", "version": version, "files": files,
-                "bundle_digest": digest, "signature": None}
-    (target / "bundle.json").write_text(json.dumps(sign_manifest(manifest, key), indent=1), encoding="utf-8")
-    return target
-
-
-def build_installer(product: str, installer: Path, dist: Path, out: Path, key: Path | None = None) -> Path:
-    """A bundle of kind ``installer``: the product's own signed installer is the only payload file; the Hub runs it silently."""
-    if not installer.name.endswith("-Windows-Setup.exe"):
+def build(product: str, setup: Path, dist: Path, out: Path, key: Path | None = None) -> Path:
+    if not setup.name.endswith("-Windows-Setup.exe"):
         raise ValueError("the installer file must be named ...-Windows-Setup.exe")
     version = json.loads((dist / "distribution.json").read_text("utf-8"))["version"]
     target = out / f"{product}-{version}"
     if target.exists():
         shutil.rmtree(target)
     (target / "payload").mkdir(parents=True)
-    shutil.copyfile(installer, target / "payload" / installer.name)
-    files = [{"path": installer.name, "size": installer.stat().st_size, "sha256": sha256_file(installer)}]
+    shutil.copyfile(setup, target / "payload" / setup.name)
+    files = [{"path": setup.name, "size": setup.stat().st_size, "sha256": sha256_file(setup)}]
     digest = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
     manifest = {"schema": 1, "product": product, "kind": "installer", "version": version, "files": files, "bundle_digest": digest, "signature": None}
     (target / "bundle.json").write_text(json.dumps(sign_manifest(manifest, key), indent=1), encoding="utf-8")
@@ -111,15 +87,8 @@ def build_installer(product: str, installer: Path, dist: Path, out: Path, key: P
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("product", choices=sorted(PRODUCTS))
-    parser.add_argument("--dist", type=Path, help="an already built distribution folder (default: build or reuse the cached one)")
     parser.add_argument("--out", type=Path, default=ECO / "catalog")
     parser.add_argument("--key", type=Path, help="release signing key (default: local development key)")
-    parser.add_argument("--force", action="store_true", help="rebuild the distribution even when the cache is current")
-    parser.add_argument("--installer", type=Path, help="bundle this product installer (kind installer) instead of the distribution folder; --dist names the folder it was built from")
+    parser.add_argument("--force", action="store_true", help="rebuild the installer even when it is current")
     args = parser.parse_args()
-    if args.installer:
-        if not args.dist:
-            parser.error("--installer needs --dist (its distribution.json supplies the version)")
-        print(build_installer(args.product, args.installer, args.dist, args.out, args.key))
-    else:
-        print(build(args.product, args.dist or frozen(args.product, args.force), args.out, args.key))
+    print(build(args.product, *installer(args.product, args.force), args.out, args.key))

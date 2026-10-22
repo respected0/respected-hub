@@ -2,6 +2,10 @@
 name = "respected-hub"
 version = "0.1.0-beta.1"
 edition = "2021"
+description = "Respected Hub: desktop app that installs and manages the Respected products"
+authors = ["RESPECTED"]
+license = "MIT"
+repository = "https://github.com/respected0/respected-hub"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -26,16 +30,8 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 # End-to-end tests live in one folder per area; each file stays its own test binary (`cargo test --test brain_e2e`).
 [[test]]
-name = "lifecycle_e2e"
-path = "tests/lifecycle/lifecycle_e2e.rs"
-
-[[test]]
 name = "installer_e2e"
 path = "tests/lifecycle/installer_e2e.rs"
-
-[[test]]
-name = "cleanup_e2e"
-path = "tests/lifecycle/cleanup_e2e.rs"
 
 [[test]]
 name = "remote_catalog_e2e"
@@ -46,18 +42,6 @@ name = "trust_catalog_e2e"
 path = "tests/lifecycle/trust_catalog_e2e.rs"
 
 [[test]]
-name = "brain_e2e"
-path = "tests/secondbrain/brain_e2e.rs"
-
-[[test]]
-name = "brain_concurrency_e2e"
-path = "tests/secondbrain/brain_concurrency_e2e.rs"
-
-[[test]]
-name = "memory_access_e2e"
-path = "tests/secondbrain/memory_access_e2e.rs"
-
-[[test]]
 name = "memory_index_e2e"
 path = "tests/secondbrain/memory_index_e2e.rs"
 
@@ -65,6 +49,3 @@ path = "tests/secondbrain/memory_index_e2e.rs"
 name = "campaign_e2e"
 path = "tests/orchestrator/campaign_e2e.rs"
 
-[[test]]
-name = "mcp_access_e2e"
-path = "tests/orchestrator/mcp_access_e2e.rs"
