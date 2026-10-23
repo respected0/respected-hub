@@ -15,9 +15,9 @@
     const product = (id, state, version, available) => ({ product: id, installed: true, install_state: state, version, recorded_at: String(Date.now() - 3600e3),
       available: { version: available, signed: true, trust: 'production', remote: true, size: 1 }, catalog_skipped: [], root: 'x' });
     const state = new URLSearchParams(location.search).get('state') || 'update';
-    const absent = id => ({ product: id, installed: false, install_state: 'absent', version: null, recorded_at: null, available: { version: '0.1.0b2', signed: true, trust: 'production', remote: true, size: 1 }, catalog_skipped: [], root: null });
+    const absent = id => ({ product: id, installed: false, install_state: 'absent', version: null, recorded_at: null, available: { version: '0.1.0b1', signed: true, trust: 'production', remote: true, size: 1 }, catalog_skipped: [], root: null });
     const lifecycle = { catalog_root: 'x', products: state === 'absent' ? [absent('brain'), absent('orchestrator')]
-      : [product('brain', state === 'installed' ? 'installed' : 'update-available', '0.1.0b2', state === 'installed' ? '0.1.0b2' : '0.1.0b3'), product('orchestrator', 'installed', '0.1.0b2', '0.1.0b2')] };
+      : [product('brain', state === 'installed' ? 'installed' : 'update-available', '0.1.0b1', state === 'installed' ? '0.1.0b1' : '0.1.0b2'), product('orchestrator', 'installed', '0.1.0b1', '0.1.0b1')] };
     const gone = { rpp: '1', ok: false, operation_id: null, result: null, error: { code: 'ENGINE_NOT_FOUND', message: 'The product engine is not installed.', hint: 'Install the product from the Hub.' } };
     const journal = [];
     // sample tasks so the Orchestrator pages can be looked at with something in them
@@ -43,7 +43,7 @@
           brain().version = brain().available.version; brain().install_state = 'installed'; brain().recorded_at = String(Date.now()); journal.unshift(entry);
           return { ok: true, result: entry, error: null };
         }
-        if (cmd === 'hub_update_status') return { ok: true, result: { current: '0.1.0-beta.2', channel: 'stable', available: { version: '0.1.0-beta.3', size: 1, min_hub: null }, checked: true }, error: null };
+        if (cmd === 'hub_update_status') return { ok: true, result: { current: '0.1.0-beta.1', channel: 'stable', available: { version: '0.1.0-beta.2', size: 1, min_hub: null }, checked: true }, error: null };
         if (cmd === 'hub_update_install') return { ok: true, result: null, error: null };
         if (cmd === 'engine_request' && state === 'absent') throw 'The orchestrator engine is not installed.';
         if (cmd === 'rpp_request' && state === 'absent') return gone;
