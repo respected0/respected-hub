@@ -2,6 +2,17 @@
 
 Ürün beklentisiyle bugünkü durum arasındaki açıklar (2026-10-23 itibarıyla). Yapılan madde silinir.
 
+## Beta.2 kapsamı
+
+Beta.1 tamamdır. Beta.2 **yeni özellik eklemez**: yalnızca doğrulama eksiklerini kapatır, hataları düzeltir ve var olan
+özellikleri iyileştirir (bir özelliği başka bir özelliğe çevirmeden, mevcut olanı düzenleyerek). Üç ürün için geçerlidir.
+
+- [ ] Doğrulama eksikleri: gerçek eski sürümden (beta.1) güncelleme CI işi, Hub'ın kendini güncellemesi, Brain'de Gemini CLI
+  ve Cursor, Orchestrator'da Gemini ve Cursor token kullanımı, güncellemede sağlık dalıyla geri alma, temiz makinede ilk kurulum.
+- [ ] Hata düzeltmeleri: beta.1 sonrası bulunanlar.
+- [ ] Var olanı iyileştirme: örneğin çalışan Orchestrator görevi varken güncelleme uyarısı, Hub'sız kullanıcıya sürüm
+  bildirimi, aynı sürüm numarasıyla düzeltilmiş yayın.
+
 ## Dış eklenti ve MCP keşfi
 
 - [ ] Keşfet sayfasında GitHub repoları, eklentiler ve MCP sunucularını listelemek (bugün yalnızca Brain ve
