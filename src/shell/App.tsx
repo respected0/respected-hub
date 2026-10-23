@@ -3,6 +3,7 @@ import { HUB_NAV, SETTINGS_TABS, type HubRoute, type SettingsTab } from './apps.
 import { native, startupIntent, type StartupIntent } from '../shared/api.ts';
 import { hubUpdateStatus, type HubUpdate, type LifecycleAction } from './lifecycle.ts';
 import { useEcosystem } from './useEcosystem.ts';
+import WhatsNew from './views/WhatsNew.tsx';
 import Home, { type Go } from './views/Home.tsx';
 import Library from './views/Library.tsx';
 import { readIdentity } from './identity.ts';
@@ -85,5 +86,6 @@ export default function App() {
         {route.kind === 'settings' && <SettingsHub tab={route.tab} onTab={tab => setRoute({ kind: 'settings', tab })} eco={eco} go={go} onCatalogChanged={() => { readHubUpdate(); eco.refresh(); }} />}
         {(route.kind === 'apps' || route.kind === 'app') && <Library eco={eco} appId={route.kind === 'app' ? route.app : undefined} page={route.kind === 'app' ? route.page : 'overview'} select={(appId, page = 'overview') => setRoute({ kind: 'app', app: appId, page })} go={go} ask={ask} onAsked={() => setAsk(null)} />}
     </main>
+    {native && hubUpdate && <WhatsNew version={hubUpdate.current} />}
   </div>;
 }
