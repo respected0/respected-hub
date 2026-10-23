@@ -58,12 +58,12 @@ def installer_path(name: str) -> Path:
 
 
 def installer_name(product: str, version: str) -> str:
-    """The file people download: Respected-Hub-0.1.0-beta.2-Windows-x64-Setup.exe (inside catalog bundles the name stays fixed)."""
+    """The file people download: Respected-Hub-0.1.0-beta.1-Windows-x64-Setup.exe (inside catalog bundles the name stays fixed)."""
     return f"{DISPLAY[product]}-{version}-Windows-x64-Setup.exe"
 
 
 def package_name(product: str, version: str) -> str:
-    """The signed catalog package (what the Hub downloads): Respected-Brain-0.1.0-beta.2-Windows-x64-Package.zip."""
+    """The signed catalog package (what the Hub downloads): Respected-Brain-0.1.0-beta.1-Windows-x64-Package.zip."""
     return f"{DISPLAY[product]}-{version}-Windows-x64-Package.zip"
 
 
