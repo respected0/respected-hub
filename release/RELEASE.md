@@ -13,7 +13,7 @@ git clone https://github.com/respected0/respected-orchestrator.git
 ```
 
 Üçünü aynı klasöre koyun. Depoya girmeyen ve yeniden üretilen klasörler: `dist\` (kurucular), `.build-cache\`,
-`.cargo-target-hub\` (Rust çıktısı, ~12 GB; `CARGO_TARGET_DIR` ile seçilir), `catalog\` (yerel katalog).
+`.cargo-target-hub\` (Rust çıktısı, birkaç GB; `CARGO_TARGET_DIR` ile seçilir), isteğe bağlı `catalog\` (yerel katalog, yalnızca geliştirme).
 
 **Yalnızca bunu yedekleyin:** `%USERPROFILE%\.respected-release\respected-release.vault` ve parolası. Katalogu ve her
 paketi imzalayan yayın anahtarı odur; kaybolursa kurulu Hub'lar artık güncelleme alamaz (yalnızca bu anahtara güvenirler)

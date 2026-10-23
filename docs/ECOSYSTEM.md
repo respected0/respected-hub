@@ -20,7 +20,7 @@ kurulmamışken de ürünler çalışır. Ürünler birbirinin kodunu içe aktar
 | [PRODUCT_CONTRACT.md](PRODUCT_CONTRACT.md) | Üç ürünün uyduğu ortak sözleşme: klasörler, kurucu, komutlar, ayarlar, protokol, Hub'ın rolü |
 | `respected-brain/README.md` | Brain'e giriş; `docs/USAGE.md`, `docs/COMMANDS.md`, `docs/ARCHITECTURE.md` |
 | `respected-orchestrator/README.md` | Orchestrator'a giriş; `docs/USAGE.md`, `docs/COMMANDS.md`, `docs/ARCHITECTURE.md` |
-| `../README.md` (bu depo) | Hub'a giriş; `ARCHITECTURE.md`; yayın: `../release/RELEASE.md` |
+| `README.md` (bu depo) | Hub'a giriş; `docs/ARCHITECTURE.md`; yayın: `release/RELEASE.md` |
 | Her deponun `AGENTS.md` dosyası | O depoda çalışan AI ajanları için kurallar |
 
 ## Klasör düzeni
@@ -29,7 +29,7 @@ kurulmamışken de ürünler çalışır. Ürünler birbirinin kodunu içe aktar
 respected-ecosystem\
   respected-hub\  respected-brain\  respected-orchestrator\   üç depo, yan yana (araçlar birbirini böyle bulur)
     respected-hub\tools\                                       sözleşmeye uyum testi (conformance/, üç depoyu birlikte ölçer), ölçüm, marka, önizleme
-  dist\  catalog\  .build-cache\  .cargo-target-hub\            üretilen dosyalar, depoya girmez, silinirse yeniden üretilir
+  dist\  .build-cache\  .cargo-target-hub\                     üretilen dosyalar, depoya girmez, silinirse yeniden üretilir
 ```
 
 ## Geliştirme ortamı (Windows 10/11, bir kez)
