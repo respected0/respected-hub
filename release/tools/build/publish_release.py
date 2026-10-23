@@ -201,7 +201,7 @@ def upload(args) -> None:
         exists = subprocess.run(["gh", "release", "view", tag, "-R", f"{OWNER}/{repo}"], capture_output=True).returncode == 0
         if not exists:
             gh("release", "create", tag, "-R", f"{OWNER}/{repo}", "--title", f"Respected {tag[1:]}", "--notes-file", str(notes),
-               "--target", "main", run_it=args.yes)  # never --prerelease: the installers download the Hub from releases/latest
+               "--target", "main", *(["--prerelease"] if "-" in tag else []), run_it=args.yes)  # betas are pre-releases, stable versions are not
         gh("release", "upload", tag, "-R", f"{OWNER}/{repo}", "--clobber", *map(str, files), run_it=args.yes)
     exists = subprocess.run(["gh", "release", "view", "catalog", "-R", f"{OWNER}/respected-hub"], capture_output=True).returncode == 0
     if not exists:

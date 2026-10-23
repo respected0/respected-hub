@@ -143,7 +143,10 @@ fn download_bundle(roots: &Roots, product: &str, target: &Entry) -> Result<(), L
     let failed = |m: String| err("CATALOG_UNAVAILABLE", format!("Paket indirilemedi: {m}"), "İnternet bağlantınızı kontrol edip yeniden deneyin.");
     let dir = download_dir(roots);
     fs::create_dir_all(&dir).map_err(|e| failed(e.to_string()))?;
-    let archive = dir.join(format!("{product}-{}.zip", target.version));
+    // the local copy keeps the release's own file name (the last part of the signed URL), so it is the same file under one name
+    let name = target.url.rsplit('/').next().filter(|n| n.ends_with(".zip") && n.chars().all(|c| c.is_ascii_alphanumeric() || "._-".contains(c)))
+        .ok_or_else(|| failed("Katalogdaki paket adresi geçersiz.".into()))?;
+    let archive = dir.join(name);
     let result = (|| {
         curl(&target.url, &archive, 1800).map_err(failed)?;
         let size = fs::metadata(&archive).map(|m| m.len()).unwrap_or(0);

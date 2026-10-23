@@ -126,9 +126,9 @@ export default function AppWorkspace({ appId, page, eco, go, ask, onAsked }: { a
   return <div className={`lib-pane accent-${app.accent}`}>
     <header className="ws-banner"><Weave /><Emblem app={app.id} />
       <div className="ws-title"><h1>{app.name}</h1><p>{app.tagline}</p>
-        {!runtime.loading && summary.statusKind !== 'ok' && view !== 'overview' && <span className="ws-meta"><button className="link-btn" onClick={() => go('overview')}>Ürün bir sorun bildiriyor: Genel bakışı aç</button></span>}
+        {!runtime.loading && eco.busy !== app.id && summary.statusKind !== 'ok' && view !== 'overview' && <span className="ws-meta"><button className="link-btn" onClick={() => go('overview')}>Ürün bir sorun bildiriyor: Genel bakışı aç</button></span>}
 </div>
-      <LifecycleControls name={app.name} lc={lc} onChanged={eco.refresh} onWizard={app.id === 'brain' ? () => go('settings') : undefined} autoAction={ask?.product === app.id ? ask.action : undefined} onAutoDone={onAsked} />
+      <LifecycleControls name={app.name} lc={lc} onChanged={eco.refresh} onBusy={on => eco.setBusy(on ? app.id : null)} onWizard={app.id === 'brain' ? () => go('settings') : undefined} autoAction={ask?.product === app.id ? ask.action : undefined} onAutoDone={onAsked} />
       <div className="ws-tabs" role="tablist" aria-label={`${app.name} bölümleri`}>{app.pages.map(item => <button key={item.id} role="tab" aria-selected={view === mountFor(app.id, item.id)} className="tab" onClick={() => go(item.id)}>{item.label}</button>)}</div>
     </header>
     <section className="ws-page" aria-label={pageInfo?.label}>

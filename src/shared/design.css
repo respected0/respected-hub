@@ -283,7 +283,7 @@ fieldset { border: none; padding: 0; margin: 0 0 var(--s-4); min-width: 0; } leg
 
 /* Lifecycle controls (install / update / repair / uninstall) */
 .lifecycle { margin-top: var(--s-2); display: grid; gap: 10px; }
-.lifecycle h3 { margin: 0 0 var(--s-2); font-size: 15px; }
+.lifecycle h3 { margin: 0 0 var(--s-2); font-size: 15px; display: flex; align-items: center; gap: 8px; } .lifecycle h3 .ico { flex: none; width: 16px; height: 16px; }
 .lifecycle .actions { margin: 0; } .lifecycle .meta { margin: 0; }
 .lifecycle .panel-glass { background: var(--surface-2); padding: var(--s-4) var(--s-5); }
 .plan-steps { margin: 0 0 10px; padding-left: 20px; font-size: 13px; color: var(--text-2); display: grid; gap: 6px; }
