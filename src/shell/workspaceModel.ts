@@ -2,7 +2,7 @@
 // No React and no Tauri imports: node --test can import this module directly.
 // Real data only; the browser preview is labelled honestly, never faked.
 
-export interface WorkspacePage { id: string; label: string; description: string; }
+interface WorkspacePage { id: string; label: string; description: string; }
 
 // Orchestrator workspace tabs, in tab order. This is the single source of truth
 // used by apps.ts so the registry and the mount logic cannot drift apart.
