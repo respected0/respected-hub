@@ -68,6 +68,9 @@ try:
     for name in names:  # a product's release page and notes never talk about another product
         text = (pr.TOOLS.parent / "docs" / "release_notes" / f"{name}.md").read_text("utf-8") + pr.update_bullets(name)
         assert "{notes}" in text and not [other for key, other in names.items() if other and key != name and other in text], name
+    guarded = pr.merged_catalog({**base, "blocked": {"brain": ["0.1.0-beta.0"]}}, entries, "beta", None, None, "0.1.0-beta.1", ["brain:0.1.0-beta.2", "brain:0.1.0-beta.2", "hub:0.1.0"])
+    assert guarded["products"]["orchestrator"]["beta"]["min_from"] == "0.1.0-beta.1" and "min_from" not in release
+    assert guarded["blocked"] == {"brain": ["0.1.0-beta.0", "0.1.0-beta.2"], "hub": ["0.1.0"]} and "blocked" not in index, "blocks accumulate, once each"
     pr.sign_index(index, key, work)
     body = (work / "catalog.json").read_bytes()
     key_id, value = (work / "catalog.json.sig").read_text().split()

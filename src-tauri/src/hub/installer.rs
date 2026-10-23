@@ -76,6 +76,7 @@ fn plan_in(roots: &Roots, root: &Path, id: &str, action: &str, params: &Value) -
                 ("update", Some(current)) if lifecycle::version_key(&bundle.version) <= lifecycle::version_key(current) => return Err(err("LIFECYCLE_CONFLICT", "Güncelleme yok; kurulu sürüm güncel.", "Sorun varsa onarımı kullanın.")),
                 _ => {}
             }
+            if action == "update" { if let Some(current) = &installed { if let Some(problem) = crate::lifecycle::catalog::path_problem(roots, id, current) { return Err(problem); } } }
             steps.push(step("verify", format!("{}'in imzalı kurucusunu (v{}) doğrula", product.name, bundle.version), true, None));
             steps.push(step("install", format!("Kurucuyu sessiz çalıştır: {}", if action == "install" { "program, ayarlar ve Yüklü uygulamalar girdisi" } else { "program yerinde yenilenir, ayarlar korunur" }), true,
                 if action == "install" { None } else { Some("Önceki sürüm yerinde değiştirilir") }));
