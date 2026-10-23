@@ -32,12 +32,20 @@ SetupIconFile=..\..\src-tauri\icons\icon.ico
 CloseApplications=yes
 SetupLogging=yes
 WizardStyle=modern
+WizardImageFile=wizard\side-164x314.bmp,wizard\side-192x366.bmp,wizard\side-246x470.bmp,wizard\side-328x628.bmp
+WizardSmallImageFile=wizard\small-55.bmp,wizard\small-64.bmp,wizard\small-83.bmp,wizard\small-110.bmp
+DisableWelcomePage=no
 InfoBeforeFile={#StageDir}\BETA_NOTICE.txt
 
 [Languages]
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 
 [Messages]
+turkish.WelcomeLabel1=Respected Hub'a hoş geldin
+turkish.WelcomeLabel2=Respected Hub, Brain ve Orchestrator'ı tek yerden kurar, günceller ve ayarlar.%n%nYönetici izni gerekmez; ürünlerin ve notlarının kurulumdan etkilenmez.%n%nDevam etmek için Sonraki'ne tıkla.
+turkish.FinishedHeadingLabel=Respected Hub hazır
+turkish.FinishedLabelNoIcons=Kurulum tamamlandı.
+turkish.FinishedLabel=Kurulum tamamlandı. Hub'ı Başlat menüsünden ya da masaüstü kısayolundan açabilirsin.
 ; the ready page's button is "Kur", not "Sonraki"
 turkish.ReadyLabel2a=Kuruluma devam etmek için Kur düğmesine, ayarları gözden geçirmek ya da değiştirmek için Önceki düğmesine tıklayın.
 turkish.ReadyLabel2b=Kuruluma başlamak için Kur düğmesine tıklayın.
@@ -92,8 +100,10 @@ end;
 const
   UninstallKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{5C0F6A1E-3B7D-4E2A-9D55-7A1C2F0E8B31}_is1';
 
+#include "respected_cards.iss"
+
 var
-  MaintenancePage: TInputOptionWizardPage;
+  MaintenancePage: TWizardPage;
   Leaving: Boolean;
 
 function InstalledVersion(): String;
@@ -104,11 +114,10 @@ end;
 procedure InitializeWizard;
 begin
   if InstalledVersion() = '' then Exit;
-  MaintenancePage := CreateInputOptionPage(wpWelcome, 'Respected Hub kurulu', 'Ne yapmak istersin?',
-    'Kurulu sürüm: v' + InstalledVersion() + '. Bu kurucu: v{#AppVersion}. Ürünlere ve kasana dokunulmaz.', True, False);
-  MaintenancePage.Add('Onar / güncelle: Hub''ı bu kurucudaki sürümle (v{#AppVersion}) yenile');
-  MaintenancePage.Add('Kaldır');
-  MaintenancePage.SelectedValueIndex := 0;
+  MaintenancePage := NewCardPage(0, wpWelcome, 'Respected Hub kurulu',
+    'Kurulu sürüm v' + InstalledVersion() + ', bu kurucu v{#AppVersion}. Ürünlerine ve kasana dokunulmaz.', False);
+  AddCard(MaintenancePage, 0, #$E895, 'Onar / güncelle', 'Hub''ı bu kurucudaki sürümle (v{#AppVersion}) yeniler.', True);
+  AddCard(MaintenancePage, 0, #$E74D, 'Kaldır', 'Hub kaldırılır; kurduğun ürünler ve notların yerinde kalır.', False);
 end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
@@ -127,7 +136,7 @@ var
   Code: Integer;
 begin
   Result := True;
-  if (MaintenancePage = nil) or (CurPageID <> MaintenancePage.ID) or (MaintenancePage.SelectedValueIndex <> 1) then Exit;
+  if (MaintenancePage = nil) or (CurPageID <> MaintenancePage.ID) or (CardSelectedIndex(0) <> 1) then Exit;
   if RegQueryStringValue(HKCU, UninstallKey, 'UninstallString', Uninstaller) then
     Exec(RemoveQuotes(Uninstaller), '', '', SW_SHOWNORMAL, ewNoWait, Code);
   Result := False;
