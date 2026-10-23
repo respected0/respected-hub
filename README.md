@@ -43,7 +43,7 @@ Node 22.12+, Rust/Cargo ve [Tauri gereksinimleri](https://v2.tauri.app/start/pre
 npm ci
 npm run check                                     # tsc + arayüz birim testleri
 cargo test --manifest-path src-tauri/Cargo.toml   # Rust birim + uçtan uca (ürünleri geçici köklerde çalıştırır)
-python tools/accept_hub.py     # ikisi + ortak sözleşme; gerçek AI aracı ayarlarının değişmediğini denetler
+python release/tools/acceptance/accept_hub.py     # ikisi + ortak sözleşme; gerçek AI aracı ayarlarının değişmediğini denetler
 npm run tauri -- dev                              # geliştirme penceresi
 ```
 

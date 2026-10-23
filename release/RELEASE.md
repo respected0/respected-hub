@@ -28,6 +28,7 @@ ve insanlar yeni Hub'ı elle indirmek zorunda kalır. Anahtar kimliği `dabcb526
 | `tools/build/build_hub_installer.py [--skip-app] [--release-key DOSYA]` | Hub kurucusu. Varsayılan GELİŞTİRME kurucusudur (yerel geliştirme anahtarına güvenir, dağıtılmaz); `--release-key` ile ÜRETİM kurucusu (dev-trust yok, geliştirme anahtarı yok). |
 | `tools/build/publish_release.py build\|catalog\|upload\|local-catalog` | Yayın (aşağıda); `local-catalog` testler için file:// adresli, geliştirme imzalı katalog. |
 | `tools/build/release_package.py build\|verify` | İndirme klasörü: kurucular + `SHA256SUMS.txt` + `SHA256SUMS.sig` + `BETA_NOTICE.txt`. |
+| `tools/acceptance/accept_hub.py`, `real_env_guard.py` | Yerel kabul; gerçek AI aracı ayarlarının önce/sonra aynı olduğunu denetler. |
 | `tools/signing/` | `bundle_signing.py`, `release_keys.py`, `release_vault.py`: anahtar saklama ve imzalama. |
 | `tests/test_release_tools.py` | Araçların kendi testi (CI'da çalışır). |
 | `BETA_NOTICE.txt` | Hub kurucusunun kurmadan önce gösterdiği sayfa. |

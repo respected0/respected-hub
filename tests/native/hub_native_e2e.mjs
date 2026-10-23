@@ -45,9 +45,9 @@ const foreign = '{"mcpServers":{"someone-elses":{"command":"x","args":[]}},"them
 writeFileSync(join(dirs.home, '.claude.json'), foreign);
 const vault = join(dirs.vaults, 'Brain Vault');
 
-// Guard: the run must not change the REAL AI-client configuration (tools/real_env_guard.py compares before and after).
+// Guard: the run must not change the REAL AI-client configuration (release/tools/acceptance/real_env_guard.py compares before and after).
 const guardFile = join(work, 'real-env-before.json');
-spawnSync('python', ['-B', join(hub, 'tools', 'real_env_guard.py'), 'snapshot', guardFile], { encoding: 'utf8' });
+spawnSync('python', ['-B', join(tools, 'acceptance', 'real_env_guard.py'), 'snapshot', guardFile], { encoding: 'utf8' });
 const py = (...a) => { const r = spawnSync('python', ['-B', ...a], { encoding: 'utf8' }); if (r.status !== 0) { console.error(r.stderr); process.exit(2); } return r.stdout.trim(); };
 // both products as their own signed installers, exactly as a release ships them (built once, then reused)
 if (!intent) {
@@ -329,7 +329,7 @@ try {
     }
     check('nothing of this run is left installed', Object.values(product).every(p => !existsSync(p.folder) && !registered(p.key)));
   }
-  const guard = spawnSync('python', ['-B', join(hub, 'tools', 'real_env_guard.py'), 'verify', guardFile], { encoding: 'utf8' });
+  const guard = spawnSync('python', ['-B', join(tools, 'acceptance', 'real_env_guard.py'), 'verify', guardFile], { encoding: 'utf8' });
   check('real AI client configuration untouched by this run', guard.status === 0, (guard.stdout ?? '').trim().slice(0, 300));
   await sleep(2000);
   rmSync(work, { recursive: true, force: true });

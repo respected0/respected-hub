@@ -28,8 +28,7 @@ kurulmamışken de ürünler çalışır. Ürünler birbirinin kodunu içe aktar
 ```
 respected-ecosystem\
   respected-hub\  respected-brain\  respected-orchestrator\   üç depo, yan yana (araçlar birbirini böyle bulur)
-    respected-hub\conformance\                                 sözleşmeye uyum testi (üç depoyu birlikte ölçer)
-    respected-hub	ools\                                       geliştirici araçları (kabul, ölçüm, marka, önizleme)
+    respected-hub\tools\                                       sözleşmeye uyum testi (conformance/, üç depoyu birlikte ölçer), ölçüm, marka, önizleme
   dist\  catalog\  .build-cache\  .cargo-target-hub\            üretilen dosyalar, depoya girmez, silinirse yeniden üretilir
 ```
 
@@ -52,7 +51,7 @@ cd respected-hub; npm ci
 ## Günlük kontroller
 
 ```powershell
-cd respected-hub; python -m unittest discover -s conformance               # ortak sözleşme (kaynakta)
+cd respected-hub; python -m unittest discover -s tools/conformance               # ortak sözleşme (kaynakta)
 cd ..\respected-brain; python -m unittest discover -s tests -t .
 cd ..\respected-orchestrator; python -m unittest discover -s tests -t .
 cd ..\respected-hub; npm run check; cargo test --manifest-path src-tauri/Cargo.toml
