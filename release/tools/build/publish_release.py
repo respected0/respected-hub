@@ -129,7 +129,7 @@ def load_base(base: str | None) -> dict:
         return {"schema": 1, "sequence": 0, "hub": {}, "products": {}}
 
 
-def merged_catalog(base: dict, entries: dict, channel: str, min_hub: str | None) -> dict:
+def merged_catalog(base: dict, entries: dict, channel: str, min_hub: str | None, notes: str | None = None) -> dict:
     index = {"schema": 1, "sequence": max(int(time.strftime("%Y%m%d%H%M%S", time.gmtime())), int(base.get("sequence", 0)) + 1),
              "published": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "hub": dict(base.get("hub") or {}),
              "products": {name: dict(node) for name, node in (base.get("products") or {}).items()}}
@@ -137,6 +137,8 @@ def merged_catalog(base: dict, entries: dict, channel: str, min_hub: str | None)
         release = {"version": row["version"], "url": url_of(row), "sha256": row["sha256"], "size": row["size"]}
         if min_hub and name != "hub":
             release["min_hub"] = min_hub
+        if notes:  # short "what changed" text the Hub shows before the person updates; covered by the catalog signature
+            release["notes"] = notes
         target = index["hub"] if name == "hub" else index["products"].setdefault(name, {})
         target[channel] = release
     return index
@@ -152,7 +154,7 @@ def sign_index(index: dict, key: Path, out: Path) -> None:
 
 def catalog(args) -> None:
     entries = json.loads((OUT / "entries.json").read_text("utf-8"))
-    index = merged_catalog(load_base(args.base), entries, args.channel, args.min_hub)
+    index = merged_catalog(load_base(args.base), entries, args.channel, args.min_hub, args.notes)
     sign_index(index, args.key, OUT)
     print(json.dumps(index, indent=1))
 
@@ -207,7 +209,7 @@ if __name__ == "__main__":
     sub = parser.add_subparsers(dest="action", required=True)
     b = sub.add_parser("build"); b.add_argument("--key", type=Path, required=True); b.add_argument("--only"); b.add_argument("--skip-hub-build", action="store_true")
     c = sub.add_parser("catalog"); c.add_argument("--key", type=Path, required=True); c.add_argument("--channel", choices=("beta", "stable"), default="beta")
-    c.add_argument("--base"); c.add_argument("--min-hub")
+    c.add_argument("--base"); c.add_argument("--min-hub"); c.add_argument("--notes")
     u = sub.add_parser("upload"); u.add_argument("--yes", action="store_true")
     l = sub.add_parser("local-catalog"); l.add_argument("--bundle", type=Path, action="append", required=True); l.add_argument("--out", type=Path, required=True)
     l.add_argument("--channel", choices=("beta", "stable"), default="beta")

@@ -47,7 +47,7 @@ indirilir.
 |---|---|
 | Katalog adresi | `https://github.com/respected0/respected-hub/releases/download/catalog/catalog.json` (+ `.sig`) |
 | Katalog imzası | Ed25519 yayın anahtarı, `b"respected-catalog-v1\n"` + dosyanın tam baytları üzerinde; `.sig` = `<anahtar_kimliği> <base64>` |
-| Katalog şeması 1 | `{schema, sequence, published, hub:{stable,beta}, products:{brain,orchestrator:{stable,beta}}}`; bir sürüm `{version, url, sha256, size, min_hub?}` |
+| Katalog şeması 1 | `{schema, sequence, published, hub:{stable,beta}, products:{brain,orchestrator:{stable,beta}}}`; bir sürüm `{version, url, sha256, size, min_hub?, notes?}`; `notes` en çok 600 karakterlik düz metindir, güncelleme önerilirken gösterilir |
 | Geri gitme | Önbellektekinden küçük `sequence` reddedilir |
 | Arşiv | Kökünde tek imzalı paket klasörü (`bundle.json` + `payload/<Ürün>-Windows-Setup.exe`) olan zip |
 | Sürüm sırası | SemVer (`0.1.0-beta.1 < 0.1.0-rc.1 < 0.1.0 < 0.1.1-beta.1`); PEP 440 yazımları eşittir (`0.1.0b1`) |

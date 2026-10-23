@@ -59,6 +59,7 @@ try:
     release = index["products"]["orchestrator"]["beta"]
     assert release["url"] == "https://github.com/respected0/respected-orchestrator/releases/download/v0.1.0-beta.2/orchestrator-0.1.0-beta.2.zip"
     assert release["min_hub"] == "0.1.0-beta.1" and release["size"] == archive.stat().st_size
+    assert "notes" not in release and pr.merged_catalog(base, entries, "beta", None, "Düzeltmeler")["products"]["orchestrator"]["beta"]["notes"] == "Düzeltmeler"
     pr.sign_index(index, key, work)
     body = (work / "catalog.json").read_bytes()
     key_id, value = (work / "catalog.json.sig").read_text().split()

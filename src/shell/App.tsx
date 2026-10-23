@@ -67,8 +67,10 @@ export default function App() {
   // the greeting's name is ready before the first Brain page opens
   useEffect(() => { void readIdentity().catch(() => undefined); }, []);
   const go: Go = target => setRoute(typeof target !== 'string' ? ('store' in target ? { kind: 'discover', app: target.store } : { kind: 'app', ...target }) : target === 'activity' ? { kind: 'settings', tab: 'activity' } : target === 'settings' ? { kind: 'settings', tab: 'general' } : { kind: target });
-  const navItem = (id: string, label: string, active: boolean) => <button key={id} className={`nav-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined} onClick={() => setRoute(id === 'settings' ? { kind: 'settings', tab: 'general' } : { kind: id as Exclude<HubRoute, 'settings'> })}>{label}</button>;
+  const navItem = (id: string, label: string, active: boolean) => <button key={id} className={`nav-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined} onClick={() => setRoute(id === 'settings' ? { kind: 'settings', tab: 'general' } : { kind: id as Exclude<HubRoute, 'settings'> })}>{label}{id === 'settings' && newVersion && <span className="dot warn nav-dot" role="img" aria-label="Güncelleme var" title="Güncelleme var" />}</button>;
   const hubOffer = hubUpdate?.available ?? null;
+  // a quiet dot on Settings: Home's "Dikkat gerekenler" lists the same updates
+  const newVersion = hubOffer !== null || (eco.lifecycle?.products ?? []).some(item => item?.installed && item.install_state === 'update-available');
 
   return <div className="shell">
     <header className="topnav" data-tauri-drag-region>

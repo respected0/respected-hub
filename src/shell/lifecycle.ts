@@ -17,7 +17,7 @@ export interface ProductLifecycle {
   /** When the product last wrote its install record (epoch ms): by the Hub, its installer or its own command line. */
   recorded_at?: string | null;
   /** `remote`: listed in the downloaded catalog index, fetched from GitHub when the person installs or updates. */
-  available: { version: string; signed: boolean; trust?: 'production' | 'development' | 'unsigned'; remote?: boolean; size?: number } | null;
+  available: { version: string; signed: boolean; trust?: 'production' | 'development' | 'unsigned'; remote?: boolean; size?: number; notes?: string | null } | null;
   catalog_skipped: string[];
   root: string | null;
 }
@@ -49,7 +49,7 @@ export const lifecycleApply = (product: string, action: LifecycleAction, params?
 export const activityList = (limit = 50) => call<JournalEntry[]>('activity_list', { limit });
 
 export type Channel = 'beta' | 'stable';
-export interface HubUpdate { current: string; channel: Channel; available: { version: string; size: number; min_hub: string | null } | null; checked: boolean; }
+export interface HubUpdate { current: string; channel: Channel; available: { version: string; size: number; min_hub: string | null; notes?: string | null } | null; checked: boolean; }
 export const hubUpdateStatus = () => call<HubUpdate>('hub_update_status');
 /** Downloads and verifies the signed catalog index again (GitHub), then answers like hubUpdateStatus. */
 export const catalogRefresh = () => call<HubUpdate>('catalog_refresh');
