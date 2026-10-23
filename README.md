@@ -170,6 +170,10 @@ gerçek indirmesini.
 | [ROADMAP.md](docs/ROADMAP.md) | Yol haritası |
 | [RELEASE.md](release/RELEASE.md) | Derleme ve yayın |
 
+## Destek
+
+Hata bildirimi ve sorular için [GitHub Issues](https://github.com/respected0/respected-hub/issues).
+
 ## Lisans
 
 [MIT lisansı](LICENSE).
