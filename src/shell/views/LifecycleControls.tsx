@@ -49,6 +49,7 @@ export default function LifecycleControls({ name, lc, onChanged, onWizard, autoA
     <p className="meta">{lc.install_state !== 'installed' && <span className={`badge-status ${lc.install_state === 'absent' ? 'unreachable' : 'warn'}`}>{STATE_LABEL[lc.install_state]}</span>}
       {lc.version && <span className="ver">v{lc.version}</span>}
       {lc.available && lc.install_state !== 'installed' && <span className="ver">{lc.install_state === 'absent' ? 'Sürüm' : 'Yeni sürüm'}: v{lc.available.version}</span>}</p>
+    {lc.available?.notes && lc.install_state === 'update-available' && <p className="muted" style={{ whiteSpace: 'pre-line' }}>{lc.available.notes}</p>}
     {!lc.available && lc.install_state === 'absent' && <p className="muted">Ürün kataloğu henüz alınamadı{lc.catalog_skipped.length ? ` (${lc.catalog_skipped.length} geçersiz paket atlandı)` : ''}. İnternete bağlıyken Ayarlar › Güncellemeleri denetle'yi kullanın.</p>}
     {busy && !pending && <p className="muted" role="status">Hazırlanıyor… Gerekirse ürünün kurucusu indirilip doğrulanır.</p>}
     {!pending && <div className="actions">{actions.map(action => <button key={action} className={action === 'uninstall' ? '' : 'cta'} disabled={busy} onClick={() => void preview(action)}><Icon name={ICON[action]} />{ACTION_LABEL[action]}</button>)}</div>}

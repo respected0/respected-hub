@@ -56,7 +56,10 @@ Remove-Item Env:\RESPECTED_VAULT_PASSPHRASE
 ```
 
 - `build --only brain` yalnızca bir ürünü yayınlar; katalog diğerlerini yayındaki haliyle tutar.
-- `catalog --channel stable` kararlı kanala yayınlar; `--min-hub X` eski Hub'ların önce kendini güncellemesini ister.
+- `catalog --channel stable` kararlı kanala yayınlar; `--min-hub X` eski Hub'ların önce kendini güncellemesini ister;
+  `--notes "metin"` güncelleme önerilirken gösterilen kısa sürüm notudur (en çok 600 karakter, katalog imzasına dahildir).
+- **Yayınlanmış bir sürüm numarası bir daha kullanılmaz.** Düzeltme gerekiyorsa yeni numara çıkar (`0.1.0-beta.3`):
+  Hub aynı numarayı "daha yeni" saymaz, kurmuş olanlar düzeltmeyi almaz. Yalnızca hiç yayınlanmamış numara yerinde yeniden derlenir.
 - Yükleme sırası: önce ürünler, en son katalog (katalog hiçbir zaman olmayan bir dosyayı göstermez).
 - Anahtarsız derleme GELİŞTİRMEdir ve asla yayınlanmaz.
 

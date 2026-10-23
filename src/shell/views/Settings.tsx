@@ -53,7 +53,7 @@ function Updates({ onCatalogChanged }: { onCatalogChanged?: () => void }) {
         </select>
         <small>Kararlıya geçmek kurulu sürümü geri almaz; bir sonraki kararlı sürüm geldiğinde güncelleme önerilir.</small></label>
     </div>}
-    {native && info?.available && <div className="notice" role="status"><span>Respected Hub {info.available.version} hazır (şu an {info.current}).</span>
+    {native && info?.available && <div className="notice" role="status"><span>Respected Hub {info.available.version} hazır (şu an {info.current}).{info.available.notes && <small style={{ display: 'block', whiteSpace: 'pre-line' }}>{info.available.notes}</small>}</span>
       <span className="actions"><button className="cta" disabled={busy} onClick={() => void install()}>Hub'ı güncelle</button></span></div>}
     {native && <div className="settings-actions"><button className="button primary" disabled={busy} onClick={() => void check()}>{busy ? 'Denetleniyor…' : 'Güncellemeleri denetle'}</button>
       {message && <output className="toast" role="status">{message}</output>}</div>}

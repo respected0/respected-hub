@@ -87,10 +87,10 @@ pub fn refresh(roots: &Roots) -> Result<Value, LifecycleError> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Entry { pub version: String, pub url: String, pub sha256: String, pub size: u64, pub min_hub: Option<String> }
+pub struct Entry { pub version: String, pub url: String, pub sha256: String, pub size: u64, pub min_hub: Option<String>, pub notes: Option<String> }
 
 impl Entry {
-    pub fn to_json(&self) -> Value { json!({ "version": self.version, "size": self.size, "min_hub": self.min_hub }) }
+    pub fn to_json(&self) -> Value { json!({ "version": self.version, "size": self.size, "min_hub": self.min_hub, "notes": self.notes }) }
 }
 
 fn parse_entry(node: &Value) -> Option<Entry> {
@@ -100,7 +100,9 @@ fn parse_entry(node: &Value) -> Option<Entry> {
     let size = node["size"].as_u64()?;
     let valid = (1..=32).contains(&version.len()) && version.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'-' | b'+'))
         && (url.starts_with("https://") || crate::trust::dev_enabled()) && sha256.len() == 64 && sha256.bytes().all(|b| b.is_ascii_hexdigit()) && size > 0 && size <= MAX_ARCHIVE;
-    valid.then(|| Entry { version, url, sha256, size, min_hub: node["min_hub"].as_str().map(str::to_string) })
+    // notes are plain text for display only, cut to a sane length
+    let notes = node["notes"].as_str().map(|text| text.trim().chars().take(600).collect::<String>()).filter(|text| !text.is_empty());
+    valid.then(|| Entry { version, url, sha256, size, min_hub: node["min_hub"].as_str().map(str::to_string), notes })
 }
 
 /// Newest release of `name` (a product or "hub") this channel may install.
@@ -199,7 +201,7 @@ pub fn overlay_status(roots: &Roots, status: &mut Value) {
     let Some(release) = entry(&index, &product, &channel) else { return };
     let shown = status["available"]["version"].as_str().map(str::to_string);
     if shown.as_deref().map_or(true, |v| newer(&release.version, v)) {
-        status["available"] = json!({ "version": release.version, "remote": true, "size": release.size, "signed": true, "trust": "production" });
+        status["available"] = json!({ "version": release.version, "remote": true, "size": release.size, "signed": true, "trust": "production", "notes": release.notes });
     }
     if status["install_state"] == "installed" && status["version"].as_str().map_or(false, |v| newer(&release.version, v)) {
         status["install_state"] = json!("update-available");
