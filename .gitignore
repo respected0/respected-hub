@@ -5,3 +5,9 @@ src-tauri/gen/
 .local/
 __pycache__/
 .cargo-target-hub/
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
