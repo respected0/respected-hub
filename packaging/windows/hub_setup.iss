@@ -35,14 +35,19 @@ CloseApplications=yes
 SetupLogging=yes
 WizardStyle=modern
 WizardImageFile=wizard\side-164x314.bmp,wizard\side-192x366.bmp,wizard\side-246x470.bmp,wizard\side-328x628.bmp
-WizardSmallImageFile=wizard\small-55.bmp,wizard\small-64.bmp,wizard\small-83.bmp,wizard\small-110.bmp
 DisableWelcomePage=no
+InfoAfterFile=..\..\release\UPDATE_NOTES.md
 InfoBeforeFile={#StageDir}\BETA_NOTICE.txt
 
 [Languages]
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 
 [Messages]
+turkish.WizardInfoBefore=Beta sürümü hakkında
+turkish.InfoBeforeLabel=Bu kurucu henüz imzalı değil. Kurmadan önce aşağıdaki bilgileri oku.
+turkish.WizardInfoAfter=Yenilikler
+turkish.InfoAfterLabel=Bu sürümde neler değişti?
+turkish.InfoAfterClickLabel=Devam etmek için Sonraki'ne tıklayın.
 turkish.WelcomeLabel1=Respected Hub'a hoş geldin
 turkish.WelcomeLabel2=Respected Hub, Brain ve Orchestrator'ı tek yerden kurar, günceller ve ayarlar.%n%nYönetici izni gerekmez; ürünlerin ve notlarının kurulumdan etkilenmez.%n%nDevam etmek için Sonraki'ne tıkla.
 turkish.FinishedHeadingLabel=Respected Hub hazır
@@ -115,16 +120,22 @@ end;
 
 procedure InitializeWizard;
 begin
+  TidyInfoPages;
   if InstalledVersion() = '' then Exit;
   MaintenancePage := NewCardPage(0, wpWelcome, 'Respected Hub kurulu',
     'Kurulu sürüm v' + InstalledVersion() + ', bu kurucu v{#AppVersion}. Ürünlerine ve kasana dokunulmaz.', False);
-  AddCard(MaintenancePage, 0, #$E895, 'Onar / güncelle', 'Hub''ı bu kurucudaki sürümle (v{#AppVersion}) yeniler.', True);
+  AddCard(MaintenancePage, 0, #$E895, 'Onar / Güncelle', 'Hub''ı bu kurucudaki sürümle (v{#AppVersion}) yeniler.', True);
   AddCard(MaintenancePage, 0, #$E74D, 'Kaldır', 'Hub kaldırılır; kurduğun ürünler ve notların yerinde kalır.', False);
+end;
+
+procedure ProductPageChanged(CurPageID: Integer);
+begin
 end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
 begin
-  Result := (MaintenancePage <> nil) and (PageID = MaintenancePage.ID) and WizardSilent;
+  // the what's-new page is only for an update over an installed Hub
+  Result := ((MaintenancePage <> nil) and (PageID = MaintenancePage.ID) and WizardSilent) or ((PageID = wpInfoAfter) and (MaintenancePage = nil));
 end;
 
 procedure CancelButtonClick(CurPageID: Integer; var Cancel, Confirm: Boolean);

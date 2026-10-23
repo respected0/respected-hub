@@ -2,3 +2,4 @@
 - Yeni logo; pencere ve kurucu ikonu güncellendi.
 - Yeni sürüm olduğunda Ayarlar yanında küçük bir nokta görünür.
 - Obsidian kısayolu tanınmayan bir kasayı açamazsa kurulum sırasında uyarı verilir.
+- Kurucu yeniden tasarlandı; indirilen dosyanın adında sürüm yazar.
