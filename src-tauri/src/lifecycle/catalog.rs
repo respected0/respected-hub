@@ -87,7 +87,7 @@ pub fn refresh(roots: &Roots) -> Result<Value, LifecycleError> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Entry { pub version: String, pub url: String, pub sha256: String, pub size: u64, pub min_hub: Option<String>, pub notes: Option<String> }
+pub struct Entry { pub version: String, pub url: String, pub sha256: String, pub size: u64, pub min_hub: Option<String>, pub min_from: Option<String>, pub notes: Option<String> }
 
 impl Entry {
     pub fn to_json(&self) -> Value { json!({ "version": self.version, "size": self.size, "min_hub": self.min_hub, "notes": self.notes }) }
@@ -102,20 +102,33 @@ fn parse_entry(node: &Value) -> Option<Entry> {
         && (url.starts_with("https://") || crate::trust::dev_enabled()) && sha256.len() == 64 && sha256.bytes().all(|b| b.is_ascii_hexdigit()) && size > 0 && size <= MAX_ARCHIVE;
     // notes are plain text for display only, cut to a sane length
     let notes = node["notes"].as_str().map(|text| text.trim().chars().take(600).collect::<String>()).filter(|text| !text.is_empty());
-    valid.then(|| Entry { version, url, sha256, size, min_hub: node["min_hub"].as_str().map(str::to_string), notes })
+    // optional: the oldest installed version this release may be installed over directly (an older install goes through that one first)
+    let min_from = node["min_from"].as_str().map(str::to_string);
+    valid.then(|| Entry { version, url, sha256, size, min_hub: node["min_hub"].as_str().map(str::to_string), min_from, notes })
 }
 
-/// Newest release of `name` (a product or "hub") this channel may install.
+/// Newest release of `name` (a product or "hub") this channel may install. A release the index lists under `blocked`
+/// (`{"blocked": {"brain": ["0.1.0-beta.3"]}}`, a bad release withdrawn after it went out) is never offered.
 pub fn entry(index: &Value, name: &str, channel: &str) -> Option<Entry> {
     let node = if name == "hub" { &index["hub"] } else { &index["products"][name] };
     let wanted: &[&str] = if channel == "beta" { &["stable", "beta"] } else { &["stable"] };
-    wanted.iter().filter_map(|c| parse_entry(&node[*c])).max_by(|a, b| lifecycle::version_key(&a.version).cmp(&lifecycle::version_key(&b.version)))
+    let blocked: Vec<&str> = index["blocked"][name].as_array().map(|list| list.iter().filter_map(Value::as_str).collect()).unwrap_or_default();
+    wanted.iter().filter_map(|c| parse_entry(&node[*c])).filter(|e| !blocked.iter().any(|b| same(b, &e.version))).max_by(|a, b| lifecycle::version_key(&a.version).cmp(&lifecycle::version_key(&b.version)))
 }
 
 fn newer(candidate: &str, than: &str) -> bool { lifecycle::version_key(candidate) > lifecycle::version_key(than) }
 
 /// Same release whatever the spelling (`0.1.0b1` from Python metadata, `0.1.0-beta.1` in the catalog).
 fn same(a: &str, b: &str) -> bool { lifecycle::version_key(a) == lifecycle::version_key(b) }
+
+/// A release may name the oldest installed version it can be installed over (`min_from`): returns the refusal when
+/// `installed` is older, so nobody jumps over a release whose data step the newest one no longer carries.
+pub fn path_problem(roots: &Roots, product: &str, installed: &str) -> Option<LifecycleError> {
+    let target = entry(&cached(roots)?, product, &channel(roots))?;
+    let min = target.min_from?;
+    newer(&min, installed).then(|| err("UPDATE_PATH", format!("{installed} sürümünden {} sürümüne doğrudan geçilemez; en az {min} gerekiyor.", target.version),
+        format!("Önce {min} sürümünün kurucusunu GitHub Sürümler sayfasından çalıştırın, sonra güncelleyin.")))
+}
 
 /// Every cached installer bundle of `product`.
 fn cached_versions(roots: &Roots, product: &str) -> Vec<lifecycle::Bundle> { lifecycle::installers(roots, product).0 }
@@ -253,6 +266,24 @@ mod tests {
         assert!(entry(&i, "orchestrator", "stable").is_none(), "a beta-only product is not offered on the stable channel");
         assert_eq!(entry(&i, "brain", "beta").unwrap().version, "0.1.0", "a final release outranks its own betas");
         assert!(entry(&i, "runtime", "beta").is_none());
+    }
+
+    #[test]
+    fn a_blocked_release_is_never_offered_and_the_next_best_one_is() {
+        let mut i = index();
+        i["blocked"] = json!({ "brain": ["0.1.0"] });
+        assert_eq!(entry(&i, "brain", "beta").unwrap().version, "0.1.0-beta.2");
+        i["blocked"] = json!({ "brain": ["0.1.0", "0.1.0-beta.2"] });
+        assert!(entry(&i, "brain", "beta").is_none());
+        assert_eq!(entry(&i, "hub", "beta").unwrap().version, "0.2.0-beta.1", "other products are unaffected");
+    }
+
+    #[test]
+    fn min_from_is_read_from_the_release() {
+        let mut i = index();
+        assert_eq!(entry(&i, "brain", "beta").unwrap().min_from, None);
+        i["products"]["brain"]["stable"]["min_from"] = json!("0.1.0-beta.3");
+        assert_eq!(entry(&i, "brain", "beta").unwrap().min_from.as_deref(), Some("0.1.0-beta.3"));
     }
 
     #[test]

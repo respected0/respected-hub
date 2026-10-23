@@ -15,11 +15,13 @@
 ## Yayın
 
 - [ ] Temiz bir makinede ilk kurulum henüz denenmedi (`tests/native/hub_native_e2e.mjs` kurulu ürün olan makinede başlamaz).
-  Hub'ın katalogdan kendini güncellemesi (Ayarlar > Güncellemeler > Hub'ı güncelle) gerçek bir yeni sürümle denenmedi;
+  Hub'ın katalogdan kendini güncellemesi (Ayarlar > Güncellemeler > Hub'ı güncelle) ilk sürümde kapalı; bir sonraki sürüm yayınlanınca gerçek yeni sürümle denenecek;
   `npm run preview:update` yalnızca ekranları sahte veriyle gösterir.
 - [ ] Kurucuyu Authenticode ile imzalamak (SmartScreen uyarısı). Kod imzalama sertifikası gerekir; yok.
 - [ ] macOS / Linux: doğrulanmadı. Bu geliştirme makinesi Windows.
-- [ ] Güncelleme desteği penceresi: bir sürüm kendinden kaç önceki sürümden güncellenebilir kararlaştırılmadı (`min_hub`, `schema_version` ve ürünlerin `migrate` adımları bunun parçaları). İlk sürüm yayınlanınca "geçiş katmanı yok" kuralı bu karar ve test matrisiyle birlikte gevşetilecek.
+- [ ] Güncelleme yolu karara bağlandı: her sürümden en yeniye doğrudan (sözleşme §4: yedekli güncelleme, silinmeyen `STEPS`,
+  sürüm başına gerçek veri fixture'ları). Kalan: yayınlanmış eski kurucuları gerçek Windows'ta yenisinin üzerine kuran CI işi
+  (beta.2 yayınlanınca beta.1 ile başlar). Zincir gerçekten uzarsa `min_from` ile basamak sürüm istenir.
 - [ ] Hub'sız kullanıcı yeni sürümden haberdar olmuyor: ürünlerde sürüm denetimi yok.
 - [ ] Aynı sürüm numarasıyla düzeltilmiş yayın: Hub önbellekteki eski kurucuyla onarabilir ve "Güncelleme var" göstermez;
   kurmuş olanlar düzeltmeyi kurucuyu elle çalıştırarak alır.

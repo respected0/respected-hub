@@ -167,14 +167,27 @@ def catalog_note(product: str, limit: int = 600) -> str:
     return text
 
 
-def merged_catalog(base: dict, entries: dict, channel: str, min_hub: str | None, notes: "str | dict[str, str] | None" = None) -> dict:
+def merged_catalog(base: dict, entries: dict, channel: str, min_hub: str | None, notes: "str | dict[str, str] | None" = None,
+                   min_from: str | None = None, blocked: "list[str] | None" = None) -> dict:
     index = {"schema": 1, "sequence": max(int(time.strftime("%Y%m%d%H%M%S", time.gmtime())), int(base.get("sequence", 0)) + 1),
              "published": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "hub": dict(base.get("hub") or {}),
              "products": {name: dict(node) for name, node in (base.get("products") or {}).items()}}
+    withdrawn = {name: list(versions) for name, versions in (base.get("blocked") or {}).items()}
+    for item in blocked or []:  # "brain:0.1.0-beta.3": a release withdrawn after it went out; no Hub offers it again
+        name, _, version = item.partition(":")
+        if name not in ("hub", *REPOS) or not version:
+            sys.exit(f"--block takes product:version (hub, brain or orchestrator), got {item!r}")
+        withdrawn.setdefault(name, [])
+        if version not in withdrawn[name]:
+            withdrawn[name].append(version)
+    if withdrawn:
+        index["blocked"] = withdrawn
     for name, row in entries.items():
         release = {"version": row["version"], "url": url_of(row), "sha256": row["sha256"], "size": row["size"]}
         if min_hub and name != "hub":
             release["min_hub"] = min_hub
+        if min_from:  # this release can only be installed over this version or newer; older installs go through it first
+            release["min_from"] = min_from
         note = notes.get(name) if isinstance(notes, dict) else notes
         if note:  # short "what changed" text the Hub shows before the person updates; covered by the catalog signature
             release["notes"] = note
@@ -193,7 +206,7 @@ def sign_index(index: dict, key: Path, out: Path) -> None:
 
 def catalog(args) -> None:
     entries = json.loads((OUT / "entries.json").read_text("utf-8"))
-    index = merged_catalog(load_base(args.base), entries, args.channel, args.min_hub, args.notes or {name: catalog_note(name) for name in entries})
+    index = merged_catalog(load_base(args.base), entries, args.channel, args.min_hub, args.notes or {name: catalog_note(name) for name in entries}, args.min_from, args.block)
     sign_index(index, args.key, OUT)
     print(json.dumps(index, indent=1))
 
@@ -253,6 +266,7 @@ if __name__ == "__main__":
     b = sub.add_parser("build"); b.add_argument("--key", type=Path, required=True); b.add_argument("--only"); b.add_argument("--skip-hub-build", action="store_true")
     c = sub.add_parser("catalog"); c.add_argument("--key", type=Path, required=True); c.add_argument("--channel", choices=("beta", "stable"), default="beta")
     c.add_argument("--base"); c.add_argument("--min-hub"); c.add_argument("--notes")
+    c.add_argument("--min-from"); c.add_argument("--block", action="append", metavar="PRODUCT:VERSION")
     u = sub.add_parser("upload"); u.add_argument("--yes", action="store_true")
     l = sub.add_parser("local-catalog"); l.add_argument("--bundle", type=Path, action="append", required=True); l.add_argument("--out", type=Path, required=True)
     l.add_argument("--channel", choices=("beta", "stable"), default="beta")
