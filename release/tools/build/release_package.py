@@ -18,7 +18,6 @@ from signing.release_keys import TRUST_FILE
 
 DIST = bs.ROOT / "dist"
 PRODUCTS = ("Hub", "Orchestrator", "Brain")
-HUB_STABLE = "RespectedHub-Windows-Setup.exe"   # fixed name: the product installers download the Hub from releases/latest
 DOMAIN = b"respected-release-v1\n"
 
 
@@ -29,9 +28,6 @@ def sums(directory: Path) -> str:
         if len(found) != 1:
             sys.exit(f"expected one Respected-{product}-<version>-Windows-x64-Setup.exe in {directory}, found {len(found)}; run publish_release.py build first")
         files.append(found[0])
-    if not (directory / HUB_STABLE).is_file():
-        sys.exit(f"missing {HUB_STABLE}; run publish_release.py build first")
-    files.append(directory / HUB_STABLE)
     return "\n".join(f"{hashlib.sha256(file.read_bytes()).hexdigest()} *{file.name}" for file in files) + "\n"
 
 

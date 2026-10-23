@@ -14,7 +14,7 @@ Hub o karşılığı çağırır. Ürün hakkında hiçbir şey saklamaz: kurulu
 
 ## Kurulum ve kaldırma
 
-`RespectedHub-Windows-Setup.exe` kullanıcı başına kurulur (`%LOCALAPPDATA%\Respected\RespectedHub\app`), yönetici izni
+`Respected-Hub-<sürüm>-Windows-x64-Setup.exe` kullanıcı başına kurulur (`%LOCALAPPDATA%\Respected\RespectedHub\app`), yönetici izni
 istemez, WebView2 gerektirir (Windows 11'de hazır). Bir ürünün kurucusunda **Respected Hub ile devam et** seçilirse kurucu
 Hub'ı indirip kurar ve ürünü Hub'da açar (`--install=<ürün>`). Hub'ın sakladığı her şey kendisinindir ve kaldırınca
 silinir: pencere verisi (`%LOCALAPPDATA%\com.respected.hub`), ayarlar (`%APPDATA%\com.respected.hub`), indirilen

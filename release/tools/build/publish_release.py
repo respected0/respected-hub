@@ -9,7 +9,7 @@
     python publish_release.py local-catalog --bundle DIR [--bundle DIR ...] --out DIR    (tests: file:// URLs, development key)
 
 Layout on GitHub (the Hub reads only the catalog URL; everything else is named by the signed catalog):
-    respected0/respected-hub          tag v<hub version>   Respected-Hub-<version>-Windows-x64-Setup.exe + RespectedHub-Windows-Setup.exe (fixed name)
+    respected0/respected-hub          tag v<hub version>   Respected-Hub-<version>-Windows-x64-Setup.exe
     respected0/respected-brain  tag v<version>       Respected-Brain-<version>-Windows-x64-Package.zip, Respected-Brain-<version>-Windows-x64-Setup.exe
     respected0/respected-orchestrator tag v<version>       Respected-Orchestrator-<version>-Windows-x64-Package.zip, Respected-Orchestrator-<version>-Windows-x64-Setup.exe
     respected0/respected-hub          tag catalog          catalog.json + catalog.json.sig (replaced on every release)
@@ -34,8 +34,6 @@ DOMAIN = b"respected-catalog-v1\n"
 REPOS = {"hub": "respected-hub", "brain": "respected-brain", "orchestrator": "respected-orchestrator"}
 PRODUCT_INSTALLERS = {"hub": "RespectedHub", "brain": "RespectedBrain", "orchestrator": "RespectedOrchestrator"}
 DISPLAY = {"hub": "Respected-Hub", "brain": "Respected-Brain", "orchestrator": "Respected-Orchestrator"}
-# the product installers download the Hub from releases/latest/download/<this name>: it never carries a version
-HUB_STABLE = "RespectedHub-Windows-Setup.exe"
 
 
 def run(command, **kwargs):
@@ -119,7 +117,6 @@ def build(args) -> None:
         drop_old_installers("hub")
         named = OUT / installer_name("hub", source_version("hub"))
         shutil.copyfile(installer_path("RespectedHub"), named)
-        shutil.copyfile(named, OUT / HUB_STABLE)
         entries["hub"] = entry(named, source_version("hub"), REPOS["hub"], hub_tag)
     for product in ("orchestrator", "brain"):
         if product not in only:
@@ -198,7 +195,7 @@ def upload(args) -> None:
     releases: dict[tuple[str, str], list[Path]] = {}
     for name, row in entries.items():
         installer = OUT / installer_name(name, row["tag"][1:])
-        files = [installer, OUT / HUB_STABLE] if name == "hub" else [installer, OUT / row["file"]]
+        files = [installer] if name == "hub" else [installer, OUT / row["file"]]
         releases.setdefault((row["repo"], row["tag"]), []).extend(files)
     for (repo, tag), files in releases.items():  # products first: the catalog must never name a missing file
         exists = subprocess.run(["gh", "release", "view", tag, "-R", f"{OWNER}/{repo}"], capture_output=True).returncode == 0

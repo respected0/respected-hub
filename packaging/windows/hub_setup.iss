@@ -2,7 +2,7 @@
 ; Built by release/tools/build/build_hub_installer.py, which stages the Hub executable. Products are not inside: each product has
 ; its own installer, which the Hub downloads from the signed catalog and runs. Removing the Hub never touches a product.
 #ifndef AppVersion
-  #define AppVersion "0.1.0-beta.2"
+  #define AppVersion "0.1.0-beta.1"
 #endif
 #ifndef StageDir
   #define StageDir "..\..\..\.build-cache\hub-stage"
