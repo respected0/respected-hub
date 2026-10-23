@@ -1,5 +1,5 @@
 """How long one Hub call to the INSTALLED products takes (each call starts the program). Run before and after installing a new build:
-   python dev/measure-rpp.py
+   python tools/measure-rpp.py
 Read-only: it only asks manifest, health and settings.readback."""
 import json, os, subprocess, time, tempfile, concurrent.futures as cf
 

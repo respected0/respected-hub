@@ -130,7 +130,7 @@ yanıt. Ağ dinleyicisi, servis ya da kabuk yoktur.
 | `cargo test` | Rust birim testleri; `rpp_e2e` (gerçek ürün kaynakları, geçici kökler), `remote_catalog_e2e` (indirme yolu, file:// katalog), `trust_catalog_e2e`, `campaign_e2e`, `memory_index_e2e` |
 | `installer_e2e` (elle, `--ignored`) | İki ürünü gerçek kurucularıyla gerçek klasörlere kurup kaldırır |
 | `tests/native/hub_native_e2e.mjs` (elle) | Derlenmiş Hub'ı arayüzden sürer; kurulum, ayarlar, bağlantılar, hafıza, onarım, kaldırma |
-| `release/tools/acceptance/accept_hub.py` | `npm run check` + `cargo test` + ortak sözleşme, gerçek AI aracı ayarları önce/sonra karşılaştırılarak |
+| `tools/accept_hub.py` | `npm run check` + `cargo test` + ortak sözleşme, gerçek AI aracı ayarları önce/sonra karşılaştırılarak |
 
 ## 9. Açık sınırlar
 

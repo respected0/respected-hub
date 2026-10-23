@@ -29,7 +29,6 @@ ve insanlar yeni Hub'ı elle indirmek zorunda kalır. Anahtar kimliği `dabcb526
 | `tools/build/publish_release.py build\|catalog\|upload\|local-catalog` | Yayın (aşağıda); `local-catalog` testler için file:// adresli, geliştirme imzalı katalog. |
 | `tools/build/release_package.py build\|verify` | İndirme klasörü: kurucular + `SHA256SUMS.txt` + `SHA256SUMS.sig` + `BETA_NOTICE.txt`. |
 | `tools/signing/` | `bundle_signing.py`, `release_keys.py`, `release_vault.py`: anahtar saklama ve imzalama. |
-| `tools/acceptance/accept_hub.py`, `real_env_guard.py` | Yerel kabul; gerçek AI aracı ayarlarının önce/sonra aynı olduğunu denetler. |
 | `tests/test_release_tools.py` | Araçların kendi testi (CI'da çalışır). |
 | `BETA_NOTICE.txt` | Hub kurucusunun kurmadan önce gösterdiği sayfa. |
 | `docs/RELEASE_NOTES_BETA.md` | GitHub sürüm sayfalarının metni (`upload` kullanır). |

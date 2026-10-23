@@ -43,12 +43,12 @@ Node 22.12+, Rust/Cargo ve [Tauri gereksinimleri](https://v2.tauri.app/start/pre
 npm ci
 npm run check                                     # tsc + arayüz birim testleri
 cargo test --manifest-path src-tauri/Cargo.toml   # Rust birim + uçtan uca (ürünleri geçici köklerde çalıştırır)
-python release/tools/acceptance/accept_hub.py     # ikisi + ortak sözleşme; gerçek AI aracı ayarlarının değişmediğini denetler
+python tools/accept_hub.py     # ikisi + ortak sözleşme; gerçek AI aracı ayarlarının değişmediğini denetler
 npm run tauri -- dev                              # geliştirme penceresi
 ```
 
 `npm run dev` yalnızca tarayıcı önizlemesidir: yerel köprü yoktur, motor işlemleri kapalıdır (taklit edilmez).
-`npm run preview:update` tasarım içindir: uygulamaya girmeyen `dev/preview-update.html` sayfası, Brain'in güncellemesi varmış gibi ekranları gösterir; içindeki her veri uydurmadır ve hiçbir şey kurmaz.
+`npm run preview:update` tasarım içindir: uygulamaya girmeyen `tools/preview-update.html` sayfası, Brain'in güncellemesi varmış gibi ekranları gösterir; içindeki her veri uydurmadır ve hiçbir şey kurmaz.
 Geliştirme sürümü kardeş ürünlerin kaynağını Python ile çalıştırabilir (Ayarlar › Ürün durumu); üretim sürümü yalnızca
 kurulu ürünleri çalıştırır.
 
