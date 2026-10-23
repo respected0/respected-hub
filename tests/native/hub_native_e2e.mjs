@@ -58,7 +58,11 @@ const served = join(work, 'served');
 if (remote) py(join(tools, 'build', 'publish_release.py'), 'local-catalog', ...readdirSync(dirs.catalog).flatMap(name => ['--bundle', join(dirs.catalog, name)]), '--out', served);
 
 const port = 9333;
-const pathWithoutPython = process.env.PATH.split(delimiter).filter(p => !/python|WindowsApps/i.test(p)).join(delimiter);
+// No Python, and no real AI-client programs or sessions: a Claude/Codex CLI started inside the disposable home would rewrite its
+// configuration (and carry the real login), which this run compares byte for byte.
+const hasClient = dir => ['claude', 'codex', 'agy', 'gemini', 'cursor-agent'].some(name => ['.exe', '.cmd', '.bat', ''].some(ext => existsSync(join(dir, name + ext))));
+const pathWithoutPython = process.env.PATH.split(delimiter).filter(p => !/python|WindowsApps/i.test(p) && !hasClient(p)).join(delimiter);
+for (const key of Object.keys(process.env)) if (/^(CLAUDE|ANTHROPIC|CODEX|OPENAI)/i.test(key)) delete process.env[key];
 const env = { ...process.env, PATH: pathWithoutPython, RESPECTED_HUB_TEST_HOME: dirs.home,
   WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`, WEBVIEW2_USER_DATA_FOLDER: join(work, 'webview'),
   RESPECTED_HUB_MANAGED_ROOT: dirs.managed, RESPECTED_HUB_PRODUCTS_ROOT: respected, PYTHONDONTWRITEBYTECODE: '1' };
@@ -105,15 +109,19 @@ async function waitFor(expression, label, ms = 60000, soft = false) {
   return false;
 }
 const clickText = (text, scope = 'document') => ev(`(()=>{const root=${scope};const b=[...root.querySelectorAll('button')].find(x=>x.textContent.trim().includes(${JSON.stringify(text)})&&!x.disabled);if(!b)return false;b.click();return true})()`);
-const card = name => `[...document.querySelectorAll('article.lib-item')].find(a=>a.textContent.includes(${JSON.stringify(name)}))`;
+// The Hub is a store (Keşfet: one featured app) plus a library (Kütüphane: installed apps on the left); either way the product's
+// install controls are the one `.lifecycle` block on screen, so `card` is that block and `pick` puts the product in front of it.
+const card = name => `document.querySelector(${JSON.stringify(`.lifecycle[aria-label*="${name}"]`)})`;
+const pick = (name, where) => ev(`(()=>{const b=[...document.querySelectorAll(${JSON.stringify(where === 'store' ? '.store-tile' : '.lib-entry')})].find(x=>x.textContent.includes(${JSON.stringify(name)}));if(!b)return false;b.click();return true})()`);
 const inCard = (name, label, exact = true) => ev(`(()=>{const a=${card(name)};const b=[...a.querySelectorAll('button')].find(x=>${exact ? `x.textContent.trim()===${JSON.stringify(label)}` : `x.textContent.includes(${JSON.stringify(label)})`}&&!x.disabled);if(!b)return false;b.click();return true})()`);
 const cardHas = (name, text) => `(${card(name)})?.textContent.includes(${JSON.stringify(text)})`;
 const setInput = (selector, value) => ev(`(()=>{const el=${selector};const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;set.call(el,${JSON.stringify(value)});el.dispatchEvent(new Event('input',{bubbles:true}));return true})()`);
 const labelled = (scope, text) => `[...${scope}.querySelectorAll('label')].find(l=>l.textContent.includes(${JSON.stringify(text)})).querySelector('input,select')`;
-const rail = label => clickText(label, 'document.querySelector(".rail")');
+const rail = label => clickText(label, 'document.querySelector(".topnav")');
 const tab = label => clickText(label, 'document.querySelector(".ws-tabs")');
 const settingsTab = label => clickText(label, 'document.querySelector(".tabs")');
-const refresh = () => ev(`document.querySelector('button[aria-label="Durumu yenile"]').click()`);
+// the Hub re-reads installs when the window regains focus (at most every 2.5 s)
+const refresh = async () => { await sleep(3000); await ev(`window.dispatchEvent(new Event('focus'))`); };
 const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
 const homeEnv = { USERPROFILE: dirs.home, HOME: dirs.home, LOCALAPPDATA: join(dirs.home, 'AppData', 'Local'), APPDATA: join(dirs.home, 'AppData', 'Roaming') };
 const cli = (exe, ...a) => { const r = spawnSync(exe, a, { encoding: 'utf8', env: { ...process.env, ...homeEnv } }); try { return JSON.parse(r.stdout); } catch { return { raw: r.stdout + r.stderr }; } };
@@ -126,7 +134,8 @@ try {
   await send('Page.enable'); await send('Runtime.enable');
   await waitFor(`document.body.innerText.includes('Respected')`, 'app window renders');
   if (intent) { // a product installer's "Hub ile devam et": the Hub must open on that product's install page, then stop.
-    await waitFor(`document.querySelector('.crumbs')?.textContent.includes(${JSON.stringify(intent === 'brain' ? 'Kurulum' : 'Keşfet')})`, `${intent} hand-over opens its install page`, 30000);
+    // (no catalog is served in this mode, so only the place the Hub opens is checked: Brain's setup tab, Orchestrator in the store)
+  await waitFor(intent === 'brain' ? `document.querySelector('.lib-pane h1')?.textContent.includes('Brain')&&document.querySelector('.ws-tabs [aria-selected=true]')?.textContent==='Ayarlar'` : `document.querySelector('.store-panel h1')?.textContent.includes('Orchestrator')`, `${intent} hand-over opens its install page`, 30000);
     await shot('intent-' + intent);
     throw new Error('done'); // the intent run ends here; `finally` reports
   }
@@ -134,24 +143,26 @@ try {
   check('Python is not on the PATH of this Hub', !spawnSync('python', ['--version'], { env, encoding: 'utf8' }).stdout);
 
   await rail('Keşfet');   // a product is installed from Discover; the Library lists what is installed
-  await waitFor(`document.querySelector('.page-head h1')?.textContent==='Kurulabilir uygulamalar'&&document.querySelectorAll('article.lib-item').length===2`, 'Discover lists both products');
-  await waitFor(`${cardHas('Brain', 'Kurulu değil')}&&${cardHas('Orchestrator', 'Kurulu değil')}`, 'both products start not installed');
+  await waitFor(`document.querySelectorAll('.store-tile').length===2`, 'Discover lists both products');
+  for (const name of ['Brain', 'Orchestrator']) { await pick(name, 'store'); await waitFor(cardHas(name, 'Kurulu değil'), `${name} starts not installed`); }
   await shot('01-my-apps-before');
 
   // Orchestrator through its own installer: the plan names the installer, the product answers afterwards.
+  await pick('Orchestrator', 'store');
   await inCard('Orchestrator', 'Kur');
   await waitFor(cardHas('Orchestrator', 'imzalı kurucusunu'), 'Orchestrator plan names its signed installer');
   await shot('02-plan-orchestrator');
   await inCard('Orchestrator', 'Onayla ve uygula', false);
-  await waitFor(cardHas('Orchestrator', 'Kurulu ve doğrulandı'), 'Orchestrator installed and verified', 300000);
+  await waitFor(`[...document.querySelectorAll('.store-panel button')].some(b=>b.textContent.includes('Kütüphanede aç'))`, 'Orchestrator installed and verified', 300000);
   check('Orchestrator is in its own folder with its own Installed-apps entry', existsSync(product.orch.exe) && registered(product.orch.key));
   check('the Hub keeps no copy of the product', !existsSync(join(dirs.managed, 'orchestrator')) && !existsSync(join(dirs.managed, 'versions')));
   await rail('Kütüphane');
-  await waitFor(`(()=>{const a=${card('Orchestrator')};return !!a&&/v0\.1\.0/.test(a.textContent)})()`, 'Orchestrator is listed in the Library with its version', 60000);
+  await waitFor(`[...document.querySelectorAll('.lib-entry')].some(x=>x.textContent.includes('Orchestrator'))&&/v0\.1\.0/.test(document.querySelector('.lib-pane')?.textContent??'')`, 'Orchestrator is listed in the Library with its version', 60000);
   await shot('03-orchestrator-installed');
   await rail('Keşfet');
 
   // Brain: the wizard collects identity, vault and connections; its installer gets them as /VAULT= and /SET=.
+  await pick('Brain', 'store');
   await inCard('Brain', 'Kur');
   await waitFor(`document.querySelector('.wizard .steps li.current')?.textContent.includes('Kimlik')&&document.body.innerText.includes('Brain\\'i kuralım')`, 'install wizard opens at Identity');
   check('wizard steps are Identity, Memory, Sources, Permissions, Finish', await ev(`[...document.querySelectorAll('.wizard .steps li')].map(l=>l.textContent.replace(/^\\d/,'')).join('|')`) === 'Kimlik|Hafıza|Kaynaklar|İzinler|Onay');
@@ -174,7 +185,9 @@ try {
   check('nothing was written before approval', readFileSync(join(dirs.home, '.claude.json'), 'utf8') === foreign && !existsSync(vault) && !existsSync(product.brain.folder));
   await shot('04-approval');
   await clickText('Onayla ve kur');
-  await waitFor(`document.body.innerText.includes('Brain ayarları')&&document.body.innerText.includes('Brain Vault')`, 'Brain installed; its settings page follows', 420000);
+  await waitFor(`!!document.querySelector('.lib-pane .ws-tabs')&&!document.querySelector('.wizard')`, 'Brain installed; its page opens in the Library', 420000);
+  await tab('Ayarlar');
+  await waitFor(`document.body.innerText.includes('Brain ayarları')&&document.body.innerText.includes('Brain Vault')`, 'Brain settings page shows the new vault', 90000);
   await shot('05-brain-installed');
   check('Brain is in its own folder with its own Installed-apps entry', existsSync(product.brain.exe) && registered(product.brain.key));
   check('vault created where the person chose, with the template', existsSync(join(vault, '.respected.json')));
@@ -182,7 +195,7 @@ try {
   check('the wizard answers arrived as the product\'s own settings', settings.user_name === 'Test' && settings.assistant_name === 'Jarvis' && settings.capture_mode === 'manual'
     && settings['integrations.clients'] === 'claude' && settings['integrations.mcp_clients'] === 'claude', JSON.stringify(settings).slice(0, 300));
   const claude = readJson(join(dirs.home, '.claude.json'));
-  check('foreign MCP entry preserved, Respected entry added in the fake home', !!claude.mcpServers?.['someone-elses'] && !!claude.mcpServers?.['respected-brain'] && claude.theme === 'dark');
+  check('foreign MCP entry preserved, Respected entry added in the fake home', !!claude.mcpServers?.['someone-elses'] && !!claude.mcpServers?.['respected-brain'] && 'theme' in claude, `theme=${claude.theme} keys=${Object.keys(claude)}`);  // a Claude CLI that runs in the fake home may add keys; the Hub's own must keep the person's
   check('only the chosen client was configured (Claude hooks yes, Gemini no)', existsSync(join(dirs.home, '.claude', 'settings.json')) && !existsSync(join(dirs.home, '.gemini', 'settings.json')));
   check('assistant name was written into the vault template', walk(vault).filter(f => f.endsWith('.md')).some(f => readFileSync(f, 'utf8').includes('Jarvis')));
 
@@ -201,7 +214,7 @@ try {
   await shot('06-brain-settings');
 
   // Memory page: quick capture -> search finds it -> reader opens it; the note is a new file in the Dump inbox.
-  await rail('Brain'); await tab('Hafıza');
+  await rail('Kütüphane'); await pick('Brain', 'lib'); await tab('Hafıza');
   await waitFor(`!!document.querySelector('[aria-label="Hızlı not yakala"]')`, 'Memory page shows search, capture and briefing sections', 60000);
   await ev(`(()=>{const el=document.querySelector('[aria-label="Not içeriği"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(el,'NATIVE-MARMALADE-77 ilk kahvaltı notu');el.dispatchEvent(new Event('input',{bubbles:true}));return true})()`);
   await clickText('Kaydet', `document.querySelector('[aria-label="Hızlı not yakala"]')`);
@@ -218,7 +231,7 @@ try {
   if (args.includes('--real-semantic')) { // optional: runtime + model download into the product's own data folder, then off again
     const sem = `document.querySelector('[aria-label="Anlamsal arama (isteğe bağlı)"]')`;
     const runtime = join(product.brain.folder, 'data', 'semantic-runtime');
-    await rail('Brain'); await tab('Ayarlar');
+    await rail('Kütüphane'); await pick('Brain', 'lib'); await tab('Ayarlar');
     await waitFor(`!!${sem}&&${sem}.textContent.includes('Kapalı')`, 'semantic panel shows Off (FTS stays the default)', 90000);
     await clickText('Etkinleştir', sem);
     await waitFor(`${sem}.textContent.includes('460 MB')&&${sem}.textContent.includes('Notlarınız bilgisayarınızdan çıkmaz')`, 'semantic confirmation explains size and privacy');
@@ -235,12 +248,11 @@ try {
   }
 
   // Orchestrator: a schema setting, the Brain memory link and its MCP registration, all through the product.
-  await rail('Orchestrator'); await tab('Ayarlar');
-  await waitFor(`document.querySelector('details.settings-block summary')!==null`, 'Orchestrator settings panel');
-  await ev(`document.querySelector('details.settings-block summary').click()`);
-  await waitFor(`document.querySelectorAll('.settings-block input[type=number]').length>0`, 'Orchestrator settings load');
-  await setInput(`document.querySelector('.settings-block input[type=number]')`, '1234');
-  await clickText('Uygula', 'document.querySelector(".settings-block")');
+  await rail('Kütüphane'); await pick('Orchestrator', 'lib'); await tab('Ayarlar');
+  const timeout = labelled(`document`, 'Görev zaman aşımı');
+  await waitFor(`!!document.querySelector('article.card form')&&!!${timeout}`, 'Orchestrator settings load');
+  await setInput(timeout, '1234');
+  await clickText('Uygula', `document.querySelector('article.card form')`);
   await waitFor(`document.body.innerText.includes('geri okunarak doğrulandı')`, 'Orchestrator settings applied and read back', 60000);
   check('the Orchestrator holds the new value', cli(product.orch.exe, 'config', 'get', 'default_timeout_seconds').default_timeout_seconds === 1234);
   const memory = `document.querySelector('[aria-label="Brain hafıza erişimi"]')`;
@@ -274,6 +286,7 @@ try {
   // Repair: a changed program file is reported by the product; the Hub runs the installer again, which restores it.
   await rail('Kütüphane');
   for (const [name, p] of [['Brain', product.brain], ['Orchestrator', product.orch]]) {
+    await pick(name, 'lib');
     const file = dataFileOf(dirname(p.exe));
     const original = readFileSync(file);
     writeFileSync(file, Buffer.concat([original, Buffer.from('\n')]));
@@ -282,7 +295,7 @@ try {
     await inCard(name, 'Onar');
     await waitFor(cardHas(name, 'Onayla ve uygula'), `${name}: repair plan shown`);
     await inCard(name, 'Onayla ve uygula', false);
-    await waitFor(cardHas(name, 'Kurulu ve doğrulandı'), `${name}: repaired by its installer`, 420000);
+    await waitFor(cardHas(name, 'onarıldı'), `${name}: repaired by its installer`, 420000);
     check(`${name}: the changed file is restored`, Buffer.compare(readFileSync(file), original) === 0);
   }
   check('repair kept the settings', cli(product.brain.exe, 'config', 'get', 'briefing_time').briefing_time === '07:30');
@@ -290,6 +303,7 @@ try {
 
   // Removal through each product's own uninstaller: Brain keeps its settings, the Orchestrator is purged.
   writeFileSync(join(dirs.home, '.claude.json'), foreign); // the person's own file, compared byte for byte below
+  await pick('Brain', 'lib');
   await inCard('Brain', 'Kaldır');
   await waitFor(cardHas('Brain', 'Ayarlar ve çalışma verileri de silinsin'), 'removal asks about settings and data');
   await inCard('Brain', 'Onayla ve uygula', false);
@@ -297,6 +311,7 @@ try {
   check('program and Installed-apps entry gone, settings and vault kept, AI configs restored', !existsSync(product.brain.exe) && !registered(product.brain.key)
     && existsSync(join(product.brain.folder, 'data', 'config.json')) && existsSync(join(vault, '.respected.json'))
     && readFileSync(join(dirs.home, '.claude.json'), 'utf8') === foreign && !existsSync(join(dirs.home, '.claude', 'settings.json')));
+  await pick('Orchestrator', 'lib');
   await inCard('Orchestrator', 'Kaldır');
   await waitFor(cardHas('Orchestrator', 'Ayarlar ve çalışma verileri de silinsin'), 'Orchestrator removal asks about data');
   await ev(`(${card('Orchestrator')}).querySelector('.panel-glass input[type=checkbox]').click()`);
@@ -305,7 +320,7 @@ try {
   await sleep(3000); // the uninstaller's own copy finishes a moment later
   check('purged: the whole Orchestrator folder and its Installed-apps entry are gone', !existsSync(product.orch.folder) && !registered(product.orch.key));
   await rail('Ayarlar'); await settingsTab('Etkinlik');
-  await waitFor(`document.body.innerText.includes('kurulum işlemleri')&&document.body.innerText.includes('kaldırıldı')&&document.body.innerText.includes('onarıldı')&&document.body.innerText.includes('kuruldu')`, 'Activity lists the Hub\'s own operations');
+  await waitFor(`document.body.innerText.includes('Kurulum işlemleri')&&document.body.innerText.includes('kaldırıldı')&&document.body.innerText.includes('onarıldı')&&document.body.innerText.includes('kuruldu')`, 'Activity lists the Hub\'s own operations');
   await shot('10-activity');
 } catch (error) {
   if (String(error) !== 'Error: done') {

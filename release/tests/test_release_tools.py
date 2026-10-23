@@ -61,6 +61,13 @@ try:
     assert release["url"] == "https://github.com/respected0/respected-orchestrator/releases/download/v0.1.0-beta.1/Respected-Orchestrator-0.1.0-beta.1-Windows-x64-Package.zip"
     assert release["min_hub"] == "0.1.0-beta.1" and release["size"] == archive.stat().st_size
     assert "notes" not in release and pr.merged_catalog(base, entries, "beta", None, "Düzeltmeler")["products"]["orchestrator"]["beta"]["notes"] == "Düzeltmeler"
+    by_product = pr.merged_catalog(base, {**entries, "brain": pr.entry(archive, "0.1.0-beta.1", "respected-brain", "v0.1.0-beta.1")}, "beta", None, {"brain": "B", "orchestrator": "O"})
+    assert (by_product["products"]["brain"]["beta"]["notes"], by_product["products"]["orchestrator"]["beta"]["notes"]) == ("B", "O")
+    assert all(0 < len(pr.catalog_note(name)) <= 600 for name in pr.UPDATE_NOTES), "every product has its own catalog note"
+    names = {"hub": "", "brain": "Brain", "orchestrator": "Orchestrator"}  # the Hub is named by every installer, products never name each other
+    for name in names:  # a product's release page and notes never talk about another product
+        text = (pr.TOOLS.parent / "docs" / "release_notes" / f"{name}.md").read_text("utf-8") + pr.update_bullets(name)
+        assert "{notes}" in text and not [other for key, other in names.items() if other and key != name and other in text], name
     pr.sign_index(index, key, work)
     body = (work / "catalog.json").read_bytes()
     key_id, value = (work / "catalog.json.sig").read_text().split()

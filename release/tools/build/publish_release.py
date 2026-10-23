@@ -33,6 +33,9 @@ INDEX_URL = f"https://github.com/{OWNER}/respected-hub/releases/download/catalog
 DOMAIN = b"respected-catalog-v1\n"
 REPOS = {"hub": "respected-hub", "brain": "respected-brain", "orchestrator": "respected-orchestrator"}
 PRODUCT_INSTALLERS = {"hub": "RespectedHub", "brain": "RespectedBrain", "orchestrator": "RespectedOrchestrator"}
+# Every product owns its "what changed" bullets (the installer shows the same file after setup); nothing is shared between products.
+UPDATE_NOTES = {"hub": HUB / "release" / "UPDATE_NOTES.md", "brain": ECO / REPOS["brain"] / "packaging" / "windows" / "UPDATE_NOTES.md",
+                "orchestrator": ECO / REPOS["orchestrator"] / "packaging" / "windows" / "UPDATE_NOTES.md"}
 DISPLAY = {"hub": "Respected-Hub", "brain": "Respected-Brain", "orchestrator": "Respected-Orchestrator"}
 
 
@@ -150,7 +153,21 @@ def load_base(base: str | None) -> dict:
         return {"schema": 1, "sequence": 0, "hub": {}, "products": {}}
 
 
-def merged_catalog(base: dict, entries: dict, channel: str, min_hub: str | None, notes: str | None = None) -> dict:
+def update_bullets(product: str) -> str:
+    return "\n".join(line for line in UPDATE_NOTES[product].read_text("utf-8").splitlines() if line.startswith("- "))
+
+
+def catalog_note(product: str, limit: int = 600) -> str:
+    """The product's own bullets, cut at a bullet boundary to the catalog's 600-character limit."""
+    text = ""
+    for line in update_bullets(product).splitlines():
+        if len(text) + len(line) + 1 > limit:
+            break
+        text += ("\n" if text else "") + line
+    return text
+
+
+def merged_catalog(base: dict, entries: dict, channel: str, min_hub: str | None, notes: "str | dict[str, str] | None" = None) -> dict:
     index = {"schema": 1, "sequence": max(int(time.strftime("%Y%m%d%H%M%S", time.gmtime())), int(base.get("sequence", 0)) + 1),
              "published": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "hub": dict(base.get("hub") or {}),
              "products": {name: dict(node) for name, node in (base.get("products") or {}).items()}}
@@ -158,8 +175,9 @@ def merged_catalog(base: dict, entries: dict, channel: str, min_hub: str | None,
         release = {"version": row["version"], "url": url_of(row), "sha256": row["sha256"], "size": row["size"]}
         if min_hub and name != "hub":
             release["min_hub"] = min_hub
-        if notes:  # short "what changed" text the Hub shows before the person updates; covered by the catalog signature
-            release["notes"] = notes
+        note = notes.get(name) if isinstance(notes, dict) else notes
+        if note:  # short "what changed" text the Hub shows before the person updates; covered by the catalog signature
+            release["notes"] = note
         target = index["hub"] if name == "hub" else index["products"].setdefault(name, {})
         target[channel] = release
     return index
@@ -175,7 +193,7 @@ def sign_index(index: dict, key: Path, out: Path) -> None:
 
 def catalog(args) -> None:
     entries = json.loads((OUT / "entries.json").read_text("utf-8"))
-    index = merged_catalog(load_base(args.base), entries, args.channel, args.min_hub, args.notes)
+    index = merged_catalog(load_base(args.base), entries, args.channel, args.min_hub, args.notes or {name: catalog_note(name) for name in entries})
     sign_index(index, args.key, OUT)
     print(json.dumps(index, indent=1))
 
@@ -191,16 +209,19 @@ def upload(args) -> None:
     entries = json.loads((OUT / "entries.json").read_text("utf-8"))
     if not (OUT / "catalog.json").is_file():
         sys.exit("run `catalog` first")
-    notes = TOOLS.parent / "docs" / "RELEASE_NOTES_BETA.md"
     releases: dict[tuple[str, str], list[Path]] = {}
+    bodies: dict[tuple[str, str], Path] = {}
     for name, row in entries.items():
+        template = (TOOLS.parent / "docs" / "release_notes" / f"{name}.md").read_text("utf-8")  # one page per product, never shared
+        bodies[(row["repo"], row["tag"])] = OUT / f"release-notes-{name}.md"
+        bodies[(row["repo"], row["tag"])].write_text(template.replace("{version}", row["tag"][1:]).replace("{notes}", update_bullets(name)), "utf-8", newline="\n")
         installer = OUT / installer_name(name, row["tag"][1:])
         files = [installer] if name == "hub" else [installer, OUT / row["file"]]
         releases.setdefault((row["repo"], row["tag"]), []).extend(files)
     for (repo, tag), files in releases.items():  # products first: the catalog must never name a missing file
         exists = subprocess.run(["gh", "release", "view", tag, "-R", f"{OWNER}/{repo}"], capture_output=True).returncode == 0
         if not exists:
-            gh("release", "create", tag, "-R", f"{OWNER}/{repo}", "--title", f"Respected {tag[1:]}", "--notes-file", str(notes),
+            gh("release", "create", tag, "-R", f"{OWNER}/{repo}", "--title", f"Respected {tag[1:]}", "--notes-file", str(bodies[(repo, tag)]),
                "--target", "main", *(["--prerelease"] if "-" in tag else []), run_it=args.yes)  # betas are pre-releases, stable versions are not
         gh("release", "upload", tag, "-R", f"{OWNER}/{repo}", "--clobber", *map(str, files), run_it=args.yes)
     exists = subprocess.run(["gh", "release", "view", "catalog", "-R", f"{OWNER}/respected-hub"], capture_output=True).returncode == 0
