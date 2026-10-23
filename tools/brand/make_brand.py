@@ -1,7 +1,7 @@
 """Builds the Respected brand files: SVG (full and small), 1024 px PNG and a multi-size ICO for Hub, Brain and Orchestrator.
 
 The geometry below is the single source of the three marks. Rendering uses Edge in headless mode (transparent background) and a
-small area-averaging resampler, so nothing needs installing. Run from anywhere:  python dev/brand/make_brand.py
+small area-averaging resampler, so nothing needs installing. Run from anywhere:  python tools/brand/make_brand.py
 Output: assets/brand/<name>.svg, <name>-small.svg, <name>-1024.png, <name>.ico  (the app and the other two repos copy from there).
 """
 from __future__ import annotations

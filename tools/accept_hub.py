@@ -1,15 +1,15 @@
 """Local acceptance gate for the Hub: cargo tests, TypeScript check and unit tests and the shared product contract
 (respected-hub/conformance), guarded against real-environment drift.
 
-    python release/tools/acceptance/accept_hub.py        # from respected-hub; serial, a few minutes
+    python tools/accept_hub.py        # from respected-hub; serial, a few minutes
 
 The Rust end-to-end tests drive the sibling products on disposable roots; real_env_guard proves afterwards that no
 real AI-client configuration, shortcut or scheduled task was touched. CI runs the same steps without the guard."""
 import os, shutil, subprocess, sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from acceptance import real_env_guard
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "release" / "tools"))
+import real_env_guard
 from common.ecosystem_root import ECO  # noqa: E402
 
 hub = ECO / "respected-hub"

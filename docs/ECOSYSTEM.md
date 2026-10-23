@@ -29,7 +29,7 @@ kurulmamışken de ürünler çalışır. Ürünler birbirinin kodunu içe aktar
 respected-ecosystem\
   respected-hub\  respected-brain\  respected-orchestrator\   üç depo, yan yana (araçlar birbirini böyle bulur)
     respected-hub\conformance\                                 sözleşmeye uyum testi (üç depoyu birlikte ölçer)
-    respected-hub\local-test\                                  elle deneme betikleri
+    respected-hub	ools\                                       geliştirici araçları (kabul, ölçüm, marka, önizleme)
   dist\  catalog\  .build-cache\  .cargo-target-hub\            üretilen dosyalar, depoya girmez, silinirse yeniden üretilir
 ```
 
@@ -61,12 +61,6 @@ cd ..\respected-hub; npm run check; cargo test --manifest-path src-tauri/Cargo.t
 Ürün test takımlarını aynı anda çalıştırmayın (ikisi de derleme önbelleğini kullanır). Testler geçici klasörlerde ve
 sahte bir kullanıcı klasöründe çalışır; gerçek AI araçlarının ayarlarına ve gerçek kasaya dokunmaz. Gerçek kurulum yapan
 testler ayrıdır ve elle çalıştırılır: Hub'ın `installer_e2e` testi ve arayüz sürücüsü (`respected-hub/README.md`).
-
-## Elle deneme
-
-- `respected-hub\local-test\hub-ile-test.ps1 orchestrator|brain`: ürün kurucusunu "Hub ile devam et" yoluyla dener. Hub'ı yerel
-  sunucudan indirir, ürünü yerel katalogdan kurar. Gerçek klasörlere kurar.
-- `respected-hub\local-test\temizle.ps1 [-VeriyiSil]`: denemeden kalanları kaldırır (kasaya dokunmaz).
 
 ## Durum
 

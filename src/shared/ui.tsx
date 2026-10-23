@@ -31,7 +31,7 @@ export function Icon({ name }: { name: string }) {
   return <svg className={`ico ${name}`} viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={PATHS[name] ?? PATHS.apps} /></svg>;
 }
 
-// The product marks (assets/brand, built by dev/brand/make_brand.py). The small variants carry one bold shape instead of fine detail.
+// The product marks (assets/brand, built by tools/brand/make_brand.py). The small variants carry one bold shape instead of fine detail.
 const MARKS: Record<string, { full: string; small: string }> = {
   hub: { full: hubMark, small: hubSmall },
   brain: { full: brainMark, small: brainSmall },

@@ -19,6 +19,7 @@
   `npm run preview:update` yalnızca ekranları sahte veriyle gösterir.
 - [ ] Kurucuyu Authenticode ile imzalamak (SmartScreen uyarısı). Kod imzalama sertifikası gerekir; yok.
 - [ ] macOS / Linux: doğrulanmadı. Bu geliştirme makinesi Windows.
+- [ ] Güncelleme desteği penceresi: bir sürüm kendinden kaç önceki sürümden güncellenebilir kararlaştırılmadı (`min_hub`, `schema_version` ve ürünlerin `migrate` adımları bunun parçaları). İlk sürüm yayınlanınca "geçiş katmanı yok" kuralı bu karar ve test matrisiyle birlikte gevşetilecek.
 - [ ] Hub'sız kullanıcı yeni sürümden haberdar olmuyor: ürünlerde sürüm denetimi yok.
 - [ ] Aynı sürüm numarasıyla düzeltilmiş yayın: Hub önbellekteki eski kurucuyla onarabilir ve "Güncelleme var" göstermez;
   kurmuş olanlar düzeltmeyi kurucuyu elle çalıştırarak alır.
