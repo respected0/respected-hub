@@ -1,6 +1,6 @@
-# Draws the installer wizard images (welcome/finish side image and the small header logo) from the brand PNGs.
+# Draws the installer wizard image (the welcome/finish side image) from the brand PNGs.
 #   powershell -File wizard_images.ps1 -Product hub|brain|orchestrator -OutDir <folder>
-# Output: side-<w>x<h>.bmp (four DPI sizes) and small-<n>.bmp (four DPI sizes). Inno Setup reads BMP only.
+# Output: side-<w>x<h>.bmp (four DPI sizes). Inno Setup reads BMP only.
 param([Parameter(Mandatory)][ValidateSet('hub', 'brain', 'orchestrator')][string]$Product, [Parameter(Mandatory)][string]$OutDir)
 Add-Type -AssemblyName System.Drawing
 $brand = Join-Path $PSScriptRoot '..\..\..\assets\brand'
@@ -39,10 +39,4 @@ foreach ($size in @(@(164, 314), @(192, 366), @(246, 470), @(328, 628))) {
     Save-Bmp $c (Join-Path $OutDir "side-${w}x${h}.bmp")
 }
 
-foreach ($n in @(55, 64, 83, 110)) {
-    $c = New-Canvas $n $n ([System.Drawing.Color]::White)
-    $pad = [int]($n * 0.08)
-    $c.Graphics.DrawImage($logo, $pad, $pad, $n - 2 * $pad, $n - 2 * $pad)
-    Save-Bmp $c (Join-Path $OutDir "small-$n.bmp")
-}
 $logo.Dispose()

@@ -9,9 +9,9 @@
     python publish_release.py local-catalog --bundle DIR [--bundle DIR ...] --out DIR    (tests: file:// URLs, development key)
 
 Layout on GitHub (the Hub reads only the catalog URL; everything else is named by the signed catalog):
-    respected0/respected-hub          tag v<hub version>   RespectedHub-Windows-Setup.exe
-    respected0/respected-brain  tag v<version>       brain-<version>.zip, RespectedBrain-Windows-Setup.exe
-    respected0/respected-orchestrator tag v<version>       orchestrator-<version>.zip, RespectedOrchestrator-Windows-Setup.exe
+    respected0/respected-hub          tag v<hub version>   Respected-Hub-<version>-Windows-x64-Setup.exe + RespectedHub-Windows-Setup.exe (fixed name)
+    respected0/respected-brain  tag v<version>       Respected-Brain-<version>-Windows-x64-Package.zip, Respected-Brain-<version>-Windows-x64-Setup.exe
+    respected0/respected-orchestrator tag v<version>       Respected-Orchestrator-<version>-Windows-x64-Package.zip, Respected-Orchestrator-<version>-Windows-x64-Setup.exe
     respected0/respected-hub          tag catalog          catalog.json + catalog.json.sig (replaced on every release)
 An archive is one signed bundle folder (bundle.json + payload/<Product>-Windows-Setup.exe) zipped at its root; the same installer is
 also attached on its own for people who install without the Hub. The index carries each archive's size and
@@ -33,6 +33,9 @@ INDEX_URL = f"https://github.com/{OWNER}/respected-hub/releases/download/catalog
 DOMAIN = b"respected-catalog-v1\n"
 REPOS = {"hub": "respected-hub", "brain": "respected-brain", "orchestrator": "respected-orchestrator"}
 PRODUCT_INSTALLERS = {"hub": "RespectedHub", "brain": "RespectedBrain", "orchestrator": "RespectedOrchestrator"}
+DISPLAY = {"hub": "Respected-Hub", "brain": "Respected-Brain", "orchestrator": "Respected-Orchestrator"}
+# the product installers download the Hub from releases/latest/download/<this name>: it never carries a version
+HUB_STABLE = "RespectedHub-Windows-Setup.exe"
 
 
 def run(command, **kwargs):
@@ -54,6 +57,16 @@ def installer_path(name: str) -> Path:
     """Where `name`'s Windows installer was built: the Hub's in <ecosystem>/dist, a product's in its own repository's dist."""
     repo = {"RespectedHub": ECO / "dist", "RespectedBrain": ECO / REPOS["brain"] / "dist", "RespectedOrchestrator": ECO / REPOS["orchestrator"] / "dist"}[name]
     return repo / f"{name}-Windows-Setup.exe"
+
+
+def installer_name(product: str, version: str) -> str:
+    """The file people download: Respected-Hub-0.1.0-beta.2-Windows-x64-Setup.exe (inside catalog bundles the name stays fixed)."""
+    return f"{DISPLAY[product]}-{version}-Windows-x64-Setup.exe"
+
+
+def package_name(product: str, version: str) -> str:
+    """The signed catalog package (what the Hub downloads): Respected-Brain-0.1.0-beta.2-Windows-x64-Package.zip."""
+    return f"{DISPLAY[product]}-{version}-Windows-x64-Package.zip"
 
 
 def source_version(product: str) -> str:
@@ -80,6 +93,13 @@ def entry(file: Path, version: str, repo: str, tag: str) -> dict:
     return {"version": version, "file": file.name, "sha256": sha256(file), "size": file.stat().st_size, "repo": repo, "tag": tag}
 
 
+def drop_old_installers(product: str) -> None:
+    # installers, catalog packages and the unversioned archives of earlier builds
+    for pattern in (f"{DISPLAY[product]}-*-Windows-x64-Setup.exe", f"{DISPLAY[product]}-*-Windows-x64-Package.zip", f"{product}-*.zip"):
+        for old in OUT.glob(pattern):
+            old.unlink()
+
+
 def build(args) -> None:
     only = set(args.only.split(",")) if args.only else set(REPOS)
     unknown = only - set(REPOS)
@@ -96,17 +116,21 @@ def build(args) -> None:
     if "hub" in only:
         if not args.skip_hub_build:
             run(py + [str(TOOLS / "build" / "build_hub_installer.py"), "--release-key", str(args.key)])
-        shutil.copyfile(installer_path("RespectedHub"), OUT / "RespectedHub-Windows-Setup.exe")
-        entries["hub"] = entry(OUT / "RespectedHub-Windows-Setup.exe", source_version("hub"), REPOS["hub"], hub_tag)
+        drop_old_installers("hub")
+        named = OUT / installer_name("hub", source_version("hub"))
+        shutil.copyfile(installer_path("RespectedHub"), named)
+        shutil.copyfile(named, OUT / HUB_STABLE)
+        entries["hub"] = entry(named, source_version("hub"), REPOS["hub"], hub_tag)
     for product in ("orchestrator", "brain"):
         if product not in only:
             continue
         # a release is always built from the current source (--force): never a cached build of older code
         run(py + [str(TOOLS / "build" / "build_bundle.py"), product, "--force", "--out", str(STAGE), *key])
         name = {"orchestrator": "RespectedOrchestrator", "brain": "RespectedBrain"}[product]
-        shutil.copyfile(installer_path(name), OUT / f"{name}-Windows-Setup.exe")
+        drop_old_installers(product)
+        shutil.copyfile(installer_path(name), OUT / installer_name(product, source_version(product)))
         bundle = next(STAGE.glob(f"{product}-*"))
-        archive = OUT / f"{product}-{bundle_version(bundle)}.zip"
+        archive = OUT / package_name(product, source_version(product))
         zip_bundle(bundle, archive)
         entries[product] = entry(archive, bundle_version(bundle), REPOS[product], "v" + source_version(product))
     (OUT / "entries.json").write_text(json.dumps(entries, indent=1), encoding="utf-8")
@@ -173,7 +197,8 @@ def upload(args) -> None:
     notes = TOOLS.parent / "docs" / "RELEASE_NOTES_BETA.md"
     releases: dict[tuple[str, str], list[Path]] = {}
     for name, row in entries.items():
-        files = [OUT / f"{PRODUCT_INSTALLERS[name]}-Windows-Setup.exe"] + ([] if name == "hub" else [OUT / row["file"]])
+        installer = OUT / installer_name(name, row["tag"][1:])
+        files = [installer, OUT / HUB_STABLE] if name == "hub" else [installer, OUT / row["file"]]
         releases.setdefault((row["repo"], row["tag"]), []).extend(files)
     for (repo, tag), files in releases.items():  # products first: the catalog must never name a missing file
         exists = subprocess.run(["gh", "release", "view", tag, "-R", f"{OWNER}/{repo}"], capture_output=True).returncode == 0

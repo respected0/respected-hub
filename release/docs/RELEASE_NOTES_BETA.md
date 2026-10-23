@@ -1,4 +1,4 @@
-# Respected Windows Beta 0.1.0-beta.1
+# Respected Windows Beta 0.1.0-beta.2
 
 **Brain** AI araçlarınızın ortak hafızasıdır; notlar kendi kasanızda durur. **Orchestrator** çok ajanlı bir görev
 motorudur. **Respected Hub** ikisini kurar, günceller ve görsel olarak yönetir. Windows 10/11, kullanıcı başına kurulum,
@@ -8,9 +8,10 @@ yönetici izni gerekmez.
 
 | Dosya | Ne yapar |
 |---|---|
-| `RespectedHub-Windows-Setup.exe` | Hub'ı kurar; ürünleri Hub'ın içinden kurarsınız |
-| `RespectedBrain-Windows-Setup.exe` | Brain'i kurar; "Respected Hub ile devam et" seçilirse Hub'ı da kurar |
-| `RespectedOrchestrator-Windows-Setup.exe` | Orchestrator'ı kurar; aynı seçenekle |
+| `Respected-Hub-<sürüm>-Windows-x64-Setup.exe` | Hub'ı kurar; ürünleri Hub'ın içinden kurarsınız |
+| `Respected-Brain-<sürüm>-Windows-x64-Setup.exe` | Brain'i kurar; "Respected Hub ile devam et" seçilirse Hub'ı da kurar |
+| `Respected-Orchestrator-<sürüm>-Windows-x64-Setup.exe` | Orchestrator'ı kurar; aynı seçenekle |
+| `RespectedHub-Windows-Setup.exe` | Hub kurucusunun sürümsüz kopyası; Brain ve Orchestrator kurucuları Hub'ı buradan indirir |
 
 Her ürün Hub olmadan da kurulur, ayarlanır, onarılır ve kaldırılır. Hub'dan kurarken ürünün kurucusu bir kez
 internetten indirilir.
@@ -26,7 +27,7 @@ anahtarla imzalıdır ve Hub başka hiçbir şeyi kurmaz.
 ## Güncellemeler
 
 Hub yeni bir Hub ya da ürün sürümü olduğunda söyler ve kurmadan önce sorar; hiçbir şey sessizce güncellenmez.
-Hub'sız güncelleme: yeni sürümün kurucusunu çalıştırıp **Onar / güncelle**'yi seçin. Ayarlar, veriler ve kasa korunur;
+Hub'sız güncelleme: yeni sürümün kurucusunu çalıştırıp **Onar / Güncelle**'yi seçin. Ayarlar, veriler ve kasa korunur;
 eski sürüme dönüş desteklenmez.
 
 ## Nereye ne gider

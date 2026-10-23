@@ -67,9 +67,9 @@ GitHub'daki düzen (Hub yalnızca katalog adresini bilir; gerisini imzalı katal
 
 | Depo | Etiket | Dosyalar |
 |---|---|---|
-| `respected0/respected-hub` | `v<sürüm>` | `RespectedHub-Windows-Setup.exe` |
-| `respected0/respected-brain` | `v<sürüm>` | `brain-<sürüm>.zip` (katalog paketi), `RespectedBrain-Windows-Setup.exe` (Hub'sız kuranlar için) |
-| `respected0/respected-orchestrator` | `v<sürüm>` | `orchestrator-<sürüm>.zip`, `RespectedOrchestrator-Windows-Setup.exe` |
+| `respected0/respected-hub` | `v<sürüm>` | `Respected-Hub-<sürüm>-Windows-x64-Setup.exe`, ayrıca sabit adlı `RespectedHub-Windows-Setup.exe` (Brain ve Orchestrator kurucuları Hub'ı `releases/latest/download/` adresinden bu adla indirir) |
+| `respected0/respected-brain` | `v<sürüm>` | `Respected-Brain-<sürüm>-Windows-x64-Package.zip` (katalog paketi), `Respected-Brain-<sürüm>-Windows-x64-Setup.exe` (Hub'sız kuranlar için) |
+| `respected0/respected-orchestrator` | `v<sürüm>` | `Respected-Orchestrator-<sürüm>-Windows-x64-Package.zip`, `Respected-Orchestrator-<sürüm>-Windows-x64-Setup.exe` |
 | `respected0/respected-hub` | `catalog` | `catalog.json` + `catalog.json.sig` (her yayında değişir) |
 
 ## 5. Neyi ne kurar, neyi ne siler

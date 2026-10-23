@@ -139,7 +139,7 @@ class ProductContract(unittest.TestCase):
         normalise = lambda block: re.sub(r"\{ ---- shared with the \w+ installer ---- \}", "", block)
         self.assertEqual(normalise(shared["brain"]), normalise(shared["orchestrator"]), "the shared installer section differs")
         for product, text in texts.items():
-            for token in ("/SET=", "'PURGE'", "'HUB'", "'HUBURL'", "Onar / güncelle", "Ayarları değiştir", "Kaldır", "{code:UninstallArgs}",
+            for token in ("/SET=", "'PURGE'", "'HUB'", "'HUBURL'", "Onar / Güncelle", "Ayarları değiştir", "Kaldır", "{code:UninstallArgs}",
                           "'uninstall --purge'", "WizardStyle=modern", "PrivilegesRequired=lowest", "DisableDirPage=yes"):
                 self.assertIn(token, text, f"{product} installer lacks {token}")
             self.assertNotRegex(text, r"--package|--allow-unattested|--keep-data|update --", f"{product} installer still uses a retired command")
