@@ -71,7 +71,7 @@ Hub'ı açtığı yolu dener; `--remote-catalog` indirme yolunu; `--real-semanti
 
 | Yol | İçerik |
 |---|---|
-| `src/shell/` | Uygulama çerçevesi, gezinme, Ana Sayfa, Keşfet, Kütüphane, Ayarlar (Genel, Ürün durumu, Etkinlik sekmeleri), kurulum düğmeleri |
+| `src/shell/` | Uygulama çerçevesi, gezinme, Ana Sayfa, Keşfet, Kütüphane, Ayarlar (Genel ve Etkinlik sekmeleri), kurulum düğmeleri |
 | `src/products/brain/`, `src/products/orchestrator/` | Ürün çalışma alanları ve saf modelleri |
 | `src/shared/` | RPP istemcisi, yerel köprü, tasarım sistemi |
 | `src-tauri/src/hub/` | Kurulu ürünleri bulma, kurucuyu çalıştırma, açılış niyetleri |
@@ -79,6 +79,7 @@ Hub'ı açtığı yolu dener; `--remote-catalog` indirme yolunu; `--real-semanti
 | `src-tauri/src/rpp.rs`, `trust.rs`, `commands/` | RPP köprüsü, imza güveni, Tauri komutları |
 | `src-tauri/tests/` | Uçtan uca testler (geçici kökler, sahte kullanıcı klasörü) |
 | `tests/` | TypeScript birim testleri; `tests/native/` arayüz sürücüsü |
+| `tools/` | Geliştirici araçları: `conformance/` (ortak sözleşme uyum testi), `measure-rpp.py`, `brand/`, `preview-update.html` |
 | `packaging/windows/hub_setup.iss` | Hub kurucusu |
 | `release/` | Derleme, imzalama ve yayın ([release/RELEASE.md](release/RELEASE.md)) |
 

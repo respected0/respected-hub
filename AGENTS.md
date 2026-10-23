@@ -1,7 +1,7 @@
 # Respected Hub deposu: çalışma kuralları
 
 Bu, Respected Hub'dır: Tauri 2, Rust, React ve TypeScript. Belgeler: `README.md` (giriş, testler), `docs/ARCHITECTURE.md`
-(bağlayıcı kurallar ve güven), `release/RELEASE.md` (derleme ve yayın). Üç ürünün ortak sözleşmesi `docs/PRODUCT_CONTRACT.md` dosyasındadır (Brain ve Orchestrator'da aynı kopya); uyum testi `conformance/`.
+(bağlayıcı kurallar ve güven), `release/RELEASE.md` (derleme ve yayın). Üç ürünün ortak sözleşmesi `docs/PRODUCT_CONTRACT.md` dosyasındadır (Brain ve Orchestrator'da aynı kopya); uyum testi `tools/conformance/`.
 
 ## Yasaklar
 
