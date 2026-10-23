@@ -1,8 +1,8 @@
 """Guard for test runs: fails when a run changed the user's REAL AI-client configuration or left test sessions behind.
 
-    python tools/real_env_guard.py snapshot STATE.json     # before a run
-    python tools/real_env_guard.py verify   STATE.json     # after: exit 1 and a list when anything changed
-    python tools/real_env_guard.py home                    # prints a fresh sandbox home for the run's USERPROFILE/HOME/APPDATA
+    python release/tools/acceptance/real_env_guard.py snapshot STATE.json     # before a run
+    python release/tools/acceptance/real_env_guard.py verify   STATE.json     # after: exit 1 and a list when anything changed
+    python release/tools/acceptance/real_env_guard.py home                    # prints a fresh sandbox home for the run's USERPROFILE/HOME/APPDATA
 
 What is compared: whole-file hashes of the AI clients' user-level rule/hook/MCP files, the MCP server table of ~/.claude.json
 (Claude rewrites the rest of that file all the time), the names of ~/.claude/skills, and Claude session folders that belong to test

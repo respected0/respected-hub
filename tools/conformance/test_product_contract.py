@@ -1,6 +1,6 @@
 """Product contract conformance (docs/PRODUCT_CONTRACT.md): the same checks run against every product.
 
-Runs from respected-hub with the standard library only:  python -m unittest discover -s conformance -v (the three repos sit side by side)
+Runs from respected-hub with the standard library only:  python -m unittest discover -s tools/conformance -v (the three repos sit side by side)
 Default target is each product's source checkout. To test a built program set
 RESPECTED_CONFORMANCE_<PRODUCT>_EXE (PRODUCT = BRAIN or ORCHESTRATOR).
 Every check points the product at temporary folders (RESPECTED_APP_DIR / RESPECTED_DATA_DIR); nothing touches a real install.
@@ -14,7 +14,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-HUB = Path(__file__).resolve().parent.parent
+HUB = Path(__file__).resolve().parents[2]
 ROOT = HUB.parent  # the folder holding the three repos
 PRODUCTS = {
     "brain": ("respected-brain/src", "respected_brain"),
