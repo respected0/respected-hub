@@ -29,18 +29,18 @@ try:
     key.write_text(base64.b64encode(private.private_bytes(serialization.Encoding.Raw, serialization.PrivateFormat.Raw, serialization.NoEncryption())).decode())
     out = work / "dist"; out.mkdir()
     for product in rp.PRODUCTS:
-        (out / f"Respected-{product}-0.1.0-beta.2-Windows-x64-Setup.exe").write_bytes(product.encode())
-    (out / rp.HUB_STABLE).write_bytes(b"Hub")
+        (out / f"Respected-{product}-0.1.0-beta.1-Windows-x64-Setup.exe").write_bytes(product.encode())
+    hub = out / "Respected-Hub-0.1.0-beta.1-Windows-x64-Setup.exe"
     rp.build(key, out)
     trusted = {bs.key_id(bs.public_bytes(private)): bs.public_bytes(private)}
     other = Ed25519PrivateKey.generate()
     assert rp.verify(out, trusted)
     assert not rp.verify(out, {bs.key_id(bs.public_bytes(private)): bs.public_bytes(other)}), "wrong public key accepted"
     assert not rp.verify(out, {}), "unknown key accepted"
-    (out / rp.HUB_STABLE).write_bytes(b"tampered")
+    hub.write_bytes(b"tampered")
     assert not rp.verify(out, trusted), "tampered installer accepted"
-    (out / rp.HUB_STABLE).write_bytes(b"Hub")
-    (out / "SHA256SUMS.txt").write_text("0" * 64 + " *" + rp.HUB_STABLE + "\n")
+    hub.write_bytes(b"Hub")
+    (out / "SHA256SUMS.txt").write_text("0" * 64 + " *" + hub.name + "\n")
     assert not rp.verify(out, trusted), "tampered list accepted"
 
     # the catalog: merged over the published one, signed over the exact bytes, archives are bundle folders zipped at the root
@@ -48,17 +48,17 @@ try:
     from build import publish_release as pr
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
     bundle = work / "bundle"; (bundle / "payload" / "src").mkdir(parents=True)
-    (bundle / "bundle.json").write_text('{"version": "0.1.0-beta.2"}'); (bundle / "payload" / "src" / "a.py").write_text("x")
-    archive = work / pr.package_name("orchestrator", "0.1.0-beta.2")
+    (bundle / "bundle.json").write_text('{"version": "0.1.0-beta.1"}'); (bundle / "payload" / "src" / "a.py").write_text("x")
+    archive = work / pr.package_name("orchestrator", "0.1.0-beta.1")
     pr.zip_bundle(bundle, archive)
     assert sorted(zipfile.ZipFile(archive).namelist()) == ["bundle.json", "payload/src/a.py"]
     base = {"schema": 1, "sequence": 99999999999999, "hub": {"stable": {"version": "0.1.0"}}, "products": {"brain": {"beta": {"version": "0.1.0-beta.1"}}}}
-    entries = {"orchestrator": pr.entry(archive, "0.1.0-beta.2", "respected-orchestrator", "v0.1.0-beta.2")}
+    entries = {"orchestrator": pr.entry(archive, "0.1.0-beta.1", "respected-orchestrator", "v0.1.0-beta.1")}
     index = pr.merged_catalog(base, entries, "beta", "0.1.0-beta.1")
     assert index["sequence"] == base["sequence"] + 1, "sequence always grows"
     assert index["products"]["brain"] == base["products"]["brain"] and index["hub"] == base["hub"], "unreleased parts are kept"
     release = index["products"]["orchestrator"]["beta"]
-    assert release["url"] == "https://github.com/respected0/respected-orchestrator/releases/download/v0.1.0-beta.2/Respected-Orchestrator-0.1.0-beta.2-Windows-x64-Package.zip"
+    assert release["url"] == "https://github.com/respected0/respected-orchestrator/releases/download/v0.1.0-beta.1/Respected-Orchestrator-0.1.0-beta.1-Windows-x64-Package.zip"
     assert release["min_hub"] == "0.1.0-beta.1" and release["size"] == archive.stat().st_size
     assert "notes" not in release and pr.merged_catalog(base, entries, "beta", None, "Düzeltmeler")["products"]["orchestrator"]["beta"]["notes"] == "Düzeltmeler"
     pr.sign_index(index, key, work)
