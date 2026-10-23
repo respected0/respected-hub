@@ -14,6 +14,8 @@
 [Setup]
 AppId={{5C0F6A1E-3B7D-4E2A-9D55-7A1C2F0E8B31}
 AppName=Respected Hub
+AppVerName=Respected Hub
+UninstallDisplayName=Respected Hub
 AppVersion={#AppVersion}
 AppPublisher=Respected
 AppCopyright=Copyright (c) 2026 RESPECTED (MIT)
