@@ -9,7 +9,9 @@ import { onReturn } from '../shared/focus.ts';
 import { terminal } from '../products/orchestrator/tasks.ts';
 
 interface AppRuntime { loading: boolean; summary: ProductSummary; }
-export interface Ecosystem { apps: Record<string, AppRuntime>; runs: Run[]; lifecycle: LifecycleOverview | null; journal: JournalEntry[]; refresh: () => void; }
+export interface Ecosystem { apps: Record<string, AppRuntime>; runs: Run[]; lifecycle: LifecycleOverview | null; journal: JournalEntry[]; refresh: () => void;
+  // the product whose install/update/repair/removal is running: its processes are stopped on purpose, so it is not reported as a problem meanwhile
+  busy: string | null; setBusy: (product: string | null) => void; }
 
 const pending: AppRuntime = { loading: true, summary: summarizeProduct(null, null) };
 
@@ -18,6 +20,7 @@ export function useEcosystem(): Ecosystem {
   const [runs, setRuns] = useState<Run[]>([]);
   const [lifecycle, setLifecycle] = useState<LifecycleOverview | null>(null);
   const [journal, setJournal] = useState<JournalEntry[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
 
   // one refresh at a time (each spawns several engine processes); a request made meanwhile reruns once afterwards
   const inFlight = useRef(false);
@@ -69,5 +72,5 @@ export function useEcosystem(): Ecosystem {
     return () => window.clearInterval(timer);
   }, [working, refresh]);
 
-  return { apps, runs, lifecycle, journal, refresh: () => void refresh() };
+  return { apps, runs, lifecycle, journal, refresh: () => void refresh(), busy, setBusy };
 }

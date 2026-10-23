@@ -30,7 +30,7 @@ export default function Library({ eco, appId, page, select, go, ask, onAsked }: 
   }, [open]);
   const stateOf = (id: string) => eco.lifecycle?.products.find(item => item?.product === id)?.install_state;
   const hasUpdate = (id: string) => stateOf(id) === 'update-available';
-  const hasProblem = (id: string) => stateOf(id) === 'repair-needed' || (!eco.apps[id]?.loading && eco.apps[id]?.summary.statusKind !== 'ok');
+  const hasProblem = (id: string) => eco.busy !== id && (stateOf(id) === 'repair-needed' || (!eco.apps[id]?.loading && eco.apps[id]?.summary.statusKind !== 'ok'));
   const active = wanted.update || wanted.problem;
   // checked filters add up (an app matching any of them is shown); none checked shows everything
   const matches = listed.filter(app => app.name.toLowerCase().includes(query.trim().toLowerCase())
@@ -55,7 +55,7 @@ export default function Library({ eco, appId, page, select, go, ask, onAsked }: 
       {matches.map(app => { const runtime = eco.apps[app.id];
         return <button key={app.id} className={`lib-entry accent-${app.accent} ${app.id === current.id ? 'active' : ''}`} aria-current={app.id === current.id ? 'page' : undefined} onClick={() => select(app.id)}>
           <Emblem app={app.id} small /><strong>{app.name.replace('Respected ', '')}</strong>{hasUpdate(app.id) && <span className="lib-upd" title="Güncelleme var"><Icon name="download" /></span>}
-          <span className={`dot ${runtime?.loading ? '' : runtime?.summary.statusKind ?? ''}`} aria-hidden="true" /></button>; })}</nav>
+          <span className={`dot ${runtime?.loading || eco.busy === app.id ? '' : runtime?.summary.statusKind ?? ''}`} aria-hidden="true" /></button>; })}</nav>
     <div className="lib-main"><AppWorkspace key={current.id} appId={current.id} page={page} eco={eco} go={target => select(current.id, target)} ask={ask} onAsked={onAsked} /></div>
   </div>;
 }

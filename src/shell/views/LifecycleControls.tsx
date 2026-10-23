@@ -9,7 +9,7 @@ const ICON: Record<LifecycleAction, string> = { install: 'download', update: 'sy
 
 // Install / update / repair / remove one product by running its own installer or uninstaller: plan first, confirm, apply.
 // `autoAction`: the person already chose this elsewhere (an update notice, a product installer), so its plan opens directly.
-export default function LifecycleControls({ name, lc, onChanged, onWizard, autoAction, onAutoDone }: { name: string; lc: ProductLifecycle | null; onChanged: () => void; onWizard?: () => void; autoAction?: LifecycleAction; onAutoDone?: () => void }) {
+export default function LifecycleControls({ name, lc, onChanged, onWizard, autoAction, onAutoDone, onBusy }: { name: string; lc: ProductLifecycle | null; onChanged: () => void; onWizard?: () => void; onBusy?: (busy: boolean) => void; autoAction?: LifecycleAction; onAutoDone?: () => void }) {
   const [pending, setPending] = useState<LifecyclePlan | null>(null);
   const [purge, setPurge] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -37,9 +37,9 @@ export default function LifecycleControls({ name, lc, onChanged, onWizard, autoA
 
   async function confirm() {
     if (!pending) return;
-    setBusy(true); setError('');
+    setBusy(true); setError(''); onBusy?.(true);
     const reply = await lifecycleApply(pending.product, pending.action, pending.action === 'uninstall' ? { purge } : undefined);
-    setBusy(false); setPending(null);
+    onBusy?.(false); setBusy(false); setPending(null);
     if (reply.ok) setDone(reply.result); else setError(describeLifecycleError(reply.error));
     onChanged();
   }
