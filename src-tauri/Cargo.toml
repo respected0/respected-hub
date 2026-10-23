@@ -49,3 +49,8 @@ path = "tests/brain/memory_index_e2e.rs"
 name = "campaign_e2e"
 path = "tests/orchestrator/campaign_e2e.rs"
 
+
+[profile.release]
+codegen-units = 1  # slower release builds, smaller and faster binary
+lto = true
+strip = true
