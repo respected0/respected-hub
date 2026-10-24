@@ -9,7 +9,6 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 1420 --strictPort",
-    "preview:update": "vite --host 127.0.0.1 --port 1420 --strictPort --open /tools/preview-update.html",
     "build": "tsc --noEmit && vite build",
     "test": "node --test \"tests/**/*.test.ts\"",
     "check": "tsc --noEmit && npm test",

@@ -114,8 +114,7 @@ npm run tauri -- dev                              # geliştirme penceresi
 ```
 
 `npm run dev` yalnızca tarayıcı önizlemesidir: yerel köprü yoktur, motor işlemleri kapalıdır (taklit edilmez).
-`npm run preview:update` tasarım içindir: `tools/preview-update.html`, Brain'in güncellemesi varmış gibi ekranları gösterir; içindeki her veri
-uydurmadır ve hiçbir şey kurmaz. Geliştirme sürümü kardeş ürünlerin kaynağını Python ile çalıştırabilir; üretim sürümü yalnızca kurulu ürünleri çalıştırır.
+Geliştirme sürümü kardeş ürünlerin kaynağını Python ile çalıştırabilir; üretim sürümü yalnızca kurulu ürünleri çalıştırır.
 
 <details>
 <summary><b>Gerçek kurulum yapan testler</b></summary>
@@ -154,7 +153,6 @@ gerçek indirmesini.
 | `src-tauri/src/rpp.rs`, `trust.rs`, `commands/` | RPP köprüsü, imza güveni, Tauri komutları |
 | `src-tauri/tests/` | Uçtan uca testler (geçici kökler, sahte kullanıcı klasörü) |
 | `tests/` | TypeScript birim testleri; `tests/native/` arayüz sürücüsü |
-| `tools/` | Geliştirici araçları: `preview-update.html` |
 | `packaging/windows/hub_setup.iss` | Hub kurucusu |
 | `common/` | Üç depo için ortak: derleme, imzalama, yayın, uyum testi, ekosistem belgesi, logolar (`brand/`), RPP süre ölçümü (`measure-rpp.py`) ([common/release/RELEASE.md](common/release/RELEASE.md)) |
 
