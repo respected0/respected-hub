@@ -32,6 +32,10 @@ Kullandığın AI aracını yeniden başlat ve aracın ilgili yerinden (eklentil
 Program ve veriler `%LOCALAPPDATA%\Respected\RespectedOrchestrator\` altındadır. Orchestrator'ı kaldırmak programını ve AI
 araçlarınıza eklediği girdileri kaldırır; projelerinize dokunmaz.
 
+## Gizlilik
+
+Hesap ve telemetri yoktur. Hangi verinin nerede durduğu ve neyin dışarı çıktığı: https://github.com/respected0/respected-orchestrator/blob/main/PRIVACY.md
+
 ## Bu betanın sınırları
 
 - Yalnızca Windows; kod imzası yok.
