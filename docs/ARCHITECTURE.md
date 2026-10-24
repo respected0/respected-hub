@@ -49,6 +49,7 @@ indirilir.
 | Katalog imzası | Ed25519 yayın anahtarı, `b"respected-catalog-v1\n"` + dosyanın tam baytları üzerinde; `.sig` = `<anahtar_kimliği> <base64>` |
 | Katalog şeması 1 | `{schema, sequence, published, hub:{stable,beta}, products:{brain,orchestrator:{stable,beta}}}`; bir sürüm `{version, url, sha256, size, min_hub?, min_from?, notes?}`; kök `blocked?: {ürün: [sürüm]}` geri çekilen sürümleri listeler; `notes` en çok 600 karakterlik düz metindir, güncelleme önerilirken gösterilir |
 | Geri gitme | Önbellektekinden küçük `sequence` reddedilir |
+| İndirme sınırı | `curl --max-filesize`: katalog 4 MiB, imza 4 KiB, arşiv ve Hub kurucusu katalogda yazan `size`; fazlası indirilirken kesilir |
 | Arşiv | Kökünde tek imzalı paket klasörü (`bundle.json` + `payload/<Ürün>-Windows-Setup.exe`) olan zip |
 | Sürüm sırası | SemVer (`0.1.0-beta.1 < 0.1.0-rc.1 < 0.1.0 < 0.1.1-beta.1`); PEP 440 yazımları eşittir (`0.1.0b1`) |
 | Kanallar | `beta` (varsayılan; beta ve kararlıyı görür) ve `stable`; `managed\hub-preferences.json` |
