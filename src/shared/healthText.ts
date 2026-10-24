@@ -9,6 +9,7 @@ const PLAIN: Record<string, Plain> = {
   data_root_writable: { label: 'Veri klasörü', ok: () => 'Ayarlarınız ve çalışma verileriniz yazılabiliyor.', bad: 'Veri klasörüne yazılamıyor.' },
   config_loads: { label: 'Ayarlar', ok: () => 'Ayarlar okunuyor.', bad: 'Ayarlar okunamadı.' },
   vault_registered: { label: 'Not kasası', ok: detail => `Kasa bağlı: ${after(detail)}`, bad: 'Kayıtlı bir not kasası yok.' },
+  vault_folder: { label: 'Not kasası klasörü', ok: () => 'Kasa klasörü yerinde.', bad: 'Kasa klasörü bulunamadı; kasanın durduğu sürücü (ör. USB) takılı mı?' },
   git_available: { label: 'Git', ok: () => 'Git kurulu; görevler izole kopyada çalışabilir.', bad: 'Git bulunamadı; görevler izole kopya için git ister.' },
   worker_cli: { label: 'Çalışan araçlar', ok: detail => `Kullanılabilir: ${detail}`, bad: 'Görevleri yapacak komut satırı aracı (ör. claude, codex) bulunamadı.' },
   engine_key: { label: 'Motor anahtarı', ok: () => 'Hazır; ilk görevde kendiliğinden oluşur.', bad: 'Motor anahtarı okunamıyor.' },
