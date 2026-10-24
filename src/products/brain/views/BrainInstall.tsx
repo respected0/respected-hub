@@ -67,10 +67,10 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
   return <div className="wizard panel-glass">
     <ol className="steps" aria-label="Kurulum adımları">{STEPS.map((label, index) => <li key={label} className={index === step ? 'current' : index < step ? 'past' : ''} aria-current={index === step ? 'step' : undefined}><span>{index + 1}</span>{label}</li>)}</ol>
     {step === 0 && <div className="step-body"><h2>Brain'i kuralım</h2>
-      <p>Hub, Brain'in kendi imzalı kurucusunu çalıştırır ve buradaki cevapları ona iletir: program, not kasan ve istediğin AI araç bağlantıları kurulur. Aynı ayarları sonradan Hub'dan, kurucudan ya da "respected-brain config" ile değiştirebilirsin.</p>
+      <p>Hub, Brain'in kendi imzalı kurucusunu çalıştırır ve buradaki cevapları ona iletir: program, not kasanız ve istediğiniz AI araç bağlantıları kurulur. Aynı ayarları sonradan Hub'dan, kurucudan ya da "respected-brain config" ile değiştirebilirsiniz.</p>
       <label>Adın <small>İsteğe bağlı. Kasa şablonundaki kişiselleştirme için kullanılır.</small><input value={name} maxLength={40} placeholder="ör. Ayşe" onChange={event => setName(event.target.value)} /></label>
       <label>Asistanının adı <small>İsteğe bağlı. Kasadaki asistan kimliği ve AI araçlarına verilen hafıza araçları bu adı kullanır (ör. Jarvis).</small><input value={assistant} maxLength={40} placeholder="ör. Jarvis" onChange={event => setAssistant(event.target.value)} /></label>
-      <label>Kısa tanıtım <small>İsteğe bağlı. Kasa şablonunda seni tanıtan satıra yazılır.</small><input value={bio} maxLength={200} placeholder="ör. Yazılım geliştirici" onChange={event => setBio(event.target.value)} /></label></div>}
+      <label>Kısa tanıtım <small>İsteğe bağlı. Kasa şablonunda sizi tanıtan satıra yazılır.</small><input value={bio} maxLength={200} placeholder="ör. Yazılım geliştirici" onChange={event => setBio(event.target.value)} /></label></div>}
     {step === 1 && <div className="step-body vault-create"><h2>Hafıza</h2><p className="muted">Boş veya yeni bir klasör seç; var olan notların üzerine yazılmaz.</p>
       <label>Klasör<input value={parent} placeholder="ör. C:\Kullanıcı\Belgeler" onChange={event => setParent(event.target.value)} /></label>
       <div className="actions"><button type="button" onClick={() => void choose()}>Gözat…</button></div>
@@ -83,7 +83,7 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
           <input type="radio" name="capture" checked={captureMode === 'manual'} onChange={() => setCaptureMode('manual')} /></label></fieldset>
       <label>Özetleyici AI <small>Oturumları kasa notlarına özetleyen yerel AI aracı.</small><select value={provider} onChange={event => setProvider(event.target.value)}>{PROVIDERS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label></div>}
     {step === 2 && <div className="step-body"><h2>Kaynaklar</h2>
-      <p className="muted">Hangi AI araçlarının oturumları hafızaya yakalansın? Seçtiğin araçlara hafıza kuralları ve becerileri eklenir. Hepsi varsayılan olarak kapalıdır; başka araçların ve senin ayarların korunur.</p>
+      <p className="muted">Hangi AI araçlarının oturumları hafızaya yakalansın? Seçtiğiniz araçlara hafıza kuralları ve becerileri eklenir. Hepsi varsayılan olarak kapalıdır; başka araçların ve sizin ayarlarınız korunur.</p>
       <ClientPicker kind="hooks" selected={selection.sources} detected={null} onChange={sources => setSelection({ ...selection, sources })} />
       <p className="muted">Yalnızca bu bilgisayarda bulunan araçlara yazılır; kurulumdan sonra Brain › Ayarlar'da tam olarak neyin değişeceğini görerek düzenleyebilirsin.</p></div>}
     {step === 3 && <div className="step-body"><h2>İzinler</h2>

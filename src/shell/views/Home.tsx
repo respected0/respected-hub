@@ -35,10 +35,10 @@ export default function Home({ eco, go, hub }: { eco: Ecosystem; go: Go; hub?: {
   ];
 
   const hero = {
-    preview: { eyebrow: 'Tarayıcı önizlemesi', title: 'Gerçek durum masaüstünde görünür', body: 'Bu önizlemede ürünlere bağlanılamaz; hiçbir durum uydurulmaz. Gerçek ekosistem durumunu görmek için Tauri masaüstü uygulamasını çalıştır.', cta: null },
+    preview: { eyebrow: 'Tarayıcı önizlemesi', title: 'Gerçek durum masaüstünde görünür', body: 'Bu önizlemede ürünlere bağlanılamaz; hiçbir durum uydurulmaz. Gerçek ekosistem durumunu görmek için Tauri masaüstü uygulamasını çalıştırın.', cta: null },
     loading: { eyebrow: 'Kontrol ediliyor', title: 'Ekosistem durumu okunuyor…', body: 'Ürünlerin sağlık bilgisi alınıyor.', cta: null },
-    'first-launch': { eyebrow: 'Hoş geldin', title: 'Respected ekosistemini birlikte kuralım', body: "Henüz kurulu bir ürün yok. Brain ve Orchestrator'ı Keşfet sayfasından kurabilirsin.", cta: { label: 'Ürünleri keşfet', run: () => go('discover') } },
-    attention: { eyebrow: 'Dikkat gerekiyor', title: `${problems.length} ürün sağlıklı değil`, body: 'Ürünü açıp kontrolleri ve ayarları inceleyebilirsin.', cta: problems[0] ? { label: `${problems[0].name.replace('Respected ', '')} ürününü aç`, run: () => go({ app: problems[0].id, page: 'overview' }) } : null },
+    'first-launch': { eyebrow: 'Hoş geldiniz', title: 'Respected ekosistemini birlikte kuralım', body: "Henüz kurulu bir ürün yok. Brain ve Orchestrator'ı Keşfet sayfasından kurabilirsiniz.", cta: { label: 'Ürünleri keşfet', run: () => go('discover') } },
+    attention: { eyebrow: 'Dikkat gerekiyor', title: `${problems.length} ürün sağlıklı değil`, body: 'Ürünü açıp kontrolleri ve ayarları inceleyebilirsiniz.', cta: problems[0] ? { label: `${problems[0].name.replace('Respected ', '')} ürününü aç`, run: () => go({ app: problems[0].id, page: 'overview' }) } : null },
     active: { eyebrow: '', title: assistant ? `${assistant} ve ekosistemin hazır` : 'Ekosistemin hazır', body: running.length ? `${running.length} görev şu anda çalışıyor.` : '', cta: running.length ? { label: 'Çalışan görevleri gör', run: () => go('activity') } : { label: 'Ürünleri keşfet', run: () => go('discover') } },
   }[mode];
 

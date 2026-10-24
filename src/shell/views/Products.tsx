@@ -91,7 +91,7 @@ function ProductCard({ product }: { product: (typeof PRODUCTS)[number] }) {
         if (error && typeof error.key === 'string') errors[error.key] = error.message || 'Geçersiz değer.';
       }
       setFieldErrors(errors);
-      if (!result || result.valid !== true || Object.keys(errors).length) setSettingsMessage('Bazı alanlar geçersiz; düzeltip tekrar dene.');
+      if (!result || result.valid !== true || Object.keys(errors).length) setSettingsMessage('Bazı alanlar geçersiz; düzeltip tekrar deneyin.');
       else setSettingsMessage('Ayarlar geçerli. Uygulamak için "Uygula" düğmesine bas.');
     } catch (reason) { setSettingsError(String(reason)); }
     finally { setBusy(false); }

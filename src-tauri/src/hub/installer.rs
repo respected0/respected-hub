@@ -86,7 +86,7 @@ fn plan_in(roots: &Roots, root: &Path, id: &str, action: &str, params: &Value) -
             if installed.is_none() { return Err(err("LIFECYCLE_CONFLICT", format!("{} kurulu değil.", product.name), "Kaldırılacak bir şey yok.")); }
             let purge = params.get("purge") == Some(&json!(true));
             steps.push(step("remove", format!("{}'in kendi kaldırıcısını çalıştır{}", product.name, if purge { "; ayarlar ve çalışma verileri de silinir" } else { "; ayarlar ve çalışma verileri kalır" }), false, Some("Kaldırma geri alınamaz; yeniden kurmak gerekir")));
-            steps.push(step("keep-notes", "Not kasan ve notların hiçbir durumda silinmez".into(), true, None));
+            steps.push(step("keep-notes", "Not kasanız ve notlarınız hiçbir durumda silinmez".into(), true, None));
         }
         _ => return Err(err("BAD_REQUEST", format!("Bilinmeyen eylem: {action}."), "install, update, repair veya uninstall kullanın.")),
     }

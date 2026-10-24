@@ -81,7 +81,7 @@ export default function BrainSetup({ onDone }: { onDone: () => void }) {
 
   return <div className="panel-glass">
     <div className="step-body"><h2>Brain ayarları</h2>
-      <p className="muted">Kurulumdan sonra kullandığın AI aracını yeniden başlat ve aracın ilgili yerinden (eklentiler, hook'lar) Brain'in istediği onayları ver. Onaylamazsan hafıza yazılmaz.</p>
+      <p className="muted">Kurulumdan sonra kullandığınız AI aracını yeniden başlatın ve aracın ilgili yerinden (eklentiler, hook'lar) Brain'in istediği onayları verin. Onaylamazsanız hafıza yazılmaz.</p>
       <p className="muted">Not kasası: {vault ? <strong className="mono">{vault}</strong> : 'kayıtlı değil'} <small>(kasayı kurucu oluşturur; Hub kasaya dokunmaz)</small></p>
       {GROUPS.map(([title, inGroup]) => <section key={title}><h3>{title}</h3>{fields.filter(item => inGroup(item.key)).map(control)}</section>)}
       {error && <p className="error" role="alert">{error}</p>}
