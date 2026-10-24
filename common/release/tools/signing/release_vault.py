@@ -1,7 +1,7 @@
 """Passphrase-encrypted custody for the production Ed25519 release key. The plaintext key never touches disk.
 
-    python release/tools/signing/release_vault.py create --out %USERPROFILE%\\.respected-release\\respected-release.vault   # run in YOUR terminal
-    python release/tools/signing/release_vault.py verify --vault FILE      # decrypt, compare public key, sign + verify a test message
+    python common/release/tools/signing/release_vault.py create --out %USERPROFILE%\\.respected-release\\respected-release.vault   # run in YOUR terminal
+    python common/release/tools/signing/release_vault.py verify --vault FILE      # decrypt, compare public key, sign + verify a test message
 
 Format: JSON; scrypt (n=2^17, r=8, p=1, 128 MiB) -> AES-256-GCM. Public key line, KDF parameters and version are
 authenticated as AAD, so tampering with any of them fails decryption. `bundle_signing.load_private` accepts a vault

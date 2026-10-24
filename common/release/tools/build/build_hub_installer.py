@@ -1,9 +1,9 @@
 """Build the Hub's Windows installer (not Authenticode-signed): dist/RespectedHub-Windows-Setup.exe. Each product ships its own.
 
-    python respected-hub/release/tools/build_hub_installer.py [--release-key VAULT] [--skip-app]
+    python respected-hub/common/release/tools/build_hub_installer.py [--release-key VAULT] [--skip-app]
 
 Stages the release executable and compiles packaging/windows/hub_setup.iss with Inno Setup. The installers carry only the
-Hub: products are downloaded by the Hub from the signed catalog on GitHub Releases (release/tools/build/publish_release.py builds
+Hub: products are downloaded by the Hub from the signed catalog on GitHub Releases (common/release/tools/build/publish_release.py builds
 and uploads those archives and the catalog).
 """
 import argparse, json, os, shutil, subprocess, sys

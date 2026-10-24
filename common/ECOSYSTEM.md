@@ -17,10 +17,10 @@ kurulmamışken de ürünler çalışır. Ürünler birbirinin kodunu içe aktar
 
 | Belge | İçerik |
 |---|---|
-| [PRODUCT_CONTRACT.md](PRODUCT_CONTRACT.md) | Üç ürünün uyduğu ortak sözleşme: klasörler, kurucu, komutlar, ayarlar, protokol, Hub'ın rolü |
+| [PRODUCT_CONTRACT.md](../docs/PRODUCT_CONTRACT.md) | Üç ürünün uyduğu ortak sözleşme: klasörler, kurucu, komutlar, ayarlar, protokol, Hub'ın rolü |
 | `respected-brain/README.md` | Brain'e giriş; `docs/USAGE.md`, `docs/COMMANDS.md`, `docs/ARCHITECTURE.md` |
 | `respected-orchestrator/README.md` | Orchestrator'a giriş; `docs/USAGE.md`, `docs/COMMANDS.md`, `docs/ARCHITECTURE.md` |
-| `README.md` (bu depo) | Hub'a giriş; `docs/ARCHITECTURE.md`; yayın: `release/RELEASE.md` |
+| `README.md` (bu depo) | Hub'a giriş; `docs/ARCHITECTURE.md`; yayın: `common/release/RELEASE.md` |
 | Her deponun `AGENTS.md` dosyası | O depoda çalışan AI ajanları için kurallar |
 
 ## Klasör düzeni
@@ -28,7 +28,7 @@ kurulmamışken de ürünler çalışır. Ürünler birbirinin kodunu içe aktar
 ```
 respected-ecosystem\
   respected-hub\  respected-brain\  respected-orchestrator\   üç depo, yan yana (araçlar birbirini böyle bulur)
-    respected-hub\tools\                                       sözleşmeye uyum testi (conformance/, üç depoyu birlikte ölçer), ölçüm, marka, önizleme
+    respected-hub\common\ ve tools\   ortak yayın araçları, sözleşme uyum testi (common\conformance), bu belge; ölçüm ve marka (tools\)
   dist\  .build-cache\  .cargo-target-hub\                     üretilen dosyalar, depoya girmez, silinirse yeniden üretilir
 ```
 
@@ -51,7 +51,7 @@ cd respected-hub; npm ci
 ## Günlük kontroller
 
 ```powershell
-cd respected-hub; python -m unittest discover -s tools/conformance               # ortak sözleşme (kaynakta)
+cd respected-hub; python -m unittest discover -s common/conformance               # ortak sözleşme (kaynakta)
 cd ..\respected-brain; python -m unittest discover -s tests -t .
 cd ..\respected-orchestrator; python -m unittest discover -s tests -t .
 cd ..\respected-hub; npm run check; cargo test --manifest-path src-tauri/Cargo.toml

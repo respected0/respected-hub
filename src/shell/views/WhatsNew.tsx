@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import notes from '../../../release/UPDATE_NOTES.md?raw';
+import notes from '../../../common/release/UPDATE_NOTES.md?raw';
 
 const KEY = 'hub.whatsnew.seen';
 const items = notes.split('\n').filter(line => line.startsWith('- ')).map(line => line.slice(2).trim());

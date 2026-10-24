@@ -1,7 +1,7 @@
 """Local acceptance gate for the Hub: cargo tests, TypeScript check and unit tests and the shared product contract
-(respected-hub/tools/conformance), guarded against real-environment drift.
+(respected-hub/common/conformance), guarded against real-environment drift.
 
-    python release/tools/acceptance/accept_hub.py        # from respected-hub; serial, a few minutes
+    python common/release/tools/acceptance/accept_hub.py        # from respected-hub; serial, a few minutes
 
 The Rust end-to-end tests drive the sibling products on disposable roots; real_env_guard proves afterwards that no
 real AI-client configuration, shortcut or scheduled task was touched. CI runs the same steps without the guard."""
@@ -19,7 +19,7 @@ npm = shutil.which("npm") or "npm"
 steps = [(["cargo", "test", "--manifest-path", "src-tauri/Cargo.toml", "--no-fail-fast"], 3600),
          (["cargo", "test", "--release", "--manifest-path", "src-tauri/Cargo.toml", "--lib", "production_build"], 3600),  # no development keys
          ([npm, "run", "check"], 600),
-         ([sys.executable, "-m", "unittest", "discover", "-s", str(hub / "tools" / "conformance")], 900)]
+         ([sys.executable, "-m", "unittest", "discover", "-s", str(hub / "common" / "conformance")], 900)]
 code = 0
 for command, limit in steps:
     done = subprocess.run(command, cwd=hub, env=env, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=limit)

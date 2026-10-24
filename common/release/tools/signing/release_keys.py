@@ -1,8 +1,8 @@
 """Production signing key ceremony helper. Run by the release owner, on a machine they trust, OFFLINE.
 
-    python release/tools/signing/release_keys.py generate --out D:\\vault\\respected-release.key   # new key pair; private key stays at --out
-    python release/tools/signing/release_keys.py public --key D:\\vault\\respected-release.key      # print "<key_id> <base64 public>"
-    python release/tools/signing/release_keys.py check  --key D:\\vault\\respected-release.key      # is this key trusted by respected-hub/src-tauri/release-keys.txt?
+    python common/release/tools/signing/release_keys.py generate --out D:\\vault\\respected-release.key   # new key pair; private key stays at --out
+    python common/release/tools/signing/release_keys.py public --key D:\\vault\\respected-release.key      # print "<key_id> <base64 public>"
+    python common/release/tools/signing/release_keys.py check  --key D:\\vault\\respected-release.key      # is this key trusted by respected-hub/src-tauri/release-keys.txt?
 
 `generate` refuses a path inside this repository, refuses to overwrite, and appends only the PUBLIC half to release-keys.txt
 (compiled into production Hub builds). Back the private key up in two places; losing it means no further updates can be

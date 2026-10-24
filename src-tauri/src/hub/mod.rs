@@ -10,7 +10,7 @@ pub mod installer;
 pub mod startup;
 
 /// `<Respected>\RespectedHub\managed`: the Hub's own download cache (catalog bundles) and activity journal. Only a development
-/// build may point elsewhere or fall back to `<ecosystem>/catalog` built by release/tools.
+/// build may point elsewhere or fall back to `<ecosystem>/catalog` built by common/release/tools.
 pub fn standard_roots() -> lifecycle::Roots {
     let managed = trust::dev_abs("RESPECTED_HUB_MANAGED_ROOT").unwrap_or_else(|| installed::respected_root().join("RespectedHub").join("managed"));
     let sibling = if trust::dev_enabled() { Path::new(env!("CARGO_MANIFEST_DIR")).parent().and_then(Path::parent).map(|p| p.join("catalog")).filter(|p| p.is_dir()) } else { None };

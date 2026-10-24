@@ -34,7 +34,7 @@ DOMAIN = b"respected-catalog-v1\n"
 REPOS = {"hub": "respected-hub", "brain": "respected-brain", "orchestrator": "respected-orchestrator"}
 PRODUCT_INSTALLERS = {"hub": "RespectedHub", "brain": "RespectedBrain", "orchestrator": "RespectedOrchestrator"}
 # Every product owns its "what changed" bullets (the installer shows the same file after setup); nothing is shared between products.
-UPDATE_NOTES = {"hub": HUB / "release" / "UPDATE_NOTES.md", "brain": ECO / REPOS["brain"] / "packaging" / "windows" / "UPDATE_NOTES.md",
+UPDATE_NOTES = {"hub": HUB / "common" / "release" / "UPDATE_NOTES.md", "brain": ECO / REPOS["brain"] / "packaging" / "windows" / "UPDATE_NOTES.md",
                 "orchestrator": ECO / REPOS["orchestrator"] / "packaging" / "windows" / "UPDATE_NOTES.md"}
 DISPLAY = {"hub": "Respected-Hub", "brain": "Respected-Brain", "orchestrator": "Respected-Orchestrator"}
 

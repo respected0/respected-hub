@@ -1,7 +1,7 @@
 # Respected Hub deposu: çalışma kuralları
 
 Bu, Respected Hub'dır: Tauri 2, Rust, React ve TypeScript. Belgeler: `README.md` (giriş, testler), `docs/ARCHITECTURE.md`
-(bağlayıcı kurallar ve güven), `release/RELEASE.md` (derleme ve yayın). Üç ürünün ortak sözleşmesi `docs/PRODUCT_CONTRACT.md` dosyasındadır (Brain ve Orchestrator'da aynı kopya); uyum testi `tools/conformance/`.
+(bağlayıcı kurallar ve güven), `common/release/RELEASE.md` (derleme ve yayın). Üç ürünün ortak sözleşmesi `docs/PRODUCT_CONTRACT.md` dosyasındadır (Brain ve Orchestrator'da aynı kopya); uyum testi `common/conformance/`.
 
 ## Yasaklar
 
@@ -25,7 +25,7 @@ Bu, Respected Hub'dır: Tauri 2, Rust, React ve TypeScript. Belgeler: `README.md
 
 - Testler geçici kökler ve sahte bir kullanıcı klasörü kullanır. Gerçek kurulum yapanlar `installer_e2e` (ignored) ve arayüz
   sürücüsüdür; ikisi de makinede kurulu bir ürün varsa başlamaz ve kurduklarını kaldırır.
-- Tamamlandı demeden önce: `npm run check` ve `cargo test` (ya da `python release/tools/acceptance/accept_hub.py`).
+- Tamamlandı demeden önce: `npm run check` ve `cargo test` (ya da `python common/release/tools/acceptance/accept_hub.py`).
   Arayüz ya da kurulum değişikliğinde ayrıca derlenmiş exe'ye karşı arayüz sürücüsü:
   `npx tauri build --debug --no-bundle`, sonra `node tests/native/hub_native_e2e.mjs src-tauri/target/debug/respected-hub.exe`.
 - `docs/ARCHITECTURE.md` koda bağlayıcıdır; aynı değişiklikte doğru tut. Belgeler Türkçedir; belge yolları çalışma zamanı

@@ -1,6 +1,6 @@
 // What each Respected program puts on the computer, changes and removes. Written from the products' own behaviour
 // (respected-brain/docs/USAGE.md §1 and §9, ARCHITECTURE.md §4 and §6; respected-orchestrator/docs/ARCHITECTURE.md §1-3 and §6-7;
-// release/RELEASE.md §5). When a product's install, update or removal behaviour changes, change the sentence here in the same commit;
+// common/release/RELEASE.md §5). When a product's install, update or removal behaviour changes, change the sentence here in the same commit;
 // the product installers show the same text (respected-brain/packaging/windows/brain_info.txt, respected-orchestrator/.../orchestrator_info.txt) and tests/shell/installFacts.test.ts checks it.
 export type FactPhase = 'install' | 'use' | 'update' | 'uninstall';
 export type FactSubject = 'hub' | 'brain' | 'orchestrator';

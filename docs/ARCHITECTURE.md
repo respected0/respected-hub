@@ -1,7 +1,7 @@
 # Hub mimarisi
 
 Hub'ın ürünleri nasıl bulduğu, kurucuları nasıl indirip çalıştırdığı, neye güvendiği ve web görünümüne neyi yasakladığı.
-Giriş: [README.md](../README.md). Yayın: [release/RELEASE.md](../release/RELEASE.md). Ortak kurallar
+Giriş: [README.md](../README.md). Yayın: [common/release/RELEASE.md](../common/release/RELEASE.md). Ortak kurallar
 [PRODUCT_CONTRACT.md](PRODUCT_CONTRACT.md) dosyasındadır; burada tekrarlanmaz.
 
 ## 1. Ürünleri bulma ve durum
@@ -64,7 +64,7 @@ indirilir.
 
 ## 4. Paket güveni
 
-`trust.rs`, imzalama `release/tools/signing/bundle_signing.py`.
+`trust.rs`, imzalama `common/release/tools/signing/bundle_signing.py`.
 
 - Her paket, kanonik ve alan ayrımlı bir ifade üzerinde Ed25519 imzası taşır: `respected-bundle-v1\n` + şema, ürün, tür,
   sürüm ve `bundle_digest` alanlarının sıralı sıkı JSON'u. Özet her dosyanın yolunu, boyutunu ve hash'ini bağlar; bir imza
@@ -131,7 +131,7 @@ yanıt. Ağ dinleyicisi, servis ya da kabuk yoktur.
 | `cargo test` | Rust birim testleri; `rpp_e2e` (gerçek ürün kaynakları, geçici kökler), `remote_catalog_e2e` (indirme yolu, file:// katalog), `trust_catalog_e2e`, `campaign_e2e`, `memory_index_e2e` |
 | `installer_e2e` (elle, `--ignored`) | İki ürünü gerçek kurucularıyla gerçek klasörlere kurup kaldırır |
 | `tests/native/hub_native_e2e.mjs` (elle) | Derlenmiş Hub'ı arayüzden sürer; kurulum, ayarlar, bağlantılar, hafıza, onarım, kaldırma |
-| `release/tools/acceptance/accept_hub.py` | `npm run check` + `cargo test` + ortak sözleşme, gerçek AI aracı ayarları önce/sonra karşılaştırılarak |
+| `common/release/tools/acceptance/accept_hub.py` | `npm run check` + `cargo test` + ortak sözleşme, gerçek AI aracı ayarları önce/sonra karşılaştırılarak |
 
 ## 9. Açık sınırlar
 

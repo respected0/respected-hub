@@ -103,13 +103,13 @@ Bağlayıcı kurallar: [docs/PRODUCT_CONTRACT.md](docs/PRODUCT_CONTRACT.md), iç
 ## Geliştirme
 
 Node 22.12+, Rust/Cargo ve [Tauri gereksinimleri](https://v2.tauri.app/start/prerequisites/). Uçtan uca testler kardeş ürünleri derler;
-üç depo yan yana durmalıdır ([docs/ECOSYSTEM.md](docs/ECOSYSTEM.md)).
+üç depo yan yana durmalıdır ([common/ECOSYSTEM.md](common/ECOSYSTEM.md)).
 
 ```powershell
 npm ci
 npm run check                                     # tsc + arayüz birim testleri
 cargo test --manifest-path src-tauri/Cargo.toml   # Rust birim + uçtan uca (ürünleri geçici köklerde çalıştırır)
-python release/tools/acceptance/accept_hub.py     # ikisi + ortak sözleşme; gerçek AI aracı ayarlarının değişmediğini denetler
+python common/release/tools/acceptance/accept_hub.py     # ikisi + ortak sözleşme; gerçek AI aracı ayarlarının değişmediğini denetler
 npm run tauri -- dev                              # geliştirme penceresi
 ```
 
@@ -154,9 +154,9 @@ gerçek indirmesini.
 | `src-tauri/src/rpp.rs`, `trust.rs`, `commands/` | RPP köprüsü, imza güveni, Tauri komutları |
 | `src-tauri/tests/` | Uçtan uca testler (geçici kökler, sahte kullanıcı klasörü) |
 | `tests/` | TypeScript birim testleri; `tests/native/` arayüz sürücüsü |
-| `tools/` | Geliştirici araçları: `conformance/`, `measure-rpp.py`, `brand/`, `preview-update.html` |
+| `tools/` | Geliştirici araçları: `measure-rpp.py`, `brand/`, `preview-update.html` |
 | `packaging/windows/hub_setup.iss` | Hub kurucusu |
-| `release/` | Derleme, imzalama ve yayın ([release/RELEASE.md](release/RELEASE.md)) |
+| `common/` | Üç depo için ortak: derleme, imzalama, yayın, uyum testi, ekosistem belgesi ([common/release/RELEASE.md](common/release/RELEASE.md)) |
 
 </details>
 
@@ -165,12 +165,12 @@ gerçek indirmesini.
 | Belge | Konu |
 |---|---|
 | [PRODUCT_CONTRACT.md](docs/PRODUCT_CONTRACT.md) | Üç ürünün ortak sözleşmesi |
-| [ECOSYSTEM.md](docs/ECOSYSTEM.md) | Ekosistem ve geliştirme ortamı |
+| [ECOSYSTEM.md](common/ECOSYSTEM.md) | Ekosistem ve geliştirme ortamı |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | İç yapı ve bağlayıcı kurallar |
 | [ROADMAP.md](docs/ROADMAP.md) | Yol haritası |
 | [PRIVACY.md](PRIVACY.md) | Hangi veri nerede durur, neresi dışarı çıkar |
 | [FOOTPRINT.md](docs/FOOTPRINT.md) | Ne yaparsanız nerede ne oluşur: kurulum, AI araçları, kaldırma |
-| [RELEASE.md](release/RELEASE.md) | Derleme ve yayın |
+| [RELEASE.md](common/release/RELEASE.md) | Derleme ve yayın |
 
 ## Destek
 
