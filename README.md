@@ -169,6 +169,7 @@ gerçek indirmesini.
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | İç yapı ve bağlayıcı kurallar |
 | [ROADMAP.md](docs/ROADMAP.md) | Yol haritası |
 | [PRIVACY.md](PRIVACY.md) | Hangi veri nerede durur, neresi dışarı çıkar |
+| [FOOTPRINT.md](docs/FOOTPRINT.md) | Ne yaparsan nerede ne oluşur: kurulum, AI araçları, kaldırma |
 | [RELEASE.md](release/RELEASE.md) | Derleme ve yayın |
 
 ## Destek
