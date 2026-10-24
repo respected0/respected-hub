@@ -34,6 +34,10 @@ Program ve veriler `%LOCALAPPDATA%\Respected\RespectedBrain\` altındadır. Not 
 `Belgeler\RespectedOS`; bu betada **OneDrive ile eşitlenen bir klasöre koymayın**). Brain'i kaldırmak programını ve AI
 araçlarınıza eklediği girdileri kaldırır; **kasa ve notlar hiçbir durumda silinmez**.
 
+## Gizlilik
+
+Hesap ve telemetri yoktur. Hangi verinin nerede durduğu ve neyin dışarı çıktığı: https://github.com/respected0/respected-brain/blob/main/PRIVACY.md
+
 ## Bu betanın sınırları
 
 - Yalnızca Windows; kod imzası yok.

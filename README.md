@@ -168,6 +168,7 @@ gerçek indirmesini.
 | [ECOSYSTEM.md](docs/ECOSYSTEM.md) | Ekosistem ve geliştirme ortamı |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | İç yapı ve bağlayıcı kurallar |
 | [ROADMAP.md](docs/ROADMAP.md) | Yol haritası |
+| [PRIVACY.md](PRIVACY.md) | Hangi veri nerede durur, neresi dışarı çıkar |
 | [RELEASE.md](release/RELEASE.md) | Derleme ve yayın |
 
 ## Destek

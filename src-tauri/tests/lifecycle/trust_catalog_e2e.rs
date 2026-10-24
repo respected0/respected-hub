@@ -64,7 +64,7 @@ fn only_a_bundle_signed_by_a_trusted_key_is_offered() {
     std::fs::write(bundle.join("bundle.json"), serde_json::to_vec(&original).unwrap()).unwrap();
 
     // 4. a tampered signature, an unknown algorithm, a stripped signature
-    edit(&bundle, |d| { let v = d["signature"]["value"].as_str().unwrap().to_string(); d["signature"]["value"] = json!(format!("A{}", &v[1..])); });
+    edit(&bundle, |d| { let v = d["signature"]["value"].as_str().unwrap().to_string(); let first = if v.starts_with('A') { 'B' } else { 'A' }; d["signature"]["value"] = json!(format!("{first}{}", &v[1..])); });  // the swapped first character must differ from the real one
     assert_eq!(offered(&catalog).0, 0, "flipped signature bytes");
     std::fs::write(bundle.join("bundle.json"), serde_json::to_vec(&original).unwrap()).unwrap();
     edit(&bundle, |d| d["signature"]["alg"] = json!("rsa"));

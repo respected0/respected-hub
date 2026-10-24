@@ -23,6 +23,10 @@ Hub yeni bir sürüm olduğunda söyler ve kurmadan önce sorar; hiçbir şey se
 yayın anahtarıyla (`dabcb5265227bbdf`) imzalıdır; Hub imzası doğrulanmayan hiçbir şeyi kurmaz. Hub'ı kaldırmak, kurduğu
 ürünlere dokunmaz.
 
+## Gizlilik
+
+Hesap ve telemetri yoktur. Hangi verinin nerede durduğu ve neyin dışarı çıktığı: https://github.com/respected0/respected-hub/blob/main/PRIVACY.md
+
 ## Bu betanın sınırları
 
 - Yalnızca Windows; kod imzası yok.
