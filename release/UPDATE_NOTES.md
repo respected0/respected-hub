@@ -1,5 +1,3 @@
-- Yeni arayüz: üst gezinme, Kütüphane ve Keşfet, koyu palet.
-- Yeni logo; pencere ve kurucu ikonu güncellendi.
-- Yeni sürüm olduğunda Ayarlar yanında küçük bir nokta görünür.
-- Obsidian kısayolu tanınmayan bir kasayı açamazsa kurulum sırasında uyarı verilir.
-- Kurucu yeniden tasarlandı; indirilen dosyanın adında sürüm yazar.
+- İlk beta: Kütüphane ve Keşfet sayfalarından Respected ürünlerini kurun, güncelleyin, kaldırın.
+- Yeni sürüm olduğunda Ayarlar yanında küçük bir nokta görünür; hiçbir şey siz onaylamadan güncellenmez.
+- Kurucu imzasızdır: Windows uyarırsa dosyanın özetini SHA256SUMS.txt ile karşılaştırın.

@@ -48,6 +48,8 @@ function Overview({ app, eco, go }: { app: AppDef; eco: Ecosystem; go: (page: st
   return <>
     <Hello app={app.id} product={app.name.replace('Respected ', '')} kind={runtime.summary.statusKind} loading={runtime.loading} />
     {app.id === 'orchestrator' ? <OverviewPanel runs={eco.runs} workers={workers} workersLoading={workersLoading} onOpenTasks={() => go('runs')} /> : <BrainOverview openMemory={() => go('memory')} />}
+    {app.id === 'orchestrator' && <div className="notice warning">Kurulumdan sonra kullandığın AI aracını yeniden başlat ve aracın ilgili yerinden (eklentiler, MCP) Orchestrator'a izin ver. Yoksa araç Orchestrator'ı görmez.</div>}
+    {app.id === 'brain' && <div className="notice warning">Kurulumdan sonra kullandığın AI aracını yeniden başlat ve aracın ilgili yerinden (eklentiler, hook'lar) Brain'in istediği onayları ver. Onaylamazsan hafıza yazılmaz.</div>}
     <section className="panel-glass"><div className="section-head"><h2>Nasıl çalışır?</h2></div>
       <ol className="plan-steps">{HOW[app.id]?.map(([title, text]) => <li key={title}><strong>{title}.</strong> {text}</li>)}</ol></section>
     {app.rpp && <ProductStatusPanel id={app.rpp} summary={runtime.summary} />}

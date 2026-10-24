@@ -23,6 +23,10 @@ sonucu `SHA256SUMS.txt` içindeki satırla aynı olmalı.
 Yeni sürümün kurucusunu çalıştırıp **Onar / Güncelle**'yi seçin (Hub kuruluysa Hub de önerir). Ayarlar ve veriler korunur;
 eski sürüme dönüş desteklenmez.
 
+## Kurulumdan sonra
+
+Kullandığın AI aracını yeniden başlat ve aracın ilgili yerinden (eklentiler, MCP) Orchestrator'a izin ver. Yoksa araç Orchestrator'ı görmez.
+
 ## Nereye ne gider
 
 Program ve veriler `%LOCALAPPDATA%\Respected\RespectedOrchestrator\` altındadır. Orchestrator'ı kaldırmak programını ve AI
