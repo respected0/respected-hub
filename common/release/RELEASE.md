@@ -1,7 +1,7 @@
 # Derleme, imzalama ve yayın
 
 Windows betasını derleyen, imzalayan ve yayınlayan her şey bu klasördedir. Betikler üç deponun yan yana durduğunu varsayar
-(`common/release/tools/common/ecosystem_root.py` üst klasörü bulur; ya da `RESPECTED_ECOSYSTEM_ROOT`). Çıktı `<ekosistem>/dist`,
+(`common/release/tools/ecosystem_root.py` üst klasörü bulur; ya da `RESPECTED_ECOSYSTEM_ROOT`). Çıktı `<ekosistem>/dist`,
 önbellek `<ekosistem>/.build-cache`. Geliştirme ortamının kurulumu: [../ECOSYSTEM.md](../ECOSYSTEM.md).
 
 ## 1. Sıfırdan başlamak

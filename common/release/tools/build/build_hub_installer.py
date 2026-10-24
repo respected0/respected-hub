@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from common.ecosystem_root import ECO
+from ecosystem_root import ECO
 TOOLS = Path(__file__).resolve().parents[1]
 HUB = ECO / "respected-hub"
 STAGE = ECO / ".build-cache" / "hub-stage"

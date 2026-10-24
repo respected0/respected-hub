@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from signing.bundle_signing import sign_manifest
-from common.ecosystem_root import ECO
+from ecosystem_root import ECO
 
 # product -> (repository, installer file, distribution folder its build leaves beside it)
 PRODUCTS = {

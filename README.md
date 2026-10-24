@@ -154,7 +154,7 @@ gerçek indirmesini.
 | `src-tauri/tests/` | Uçtan uca testler (geçici kökler, sahte kullanıcı klasörü) |
 | `tests/` | TypeScript birim testleri; `tests/native/` arayüz sürücüsü |
 | `packaging/windows/hub_setup.iss` | Hub kurucusu |
-| `common/` | Üç depo için ortak: derleme, imzalama, yayın, uyum testi, ekosistem belgesi, logolar (`brand/`), RPP süre ölçümü (`measure-rpp.py`) ([common/release/RELEASE.md](common/release/RELEASE.md)) |
+| `common/` | Üç depo için ortak: derleme, imzalama, yayın, uyum testi, ekosistem belgesi, logolar (`brand/`), RPP süre ölçümü (`measure/`) ([common/release/RELEASE.md](common/release/RELEASE.md)) |
 
 </details>
 
@@ -163,6 +163,7 @@ gerçek indirmesini.
 | Belge | Konu |
 |---|---|
 | [PRODUCT_CONTRACT.md](docs/PRODUCT_CONTRACT.md) | Üç ürünün ortak sözleşmesi |
+| [common/](common/README.md) | Üç depo için ortak olanların dizini |
 | [ECOSYSTEM.md](common/ECOSYSTEM.md) | Ekosistem ve geliştirme ortamı |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | İç yapı ve bağlayıcı kurallar |
 | [ROADMAP.md](docs/ROADMAP.md) | Yol haritası |
