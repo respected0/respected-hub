@@ -1,8 +1,8 @@
 """Ed25519 signing of catalog bundles. The Hub verifies this; nothing here ships a private key.
 
-    python release/tools/signing/bundle_signing.py init                 # create the DEVELOPMENT key pair if missing (local, never committed)
-    python release/tools/signing/bundle_signing.py sign BUNDLE_DIR      # (re)sign a bundle.json with the dev key, or --key FILE for release
-    python release/tools/signing/bundle_signing.py verify BUNDLE_DIR    # offline check against the dev public key
+    python common/release/tools/signing/bundle_signing.py init                 # create the DEVELOPMENT key pair if missing (local, never committed)
+    python common/release/tools/signing/bundle_signing.py sign BUNDLE_DIR      # (re)sign a bundle.json with the dev key, or --key FILE for release
+    python common/release/tools/signing/bundle_signing.py verify BUNDLE_DIR    # offline check against the dev public key
 
 Trust is separated by key, not by flag: the DEVELOPMENT private key lives in ``.build-cache/signing`` (ignored by
 git, created on first use) and only development Hub builds trust its public half. The PRODUCTION key is generated

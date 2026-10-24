@@ -54,7 +54,7 @@ jobs:
           npm run check
       - name: Release tooling self-check
         working-directory: respected-hub
-        run: python release/tests/test_release_tools.py
+        run: python common/release/tests/test_release_tools.py
       - name: Rust unit and end-to-end tests
         working-directory: respected-hub
         run: cargo test --manifest-path src-tauri/Cargo.toml --no-fail-fast

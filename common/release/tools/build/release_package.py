@@ -1,7 +1,7 @@
 """Assemble the downloadable beta folder: installers + SHA256SUMS.txt + SHA256SUMS.sig + BETA_NOTICE.txt.
 
-    python release/tools/build/release_package.py build --key D:\\vault\\respected-release.key    # writes dist/SHA256SUMS.txt/.sig
-    python release/tools/build/release_package.py verify [--dir dist]                             # re-check hashes and the Ed25519 signature
+    python common/release/tools/build/release_package.py build --key D:\\vault\\respected-release.key    # writes dist/SHA256SUMS.txt/.sig
+    python common/release/tools/build/release_package.py verify [--dir dist]                             # re-check hashes and the Ed25519 signature
 
 The checksum file is signed with the same release key whose public half is compiled into the Hub, so a person with
 Python can prove the list is ours without a paid certificate (the installers themselves have no verified publisher).

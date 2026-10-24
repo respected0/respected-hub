@@ -1,4 +1,4 @@
-"""Self-check of the release tooling in a temp directory (no real key, repo files untouched): python release/tests/test_release_tools.py"""
+"""Self-check of the release tooling in a temp directory (no real key, repo files untouched): python common/release/tests/test_release_tools.py"""
 import base64, shutil, sys, tempfile
 from pathlib import Path
 

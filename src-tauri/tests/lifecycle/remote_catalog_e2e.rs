@@ -8,7 +8,7 @@ use std::process::Command;
 mod common;
 use common::Temp;
 
-fn tools() -> PathBuf { Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("release").join("tools") }
+fn tools() -> PathBuf { Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("common").join("release").join("tools") }
 
 fn python(args: &[&str]) {
     let done = Command::new("python").arg("-B").args(args).status().expect("python");

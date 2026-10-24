@@ -2,7 +2,7 @@
 //! The installers write to the real per-user locations (%LOCALAPPDATA%\Respected\<Product> and the Installed-apps key), which no
 //! environment variable redirects, so this test is ignored by default and refuses to run over an existing install:
 //!     cargo test --test installer_e2e -- --ignored --nocapture
-//! It builds (or reuses) each product's installer with release/tools/build/build_bundle.py.
+//! It builds (or reuses) each product's installer with common/release/tools/build/build_bundle.py.
 use respected_hub_lib::hub::installed;
 use respected_hub_lib::lifecycle::Roots;
 use respected_hub_lib::{hub_apply, hub_plan, hub_status, overlay, Settings};
@@ -27,7 +27,7 @@ fn the_hub_installs_and_removes_each_product_through_its_own_installer() {
     let (managed, catalog, vault) = (Temp::new("managed"), Temp::new("catalog"), Temp::new("vault"));
     let roots = Roots { managed: managed.0.clone(), catalog: catalog.0.clone() };
     for product in ["orchestrator", "brain"] {
-        let made = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("release").join("tools").join("build").join("build_bundle.py"))
+        let made = Command::new("python").arg("-B").arg(eco.join("respected-hub").join("common").join("release").join("tools").join("build").join("build_bundle.py"))
             .arg(product).arg("--out").arg(&catalog.0).status().expect("python");
         assert!(made.success(), "{product} installer bundle build failed");
     }
