@@ -24,6 +24,10 @@ sonucu `SHA256SUMS.txt` içindeki satırla aynı olmalı.
 Yeni sürümün kurucusunu çalıştırıp **Onar / Güncelle**'yi seçin (Hub kuruluysa Hub de önerir). Ayarlar, veriler ve kasa
 korunur; eski sürüme dönüş desteklenmez.
 
+## Kurulumdan sonra
+
+Kullandığın AI aracını yeniden başlat ve aracın ilgili yerinden (eklentiler, hook'lar) Brain'in istediği onayları ver. Onaylamazsan hafıza yazılmaz.
+
 ## Nereye ne gider
 
 Program ve veriler `%LOCALAPPDATA%\Respected\RespectedBrain\` altındadır. Not kasanız seçtiğiniz yerde durur (varsayılan
