@@ -28,7 +28,7 @@ kurulmamışken de ürünler çalışır. Ürünler birbirinin kodunu içe aktar
 ```
 respected-ecosystem\
   respected-hub\  respected-brain\  respected-orchestrator\   üç depo, yan yana (araçlar birbirini böyle bulur)
-    respected-hub\common\ ve tools\   ortak yayın araçları, sözleşme uyum testi (common\conformance), bu belge; ölçüm ve marka (tools\)
+    respected-hub\common\                              ortak: yayın araçları, sözleşme uyum testi (conformance), logolar (brand), RPP ölçümü, bu belge
   dist\  .build-cache\  .cargo-target-hub\                     üretilen dosyalar, depoya girmez, silinirse yeniden üretilir
 ```
 
