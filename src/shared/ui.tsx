@@ -1,9 +1,9 @@
-import hubMark from '../../assets/brand/hub.svg';
-import hubSmall from '../../assets/brand/hub-small.svg';
-import brainMark from '../../assets/brand/brain.svg';
-import brainSmall from '../../assets/brand/brain-small.svg';
-import orchestratorMark from '../../assets/brand/orchestrator.svg';
-import orchestratorSmall from '../../assets/brand/orchestrator-small.svg';
+import hubMark from '../../common/brand/hub.svg';
+import hubSmall from '../../common/brand/hub-small.svg';
+import brainMark from '../../common/brand/brain.svg';
+import brainSmall from '../../common/brand/brain-small.svg';
+import orchestratorMark from '../../common/brand/orchestrator.svg';
+import orchestratorSmall from '../../common/brand/orchestrator-small.svg';
 // Shared presentational pieces: icon set, generative app emblems and plain-language status labels.
 const PATHS: Record<string, string> = {
   home: 'M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
@@ -31,7 +31,7 @@ export function Icon({ name }: { name: string }) {
   return <svg className={`ico ${name}`} viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={PATHS[name] ?? PATHS.apps} /></svg>;
 }
 
-// The product marks (assets/brand, built by tools/brand/make_brand.py). The small variants carry one bold shape instead of fine detail.
+// The product marks (common/brand, built by common/brand/make_brand.py). The small variants carry one bold shape instead of fine detail.
 const MARKS: Record<string, { full: string; small: string }> = {
   hub: { full: hubMark, small: hubSmall },
   brain: { full: brainMark, small: brainSmall },
