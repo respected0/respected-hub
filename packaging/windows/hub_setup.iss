@@ -44,15 +44,15 @@ Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 
 [Messages]
 turkish.WizardInfoBefore=Beta sürümü hakkında
-turkish.InfoBeforeLabel=Bu kurucu henüz imzalı değil. Kurmadan önce aşağıdaki bilgileri oku.
+turkish.InfoBeforeLabel=Bu kurucu henüz imzalı değil. Kurmadan önce aşağıdaki bilgileri okuyun.
 turkish.WizardInfoAfter=Yenilikler
 turkish.InfoAfterLabel=Bu sürümde neler değişti?
 turkish.InfoAfterClickLabel=Devam etmek için Sonraki'ne tıklayın.
-turkish.WelcomeLabel1=Respected Hub'a hoş geldin
-turkish.WelcomeLabel2=Respected Hub, Brain ve Orchestrator'ı tek yerden kurar, günceller ve ayarlar.%n%nYönetici izni gerekmez; ürünlerin ve notlarının kurulumdan etkilenmez.%n%nDevam etmek için Sonraki'ne tıkla.
+turkish.WelcomeLabel1=Respected Hub'a hoş geldiniz
+turkish.WelcomeLabel2=Respected Hub, Brain ve Orchestrator'ı tek yerden kurar, günceller ve ayarlar.%n%nYönetici izni gerekmez; ürünleriniz ve notlarınız kurulumdan etkilenmez.%n%nDevam etmek için Sonraki'ne tıklayın.
 turkish.FinishedHeadingLabel=Respected Hub hazır
 turkish.FinishedLabelNoIcons=Kurulum tamamlandı.
-turkish.FinishedLabel=Kurulum tamamlandı. Hub'ı Başlat menüsünden ya da masaüstü kısayolundan açabilirsin.
+turkish.FinishedLabel=Kurulum tamamlandı. Hub'ı Başlat menüsünden ya da masaüstü kısayolundan açabilirsiniz.
 ; the ready page's button is "Kur", not "Sonraki"
 turkish.ReadyLabel2a=Kuruluma devam etmek için Kur düğmesine, ayarları gözden geçirmek ya da değiştirmek için Önceki düğmesine tıklayın.
 turkish.ReadyLabel2b=Kuruluma başlamak için Kur düğmesine tıklayın.
@@ -123,9 +123,9 @@ begin
   TidyInfoPages;
   if InstalledVersion() = '' then Exit;
   MaintenancePage := NewCardPage(0, wpWelcome, 'Respected Hub kurulu',
-    'Kurulu sürüm v' + InstalledVersion() + ', bu kurucu v{#AppVersion}. Ürünlerine ve kasana dokunulmaz.', False);
+    'Kurulu sürüm v' + InstalledVersion() + ', bu kurucu v{#AppVersion}. Ürünlerinize ve kasanıza dokunulmaz.', False);
   AddCard(MaintenancePage, 0, #$E895, 'Onar / Güncelle', 'Hub''ı bu kurucudaki sürümle (v{#AppVersion}) yeniler.', True);
-  AddCard(MaintenancePage, 0, #$E74D, 'Kaldır', 'Hub kaldırılır; kurduğun ürünler ve notların yerinde kalır.', False);
+  AddCard(MaintenancePage, 0, #$E74D, 'Kaldır', 'Hub kaldırılır; kurduğunuz ürünler ve notlarınız yerinde kalır.', False);
 end;
 
 procedure ProductPageChanged(CurPageID: Integer);
