@@ -154,9 +154,9 @@ gerçek indirmesini.
 | `src-tauri/src/rpp.rs`, `trust.rs`, `commands/` | RPP köprüsü, imza güveni, Tauri komutları |
 | `src-tauri/tests/` | Uçtan uca testler (geçici kökler, sahte kullanıcı klasörü) |
 | `tests/` | TypeScript birim testleri; `tests/native/` arayüz sürücüsü |
-| `tools/` | Geliştirici araçları: `measure-rpp.py`, `preview-update.html` |
+| `tools/` | Geliştirici araçları: `preview-update.html` |
 | `packaging/windows/hub_setup.iss` | Hub kurucusu |
-| `common/` | Üç depo için ortak: derleme, imzalama, yayın, uyum testi, ekosistem belgesi, logolar (`brand/`) ([common/release/RELEASE.md](common/release/RELEASE.md)) |
+| `common/` | Üç depo için ortak: derleme, imzalama, yayın, uyum testi, ekosistem belgesi, logolar (`brand/`), RPP süre ölçümü (`measure-rpp.py`) ([common/release/RELEASE.md](common/release/RELEASE.md)) |
 
 </details>
 
