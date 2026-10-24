@@ -1,10 +1,10 @@
 # Hub: gelecekte yapılacaklar
 
-Ürün beklentisiyle bugünkü durum arasındaki açıklar (2026-10-23 itibarıyla). Yapılan madde silinir.
+Ürün beklentisiyle bugünkü durum arasındaki açıklar. Yapılan madde silinir.
 
-## Beta.2 kapsamı
+## Beta.1'den sonraki sürüm
 
-Beta.1 yayına hazırdır (henüz yayınlanmadı). Beta.2 **yeni özellik eklemez**: yalnızca doğrulama eksiklerini kapatır, hataları düzeltir ve var olan
+Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama eksiklerini kapatır, hataları düzeltir ve var olan
 özellikleri iyileştirir (bir özelliği başka bir özelliğe çevirmeden, mevcut olanı düzenleyerek). Üç ürün için geçerlidir.
 
 - [ ] Doğrulama eksikleri: gerçek eski sürümden (beta.1) güncelleme CI işi, Hub'ın kendini güncellemesi, Brain'de Gemini CLI
@@ -26,7 +26,7 @@ Beta.1 yayına hazırdır (henüz yayınlanmadı). Beta.2 **yeni özellik ekleme
 ## Yayın
 
 - [ ] Temiz bir makinede ilk kurulum henüz denenmedi (`tests/native/hub_native_e2e.mjs` kurulu ürün olan makinede başlamaz).
-  Hub'ın katalogdan kendini güncellemesi (Ayarlar > Güncellemeler > Hub'ı güncelle) ilk sürümde kapalı; bir sonraki sürüm yayınlanınca gerçek yeni sürümle denenecek;
+  Hub'ın katalogdan kendini güncellemesi (Ayarlar > Güncellemeler > Hub'ı güncelle) ilk sürümde denenemez, çünkü güncellenecek daha yeni sürüm yok; bir sonraki sürüm yayınlanınca gerçek yeni sürümle denenecek;
   `npm run preview:update` yalnızca ekranları sahte veriyle gösterir.
 - [ ] Kurucuyu Authenticode ile imzalamak (SmartScreen uyarısı). Kod imzalama sertifikası gerekir; yok.
 - [ ] macOS / Linux: doğrulanmadı. Bu geliştirme makinesi Windows.

@@ -61,7 +61,8 @@ export const FACTS: Record<FactSubject, Record<FactPhase, string[]>> = {
       'Program klasörü ve Windows Uygulamalar girdisi silinir; kurulum kaydı her zaman kalkar.',
       'AI araçlarındaki Respected girdileri, zamanlanmış görev ve kısayol geri alınır; sizin ve başka araçların girdileri kalır.',
       'Ayarlar ve çalışma verisi (veri klasörü) varsayılan olarak kalır; "çalışma verileri de silinsin" seçeneğiyle silinir.',
-      'Not kasanız hiçbir durumda silinmez. Sizin değiştirdiğiniz bir sahipli dosya silinmez, çakışma olarak bildirilir.',
+      'Not kasanız hiçbir durumda silinmez.',
+      'Respected\'ın eklediği bir girdiyi elle değiştirmiş olsanız da kaldırırken o girdi gider; sizin eklediğiniz her şey kalır. Elle değiştirdiğiniz çalışma dosyaları (ayarlar) düz kaldırmada kalır, "çalışma verileri de silinsin" ile silinir.',
     ],
   },
   orchestrator: {
@@ -75,6 +76,7 @@ export const FACTS: Record<FactSubject, Record<FactPhase, string[]>> = {
       'Görev durumu, kanıt ve kampanya kayıtları veri klasöründe birikir.',
       'Görevi, bilgisayarınızda kurulu AI aracı (Codex, Claude, Gemini, agy, Cursor) komut satırından yapar; görev metni o aracın sağlayıcısına gider.',
       'Doğrulama komutları kısıtlı bir Windows belirteciyle çalışır; çalışanın ortamından sır gibi görünen değişkenler çıkarılır.',
+      'Çalışan araç bilgisayarınızda sıradan bir süreçtir: projenizin çalışma ağacı dışına yazmasını Orchestrator engellemez, koruma o aracın kendi kum havuzundan gelir.',
     ],
     update: [
       'Çalışan Orchestrator süreçleri durdurulur; program klasörü yeni sürümle yenilenir, eski sürümden kalan dosyalar silinir.',
@@ -83,7 +85,7 @@ export const FACTS: Record<FactSubject, Record<FactPhase, string[]>> = {
     ],
     uninstall: [
       'Program klasörü ve Windows Uygulamalar girdisi silinir; kurulum kaydı her zaman kalkar.',
-      'AI araçlarındaki Respected girdileri geri alınır; sizin ve başka araçların girdileri kalır.',
+      'AI araçlarındaki Respected girdileri (elle değiştirmiş olsanız da) geri alınır; sizin ve başka araçların girdileri kalır.',
       'Ayarlar, görev geçmişi ve çalışma ağaçları (veri klasörü) varsayılan olarak kalır; "çalışma verileri de silinsin" seçeneğiyle silinir.',
       'Projelerinize ve Git depolarınıza dokunulmaz.',
     ],

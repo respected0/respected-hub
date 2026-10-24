@@ -6,7 +6,7 @@
 
 ### Respected ekosisteminin masaüstü uygulaması.
 
-Brain'i ve Orchestrator'ı tek yerden kur, güncelle, onar, ayarla.
+Brain'i ve Orchestrator'ı tek yerden kurun, güncelleyin, onarın, ayarlayın.
 
 <br>
 
@@ -31,7 +31,7 @@ Respected ekosistemi üç ayrı ürün: **Hub**, **[Brain](https://github.com/re
 **[Orchestrator](https://github.com/respected0/respected-orchestrator)** (yerel AI görev motoru). Her biri kendi başına kurulur ve çalışır.
 Hub, bunları komut satırı bilmeden yönetmeniz için var:
 
-- **Tek yerden yönetim.** Kur, güncelle, onar, kaldır; ürünlerin ayarlarını ve AI araçlarıyla bağlantılarını görsel olarak değiştir.
+- **Tek yerden yönetim.** Kurun, güncelleyin, onarın, kaldırın; ürünlerin ayarlarını ve AI araçlarıyla bağlantılarını görsel olarak değiştirin.
 - **Her ürüne bir çalışma alanı.** Orchestrator görevleri ve kanıtları, Brain'in hafıza sayfası.
 - **Öneri var, dayatma yok.** Yeni sürümler önerilir, sessizce kurulmaz.
 
@@ -169,7 +169,7 @@ gerçek indirmesini.
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | İç yapı ve bağlayıcı kurallar |
 | [ROADMAP.md](docs/ROADMAP.md) | Yol haritası |
 | [PRIVACY.md](PRIVACY.md) | Hangi veri nerede durur, neresi dışarı çıkar |
-| [FOOTPRINT.md](docs/FOOTPRINT.md) | Ne yaparsan nerede ne oluşur: kurulum, AI araçları, kaldırma |
+| [FOOTPRINT.md](docs/FOOTPRINT.md) | Ne yaparsanız nerede ne oluşur: kurulum, AI araçları, kaldırma |
 | [RELEASE.md](release/RELEASE.md) | Derleme ve yayın |
 
 ## Destek

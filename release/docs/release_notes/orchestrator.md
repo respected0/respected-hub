@@ -25,7 +25,7 @@ eski sürüme dönüş desteklenmez.
 
 ## Kurulumdan sonra
 
-Kullandığın AI aracını yeniden başlat ve aracın ilgili yerinden (eklentiler, MCP) Orchestrator'a izin ver. Yoksa araç Orchestrator'ı görmez.
+Kullandığınız AI aracını yeniden başlatın ve aracın ilgili yerinden (eklentiler, MCP) Orchestrator'a izin verin. Yoksa araç Orchestrator'ı görmez.
 
 ## Nereye ne gider
 
@@ -39,5 +39,6 @@ Hesap ve telemetri yoktur. Hangi verinin nerede durduğu ve neyin dışarı çı
 ## Bu betanın sınırları
 
 - Yalnızca Windows; kod imzası yok.
-- Gemini çalışanları Windows'ta kullanılamaz.
+- Gemini çalışanı, npm'in `.cmd` kabuğuyla kurulmuşsa Windows'ta kullanılamaz.
+- Çalışan araç bilgisayarınızda sıradan bir süreçtir: çalışma ağacının dışına yazarsa Orchestrator bunu yakalamaz.
 - Sorunları https://github.com/respected0/respected-orchestrator/issues adresine bildirin.

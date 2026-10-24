@@ -26,7 +26,7 @@ korunur; eski sürüme dönüş desteklenmez.
 
 ## Kurulumdan sonra
 
-Kullandığın AI aracını yeniden başlat ve aracın ilgili yerinden (eklentiler, hook'lar) Brain'in istediği onayları ver. Onaylamazsan hafıza yazılmaz.
+Kullandığınız AI aracını yeniden başlatın ve aracın ilgili yerinden (eklentiler, hook'lar) Brain'in istediği onayları verin. Onaylamazsanız hafıza yazılmaz.
 
 ## Nereye ne gider
 
@@ -41,6 +41,6 @@ Hesap ve telemetri yoktur. Hangi verinin nerede durduğu ve neyin dışarı çı
 ## Bu betanın sınırları
 
 - Yalnızca Windows; kod imzası yok.
-- Claude Code uçtan uca doğrulandı; Codex, Cursor, Gemini ve Antigravity kayıtları testlerle kapsanıyor ama gerçek oturumlarla
-  henüz değil (deneysel sayın).
+- Claude Code, Codex ve Antigravity gerçek oturumlarla doğrulandı; Gemini CLI ve Cursor yalnızca test verileriyle sınandı
+  (deneysel sayın).
 - Sorunları https://github.com/respected0/respected-brain/issues adresine bildirin.

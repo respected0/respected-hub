@@ -20,12 +20,12 @@ Giriş: [README.md](../README.md). Yayın: [release/RELEASE.md](../release/RELEA
 | Eylem | Ne çalışır |
 |---|---|
 | Kur, Güncelle, Onar | Katalogdaki kurucu: `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART` + seçilenler için `/VAULT=` ve `/SET=anahtar=değer` |
-| Kaldır | `app\unins000.exe` aynı sessiz anahtarlarla, istenirse `/PURGE=1` |
+| Kaldır | Ürünün kaldırıcısı (`app\unins000.exe`; yarım kalmış bir kurulum numaralı bir çift bırakmışsa sağlam olan en yenisi) aynı sessiz anahtarlarla, istenirse `/PURGE=1` |
 
 1. **Plan:** kurucu paketinin imzası ve kurucunun SHA-256'sı denetlenir, kişiye ne çalışacağı gösterilir ("…imzalı
    kurucusunu çalıştırır"). Planda hiçbir şey yazılmaz.
 2. **Onay** sonrası kurucu (en fazla 15 dakika) çalışır. Bilinmeyen bir anahtar ya da parametre reddedilir, kurucuya
-   geçirilmez.
+   geçirilmez. Kurucu sıfırdan farklı bir kodla biterse işlem `LIFECYCLE_PARTIAL` olarak kapanır.
 3. **Doğrulama:** kurulumdan sonra ürünün `manifest`'i `installed: true` demelidir; kaldırmadan sonra program klasörü
    gitmiş olmalıdır.
 4. **Önbellek:** yalnızca şu an kurulu sürümün kurucusu kalır (çevrimdışı onarım için); kaldırınca hiçbiri kalmaz.
