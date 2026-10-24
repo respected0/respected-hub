@@ -5,6 +5,7 @@ import { excerpt } from '../../src/products/brain/noteExcerpt.ts';
 
 test('known checks read as plain sentences, bad ones keep the product detail', () => {
   assert.equal(plainCheck('vault_registered', true, 'Vault registered: C:\Notes').text, 'Kasa bağlı: C:\Notes');
+  assert.match(plainCheck('vault_folder', false, 'Vault folder not found (drive disconnected?): E:\Kasa').text, /USB.*E:/);
   assert.match(plainCheck('git_available', false, 'git not found on PATH').text, /Git bulunamadı.*git not found/);
   assert.equal(plainCheck('worker_cli', true, 'claude, codex').text, 'Kullanılabilir: claude, codex');
 });
