@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from acceptance import real_env_guard
-from common.ecosystem_root import ECO  # noqa: E402
+from ecosystem_root import ECO  # noqa: E402
 
 hub = ECO / "respected-hub"
 before = real_env_guard.snapshot()

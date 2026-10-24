@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 
-from common.ecosystem_root import ECO as ROOT
+from ecosystem_root import ECO as ROOT
 SIGNING_DIR = ROOT / ".build-cache" / "signing"
 DEV_KEY = SIGNING_DIR / "dev-ed25519.key"
 DEV_PUBLIC = SIGNING_DIR / "dev-ed25519.pub"
