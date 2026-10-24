@@ -119,7 +119,7 @@ fn apply_in(roots: &Roots, root: &Path, id: &str, action: &str, params: &Value, 
 fn run_action(roots: &Roots, root: &Path, id: &str, action: &str, args: &[String], entry: &mut Value, run: Runner, verify: Checker) -> Result<(), LifecycleError> {
     let product = product(id)?;
     if action == "uninstall" {
-        let uninstaller = product.app_dir_in(root).join("unins000.exe");
+        let uninstaller = uninstaller_in(&product.app_dir_in(root));
         if !uninstaller.is_file() { return Err(err("VERIFY_FAILED", "Ürünün kaldırıcısı bulunamadı.", "Windows'taki Yüklü uygulamalar listesinden kaldırın.")); }
         lifecycle::set_status(roots, entry, "switching")?;
         run(&uninstaller, args).map_err(|m| err("LIFECYCLE_PARTIAL", format!("Kaldırıcı tamamlanamadı: {m}"), "Ürün çalışıyorsa kapatıp yeniden deneyin."))?;
@@ -147,6 +147,16 @@ fn run_action(roots: &Roots, root: &Path, id: &str, action: &str, args: &[String
     outcome?;
     entry["to_version"] = json!(bundle.version);
     Ok(())
+}
+
+/// Inno numbers its uninstaller files (unins000, unins001...) when an interrupted install left a broken pair behind (an empty
+/// `.dat`): the newest pair that is not broken is the one the Installed-apps entry points to.
+fn uninstaller_in(app: &Path) -> std::path::PathBuf {
+    let mut found: Vec<std::path::PathBuf> = std::fs::read_dir(app).into_iter().flatten().flatten().map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|x| x == "exe") && p.file_stem().and_then(|s| s.to_str()).is_some_and(|s| s.len() == 8 && s.starts_with("unins") && s[5..].bytes().all(|b| b.is_ascii_digit())))
+        .filter(|p| std::fs::metadata(p.with_extension("dat")).map_or(true, |m| m.len() > 0)).collect();
+    found.sort();
+    found.pop().unwrap_or_else(|| app.join("unins000.exe"))
 }
 
 /// Run an installer or uninstaller to its end. No pipes: Inno's second-stage processes outlive the first and would hold them.
@@ -244,6 +254,20 @@ mod tests {
         assert_eq!(removed["status"], "applied");
         assert_eq!(calls.borrow().last().unwrap()[1..], ["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/PURGE=1"]);
         assert!(installed::product("brain").unwrap().installed_in(&root).is_none());
+    }
+
+    #[test]
+    fn the_uninstaller_is_the_newest_working_pair_after_an_interrupted_install() {
+        let app = temp("unins");
+        assert_eq!(uninstaller_in(&app), app.join("unins000.exe"), "nothing there: the usual name");
+        fs::write(app.join("unins000.exe"), b"x").unwrap();
+        fs::write(app.join("unins000.dat"), b"").unwrap(); // the install was killed while writing it
+        fs::write(app.join("unins001.exe"), b"x").unwrap();
+        fs::write(app.join("unins001.dat"), b"data").unwrap();
+        assert_eq!(uninstaller_in(&app), app.join("unins001.exe"));
+        fs::remove_file(app.join("unins001.dat")).unwrap();
+        fs::write(app.join("unins001.dat"), b"").unwrap();
+        assert_eq!(uninstaller_in(&app), app.join("unins000.exe"), "no pair is whole: fall back to the first name");
     }
 
     #[test]

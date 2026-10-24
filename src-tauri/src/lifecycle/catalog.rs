@@ -15,6 +15,8 @@ pub const INDEX_URL: &str = "https://github.com/respected0/respected-hub/release
 const INDEX_DOMAIN: &str = "respected-catalog-v1\n";
 pub const HUB_VERSION: &str = env!("CARGO_PKG_VERSION");
 const MAX_ARCHIVE: u64 = 512 * 1024 * 1024;
+const MAX_INDEX: u64 = 4 * 1024 * 1024;
+const MAX_SIGNATURE: u64 = 4096;
 const CHANNELS: [&str; 2] = ["beta", "stable"];
 
 fn err(code: &'static str, message: impl Into<String>, hint: impl Into<String>) -> LifecycleError {
@@ -39,10 +41,10 @@ pub fn set_channel(roots: &Roots, channel: &str) -> Result<(), LifecycleError> {
 }
 
 /// Windows' own curl (System32, never a PATH lookup). Production downloads are https only, redirects included.
-fn curl(url: &str, output: &Path, max_seconds: u32) -> Result<(), String> {
+fn curl(url: &str, output: &Path, max_seconds: u32, max_bytes: u64) -> Result<(), String> {
     let program = if cfg!(windows) { std::env::var_os("SystemRoot").map(PathBuf::from).unwrap_or_else(|| PathBuf::from(r"C:\Windows")).join("System32").join("curl.exe") } else { PathBuf::from("curl") };
     let mut command = Command::new(program);
-    command.args(["--location", "--fail", "--silent", "--show-error", "--max-time", &max_seconds.to_string()]);
+    command.args(["--location", "--fail", "--silent", "--show-error", "--max-time", &max_seconds.to_string(), "--max-filesize", &max_bytes.to_string()]);
     if !crate::trust::dev_enabled() { command.args(["--proto", "=https", "--proto-redir", "=https"]); }
     command.arg("--output").arg(output).arg(url);
     #[cfg(windows)] { use std::os::windows::process::CommandExt; command.creation_flags(0x08000000); }
@@ -73,7 +75,7 @@ pub fn refresh(roots: &Roots) -> Result<Value, LifecycleError> {
     fs::create_dir_all(&dir).map_err(|e| offline(e.to_string()))?;
     let (body, sig) = (dir.join("catalog.json.part"), dir.join("catalog.json.sig.part"));
     let url = index_url();
-    curl(&url, &body, 60).and_then(|_| curl(&format!("{url}.sig"), &sig, 60)).map_err(offline)?;
+    curl(&url, &body, 60, MAX_INDEX).and_then(|_| curl(&format!("{url}.sig"), &sig, 60, MAX_SIGNATURE)).map_err(offline).inspect_err(|_| { let _ = (fs::remove_file(&body), fs::remove_file(&sig)); })?;
     let bytes = fs::read(&body).map_err(|e| offline(e.to_string()))?;
     let signature = fs::read_to_string(&sig).map_err(|e| offline(e.to_string()))?;
     let _ = (fs::remove_file(&body), fs::remove_file(&sig));
@@ -161,7 +163,7 @@ fn download_bundle(roots: &Roots, product: &str, target: &Entry) -> Result<(), L
         .ok_or_else(|| failed("Katalogdaki paket adresi geçersiz.".into()))?;
     let archive = dir.join(name);
     let result = (|| {
-        curl(&target.url, &archive, 1800).map_err(failed)?;
+        curl(&target.url, &archive, 1800, target.size).map_err(failed)?;
         let size = fs::metadata(&archive).map(|m| m.len()).unwrap_or(0);
         let sha = lifecycle::sha256_file(&archive).map_err(|e| failed(e.to_string()))?;
         if size != target.size || sha != target.sha256 { return Err(err("VERIFY_FAILED", "İndirilen paket katalogdaki özetle uyuşmuyor.", "Hiçbir şey kurulmadı; yeniden deneyin.")); }
@@ -240,7 +242,7 @@ pub fn install_hub_update(roots: &Roots) -> Result<(), LifecycleError> {
     let dir = download_dir(roots);
     fs::create_dir_all(&dir).map_err(|e| err("INTERNAL", e.to_string(), "Disk alanını kontrol edin."))?;
     let setup = dir.join(format!("RespectedHub-Setup-{}.exe", release.version));
-    curl(&release.url, &setup, 1800).map_err(|m| err("CATALOG_UNAVAILABLE", format!("Hub güncellemesi indirilemedi: {m}"), "İnternet bağlantınızı kontrol edin."))?;
+    curl(&release.url, &setup, 1800, release.size).map_err(|m| err("CATALOG_UNAVAILABLE", format!("Hub güncellemesi indirilemedi: {m}"), "İnternet bağlantınızı kontrol edin."))?;
     let ok = fs::metadata(&setup).map(|m| m.len()).ok() == Some(release.size) && lifecycle::sha256_file(&setup).ok().as_deref() == Some(release.sha256.as_str());
     if !ok { let _ = fs::remove_file(&setup); return Err(err("VERIFY_FAILED", "İndirilen Hub kurulumu katalogdaki özetle uyuşmuyor.", "Hiçbir şey değiştirilmedi.")); }
     Command::new(&setup).args(["/SILENT", "/NOCANCEL", "/RELAUNCH=1"]).spawn().map_err(|e| err("INTERNAL", format!("Kurulum başlatılamadı: {e}"), "Kurulumu indirip elle çalıştırın."))?;
