@@ -26,7 +26,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![settings::get_settings, settings::save_settings,
             commands::engine::engine_request, commands::engine::rpp_request, commands::engine::product_status, commands::engine::development_build, commands::engine::campaign_list,
-            commands::manage::startup_intent, commands::manage::lifecycle_status, commands::manage::lifecycle_plan,
+            commands::manage::startup_intent, commands::manage::lifecycle_status, commands::manage::lifecycle_plan, commands::manage::detect_ai_clients,
             commands::manage::lifecycle_apply, commands::manage::activity_list, commands::manage::catalog_refresh, commands::manage::catalog_set_channel,
             commands::manage::hub_update_status, commands::manage::hub_update_install, commands::manage::orchestrator_mcp_plan,
             commands::manage::orchestrator_mcp_apply,

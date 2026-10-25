@@ -1,21 +1,24 @@
 import { useEffect, useState } from 'react';
 import { changedOnly, clientLabel, describeMcpError, initialDesired, mcpApply, mcpPlan } from '../mcpAccess.ts';
 import type { McpPlan } from '../mcpAccess.ts';
+import { forgetMcpStatus, orchestratorMcpStatus, peekMcpStatus } from '../../../shared/settingsData.ts';
 
 const ACTION: Record<string, string> = { create: 'Eklenir', update: 'Güncellenir', remove: 'Kaldırılır' };
 
 // Connect the Orchestrator to AI clients as an MCP server. Nothing is written before the user approves the exact plan.
 export default function OrchestratorMcp() {
-  const [status, setStatus] = useState<McpPlan | null>(null);
-  const [initial, setInitial] = useState<Record<string, boolean>>({});
-  const [desired, setDesired] = useState<Record<string, boolean>>({});
+  const last = peekMcpStatus()?.result;  // kept warm since the Hub opened; shown at once, then refreshed
+  const [status, setStatus] = useState<McpPlan | null>(last ?? null);
+  const [initial, setInitial] = useState<Record<string, boolean>>(() => last ? initialDesired(last) : {});
+  const [desired, setDesired] = useState<Record<string, boolean>>(() => last ? initialDesired(last) : {});
   const [plan, setPlan] = useState<McpPlan | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
 
   async function load() {
-    const reply = await mcpPlan({});
+    forgetMcpStatus();  // a refresh asks again (after an apply the stored answer is old)
+    const reply = await orchestratorMcpStatus();
     if (!reply.ok) { setError(describeMcpError(reply.error)); return; }
     const start = initialDesired(reply.result);
     setStatus(reply.result); setInitial(start); setDesired(start); setPlan(null);

@@ -6,6 +6,7 @@ import { rppTry } from '../shared/productClient.ts';
 import { activityList, lifecycleStatus, type JournalEntry, type LifecycleOverview } from './lifecycle.ts';
 import { summarizeProduct, type ProductSummary } from '../shared/productsModel.ts';
 import { onReturn } from '../shared/focus.ts';
+import { warmOrchestratorSettings } from '../shared/settingsData.ts';
 import { terminal } from '../products/orchestrator/tasks.ts';
 
 interface AppRuntime { loading: boolean; summary: ProductSummary; }
@@ -48,6 +49,7 @@ export function useEcosystem(): Ecosystem {
       manifests.current[app.id] = { version, response: manifest };
       setApps(before => ({ ...before, [app.id]: { loading: false, summary: summarizeProduct(manifest, health) } }));
     }));
+    if (!absent.has('orchestrator')) warmOrchestratorSettings();  // so its Settings page opens without waiting for the programs
     await Promise.all([runsDone, history]);
   }, []);
 
