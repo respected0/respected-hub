@@ -56,7 +56,11 @@ export default function BrainIntegrations({ settings, onApplied }: { settings: R
     setBusy(true); setError(''); setDone('');
     const reply = await rppCall('brain', 'settings.apply', { settings: toSettings(selection) }, crypto.randomUUID());
     setBusy(false);
-    if (reply.ok) { setSaved(JSON.stringify(toSettings(selection))); setDone('Bağlantılar Brain tarafından uygulandı.'); onApplied(); } else setError(failure(reply));
+    if (!reply.ok) { setError(failure(reply)); return; }
+    setSaved(JSON.stringify(toSettings(selection))); setDone('Bağlantılar Brain tarafından uygulandı.'); onApplied();
+    // the "Değişecekler" list was planned against the files as they were: ask again, now there is nothing left to change (the choice itself did not change, so no effect reruns)
+    const fresh = await integrationsPlan(desired);
+    if (fresh?.ok) setPlan(fresh.result as IntegrationPlan);
   }
 
   const detected = plan?.clients ? Object.fromEntries(plan.clients.map(item => [item.id, item.detected])) : local;
