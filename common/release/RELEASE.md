@@ -32,7 +32,7 @@ ve insanlar yeni Hub'ı elle indirmek zorunda kalır. Anahtar kimliği `dabcb526
 | `tools/signing/` | `bundle_signing.py`, `release_keys.py`, `release_vault.py`: anahtar saklama ve imzalama. |
 | `tests/test_release_tools.py` | Araçların kendi testi (CI'da çalışır). |
 | `BETA_NOTICE.txt` | Hub kurucusunun kurmadan önce gösterdiği sayfa. |
-| `docs/release_notes/<ürün>.md` | Her ürünün GitHub sürüm sayfası şablonu (`upload` kullanır; `{notes}` yerine ürünün kendi `UPDATE_NOTES.md` maddeleri girer, ürünler birbirinin adını anmaz). |
+| `docs/release_notes/<ürün>.md` | Her ürünün GitHub sürüm sayfası şablonu (`upload` kullanır; `{notes}` yerine ürünün kendi `packaging/windows/UPDATE_NOTES.md` dosyasının tamamı (giriş metni ve maddeler) girer; kurucunun son sayfası da aynı dosyayı gösterir; ürünler birbirinin adını anmaz). |
 
 ## 3. Sürüm
 
@@ -57,7 +57,7 @@ Remove-Item Env:\RESPECTED_VAULT_PASSPHRASE
 
 - `build --only brain` yalnızca bir ürünü yayınlar; katalog diğerlerini yayındaki haliyle tutar.
 - `catalog --channel stable` kararlı kanala yayınlar; `--min-hub X` eski Hub'ların önce kendini güncellemesini ister;
-  `--notes "metin"` her ürün için ürünün kendi `UPDATE_NOTES.md` maddelerinin (en çok 600 karakter) yerine geçer; katalogdaki not güncelleme önerilirken gösterilir ve imzaya dahildir.
+  `--notes "metin"` her ürün için ürünün `UPDATE_NOTES.md` maddelerinin (katalog yalnızca `- ` ile başlayan satırları alır, en çok 600 karakter; en önemli maddeler başta olmalı) yerine geçer; katalogdaki not güncelleme önerilirken gösterilir ve imzaya dahildir.
 - **Yayınlanmış bir sürüm numarası bir daha kullanılmaz.** Düzeltme gerekiyorsa yeni numara çıkar (`0.1.0-beta.3`):
   Hub aynı numarayı "daha yeni" saymaz, kurmuş olanlar düzeltmeyi almaz. Yalnızca hiç yayınlanmamış numara yerinde yeniden derlenir.
 - Yükleme sırası: önce ürünler, en son katalog (katalog hiçbir zaman olmayan bir dosyayı göstermez).

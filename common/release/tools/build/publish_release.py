@@ -34,7 +34,7 @@ DOMAIN = b"respected-catalog-v1\n"
 REPOS = {"hub": "respected-hub", "brain": "respected-brain", "orchestrator": "respected-orchestrator"}
 PRODUCT_INSTALLERS = {"hub": "RespectedHub", "brain": "RespectedBrain", "orchestrator": "RespectedOrchestrator"}
 # Every product owns its "what changed" bullets (the installer shows the same file after setup); nothing is shared between products.
-UPDATE_NOTES = {"hub": HUB / "common" / "release" / "UPDATE_NOTES.md", "brain": ECO / REPOS["brain"] / "packaging" / "windows" / "UPDATE_NOTES.md",
+UPDATE_NOTES = {"hub": HUB / "packaging" / "windows" / "UPDATE_NOTES.md", "brain": ECO / REPOS["brain"] / "packaging" / "windows" / "UPDATE_NOTES.md",
                 "orchestrator": ECO / REPOS["orchestrator"] / "packaging" / "windows" / "UPDATE_NOTES.md"}
 DISPLAY = {"hub": "Respected-Hub", "brain": "Respected-Brain", "orchestrator": "Respected-Orchestrator"}
 
@@ -157,6 +157,11 @@ def update_bullets(product: str) -> str:
     return "\n".join(line for line in UPDATE_NOTES[product].read_text("utf-8").splitlines() if line.startswith("- "))
 
 
+def release_text(product: str) -> str:
+    """The whole notes file (introduction and bullets): the GitHub release page shows all of it, the catalog only the bullets."""
+    return UPDATE_NOTES[product].read_text("utf-8").strip()
+
+
 def catalog_note(product: str, limit: int = 600) -> str:
     """The product's own bullets, cut at a bullet boundary to the catalog's 600-character limit."""
     text = ""
@@ -227,7 +232,7 @@ def upload(args) -> None:
     for name, row in entries.items():
         template = (TOOLS.parent / "docs" / "release_notes" / f"{name}.md").read_text("utf-8")  # one page per product, never shared
         bodies[(row["repo"], row["tag"])] = OUT / f"release-notes-{name}.md"
-        bodies[(row["repo"], row["tag"])].write_text(template.replace("{version}", row["tag"][1:]).replace("{notes}", update_bullets(name)), "utf-8", newline="\n")
+        bodies[(row["repo"], row["tag"])].write_text(template.replace("{version}", row["tag"][1:]).replace("{notes}", release_text(name)), "utf-8", newline="\n")
         installer = OUT / installer_name(name, row["tag"][1:])
         files = [installer] if name == "hub" else [installer, OUT / row["file"]]
         releases.setdefault((row["repo"], row["tag"]), []).extend(files)

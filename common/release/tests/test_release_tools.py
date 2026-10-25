@@ -66,7 +66,7 @@ try:
     assert all(0 < len(pr.catalog_note(name)) <= 600 for name in pr.UPDATE_NOTES), "every product has its own catalog note"
     names = {"hub": "", "brain": "Brain", "orchestrator": "Orchestrator"}  # the Hub is named by every installer, products never name each other
     for name in names:  # a product's release page and notes never talk about another product
-        text = (pr.TOOLS.parent / "docs" / "release_notes" / f"{name}.md").read_text("utf-8") + pr.update_bullets(name)
+        text = (pr.TOOLS.parent / "docs" / "release_notes" / f"{name}.md").read_text("utf-8") + pr.release_text(name)
         assert "{notes}" in text and not [other for key, other in names.items() if other and key != name and other in text], name
     guarded = pr.merged_catalog({**base, "blocked": {"brain": ["0.1.0-beta.0"]}}, entries, "beta", None, None, "0.1.0-beta.1", ["brain:0.1.0-beta.2", "brain:0.1.0-beta.2", "hub:0.1.0"])
     assert guarded["products"]["orchestrator"]["beta"]["min_from"] == "0.1.0-beta.1" and "min_from" not in release

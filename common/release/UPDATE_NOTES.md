@@ -1,3 +1,0 @@
-- İlk beta: Kütüphane ve Keşfet sayfalarından Respected ürünlerini kurun, güncelleyin, kaldırın.
-- Yeni sürüm olduğunda Ayarlar yanında küçük bir nokta görünür; hiçbir şey siz onaylamadan güncellenmez.
-- Kurucu imzasızdır: Windows uyarırsa dosyanın özetini SHA256SUMS.txt ile karşılaştırın.
