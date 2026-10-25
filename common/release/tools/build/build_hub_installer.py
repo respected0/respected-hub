@@ -60,7 +60,15 @@ if __name__ == "__main__":
     shutil.copyfile(exe, STAGE / "respected-hub.exe")
     if not release:  # public half only; production installers carry no development trust
         shutil.copyfile(ECO / ".build-cache" / "signing" / "dev-ed25519.pub", STAGE / "dev-trust.pub")
-    shutil.copyfile(TOOLS.parent / "BETA_NOTICE.txt", STAGE / "BETA_NOTICE.txt")
+    # one information page: the beta notice, then what the Hub does on the computer (the same text the Hub shows in Settings)
+    notice = (TOOLS.parent / "BETA_NOTICE.txt").read_text("utf-8-sig").strip()
+    facts = (HUB / "packaging" / "windows" / "hub_info.txt").read_text("utf-8-sig").strip()
+    (STAGE / "hub_notice.txt").write_text(notice + "
+
+" + "—" * 13 + "
+
+" + facts + "
+", "utf-8-sig", newline="")
     if release:  # a production artifact must not carry the development override surface
         data = (STAGE / "respected-hub.exe").read_bytes()
         leaked = [s for s in (b"RESPECTED_HUB_ALLOW_UNSIGNED", b"RESPECTED_HUB_DEV_TRUST", b"RESPECTED_HUB_TEST_HOME") if s in data]

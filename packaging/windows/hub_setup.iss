@@ -37,13 +37,13 @@ WizardStyle=modern
 WizardImageFile=wizard\side-164x314.bmp,wizard\side-192x366.bmp,wizard\side-246x470.bmp,wizard\side-328x628.bmp
 DisableWelcomePage=no
 InfoAfterFile=UPDATE_NOTES.md
-InfoBeforeFile={#StageDir}\BETA_NOTICE.txt
+InfoBeforeFile={#StageDir}\hub_notice.txt
 
 [Languages]
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 
 [Messages]
-turkish.WizardInfoBefore=Beta sürümü hakkında
+turkish.WizardInfoBefore=Beta sürümü ve bilgisayarınızda neler olur
 turkish.InfoBeforeLabel=Bu kurucu henüz imzalı değil. Kurmadan önce aşağıdaki bilgileri okuyun.
 turkish.WizardInfoAfter=Yenilikler
 turkish.InfoAfterLabel=Bu sürümde neler değişti?

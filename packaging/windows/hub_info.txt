@@ -1,0 +1,26 @@
+﻿Respected Hub: bilgisayarınızda neler olur
+
+Bu bilgiler Hub'ın Ayarlar sayfasında da aynen görünür.
+
+KURULUMDA NELER OLUR
+
+  - Program: %LOCALAPPDATA%\Respected\RespectedHub\app. Yönetici izni ve Python gerekmez.
+  - Başlat menüsü ve masaüstü kısayolu; Windows Ayarlar › Uygulamalar listesinde bir giriş.
+  - Hub'ın kendi verisi: pencere verisi (%LOCALAPPDATA%\com.respected.hub, %APPDATA%\com.respected.hub), katalog önbelleği ve etkinlik günlüğü (%LOCALAPPDATA%\Respected\RespectedHub\managed).
+  - Microsoft Edge WebView2 gerekir (Windows 11'de hazır gelir); kurucu onu kendiliğinden indirmez, yoksa size söyler.
+
+KULLANIRKEN NELER OLUR
+
+  - GitHub'daki imzalı Respected kataloğunu okur; imzası geçmeyen katalog kullanılmaz.
+  - Ürün kurucuları yalnızca siz onaylayınca indirilir; imza ve özet doğrulanır, sonra ürünün kendi kurucusu çalışır.
+  - Hub ürünler hakkında veri saklamaz: durumu her seferinde ürünlerden okur.
+
+GÜNCELLEMEDE NELER DEĞİŞİR
+
+  - Siz onaylayınca yeni kurucu indirilip doğrulanır; Hub kapanır, yerinde güncellenir ve yeniden açılır.
+  - Ürünlere, notlarınıza ve ayarlarınıza dokunulmaz.
+
+KALDIRINCA NELER SİLİNİR
+
+  - Hub'ın programı, kısayolları ve kendi klasörleri (pencere verisi, katalog önbelleği, etkinlik günlüğü) silinir.
+  - Kurulu ürünlere (Brain, Orchestrator) dokunulmaz; Hub'ı yeniden kurunca onları olduğu gibi bulur.

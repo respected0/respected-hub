@@ -13,7 +13,7 @@ test('a repair is explained like an update', () => {
 });
 
 // The product installers show the same sentences (packaging/windows/<product>_info.txt); the three repos sit side by side.
-for (const [subject, path] of [['brain', '../respected-brain/packaging/windows/brain_info.txt'], ['orchestrator', '../respected-orchestrator/packaging/windows/orchestrator_info.txt']] as const) {
+for (const [subject, path] of [['hub', 'packaging/windows/hub_info.txt'], ['brain', '../respected-brain/packaging/windows/brain_info.txt'], ['orchestrator', '../respected-orchestrator/packaging/windows/orchestrator_info.txt']] as const) {
   test(`${subject} installer notice carries the Hub's facts`, { skip: !existsSync(path) && 'sibling repository not checked out' }, () => {
     const notice = readFileSync(path, 'utf8');
     for (const phase of PHASES) for (const line of FACTS[subject][phase.id]) assert.ok(notice.includes(line), `${path} lacks: ${line}`);
