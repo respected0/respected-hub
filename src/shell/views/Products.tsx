@@ -4,6 +4,7 @@ import { Icon } from '../../shared/ui.tsx';
 import { plainCheck } from '../../shared/healthText.ts';
 import { rppCall } from '../../shared/productClient.ts';
 import type { RppProduct } from '../../shared/productClient.ts';
+import { forgetReadback, peekSettings, settingsReadback, settingsSchema } from '../../shared/settingsData.ts';
 import { describeError, SECRET_REDACTED } from '../../shared/rpp.ts';
 import type { RppResponse, SettingsSchema, SettingsValidation } from '../../shared/rpp.ts';
 import { changedSettings, formFromSchema, parseFieldValue, verifyReadback } from '../../shared/productsModel.ts';
@@ -15,11 +16,6 @@ const PRODUCTS: { id: RppProduct; name: string; description: string; short: stri
   { id: 'orchestrator', name: 'Respected Orchestrator', description: 'Bağımsız görev motoru.', short: 'Orchestrator', scope: 'Hub, Orchestrator\'a şu hızlı kontrolleri yapar: veri klasörü, git, çalışan araçlar ve motor anahtarı hazır mı. Görevlerin sonuçlarını denetlemez; onlar Kanıtlar sayfasındadır.' },
   { id: 'brain', name: 'RespectedBrain', description: 'AI hafıza motoru.', short: 'Brain', scope: 'Hub, Brain\'e şu hızlı kontrolleri yapar: ulaşılıyor mu, ayarlar ve veri klasörü okunuyor mu, not kasası bağlı mı. Notlarınızın içeriğini denetlemez; onun için brain-doktor becerisi var.' },
 ];
-
-async function call(product: RppProduct, op: string, payload?: Record<string, unknown>, operationId?: string): Promise<RppResponse | null> {
-  try { return await rppCall(product, op, payload, operationId); }
-  catch { return null; }
-}
 
 function failureText(response: RppResponse | null): string {
   if (!response) return 'Ürüne ulaşılamadı: çağrı yanıt vermedi.';
@@ -49,20 +45,25 @@ function ProductCard({ product }: { product: (typeof PRODUCTS)[number] }) {
   const [settingsError, setSettingsError] = useState('');
 
   const loadSettings = useCallback(async () => {
-    setSettingsState('loading');
     setSettingsLoadError('');
-    const [schemaResponse, readbackResponse] = await Promise.all([call(product.id, 'settings.schema'), call(product.id, 'settings.readback')]);
+    const show = (schemaResponse: RppResponse | null, readbackResponse: RppResponse | null) => {
+      const schemaResult = schemaResponse?.ok && typeof schemaResponse.result === 'object' && schemaResponse.result !== null ? schemaResponse.result as SettingsSchema : null;
+      const settings = settingsFrom(readbackResponse);
+      setSchema(schemaResult);
+      setOriginal(settings);
+      setFields(formFromSchema(schemaResult, settings));
+      setSettingsState('ready');
+    };
+    // the last answers (kept warm since the Hub opened) are shown at once; the fresh ones replace them only if they differ
+    const last = peekSettings(product.id);
+    if (last.schema?.ok && last.readback?.ok) show(last.schema, last.readback); else setSettingsState('loading');
+    const [schemaResponse, readbackResponse] = await Promise.all([settingsSchema(product.id), settingsReadback(product.id)]);
     if (!schemaResponse || !schemaResponse.ok) {
       setSettingsState('failed');
       setSettingsLoadError(failureText(schemaResponse) || 'Ayarlar şeması alınamadı.');
       return;
     }
-    const schemaResult = typeof schemaResponse.result === 'object' && schemaResponse.result !== null ? schemaResponse.result as SettingsSchema : null;
-    const settings = settingsFrom(readbackResponse);
-    setSchema(schemaResult);
-    setOriginal(settings);
-    setFields(formFromSchema(schemaResult, settings));
-    setSettingsState('ready');
+    if (!(last.schema?.ok && last.readback?.ok) || JSON.stringify(settingsFrom(readbackResponse)) !== JSON.stringify(settingsFrom(last.readback ?? null))) show(schemaResponse, readbackResponse);
     if (!readbackResponse || !readbackResponse.ok) setSettingsLoadError(`${failureText(readbackResponse)} Şema varsayılan değerlerle gösteriliyor.`);
   }, [product.id]);
 
@@ -104,8 +105,9 @@ function ProductCard({ product }: { product: (typeof PRODUCTS)[number] }) {
       if (!Object.keys(intended).length) { setSettingsMessage('Değiştirilmiş ayar yok.'); return; }
       const applied = await rppCall(product.id, 'settings.apply', { settings: intended }, crypto.randomUUID());
       if (!applied.ok) { setSettingsError(failureText(applied)); return; }
-      const readbackResponse = await rppCall(product.id, 'settings.readback');
-      if (!readbackResponse.ok) {
+      forgetReadback(product.id);  // the stored answer is from before this change
+      const readbackResponse = await settingsReadback(product.id);
+      if (!readbackResponse || !readbackResponse.ok) {
         setSettingsError(`Ayarlar uygulandı ama motordan geri okunamadı: ${failureText(readbackResponse)}`);
         return;
       }

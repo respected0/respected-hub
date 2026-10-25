@@ -46,7 +46,9 @@ export const lifecycleStatus = () => call<LifecycleOverview>('lifecycle_status')
 export const lifecyclePlan = (product: string, action: LifecycleAction, params?: LifecycleParams) => call<LifecyclePlan>('lifecycle_plan', { product, action, params: params ?? null });
 export const lifecycleApply = (product: string, action: LifecycleAction, params?: LifecycleParams, operationId = newOperationId(action)) =>
   call<JournalEntry>('lifecycle_apply', { product, action, operationId, params: params ?? null });
-export const activityList = (limit = 50) => call<JournalEntry[]>('activity_list', { limit });
+/** Which AI clients exist on this computer (before Brain is installed, so no product can answer). Rejects when the native side is unavailable. */
+export const detectAiClients = () => invoke<Record<string, boolean>>('detect_ai_clients');
+export const activityList =(limit = 50) => call<JournalEntry[]>('activity_list', { limit });
 
 export type Channel = 'beta' | 'stable';
 export interface HubUpdate { current: string; channel: Channel; available: { version: string; size: number; min_hub: string | null; notes?: string | null } | null; checked: boolean; }

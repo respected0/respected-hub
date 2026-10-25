@@ -3,7 +3,7 @@
 interface ClientDef { id: string; label: string; hooks: boolean; mcp: boolean; }
 export const CLIENTS: ClientDef[] = [
   { id: 'claude', label: 'Claude Code', hooks: true, mcp: true },
-  { id: 'codex', label: 'Codex', hooks: true, mcp: false },
+  { id: 'codex', label: 'Codex', hooks: true, mcp: true },
   { id: 'gemini', label: 'Gemini CLI', hooks: true, mcp: false },
   { id: 'antigravity', label: 'Antigravity', hooks: true, mcp: true },
   { id: 'cursor', label: 'Cursor', hooks: true, mcp: true },

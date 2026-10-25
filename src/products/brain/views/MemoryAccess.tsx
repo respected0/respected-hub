@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
-import { describeMemoryError, describeMemoryStatus, memoryAccessDisable, memoryAccessEnable, memoryAccessStatus } from '../memoryAccess.ts';
+import { describeMemoryError, describeMemoryStatus, memoryAccessDisable, memoryAccessEnable } from '../memoryAccess.ts';
+import { brainAccessStatus, forgetBrainAccess, peekBrainAccess } from '../../../shared/settingsData.ts';
 import type { MemoryStatus } from '../memoryAccess.ts';
 
 // Enable/disable Brain memory access. The grant token never reaches this component.
 export default function MemoryAccess() {
-  const [status, setStatus] = useState<MemoryStatus | null>(null);
+  const last = peekBrainAccess();  // kept warm since the Hub opened; shown at once, then refreshed
+  const [status, setStatus] = useState<MemoryStatus | null>(last?.ok ? last.result : null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [write, setWrite] = useState(false);
   const [error, setError] = useState('');
 
   async function refresh() {
-    const reply = await memoryAccessStatus();
+    forgetBrainAccess();  // after enable/disable the stored answer is old
+    const reply = await brainAccessStatus();
     if (reply.ok) setStatus(reply.result); else setError(describeMemoryError(reply.error));
   }
   useEffect(() => { void refresh(); }, []);

@@ -18,6 +18,12 @@ export function cached<T>(key: string, fetcher: () => Promise<T>, maxAgeMs = 0):
   return call;
 }
 
+/** `cached` for replies shaped `{ ok }`: a failed reply is handed back to every waiting caller but never stored. */
+export async function cachedReply<T extends { ok: boolean }>(key: string, fetcher: () => Promise<T>, maxAgeMs = 0): Promise<T> {
+  try { return await cached(key, async () => { const reply = await fetcher(); if (!reply.ok) throw reply; return reply; }, maxAgeMs); }
+  catch (failure) { if (failure && typeof failure === 'object' && 'ok' in failure) return failure as T; throw failure; }
+}
+
 export function forget(prefix: string): void {
   for (const key of [...store.keys()]) if (key.startsWith(prefix)) store.delete(key);
 }

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
-import { describeLifecycleError, lifecycleApply, lifecyclePlan } from '../../../shell/lifecycle.ts';
+import { describeLifecycleError, detectAiClients, lifecycleApply, lifecyclePlan } from '../../../shell/lifecycle.ts';
 import type { LifecyclePlan } from '../../../shell/lifecycle.ts';
-import { EMPTY_SELECTION, summarize, toSettings } from '../brainClients.ts';
+import { CLIENTS, EMPTY_SELECTION, summarize, toSettings } from '../brainClients.ts';
 import type { Selection } from '../brainClients.ts';
 import InstallFacts from '../../../shell/views/InstallFacts.tsx';
 import ClientPicker from './ClientPicker.tsx';
@@ -27,6 +27,15 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
   const [planning, setPlanning] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [detected, setDetected] = useState<Record<string, boolean> | null>(null);
+
+  // Not found is a real answer; if detection itself fails, do not leave "Aranıyor…" on screen: allow every client.
+  useEffect(() => {
+    let active = true;
+    const done = (value: Record<string, boolean>) => { if (active) setDetected(value); };
+    detectAiClients().then(done, () => done(Object.fromEntries(CLIENTS.map(client => [client.id, true]))));
+    return () => { active = false; };
+  }, []);
 
   const separator = parent.includes('\\') ? '\\' : '/';
   const vaultPath = parent && vaultName.trim() ? `${parent.replace(/[\\/]+$/, '')}${separator}${vaultName.trim()}` : '';
@@ -84,11 +93,11 @@ export default function BrainInstall({ onDone }: { onDone: () => void }) {
       <label>Özetleyici AI <small>Oturumları kasa notlarına özetleyen yerel AI aracı.</small><select value={provider} onChange={event => setProvider(event.target.value)}>{PROVIDERS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label></div>}
     {step === 2 && <div className="step-body"><h2>Kaynaklar</h2>
       <p className="muted">Hangi AI araçlarının oturumları hafızaya yakalansın? Seçtiğiniz araçlara hafıza kuralları ve becerileri eklenir. Hepsi varsayılan olarak kapalıdır; başka araçların ve sizin ayarlarınız korunur.</p>
-      <ClientPicker kind="hooks" selected={selection.sources} detected={null} onChange={sources => setSelection({ ...selection, sources })} />
+      <ClientPicker kind="hooks" selected={selection.sources} detected={detected} onChange={sources => setSelection({ ...selection, sources })} />
       <p className="muted">Yalnızca bu bilgisayarda bulunan araçlara yazılır; kurulumdan sonra Brain › Ayarlar'da tam olarak neyin değişeceğini görerek düzenleyebilirsin.</p></div>}
     {step === 3 && <div className="step-body"><h2>İzinler</h2>
       <p className="muted">Hangi araçlar hafızayı MCP sunucusu olarak kullanabilsin? Her izin istediğin zaman Hub'dan geri alınabilir.</p>
-      <ClientPicker kind="mcp" selected={selection.mcp} detected={null} onChange={mcp => setSelection({ ...selection, mcp })} />
+      <ClientPicker kind="mcp" selected={selection.mcp} detected={detected} onChange={mcp => setSelection({ ...selection, mcp })} />
       {choice('Sabah özeti zamanlanmış görevi', 'Windows Görev Zamanlayıcı’ya günlük bir görev ekler.', selection.schedule, schedule => setSelection({ ...selection, schedule }))}
       {choice('Masaüstü kısayolu', 'Masaüstüne not kasasını Obsidian\'da açan bir kısayol koyar. Çalışması için kasanın Obsidian\'da en az bir kez açılmış olması gerekir.', selection.shortcut, shortcut => setSelection({ ...selection, shortcut }))}
       <p className="muted">Orchestrator'ın hafızaya erişimi (okuma, isteğe bağlı yazma) burada değil, kurulumdan sonra Orchestrator › Ayarlar'da ayrıca ve varsayılan kapalı verilir.</p></div>}
