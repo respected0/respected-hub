@@ -61,7 +61,7 @@ if __name__ == "__main__":
     if not release:  # public half only; production installers carry no development trust
         shutil.copyfile(ECO / ".build-cache" / "signing" / "dev-ed25519.pub", STAGE / "dev-trust.pub")
     # one information page: the beta notice, then what the Hub does on the computer (the same text the Hub shows in Settings)
-    notice = (TOOLS.parent / "BETA_NOTICE.txt").read_text("utf-8-sig").strip()
+    notice = (HUB / "packaging" / "windows" / "BETA_NOTICE.txt").read_text("utf-8-sig").strip()
     facts = (HUB / "packaging" / "windows" / "hub_info.txt").read_text("utf-8-sig").strip()
     (STAGE / "hub_notice.txt").write_text(notice + "
 
