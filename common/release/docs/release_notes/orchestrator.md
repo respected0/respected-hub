@@ -16,7 +16,7 @@ ile devam et" seçeneğiyle Hub da kurulur. Orchestrator Hub olmadan da kurulur,
 
 Kurucu **Authenticode ile imzalı değil** (ücretli sertifika henüz yok). Windows "Bilinmeyen yayıncı" / SmartScreen uyarısı
 gösterir: yalnızca özet eşleşiyorsa *Ek bilgi › Yine de çalıştır* seçin. Çalıştırmadan önce `Get-FileHash <dosya> -Algorithm SHA256`
-sonucu `SHA256SUMS.txt` içindeki satırla aynı olmalı.
+sonucu, bu sayfada dosyanın yanında GitHub'ın gösterdiği `sha256:` değeriyle aynı olmalı.
 
 ## Güncelleme
 

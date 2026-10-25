@@ -27,10 +27,9 @@ ve insanlar yeni Hub'ı elle indirmek zorunda kalır. Anahtar kimliği `dabcb526
 | `tools/build/build_bundle.py orchestrator\|brain [--out DİZİN] [--key DOSYA] [--force]` | Ürünün kendi `packaging/build_installer.py`'si ile `<Ürün>-Windows-Setup.exe` üretir (kaynak değişmediyse yeniden kullanır) ve onu imzalı katalog paketine sarar: `<ürün>-<sürüm>/bundle.json` + `payload/<Ürün>-Windows-Setup.exe`. Anahtar verilmezse yerel geliştirme anahtarıyla imzalar. |
 | `tools/build/build_hub_installer.py [--skip-app] [--release-key DOSYA]` | Hub kurucusu. Varsayılan GELİŞTİRME kurucusudur (yerel geliştirme anahtarına güvenir, dağıtılmaz); `--release-key` ile ÜRETİM kurucusu (dev-trust yok, geliştirme anahtarı yok). |
 | `tools/build/publish_release.py build\|catalog\|upload\|local-catalog` | Yayın (aşağıda); `local-catalog` testler için file:// adresli, geliştirme imzalı katalog. |
-| `tools/build/release_package.py build\|verify` | İndirme klasörü: kurucular + `SHA256SUMS.txt` + `SHA256SUMS.sig` + `BETA_NOTICE.txt`. |
+| `tools/build/release_package.py build\|verify` | İndirme klasörü: kurucular + `SHA256SUMS.txt` + `SHA256SUMS.sig` (imzalı özet listesi, kendi denetiminiz için; GitHub'a yüklenmez, sürüm sayfalarında GitHub'ın dosya yanında gösterdiği SHA-256 değeri kullanılır). |
 | `tools/acceptance/accept_hub.py`, `real_env_guard.py` | Yerel kabul; gerçek AI aracı ayarlarının önce/sonra aynı olduğunu denetler. |
 | `tools/signing/` | `bundle_signing.py`, `release_keys.py`, `release_vault.py`: anahtar saklama ve imzalama. |
-| `packaging/windows/BETA_NOTICE.txt` | Beta ve SmartScreen açıklaması; indirme klasörüne aynen konur (`release_package.py`). Kurucunun kendi bilgi sayfası `packaging/windows/hub_info.txt`, karşılama sayfasında da tek cümlelik beta notu vardır. |
 | `tests/test_release_tools.py` | Araçların kendi testi (CI'da çalışır). |
 | `docs/release_notes/<ürün>.md` | Her ürünün GitHub sürüm sayfası şablonu (`upload` kullanır; `{notes}` yerine ürünün kendi `packaging/windows/UPDATE_NOTES.md` dosyasının tamamı (giriş metni ve maddeler) girer; kurucunun son sayfası da aynı dosyayı gösterir; ürünler birbirinin adını anmaz). |
 

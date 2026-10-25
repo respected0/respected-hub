@@ -33,7 +33,7 @@ dışında bir şey göndermez.
 
 ## Dürüst sınırlar
 
-- Kurucular Authenticode ile imzalı değildir; Windows uyarı gösterebilir. İndirdiğiniz dosyanın özetini `SHA256SUMS.txt` ile karşılaştırın.
+- Kurucular Authenticode ile imzalı değildir; Windows uyarı gösterebilir. İndirdiğiniz dosyanın özetini sürüm sayfasında dosyanın yanında GitHub'ın gösterdiği SHA-256 değeriyle karşılaştırın.
 - Bu metin hukuki danışmanlık ya da sözleşme metni değildir; neyin nereye gittiğini anlatır.
 
 ## Silme

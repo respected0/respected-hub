@@ -12,4 +12,4 @@ Bu ilk beta sürümde her şey yenidir:
 - İlk açılışta karşılama ekranı, sonra ürünlerin gerçek durumu: Kurulu olan, sürüm, ayarlar ve sağlık her seferinde ürünün kendisinden okunur; Hub bunları kendi başına saklamaz.
 - Hesap yok, telemetri yok: Hub'ın sakladığı her şey kendi klasörlerindedir ve kaldırınca silinir.
 - Kullanıcı başına kurulum: Yönetici izni gerekmez; WebView2 gerekir (Windows 11'de hazırdır).
-- Kurucu imzasızdır: Windows uyarırsa dosyanın özetini SHA256SUMS.txt ile karşılaştırın.
+- Kurucu imzasızdır: Windows uyarırsa dosyanın özetini sürüm sayfasında dosyanın yanında GitHub'ın gösterdiği SHA-256 değeriyle karşılaştırın.
