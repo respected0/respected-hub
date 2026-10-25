@@ -37,7 +37,7 @@ def build(key: Path, directory: Path) -> None:
     (directory / "SHA256SUMS.txt").write_text(text, encoding="ascii", newline="\n")
     signature = {"key_id": bs.key_id(bs.public_bytes(private)), "value": base64.b64encode(private.sign(DOMAIN + text.encode("ascii"))).decode("ascii")}
     (directory / "SHA256SUMS.sig").write_text(f"{signature['key_id']} {signature['value']}\n", encoding="ascii")
-    shutil.copyfile(Path(__file__).resolve().parents[2] / "BETA_NOTICE.txt", directory / "BETA_NOTICE.txt")
+    shutil.copyfile(bs.ROOT / "respected-hub" / "packaging" / "windows" / "BETA_NOTICE.txt", directory / "BETA_NOTICE.txt")
     print(text, end="")
 
 

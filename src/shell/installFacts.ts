@@ -28,8 +28,9 @@ export const FACTS: Record<FactSubject, Record<FactPhase, string[]>> = {
       'Hub ürünler hakkında veri saklamaz: durumu her seferinde ürünlerden okur.',
     ],
     update: [
-      'Siz onaylayınca yeni kurucu indirilip doğrulanır; Hub kapanır, yerinde güncellenir ve yeniden açılır.',
-      'Ürünlere, notlarınıza ve ayarlarınıza dokunulmaz.',
+      'Güncelleme yalnızca siz onaylayınca başlar. Yeni kurucu indirilir; boyutu ve SHA-256 özeti imzalı katalogdakiyle uyuşmazsa silinir ve hiçbir şey değişmez.',
+      'Doğrulanan kurucu çalışırken kısa bir ilerleme penceresi görünür (iptal edilemez). Hub kapanır, program klasörü yeni sürümle yerinde yenilenir ve bitince Hub kendiliğinden yeniden açılır.',
+      'Hub\'ın ayarları, pencere verisi ve etkinlik günlüğü korunur. Kurulu ürünlere, notlarınıza ve ayarlarınıza dokunulmaz.',
     ],
     uninstall: [
       'Hub\'ın programı, kısayolları ve kendi klasörleri (pencere verisi, katalog önbelleği, etkinlik günlüğü) silinir.',
