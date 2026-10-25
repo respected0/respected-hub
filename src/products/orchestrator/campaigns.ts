@@ -2,6 +2,7 @@
 // Real data only: outside Tauri the calls reject / the view shows an honest notice.
 import { invoke } from '@tauri-apps/api/core';
 import { engine, native } from '../../shared/api.ts';
+import { cached, peek } from '../../shared/rppCache.ts';
 
 export interface CampaignStatusResponse {
   campaign_id?: string;
@@ -31,6 +32,10 @@ export async function listCampaigns(): Promise<string[]> {
   if (!native) throw new Error('Kampanya listesi Tauri masaüstü uygulamasında kullanılabilir.');
   return invoke<string[]>('campaign_list');
 }
+
+/** Kept warm (rppCache): the page shows the last list at once and refreshes it; every call starts the engine. */
+export const campaignNames = () => cached('orchestrator:campaigns', listCampaigns);
+export const peekCampaigns = () => peek<string[]>('orchestrator:campaigns');
 
 export function campaignStatus(id: string): Promise<CampaignStatusResponse> {
   return engine<CampaignStatusResponse>('campaign-status', id);

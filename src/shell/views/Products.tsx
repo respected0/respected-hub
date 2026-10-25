@@ -34,10 +34,12 @@ function settingsFrom(response: RppResponse | null): Record<string, unknown> {
 
 // The product's settings form (its workspace Settings page).
 function ProductCard({ product }: { product: (typeof PRODUCTS)[number] }) {
-  const [schema, setSchema] = useState<SettingsSchema | null>(null);
-  const [fields, setFields] = useState<FormField[]>([]);
-  const [original, setOriginal] = useState<Record<string, unknown>>({});
-  const [settingsState, setSettingsState] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
+  // the last answers (kept warm since the Hub opened) fill the form in the very first frame, so it never flashes empty
+  const [last] = useState(() => { const known = peekSettings(product.id); return known.schema?.ok && known.readback?.ok ? known : null; });
+  const [schema, setSchema] = useState<SettingsSchema | null>(() => last && typeof last.schema?.result === 'object' ? last.schema.result as SettingsSchema : null);
+  const [original, setOriginal] = useState<Record<string, unknown>>(() => settingsFrom(last?.readback ?? null));
+  const [fields, setFields] = useState<FormField[]>(() => last ? formFromSchema(schema, original) : []);
+  const [settingsState, setSettingsState] = useState<'loading' | 'ready' | 'failed'>(last ? 'ready' : 'loading');
   const [settingsLoadError, setSettingsLoadError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -54,18 +56,16 @@ function ProductCard({ product }: { product: (typeof PRODUCTS)[number] }) {
       setFields(formFromSchema(schemaResult, settings));
       setSettingsState('ready');
     };
-    // the last answers (kept warm since the Hub opened) are shown at once; the fresh ones replace them only if they differ
-    const last = peekSettings(product.id);
-    if (last.schema?.ok && last.readback?.ok) show(last.schema, last.readback); else setSettingsState('loading');
+    // the fresh answers replace the ones already shown (see `last`) only if they differ
     const [schemaResponse, readbackResponse] = await Promise.all([settingsSchema(product.id), settingsReadback(product.id)]);
     if (!schemaResponse || !schemaResponse.ok) {
       setSettingsState('failed');
       setSettingsLoadError(failureText(schemaResponse) || 'Ayarlar şeması alınamadı.');
       return;
     }
-    if (!(last.schema?.ok && last.readback?.ok) || JSON.stringify(settingsFrom(readbackResponse)) !== JSON.stringify(settingsFrom(last.readback ?? null))) show(schemaResponse, readbackResponse);
+    if (!last || JSON.stringify(settingsFrom(readbackResponse)) !== JSON.stringify(settingsFrom(last.readback ?? null))) show(schemaResponse, readbackResponse);
     if (!readbackResponse || !readbackResponse.ok) setSettingsLoadError(`${failureText(readbackResponse)} Şema varsayılan değerlerle gösteriliyor.`);
-  }, [product.id]);
+  }, [product.id, last]);
 
   function editedValues(): Record<string, unknown> {
     const edited: Record<string, unknown> = {};
@@ -121,7 +121,7 @@ function ProductCard({ product }: { product: (typeof PRODUCTS)[number] }) {
     finally { setBusy(false); }
   }
 
-  useEffect(() => { if (settingsState === 'idle') void loadSettings(); }, [settingsState, loadSettings]);
+  useEffect(() => { void loadSettings(); }, [loadSettings]);
 
   const settingsBusy = busy || settingsState !== 'ready';
 
