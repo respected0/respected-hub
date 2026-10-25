@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { HUB_NAV, SETTINGS_TABS, type HubRoute, type SettingsTab } from './apps.ts';
 import { native, startupIntent, type StartupIntent } from '../shared/api.ts';
-import { hubUpdateStatus, type HubUpdate, type LifecycleAction } from './lifecycle.ts';
+import { developmentBuildCached, hubUpdateCached, type HubUpdate, type LifecycleAction } from './lifecycle.ts';
 import { useEcosystem } from './useEcosystem.ts';
 import WhatsNew from './views/WhatsNew.tsx';
 import Home, { type Go } from './views/Home.tsx';
@@ -53,10 +53,11 @@ export default function App() {
   }, []);
   // Updates are offered, never installed silently: Home points at Settings > Updates, where the person starts the Hub update.
   const [hubUpdate, setHubUpdate] = useState<HubUpdate | null>(null);
-  const readHubUpdate = () => { if (native) void hubUpdateStatus().then(reply => { if (reply.ok) setHubUpdate(reply.result); }); };
+  const readHubUpdate = () => { if (native) void hubUpdateCached().then(reply => { if (reply.ok) setHubUpdate(reply.result); }); };
   // the startup catalog check runs in the background and announces itself when done (offline: the last verified catalog stays)
   useEffect(() => {
     readHubUpdate();
+    if (native) void developmentBuildCached().catch(() => undefined);
     if (!native) return;
     let stop: (() => void) | undefined;
     let cancelled = false;

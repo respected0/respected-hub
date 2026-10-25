@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { rppCall } from '../../../shared/productClient.ts';
+import { brainManifest, forgetReadback, peekBrainManifest, peekSettings, settingsReadback, settingsSchema } from '../../../shared/settingsData.ts';
 import BrainIntegrations from './BrainIntegrations.tsx';
 import { describeError } from '../../../shared/rpp.ts';
 import type { RppResponse, SettingsSchema } from '../../../shared/rpp.ts';
@@ -21,26 +22,32 @@ const failure = (response: RppResponse | null) => {
 };
 
 export default function BrainSetup({ onDone }: { onDone: () => void }) {
-  const [fields, setFields] = useState<FormField[]>([]);
-  const [original, setOriginal] = useState<Record<string, unknown>>({});
-  const [schema, setSchema] = useState<SettingsSchema | null>(null);
-  const [state, setState] = useState<'loading' | 'ready' | 'failed'>('loading');
+  // the last answers (kept warm since the Hub opened) fill the page in its first frame; the fresh ones replace them below
+  const [last] = useState(() => { const known = peekSettings('brain'); return known.schema?.ok && known.readback?.ok ? { schema: known.schema.result as SettingsSchema, settings: (known.readback.result as { settings?: Record<string, unknown> }).settings ?? {} } : null; });
+  const [fields, setFields] = useState<FormField[]>(() => last ? formFromSchema(last.schema, last.settings) : []);
+  const [original, setOriginal] = useState<Record<string, unknown>>(last?.settings ?? {});
+  const [schema, setSchema] = useState<SettingsSchema | null>(last?.schema ?? null);
+  const [state, setState] = useState<'loading' | 'ready' | 'failed'>(last ? 'ready' : 'loading');
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
   const [busy, setBusy] = useState(false);
-  const [vault, setVault] = useState<string | null>(null);
+  const [vault, setVault] = useState<string | null>(() => ((peekBrainManifest()?.ok ? peekBrainManifest()?.result : null) as { roots?: { vault?: string | null } } | null)?.roots?.vault ?? null);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const [schemaResponse, readback, manifest] = await Promise.all([rppCall('brain', 'settings.schema'), rppCall('brain', 'settings.readback'), rppCall('brain', 'manifest')]);
+        const [schemaResponse, readback, manifest] = await Promise.all([settingsSchema('brain'), settingsReadback('brain'), brainManifest()]);
         if (!active) return;
-        if (manifest.ok) setVault(((manifest.result as { roots?: { vault?: string | null } }).roots?.vault) ?? null);
+        if (!schemaResponse || !readback) { setError('Brain’e ulaşılamadı.'); setState('failed'); return; }
+        if (manifest?.ok) setVault(((manifest.result as { roots?: { vault?: string | null } }).roots?.vault) ?? null);
         if (!schemaResponse.ok || !readback.ok) { setError(failure(schemaResponse) || failure(readback)); setState('failed'); return; }
         const current = (readback.result as { settings?: Record<string, unknown> }).settings ?? {};
-        setSchema(schemaResponse.result as SettingsSchema); setOriginal(current);
-        setFields(formFromSchema(schemaResponse.result as SettingsSchema, current)); setState('ready');
+        if (!last || JSON.stringify(current) !== JSON.stringify(last.settings)) {
+          setSchema(schemaResponse.result as SettingsSchema); setOriginal(current);
+          setFields(formFromSchema(schemaResponse.result as SettingsSchema, current));
+        }
+        setState('ready');
       } catch (reason) { if (active) { setError(String(reason)); setState('failed'); } }
     })();
     return () => { active = false; };
@@ -56,6 +63,7 @@ export default function BrainSetup({ onDone }: { onDone: () => void }) {
     try {
       const applied = await rppCall('brain', 'settings.apply', { settings: pending }, crypto.randomUUID());
       if (!applied.ok) { setError(failure(applied)); return; }
+      forgetReadback('brain');  // the kept answer is from before this change
       const readback = await rppCall('brain', 'settings.readback');
       if (!readback.ok) { setError(`Uygulandı ama geri okunamadı. ${failure(readback)}`); return; }
       const current = (readback.result as { settings?: Record<string, unknown> }).settings ?? {};

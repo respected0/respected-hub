@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { onReturn } from '../../../shared/focus.ts';
 import { loadSettings, native } from '../../../shared/api.ts';
-import { campaignStatus, listCampaigns, startCampaign, summarizeCampaign } from '../campaigns.ts';
+import { campaignNames, campaignStatus, peekCampaigns, startCampaign, summarizeCampaign } from '../campaigns.ts';
 import './campaigns.css';
 import type { CampaignPhase, CampaignStatusResponse, CampaignSummary } from '../campaigns.ts';
 
@@ -77,9 +77,9 @@ function CampaignDetail({ id, status, summary }: { id: string; status: CampaignS
 }
 
 export default function Campaigns() {
-  const [names, setNames] = useState<string[]>([]);
+  const [names, setNames] = useState<string[]>(() => peekCampaigns() ?? []);
   const [dataRoot, setDataRoot] = useState('');
-  const [listState, setListState] = useState<'loading' | 'ready' | 'failed'>('loading');
+  const [listState, setListState] = useState<'loading' | 'ready' | 'failed'>(() => peekCampaigns() ? 'ready' : 'loading');
   const [listError, setListError] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
   const [status, setStatus] = useState<CampaignStatusResponse | null>(null);
@@ -93,10 +93,10 @@ export default function Campaigns() {
   selectedRef.current = selected;
 
   const loadList = useCallback(async (quiet = false) => {
-    if (!quiet) setListState('loading');
+    if (!quiet && !peekCampaigns()) setListState('loading');
     setListError('');
     try {
-      setNames(await listCampaigns());
+      setNames(await campaignNames());
       setListState('ready');
     } catch (reason) {
       setListState('failed'); setListError(errorText(reason));

@@ -1,7 +1,8 @@
 // Product lifecycle client: the Hub runs each product's own installer (install / update / repair) or uninstaller.
 // The native backend answers { ok, result, error:{code,message,hint} }; nothing here is simulated.
 import { invoke } from '@tauri-apps/api/core';
-import { native } from '../shared/api.ts';
+import { developmentBuild, native } from '../shared/api.ts';
+import { cached, cachedReply, peek } from '../shared/rppCache.ts';
 
 export type LifecycleAction = 'install' | 'update' | 'repair' | 'uninstall';
 type InstallState = 'absent' | 'installed' | 'update-available' | 'repair-needed';
@@ -53,6 +54,11 @@ export const activityList =(limit = 50) => call<JournalEntry[]>('activity_list',
 export type Channel = 'beta' | 'stable';
 export interface HubUpdate { current: string; channel: Channel; available: { version: string; size: number; min_hub: string | null; notes?: string | null } | null; checked: boolean; }
 export const hubUpdateStatus = () => call<HubUpdate>('hub_update_status');
+/** The last answer is kept (rppCache) so the Settings page opens with it instead of growing when the answer arrives. */
+export const hubUpdateCached = () => cachedReply('hub:update', hubUpdateStatus);
+export const peekHubUpdate = () => peek<{ ok: true; result: HubUpdate }>('hub:update')?.result ?? null;
+export const developmentBuildCached = () => cached('hub:development', developmentBuild, Infinity);
+export const peekDevelopmentBuild = () => peek<boolean>('hub:development') ?? false;
 /** Downloads and verifies the signed catalog index again (GitHub), then answers like hubUpdateStatus. */
 export const catalogRefresh = () => call<HubUpdate>('catalog_refresh');
 export const catalogSetChannel = (channel: Channel) => call<HubUpdate>('catalog_set_channel', { channel });

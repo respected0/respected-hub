@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { APPS, type AppDef } from '../apps.ts';
-import { engine, loadSettings, native, type Run, type Settings } from '../../shared/api.ts';
+import { loadSettings, native, type Run, type Settings } from '../../shared/api.ts';
 import { listCampaigns } from '../../products/orchestrator/campaigns.ts';
-import { rppTry } from '../../shared/productClient.ts';
+import { orchestratorWorkers, peekSettings, peekWorkers, settingsReadback } from '../../shared/settingsData.ts';
 import type { Ecosystem } from '../useEcosystem.ts';
 import type { LifecycleAction } from '../lifecycle.ts';
 import LifecycleControls from './LifecycleControls.tsx';
@@ -41,9 +41,9 @@ const HOW: Record<string, [string, string][]> = {
 
 // The Overview opens with a greeting and the product's state, then what it did lately, how it works, what was checked and what it installs.
 function Overview({ app, eco, go }: { app: AppDef; eco: Ecosystem; go: (page: string) => void }) {
-  const [workers, setWorkers] = useState<Record<string, string[] | null> | null>(null);
-  const [workersLoading, setWorkersLoading] = useState(native && app.id === 'orchestrator');
-  useEffect(() => { if (native && app.id === 'orchestrator') engine<{ workers?: Record<string, string[] | null> }>('status').then(s => setWorkers(s.workers ?? null)).catch(() => setWorkers(null)).finally(() => setWorkersLoading(false)); }, [app.id]);
+  const [workers, setWorkers] = useState<Record<string, string[] | null> | null>(() => peekWorkers() ?? null);
+  const [workersLoading, setWorkersLoading] = useState(native && app.id === 'orchestrator' && !peekWorkers());
+  useEffect(() => { if (native && app.id === 'orchestrator') orchestratorWorkers().then(setWorkers).catch(() => setWorkers(null)).finally(() => setWorkersLoading(false)); }, [app.id]);
   const runtime = eco.apps[app.id];
   return <>
     <Hello app={app.id} product={app.name.replace('Respected ', '')} kind={runtime.summary.statusKind} loading={runtime.loading} />
@@ -59,24 +59,19 @@ function Overview({ app, eco, go }: { app: AppDef; eco: Ecosystem; go: (page: st
 
 // Real engine data only; both calls degrade to honest empty states on failure.
 function AgentsPage() {
-  const [workers, setWorkers] = useState<Record<string, string[] | null> | null>(null);
-  const [settings, setSettings] = useState<Record<string, unknown> | null>(null);
-  const [loading, setLoading] = useState(true);
+  const readSettings = (readback: { ok: boolean; result?: unknown } | null | undefined) => readback?.ok && readback.result && typeof readback.result === 'object' ? readback.result as Record<string, unknown> : null;
+  const [workers, setWorkers] = useState<Record<string, string[] | null> | null>(() => peekWorkers() ?? null);
+  const [settings, setSettings] = useState<Record<string, unknown> | null>(() => readSettings(peekSettings('orchestrator').readback));
+  const [loading, setLoading] = useState(!(peekWorkers() && peekSettings('orchestrator').readback));  // the last answers show at once, then refresh
   const [error, setError] = useState('');
   useEffect(() => {
     if (!native) { setLoading(false); return; }
     let active = true;
-    void (async () => {
-      try {
-        const status = await engine<{ workers?: Record<string, string[] | null> }>('status');
-        if (active) setWorkers(status.workers ?? null);
-      } catch {
-        if (active) { setWorkers(null); setError('Worker durumu al\u0131namad\u0131.'); }
-      }
-      const readback = await rppTry('orchestrator', 'settings.readback');
-      if (active) setSettings(readback?.ok && readback.result && typeof readback.result === 'object' ? readback.result as Record<string, unknown> : null);
-      if (active) setLoading(false);
-    })();
+    // both questions start a program: ask them together, not one after the other
+    void Promise.all([
+      orchestratorWorkers().then(value => { if (active) setWorkers(value); }, () => { if (active) { setWorkers(null); setError('Worker durumu al\u0131namad\u0131.'); } }),
+      settingsReadback('orchestrator').then(readback => { if (active) setSettings(readSettings(readback)); }),
+    ]).then(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
   return <AgentsPanel workers={workers} settings={settings} loading={loading} error={error} />;

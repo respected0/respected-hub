@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { rppCall } from '../../../shared/productClient.ts';
+import { integrationsPlan, peekIntegrationsPlan } from '../../../shared/settingsData.ts';
 import { describeError } from '../../../shared/rpp.ts';
 import type { RppResponse } from '../../../shared/rpp.ts';
 import type { IntegrationPlan } from '../../../shell/lifecycle.ts';
@@ -20,7 +21,7 @@ const failure = (response: RppResponse) => {
 export default function BrainIntegrations({ settings, onApplied }: { settings: Record<string, unknown>; onApplied: () => void }) {
   const [selection, setSelection] = useState<Selection>(() => fromSettings(settings));
   const [saved, setSaved] = useState<string>(() => JSON.stringify(toSettings(fromSettings(settings))));
-  const [plan, setPlan] = useState<IntegrationPlan | null>(null);
+  const [plan, setPlan] = useState<IntegrationPlan | null>(() => peekIntegrationsPlan(toDesired(fromSettings(settings))));  // the last answer (kept warm), so the client rows are not "Aranıyor…" while the program starts
   const [planError, setPlanError] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -32,8 +33,9 @@ export default function BrainIntegrations({ settings, onApplied }: { settings: R
   useEffect(() => {
     let active = true;
     setPlanError('');
-    void rppCall('brain', 'integrations.plan', { target: { desired } }).then(reply => {
+    void integrationsPlan(desired).then(reply => {
       if (!active) return;
+      if (!reply) { setPlan(null); setPlanError('Brain’e ulaşılamadı.'); return; }
       if (!reply.ok) { setPlan(null); setPlanError(failure(reply)); return; }
       const result = reply.result as IntegrationPlan;
       setPlan(result);

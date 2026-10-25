@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { developmentBuild, loadSettings, native, saveSettings, type Settings } from '../../shared/api.ts';
+import { loadSettings, native, saveSettings, type Settings } from '../../shared/api.ts';
 import InstallFacts from './InstallFacts.tsx';
-import { catalogRefresh, catalogSetChannel, describeLifecycleError, hubUpdateInstall, hubUpdateStatus, lifecycleStatus, type Channel, type HubUpdate } from '../lifecycle.ts';
+import { catalogRefresh, catalogSetChannel, describeLifecycleError, developmentBuildCached, hubUpdateCached, hubUpdateInstall, lifecycleStatus, peekDevelopmentBuild, peekHubUpdate, type Channel, type HubUpdate } from '../lifecycle.ts';
 
 type SaveState = 'idle' | 'saving' | 'applied' | 'verified' | 'failed';
 
@@ -16,10 +16,10 @@ const sameSettings = (left: Settings, right: Settings) => fields.every(field => 
 
 // Where updates come from and which releases this Hub offers. Nothing is installed from here: updates are offered as notices.
 function Updates({ onCatalogChanged }: { onCatalogChanged?: () => void }) {
-  const [info, setInfo] = useState<HubUpdate | null>(null);
+  const [info, setInfo] = useState<HubUpdate | null>(peekHubUpdate);  // the last answer, so the card does not grow when the fresh one arrives
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  useEffect(() => { if (native) void hubUpdateStatus().then(reply => { if (reply.ok) setInfo(reply.result); }); }, []);
+  useEffect(() => { if (native) void hubUpdateCached().then(reply => { if (reply.ok) setInfo(reply.result); }); }, []);
   async function check() {
     setBusy(true); setMessage('');
     const reply = await catalogRefresh();
@@ -66,8 +66,8 @@ export default function Settings({ onCatalogChanged }: { onCatalogChanged?: () =
   const [managed, setManaged] = useState<string[]>([]);
   useEffect(() => { if (native) void lifecycleStatus().then(reply => { if (reply.ok) setManaged(reply.result.products.filter(item => item?.installed).map(item => item!.product)); }); }, []);
   const [error, setError] = useState('');
-  const [development, setDevelopment] = useState(false);   // source search paths only mean something in a development build
-  useEffect(() => { if (native) developmentBuild().then(setDevelopment).catch(() => setDevelopment(false)); }, []);
+  const [development, setDevelopment] = useState(peekDevelopmentBuild);   // source search paths only mean something in a development build
+  useEffect(() => { if (native) developmentBuildCached().then(setDevelopment).catch(() => setDevelopment(false)); }, []);
 
   useEffect(() => {
     if (!native) return;

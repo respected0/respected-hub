@@ -58,7 +58,7 @@ pre { background: #0f1620; border: 1px solid var(--line-soft); border-radius: va
 .icon-btn:hover { background: var(--surface-3); color: #fff; }
 .icon-btn.spin .ico { animation: spin .8s linear; }
 @keyframes spin { to { transform: rotate(360deg); } }
-main.content { flex: 1; min-height: 0; overflow-y: auto; padding: var(--s-6) var(--s-6) var(--s-7); }
+main.content { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: var(--s-6) var(--s-6) var(--s-7); }
 .page { display: flex; flex-direction: column; gap: var(--s-5); animation: rise .35s var(--ease); }
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s-5); }
