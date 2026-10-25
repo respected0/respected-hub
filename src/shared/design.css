@@ -48,7 +48,7 @@ pre { background: #0f1620; border: 1px solid var(--line-soft); border-radius: va
 .nav-item:hover { color: var(--text); }
 .nav-item .nav-dot { margin-left: 7px; }
 .whatsnew-scrim { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(8, 12, 18, .6); }
-.whatsnew { width: min(440px, calc(100vw - 32px)); padding: var(--s-5, 24px); border: 1px solid var(--line-strong); border-radius: var(--r-md); background: #1f2d3d; box-shadow: var(--shadow); display: grid; gap: var(--s-4); }
+.whatsnew { width: min(440px, calc(100vw - 32px)); max-height: calc(100vh - 64px); overflow-y: auto; padding: var(--s-5, 24px); border: 1px solid var(--line-strong); border-radius: var(--r-md); background: #1f2d3d; box-shadow: var(--shadow); display: grid; gap: var(--s-4); }
 .whatsnew h2 { font-size: 16px; }
 .whatsnew ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--muted); }
 .whatsnew .cta { justify-self: end; }

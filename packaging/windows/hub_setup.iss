@@ -36,7 +36,7 @@ SetupLogging=yes
 WizardStyle=modern
 WizardImageFile=wizard\side-164x314.bmp,wizard\side-192x366.bmp,wizard\side-246x470.bmp,wizard\side-328x628.bmp
 DisableWelcomePage=no
-InfoAfterFile=..\..\release\UPDATE_NOTES.md
+InfoAfterFile=UPDATE_NOTES.md
 InfoBeforeFile={#StageDir}\BETA_NOTICE.txt
 
 [Languages]
