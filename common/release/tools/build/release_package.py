@@ -1,4 +1,4 @@
-"""Assemble the downloadable beta folder: installers + SHA256SUMS.txt + SHA256SUMS.sig + BETA_NOTICE.txt.
+"""Assemble the downloadable beta folder: installers + SHA256SUMS.txt + SHA256SUMS.sig (a signed checksum list for your own checks; not uploaded).
 
     python common/release/tools/build/release_package.py build --key D:\\vault\\respected-release.key    # writes dist/SHA256SUMS.txt/.sig
     python common/release/tools/build/release_package.py verify [--dir dist]                             # re-check hashes and the Ed25519 signature
@@ -37,7 +37,6 @@ def build(key: Path, directory: Path) -> None:
     (directory / "SHA256SUMS.txt").write_text(text, encoding="ascii", newline="\n")
     signature = {"key_id": bs.key_id(bs.public_bytes(private)), "value": base64.b64encode(private.sign(DOMAIN + text.encode("ascii"))).decode("ascii")}
     (directory / "SHA256SUMS.sig").write_text(f"{signature['key_id']} {signature['value']}\n", encoding="ascii")
-    shutil.copyfile(bs.ROOT / "respected-hub" / "packaging" / "windows" / "BETA_NOTICE.txt", directory / "BETA_NOTICE.txt")
     print(text, end="")
 
 
