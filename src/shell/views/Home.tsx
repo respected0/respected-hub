@@ -39,7 +39,7 @@ export default function Home({ eco, go, hub }: { eco: Ecosystem; go: Go; hub?: {
     loading: { eyebrow: 'Kontrol ediliyor', title: 'Ekosistem durumu okunuyor…', body: 'Ürünlerin sağlık bilgisi alınıyor.', cta: null },
     'first-launch': { eyebrow: 'Hoş geldiniz', title: 'Respected ekosistemini birlikte kuralım', body: "Henüz kurulu bir ürün yok. Brain ve Orchestrator'ı Keşfet sayfasından kurabilirsiniz.", cta: { label: 'Ürünleri keşfet', run: () => go('discover') } },
     attention: { eyebrow: 'Dikkat gerekiyor', title: `${problems.length} ürün sağlıklı değil`, body: 'Ürünü açıp kontrolleri ve ayarları inceleyebilirsiniz.', cta: problems[0] ? { label: `${problems[0].name.replace('Respected ', '')} ürününü aç`, run: () => go({ app: problems[0].id, page: 'overview' }) } : null },
-    active: { eyebrow: '', title: assistant ? `${assistant} ve ekosistemin hazır` : 'Ekosistemin hazır', body: running.length ? `${running.length} görev şu anda çalışıyor.` : '', cta: running.length ? { label: 'Çalışan görevleri gör', run: () => go('activity') } : { label: 'Ürünleri keşfet', run: () => go('discover') } },
+    active: { eyebrow: '', title: assistant ? `${assistant} ve ekosistemin hazır` : 'Ekosistemin hazır', body: running.length ? `${running.length} görev şu anda çalışıyor.` : '', cta: running.length ? { label: 'Çalışan görevleri gör', run: () => go({ app: 'orchestrator', page: 'runs' }) } : { label: 'Ürünleri keşfet', run: () => go('discover') } },
   }[mode];
 
   const updates = (eco.lifecycle?.products ?? []).filter(item => item?.installed && item.install_state === 'update-available' && item.available);
@@ -67,7 +67,7 @@ export default function Home({ eco, go, hub }: { eco: Ecosystem; go: Go; hub?: {
     <div className="home-stack">
       {live && has('brain') && <section className="side-card" aria-label="Hafızadan"><h2>Hafızadan <button className="link-btn" onClick={() => go({ app: 'brain', page: 'memory' })}>Hafıza</button></h2>
         <BrainOverview flat openMemory={() => go({ app: 'brain', page: 'memory' })} /></section>}
-      {has('orchestrator') && <section className="side-card" aria-label="Görevler"><h2>Görevler {running.length > 0 && <span className="badge tone-live">{running.length} çalışıyor</span>}<button className="link-btn" onClick={() => go('activity')}>Tüm geçmiş</button></h2>
+      {has('orchestrator') && <section className="side-card" aria-label="Görevler"><h2>Görevler {running.length > 0 && <span className="badge tone-live">{running.length} çalışıyor</span>}<button className="link-btn" onClick={() => go({ app: 'orchestrator', page: 'runs' })}>Tüm geçmiş</button></h2>
         {!live ? <p className="muted">Görev verisi masaüstü uygulamasında görünür.</p>
           : running.length + recent.length === 0 ? <p className="muted">Henüz görev yok. Orchestrator'da başlattığınız görevler burada görünür.</p>
           : <>{running.slice(0, 5).map(taskRow)}{recent.map(taskRow)}</>}
