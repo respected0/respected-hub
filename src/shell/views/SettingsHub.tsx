@@ -6,7 +6,7 @@ import Settings from './Settings.tsx';
 
 const INTRO: Record<SettingsTab, string> = {
   general: 'Hub\'ın güncelleme kanalı; Hub ve ürünlerin bilgisayarınıza neler kurduğu.',
-  activity: 'Kurulum işlemleri ve Orchestrator motorunun gerçek görev kayıtları.',
+  activity: "Hub'dan yaptığınız kurulum işlemleri ve ürünlerin kurulum kayıtları. Görevler Orchestrator'ın kendi sayfasındadır.",
 };
 
 // Hub settings, product status and the activity history in one place: they are diagnostics and configuration, not destinations.
