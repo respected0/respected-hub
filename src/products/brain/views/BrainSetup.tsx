@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { rppCall } from '../../../shared/productClient.ts';
-import { brainManifest, forgetReadback, peekBrainManifest, peekSettings, settingsReadback, settingsSchema } from '../../../shared/settingsData.ts';
+import { brainManifest, forgetBrainManifest, forgetReadback, peekBrainManifest, peekSettings, settingsReadback, settingsSchema } from '../../../shared/settingsData.ts';
 import BrainIntegrations from './BrainIntegrations.tsx';
 import { describeError } from '../../../shared/rpp.ts';
 import type { RppResponse, SettingsSchema } from '../../../shared/rpp.ts';
@@ -63,7 +63,7 @@ export default function BrainSetup({ onDone }: { onDone: () => void }) {
     try {
       const applied = await rppCall('brain', 'settings.apply', { settings: pending }, crypto.randomUUID());
       if (!applied.ok) { setError(failure(applied)); return; }
-      forgetReadback('brain');  // the kept answer is from before this change
+      forgetReadback('brain'); forgetBrainManifest();  // the kept answers are from before this change (the vault may have moved)
       const readback = await rppCall('brain', 'settings.readback');
       if (!readback.ok) { setError(`Uygulandı ama geri okunamadı. ${failure(readback)}`); return; }
       const current = (readback.result as { settings?: Record<string, unknown> }).settings ?? {};

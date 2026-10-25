@@ -6,8 +6,7 @@ import { rppTry } from '../shared/productClient.ts';
 import { activityList, lifecycleStatus, type JournalEntry, type LifecycleOverview } from './lifecycle.ts';
 import { summarizeProduct, type ProductSummary } from '../shared/productsModel.ts';
 import { onReturn } from '../shared/focus.ts';
-import { warmBrainSettings, warmOrchestratorSettings } from '../shared/settingsData.ts';
-import { forget } from '../shared/rppCache.ts';
+import { coolSettings, warmBrainSettings, warmOrchestratorSettings } from '../shared/settingsData.ts';
 import { terminal } from '../products/orchestrator/tasks.ts';
 
 interface AppRuntime { loading: boolean; summary: ProductSummary; }
@@ -44,7 +43,7 @@ export function useEcosystem(): Ecosystem {
       if (absent.has(app.id)) { setApps(before => ({ ...before, [app.id]: { loading: false, summary: { ...summarizeProduct(null, null), statusText: 'Kurulu değil', errorText: undefined } } })); return; }
       const version = products.find(item => item?.product === app.id)?.version ?? null;
       const known = manifests.current[app.id];
-      if (known && known.version !== version) forget(`${app.rpp}:`);  // an update or repair: the kept answers are the old program's
+      if (known && known.version !== version) coolSettings(app.rpp);  // an update or repair: the kept answers are the old program's
       const [manifest, health] = await Promise.all([
         known && known.version === version && known.response?.ok ? known.response : rppTry(app.rpp, 'manifest'),
         rppTry(app.rpp, 'health')]);
