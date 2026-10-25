@@ -229,12 +229,15 @@ def upload(args) -> None:
         sys.exit("run `catalog` first")
     releases: dict[tuple[str, str], list[Path]] = {}
     bodies: dict[tuple[str, str], Path] = {}
+    sums = [OUT / "SHA256SUMS.txt", OUT / "SHA256SUMS.sig"]  # the release pages tell people to compare their download with this file
+    if not all(path.is_file() for path in sums):
+        sys.exit("run `release_package.py build` first: the release pages refer to SHA256SUMS.txt")
     for name, row in entries.items():
         template = (TOOLS.parent / "docs" / "release_notes" / f"{name}.md").read_text("utf-8")  # one page per product, never shared
         bodies[(row["repo"], row["tag"])] = OUT / f"release-notes-{name}.md"
         bodies[(row["repo"], row["tag"])].write_text(template.replace("{version}", row["tag"][1:]).replace("{notes}", release_text(name)), "utf-8", newline="\n")
         installer = OUT / installer_name(name, row["tag"][1:])
-        files = [installer] if name == "hub" else [installer, OUT / row["file"]]
+        files = [installer, *sums] if name == "hub" else [installer, OUT / row["file"], *sums]
         releases.setdefault((row["repo"], row["tag"]), []).extend(files)
     for (repo, tag), files in releases.items():  # products first: the catalog must never name a missing file
         exists = subprocess.run(["gh", "release", "view", tag, "-R", f"{OWNER}/{repo}"], capture_output=True).returncode == 0
