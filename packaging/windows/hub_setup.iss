@@ -37,19 +37,19 @@ WizardStyle=modern
 WizardImageFile=wizard\side-164x314.bmp,wizard\side-192x366.bmp,wizard\side-246x470.bmp,wizard\side-328x628.bmp
 DisableWelcomePage=no
 InfoAfterFile=UPDATE_NOTES.md
-InfoBeforeFile={#StageDir}\hub_notice.txt
+InfoBeforeFile=hub_info.txt
 
 [Languages]
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 
 [Messages]
-turkish.WizardInfoBefore=Beta sürümü ve bilgisayarınızda neler olur
-turkish.InfoBeforeLabel=Bu kurucu henüz imzalı değil. Kurmadan önce aşağıdaki bilgileri okuyun.
+turkish.WizardInfoBefore=Bilgisayarınızda neler olur
+turkish.InfoBeforeLabel=Kurulumda, kullanırken, güncellemede ve kaldırırken neler olacağını aşağıda okuyabilirsiniz.
 turkish.WizardInfoAfter=Yenilikler
 turkish.InfoAfterLabel=Bu sürümde neler değişti?
 turkish.InfoAfterClickLabel=Devam etmek için Sonraki'ne tıklayın.
 turkish.WelcomeLabel1=Respected Hub'a hoş geldiniz
-turkish.WelcomeLabel2=Respected Hub, Brain ve Orchestrator'ı tek yerden kurar, günceller ve ayarlar.%n%nYönetici izni gerekmez; ürünleriniz ve notlarınız kurulumdan etkilenmez.%n%nDevam etmek için Sonraki'ne tıklayın.
+turkish.WelcomeLabel2=Respected Hub, Brain ve Orchestrator'ı tek yerden kurar, günceller ve ayarlar.%n%nYönetici izni gerekmez; ürünleriniz ve notlarınız kurulumdan etkilenmez.%n%nBu bir beta sürümüdür: kurucu henüz Authenticode ile imzalı değildir, Windows uyarı göstermiş olabilir.%n%nDevam etmek için Sonraki'ne tıklayın.
 turkish.FinishedHeadingLabel=Respected Hub hazır
 turkish.FinishedLabelNoIcons=Kurulum tamamlandı.
 turkish.FinishedLabel=Kurulum tamamlandı. Hub'ı Başlat menüsünden ya da masaüstü kısayolundan açabilirsiniz.

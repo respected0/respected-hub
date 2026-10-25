@@ -30,7 +30,7 @@ ve insanlar yeni Hub'ı elle indirmek zorunda kalır. Anahtar kimliği `dabcb526
 | `tools/build/release_package.py build\|verify` | İndirme klasörü: kurucular + `SHA256SUMS.txt` + `SHA256SUMS.sig` + `BETA_NOTICE.txt`. |
 | `tools/acceptance/accept_hub.py`, `real_env_guard.py` | Yerel kabul; gerçek AI aracı ayarlarının önce/sonra aynı olduğunu denetler. |
 | `tools/signing/` | `bundle_signing.py`, `release_keys.py`, `release_vault.py`: anahtar saklama ve imzalama. |
-| `packaging/windows/BETA_NOTICE.txt`, `hub_info.txt` | Hub deposunda durur. Hub kurucusu ikisini birleştirip kurmadan önce tek bilgi sayfası olarak gösterir (`build_hub_installer.py`, `.build-cache\hub-stage\hub_notice.txt`); `BETA_NOTICE.txt` indirme klasörüne de aynen konur. |
+| `packaging/windows/BETA_NOTICE.txt` | Beta ve SmartScreen açıklaması; indirme klasörüne aynen konur (`release_package.py`). Kurucunun kendi bilgi sayfası `packaging/windows/hub_info.txt`, karşılama sayfasında da tek cümlelik beta notu vardır. |
 | `tests/test_release_tools.py` | Araçların kendi testi (CI'da çalışır). |
 | `docs/release_notes/<ürün>.md` | Her ürünün GitHub sürüm sayfası şablonu (`upload` kullanır; `{notes}` yerine ürünün kendi `packaging/windows/UPDATE_NOTES.md` dosyasının tamamı (giriş metni ve maddeler) girer; kurucunun son sayfası da aynı dosyayı gösterir; ürünler birbirinin adını anmaz). |
 
