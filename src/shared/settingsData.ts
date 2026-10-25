@@ -44,6 +44,7 @@ export const orchestratorWorkers = () => cached('orchestrator:workers', () => en
 export const peekWorkers = () => peek<Workers>('orchestrator:workers');
 
 let brainWarmed = false;
+export const forgetBrainManifest = () => forget(key('brain', 'manifest'));
 /** The same for the Brain's Settings page: schema, settings, manifest and the connections plan for the stored choice. */
 export function warmBrainSettings(): void {
   if (brainWarmed) return;
@@ -56,6 +57,11 @@ export function warmBrainSettings(): void {
 }
 
 let warmed = false;
+/** A product changed under us (an update, a repair, a removal by an installer): its kept answers are the old program's. They are dropped and warmed again by the next refresh. */
+export function coolSettings(product: RppProduct): void {
+  forget(`${product}:`);
+  if (product === 'brain') brainWarmed = false; else warmed = false;
+}
 /** Starts all the reads of the Orchestrator's Settings page in the background, once; the page refreshes them itself when it opens. */
 export function warmOrchestratorSettings(): void {
   if (warmed) return;
