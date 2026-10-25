@@ -31,7 +31,7 @@ ve insanlar yeni Hub'ı elle indirmek zorunda kalır. Anahtar kimliği `dabcb526
 | `tools/acceptance/accept_hub.py`, `real_env_guard.py` | Yerel kabul; gerçek AI aracı ayarlarının önce/sonra aynı olduğunu denetler. |
 | `tools/signing/` | `bundle_signing.py`, `release_keys.py`, `release_vault.py`: anahtar saklama ve imzalama. |
 | `tests/test_release_tools.py` | Araçların kendi testi (CI'da çalışır). |
-| `BETA_NOTICE.txt` | Hub kurucusunun kurmadan önce gösterdiği sayfa. |
+| `BETA_NOTICE.txt` | Beta ve SmartScreen uyarısı. Hub kurucusu bunu `packaging/windows/hub_info.txt` ile birleştirip kurmadan önce tek sayfa olarak gösterir; indirme klasörüne de aynen konur. |
 | `docs/release_notes/<ürün>.md` | Her ürünün GitHub sürüm sayfası şablonu (`upload` kullanır; `{notes}` yerine ürünün kendi `packaging/windows/UPDATE_NOTES.md` dosyasının tamamı (giriş metni ve maddeler) girer; kurucunun son sayfası da aynı dosyayı gösterir; ürünler birbirinin adını anmaz). |
 
 ## 3. Sürüm

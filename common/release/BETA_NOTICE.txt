@@ -17,14 +17,6 @@ Get-FileHash .\Respected-Hub-*-Windows-x64-Setup.exe -Algorithm SHA256
 
 Çıkan değer SHA256SUMS.txt içindekiyle birebir aynı olmalıdır.
 
-NE KURULUR, NEYE DOKUNULMAZ?
-
-- Yönetici yetkisi gerekmez; yalnızca kendi kullanıcı profilinize kurulur.
-- Hub, siz onay verdikçe Brain ve Orchestrator'ı kendi kurucularıyla kurar. Ürünler, sizin seçtiğiniz AI araçlarına (Claude, Codex vb.) kayıt ekler; her kayıt kaldırmada geri alınır, sizin eklediğiniz ayarlara dokunulmaz.
-- Hub'ı kaldırmak ürünlere dokunmaz. Bir ürünü kaldırırken not kasanız hiçbir durumda silinmez.
-- Beta sürümde hata olabilir. Önemli notlarınızı yedekleyin.
-- Hub arayüzü Microsoft Edge WebView2 gerektirir (Windows 11'de hazırdır). Eksikse kurulum sizi uyarır.
-
 —————————————
 
 ENGLISH
