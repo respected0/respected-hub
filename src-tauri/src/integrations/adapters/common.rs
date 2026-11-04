@@ -30,8 +30,10 @@ pub(super) fn source(path: &Path, owner: Owner, format: SourceFormat, fingerprin
     source
 }
 
+/// Preview planning is available for the MCP formats the planner can read; apply/undo stay
+/// closed until the M3 write gate.
 pub(super) fn read_only(inventory: &mut Inventory, client: ClientId) {
-    inventory.capabilities.push(Capability { client, read: true, plan: false, apply: false, undo: false });
+    inventory.capabilities.push(Capability { client, read: true, plan: true, apply: false, undo: false });
 }
 
 /// Read one JSON/JSONC file. Errors never include file contents, only the path and a fixed reason.

@@ -103,7 +103,7 @@ fn cursor_parses_ten_observations_project_override_and_nested_skills() {
     let remote = inventory.assets.iter().find(|asset| asset.name == "remote").unwrap();
     assert!(remote.identity.contains("[redacted]") && !remote.identity.contains("sk-live-abc"));
     assert!(inventory.capabilities.iter().any(|item| item.client == respected_hub_lib::integrations::model::ClientId::Cursor
-        && item.read && !item.plan && !item.apply && !item.undo));
+        && item.read && item.plan && !item.apply && !item.undo));
 }
 
 #[test]

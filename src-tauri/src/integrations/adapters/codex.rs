@@ -6,7 +6,7 @@
 //! - project config: `<project>/.codex/config.toml`, only when `[projects."<path>"]` is trusted
 //! - project skills: `<project>/.codex/skills/<name>/SKILL.md`
 
-use super::common::{add_skills, digest, entry_owner, issue, source};
+use super::common::{add_skills, digest, entry_owner, issue, read_only, source};
 use crate::integrations::discovery::Environment;
 use crate::integrations::model::{
     Asset, AssetKind, Binding, ClientId, Inventory, ObservedStatus, Owner, Project, Scope, SourceFormat,
@@ -19,6 +19,7 @@ use toml::Value;
 
 pub fn scan(env: &Environment, projects: &[Project]) -> Inventory {
     let mut inventory = Inventory::default();
+    read_only(&mut inventory, ClientId::Codex);
     let root = env.vars.get("CODEX_HOME").map(PathBuf::from).unwrap_or_else(|| env.home.join(".codex"));
     let global_path = root.join("config.toml");
     let global = read_toml(&mut inventory, &global_path);

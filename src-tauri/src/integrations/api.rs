@@ -3,7 +3,7 @@
 
 use crate::integrations::catalog;
 use crate::integrations::discovery::{self, Environment};
-use crate::integrations::{inventory, projects, resolver};
+use crate::integrations::{inventory, planner, projects, resolver};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -13,17 +13,23 @@ pub enum Action {
     Inventory,
     Clients,
     Catalog,
+    Plan,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Request {
     pub action: Action,
+    #[serde(default)]
+    pub plan: Option<planner::PlanRequest>,
 }
 
 pub fn execute(request: Request) -> Value { execute_with(request, &Environment::current()) }
 
 pub fn execute_with(request: Request, env: &Environment) -> Value {
+    if request.action != Action::Plan && request.plan.is_some() {
+        return reply(false, Value::Null, "bad_request", "Bu eylem plan verisi kabul etmez.");
+    }
     match request.action {
         Action::Inventory => match projects::load(env) {
             Ok(projects) => {
@@ -41,7 +47,25 @@ pub fn execute_with(request: Request, env: &Environment) -> Value {
             Ok(entries) => json!({ "ok": true, "result": { "read_only": true, "entries": entries }, "error": Value::Null }),
             Err(message) => json!({ "ok": false, "result": Value::Null, "error": { "code": "catalog_invalid", "message": message } }),
         },
+        Action::Plan => {
+            let Some(selector) = request.plan else {
+                return reply(false, Value::Null, "bad_request", "Plan seçicisi eksik.");
+            };
+            let projects = match projects::load(env) {
+                Ok(projects) => projects,
+                Err(message) => return reply(false, Value::Null, "projects_invalid", &message),
+            };
+            let inventory = inventory::scan(env, &projects);
+            match planner::plan(&inventory, &projects, &selector) {
+                Ok(plan) => json!({ "ok": true, "result": { "read_only": true, "plan": plan }, "error": Value::Null }),
+                Err(error) => json!({ "ok": false, "result": Value::Null, "error": error }),
+            }
+        }
     }
+}
+
+fn reply(ok: bool, result: Value, code: &str, message: &str) -> Value {
+    json!({ "ok": ok, "result": result, "error": { "code": code, "message": message } })
 }
 
 #[cfg(test)]
@@ -53,6 +77,7 @@ mod tests {
         assert!(serde_json::from_str::<Request>(r#"{"action":"inventory"}"#).is_ok());
         assert!(serde_json::from_str::<Request>(r#"{"action":"clients"}"#).is_ok());
         assert!(serde_json::from_str::<Request>(r#"{"action":"catalog"}"#).is_ok());
+        assert!(serde_json::from_str::<Request>(r#"{"action":"plan","plan":{"operation":"remove_mcp","asset_key":"mcp:demo","client":"claude","scope":"global"}}"#).is_ok());
         for body in [
             r#"{"action":"apply"}"#,
             r#"{"action":"undo"}"#,
@@ -63,6 +88,9 @@ mod tests {
             r#"{"action":"inventory","command":"npx evil"}"#,
             r#"{"action":"inventory","url":"https://example.invalid"}"#,
             r#"{"action":"inventory","plan_digest":"deadbeef"}"#,
+            r#"{"action":"plan","path":"C:\Users\person\.claude.json"}"#,
+            r#"{"action":"plan","plan":{"operation":"remove_mcp","asset_key":"mcp:demo","client":"claude","scope":"global","path":"C:\Users\person\.claude.json"}}"#,
+            r#"{"action":"plan","plan":{"operation":"remove_mcp","asset_key":"mcp:demo","client":"claude","scope":"global","plan_digest":"deadbeef"}}"#,
         ] {
             assert!(serde_json::from_str::<Request>(body).is_err(), "accepted {body}");
         }
@@ -77,7 +105,7 @@ mod tests {
             home: root.join("home"), app_data: root.join("roaming"), local_app_data: root.join("local"),
             path: Vec::new(), path_ext: Vec::new(), vars: std::collections::BTreeMap::new(),
         };
-        let reply = execute_with(Request { action: Action::Inventory }, &env);
+        let reply = execute_with(Request { action: Action::Inventory, plan: None }, &env);
         assert_eq!(reply["ok"], true);
         assert_eq!(reply["result"]["read_only"], true);
         assert_eq!(reply["result"]["inventory"]["clients"].as_array().unwrap().len(), 5);
@@ -116,7 +144,7 @@ mod tests {
         let before: Vec<_> = registered[..3].iter()
             .map(|project| std::fs::read(std::path::Path::new(&project.root).join(".mcp.json")).unwrap()).collect();
 
-        let reply = execute_with(Request { action: Action::Inventory }, &env);
+        let reply = execute_with(Request { action: Action::Inventory, plan: None }, &env);
         assert_eq!(reply["ok"], true);
         let entries = reply["result"]["resolution"]["entries"].as_array().unwrap();
         for name in ["alpha", "beta", "gamma"] {
@@ -132,7 +160,7 @@ mod tests {
 
     #[test]
     fn catalog_is_compiled_in_and_needs_no_network() {
-        let reply = execute(Request { action: Action::Catalog });
+        let reply = execute(Request { action: Action::Catalog, plan: None });
         assert_eq!(reply["ok"], true);
         assert_eq!(reply["result"]["read_only"], true);
         let entries = reply["result"]["entries"].as_array().unwrap();
@@ -140,6 +168,38 @@ mod tests {
         for entry in entries {
             assert!(entry["source_url"].as_str().unwrap().starts_with("https://github.com/"));
         }
+    }
+
+    #[test]
+    fn plan_action_previews_without_writing() {
+        let root = std::env::temp_dir().join(format!("hub-api-plan-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("home")).unwrap();
+        let config = root.join("home/.claude.json");
+        std::fs::write(&config, r#"{"mcpServers":{"postgres":{"command":"npx","env":{"API_KEY":"sk-live-secret"}}}}"#).unwrap();
+        let env = Environment {
+            home: root.join("home"), app_data: root.join("roaming"), local_app_data: root.join("local"),
+            path: Vec::new(), path_ext: Vec::new(), vars: std::collections::BTreeMap::new(),
+        };
+        let inventory = inventory::scan(&env, &[]);
+        let asset_key = inventory.assets[0].key.clone();
+        let before = std::fs::read(&config).unwrap();
+        let reply = execute_with(Request {
+            action: Action::Plan,
+            plan: Some(planner::PlanRequest {
+                operation: planner::Operation::RemoveMcp,
+                asset_key,
+                client: crate::integrations::model::ClientId::Claude,
+                scope: crate::integrations::model::Scope::Global,
+                project: None,
+            }),
+        }, &env);
+        assert_eq!(reply["ok"], true, "{reply}");
+        assert_eq!(reply["result"]["read_only"], true);
+        assert_eq!(reply["result"]["plan"]["targets"].as_array().unwrap().len(), 1);
+        assert!(!reply["result"]["plan"]["targets"][0]["before"].to_string().contains("sk-live-secret"));
+        assert_eq!(before, std::fs::read(&config).unwrap());
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]
@@ -151,7 +211,7 @@ mod tests {
             home: root.join("home"), app_data: root.join("roaming"), local_app_data: root.join("local"),
             path: Vec::new(), path_ext: Vec::new(), vars: std::collections::BTreeMap::new(),
         };
-        let reply = execute_with(Request { action: Action::Clients }, &env);
+        let reply = execute_with(Request { action: Action::Clients, plan: None }, &env);
         assert_eq!(reply["result"]["read_only"], true);
         assert_eq!(reply["result"]["clients"].as_array().unwrap().len(), 5);
         assert_eq!(reply["result"]["clients"][0]["status"], "configured");

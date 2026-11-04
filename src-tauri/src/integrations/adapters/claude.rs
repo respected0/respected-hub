@@ -7,7 +7,7 @@
 //! - project skills: `<project>/.claude/skills/<name>/SKILL.md`
 //! - plugins: `~/.claude/plugins/**/.claude-plugin/plugin.json`
 
-use super::common::{add_skills, entry_owner, issue, json_mcp_identity, read_json, source};
+use super::common::{add_skills, entry_owner, issue, json_mcp_identity, read_json, read_only, source};
 use crate::integrations::discovery::Environment;
 use crate::integrations::model::{
     Asset, AssetKind, Binding, ClientId, Inventory, ObservedStatus, Owner, Project, Scope, Source, SourceFormat,
@@ -25,6 +25,7 @@ const PLUGIN_DEPTH: usize = 8;
 /// No project is discovered by walking the disk.
 pub fn scan(env: &Environment, projects: &[Project]) -> Inventory {
     let mut inventory = Inventory::default();
+    read_only(&mut inventory, ClientId::Claude);
     let config = env.vars.get("CLAUDE_CONFIG_DIR").map(PathBuf::from).unwrap_or_else(|| env.home.join(".claude"));
     let user_mcp = if env.vars.contains_key("CLAUDE_CONFIG_DIR") { config.join(".claude.json") } else { env.home.join(".claude.json") };
 
