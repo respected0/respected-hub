@@ -8,3 +8,4 @@ pub mod security;
 pub mod discovery;
 pub mod adapters;
 pub mod skills;
+pub mod plugins;

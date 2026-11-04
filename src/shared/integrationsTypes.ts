@@ -7,7 +7,7 @@ export type Owner =
   | { kind: 'product'; product: string }
   | { kind: 'catalog' }
   | { kind: 'unknown' };
-export type SourceFormat = 'json' | 'jsonc' | 'toml' | 'skill_directory' | 'manifest' | 'unknown';
+export type SourceFormat = 'json' | 'jsonc' | 'toml' | 'skill_directory' | 'markdown' | 'manifest' | 'unknown';
 export type SourceIntegrity = 'ok' | 'missing' | 'broken_link' | 'unreadable' | 'unsupported';
 export type ObservedStatus =
   | 'unknown' | 'installed' | 'configured' | 'enabled' | 'connection_verified' | 'usage_proven';
@@ -15,6 +15,7 @@ export type ObservedStatus =
 export interface Project { id: string; root: string }
 export interface Source {
   path: string; path_id: string; fingerprint: string | null; owner: Owner;
+  symlink_target?: string | null;
   format: SourceFormat; integrity: SourceIntegrity;
 }
 export interface Asset { key: string; name: string; kind: AssetKind; identity: string; description: string | null }

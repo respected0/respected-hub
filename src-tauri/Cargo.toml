@@ -70,6 +70,10 @@ path = "tests/integrations/cursor_gemini_opencode_adapter_e2e.rs"
 name = "skills_e2e"
 path = "tests/integrations/skills_e2e.rs"
 
+[[test]]
+name = "plugins_e2e"
+path = "tests/integrations/plugins_e2e.rs"
+
 
 [profile.release]
 codegen-units = 1  # slower release builds, smaller and faster binary

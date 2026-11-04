@@ -81,6 +81,7 @@ pub enum SourceFormat {
     Jsonc,
     Toml,
     SkillDirectory,
+    Markdown,
     Manifest,
     Unknown,
 }

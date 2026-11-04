@@ -168,7 +168,7 @@ pub(super) fn entry_owner(name: &str, identity: &str) -> Owner {
     }
 }
 
-pub(super) fn add_skills(
+pub(crate) fn add_skills(
     inventory: &mut Inventory,
     client: ClientId,
     root: &Path,

@@ -13,6 +13,7 @@ use crate::integrations::model::{
     Asset, AssetKind, Binding, ClientId, Inventory, ObservedStatus, Owner, Project, Scope, Source, SourceFormat,
 };
 use crate::integrations::security::{self, Limits};
+use crate::integrations::plugins;
 use serde_json::Value;
 use std::collections::HashSet;
 use std::fs;
@@ -108,6 +109,8 @@ fn add_plugin(inventory: &mut Inventory, manifest_path: &Path, root: &Path) {
     let identity = format!("plugin:{name}:{}", source.path_id);
     let asset = Asset::new(AssetKind::Plugin, &name, &identity);
     let parent = asset.key.clone();
+    // shortcut: the manifest `enabled` hint is read locally; Claude's enabledPlugins map is M3 work.
+    let enabled = manifest.get("enabled").and_then(Value::as_bool);
     inventory.add_binding(asset, Binding {
         asset_key: parent.clone(),
         client: ClientId::Claude,
@@ -115,7 +118,7 @@ fn add_plugin(inventory: &mut Inventory, manifest_path: &Path, root: &Path) {
         project: None,
         source,
         status: ObservedStatus::Configured,
-        enabled: None,
+        enabled,
         managed: false,
         parent_asset_key: None,
     });
@@ -139,6 +142,5 @@ fn add_plugin(inventory: &mut Inventory, manifest_path: &Path, root: &Path) {
         }
     }
 
-    let skills = root.join("skills");
-    add_skills(inventory, ClientId::Claude, &skills, Scope::Global, None, Some(parent), Owner::User);
+    plugins::add_children(inventory, ClientId::Claude, &parent, root, Scope::Global, None, Owner::User);
 }
