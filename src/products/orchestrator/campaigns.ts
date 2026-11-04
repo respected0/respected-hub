@@ -10,32 +10,44 @@ export interface CampaignStatusResponse {
   result?: unknown;
   events?: unknown;
   supervisor_alive?: boolean;
+  goal?: string;
+  created_at?: string;
+  workstreams?: unknown;
+  final_review?: unknown;
+  final_text?: string;
 }
 
 interface CampaignStart { campaign_id: string; status: string; pid: number }
+export interface CampaignListItem { id: string; goal: string; created_at: string }
 
 export type CampaignPhase = 'running' | 'finished' | 'needs_review' | 'interrupted' | 'blocked';
 interface CampaignLane { name: string; statusText: string; detail: string; tokens: number | null }
+export interface CampaignWorkstream { name: string; task: string; after: string[] }
 interface CampaignTimelineItem { at: string; text: string }
 interface CampaignChain { index: number; parent: string; outcome: string }
 export interface CampaignSummary {
   headline: string;
   phase: CampaignPhase;
+  goal?: string;
+  createdAt?: string;
+  workstreams: CampaignWorkstream[];
   lanes: CampaignLane[];
+  totalTokens: number | null;
   timeline: CampaignTimelineItem[];
   chain?: CampaignChain;
   finalText?: string;
+  finalReview?: string;
 }
 
-/** Newest-first campaign directory names from the read-only native command. */
-export async function listCampaigns(): Promise<string[]> {
+/** Newest-first campaigns from the read-only native command, with the goal the user gave them. */
+export async function listCampaigns(): Promise<CampaignListItem[]> {
   if (!native) throw new Error('Kampanya listesi Tauri masaüstü uygulamasında kullanılabilir.');
-  return invoke<string[]>('campaign_list');
+  return invoke<CampaignListItem[]>('campaign_list');
 }
 
 /** Kept warm (rppCache): the page shows the last list at once and refreshes it; every call starts the engine. */
 export const campaignNames = () => cached('orchestrator:campaigns', listCampaigns);
-export const peekCampaigns = () => peek<string[]>('orchestrator:campaigns');
+export const peekCampaigns = () => peek<CampaignListItem[]>('orchestrator:campaigns');
 
 export function campaignStatus(id: string): Promise<CampaignStatusResponse> {
   return engine<CampaignStatusResponse>('campaign-status', id);
@@ -48,6 +60,60 @@ export async function startCampaign(specJson: string): Promise<CampaignStart> {
   catch { throw new Error('Kampanya spec geçerli bir JSON olmalı.'); }
   if (!isRecord(spec)) throw new Error('Kampanya spec bir JSON nesnesi olmalı.');
   return engine<CampaignStart>('campaign-start', undefined, spec);
+}
+
+export interface CampaignFormStream { name: string; task: string; after: string }
+export interface CampaignForm {
+  goal: string;
+  projectRoot: string;
+  worker: string;
+  kind: 'read' | 'write';
+  ownership: string;
+  forbidden: string;
+  acceptance: string;
+  timeout: number;
+  finalSkip: boolean;
+  streams: CampaignFormStream[];
+}
+
+export const emptyCampaignForm = (): CampaignForm => ({
+  goal: '', projectRoot: '', worker: 'codex', kind: 'write', ownership: '', forbidden: '.env\ncredentials',
+  acceptance: '', timeout: 900, finalSkip: true, streams: [{ name: 'main', task: '', after: '' }],
+});
+
+function lines(value: string): string[] {
+  return value.split('\n').map(line => line.trim()).filter(Boolean);
+}
+
+/** One command per line; quotes group an argument, as a shell would. */
+function argv(line: string): string[] {
+  return (line.match(/"[^"]*"|'[^']*'|\S+/g) ?? []).map(part => part.replace(/^(["'])(.*)\1$/, '$2'));
+}
+
+/** Turns the simple Hub form into the exact spec the engine accepts. Throws before anything starts. */
+export function buildCampaignSpec(form: CampaignForm): Record<string, unknown> {
+  if (!form.goal.trim()) throw new Error('Kampanya hedefi boş olamaz.');
+  if (!form.projectRoot.trim()) throw new Error('Proje kökü seçilmeli.');
+  if (form.streams.length === 0) throw new Error('En az bir iş akışı gerekli.');
+  const names = new Set<string>();
+  const workstreams = form.streams.map(stream => {
+    const name = stream.name.trim();
+    if (!/^[a-z0-9][a-z0-9-]{0,39}$/.test(name)) throw new Error(`${name || 'İş akışı'}: ad küçük harf, rakam ve tireden oluşmalı (en fazla 40 karakter).`);
+    if (names.has(name)) throw new Error(`${name}: iş akışı adı tekrar ediyor.`);
+    names.add(name);
+    if (!stream.task.trim()) throw new Error(`${name}: görev metni boş olamaz.`);
+    return { name, after: lines(stream.after.replace(/,/g, '\n')), request: {
+      project_root: form.projectRoot.trim(),
+      task: stream.task.trim(),
+      worker: form.worker,
+      kind: form.kind,
+      ownership: lines(form.ownership),
+      forbidden: lines(form.forbidden),
+      acceptance: lines(form.acceptance).map(argv),
+      timeout_seconds: form.timeout,
+    } };
+  });
+  return { goal: form.goal.trim(), workstreams, final: { skip: form.finalSkip } };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -166,12 +232,26 @@ export function summarizeCampaign(status: unknown): CampaignSummary {
     tokens: tokensOf(lane.token_usage),
   }));
 
+  const workstreams: CampaignWorkstream[] = (Array.isArray(root.workstreams) ? root.workstreams : []).filter(isRecord).map(lane => {
+    const request = isRecord(lane.request) ? lane.request : {};
+    return {
+      name: typeof lane.name === 'string' && lane.name ? lane.name : '(isimsiz şerit)',
+      task: typeof request.task === 'string' ? request.task : '',
+      after: Array.isArray(lane.after) ? lane.after.filter((item): item is string => typeof item === 'string') : [],
+    };
+  });
+  const knownTokens = lanes.map(lane => lane.tokens).filter((value): value is number => value !== null);
+  const totalTokens = knownTokens.length ? knownTokens.reduce((sum, value) => sum + value, 0) : null;
+
   const timeline: CampaignTimelineItem[] = events.map(event => ({
     at: typeof event.at === 'string' ? event.at : '',
     text: eventText(event),
   }));
 
-  const summary: CampaignSummary = { headline: headlineOf(phase, alive, masterFinished), phase, lanes, timeline };
+  const summary: CampaignSummary = { headline: headlineOf(phase, alive, masterFinished), phase, workstreams, lanes, totalTokens, timeline };
+
+  if (typeof root.goal === 'string' && root.goal.trim()) summary.goal = root.goal.trim();
+  if (typeof root.created_at === 'string' && root.created_at) summary.createdAt = root.created_at;
 
   const chainRaw = isRecord(result.chain) ? result.chain : isRecord(root.chain) ? root.chain : null;
   if (chainRaw && typeof chainRaw.index === 'number' && typeof chainRaw.parent === 'string' && typeof chainRaw.outcome === 'string') {
@@ -180,6 +260,9 @@ export function summarizeCampaign(status: unknown): CampaignSummary {
 
   const finalText = typeof result.final_text === 'string' ? result.final_text : typeof root.final_text === 'string' ? root.final_text : '';
   if (finalText) summary.finalText = finalText;
+
+  const finalReview = isRecord(root.final_review) ? root.final_review : null;
+  if (finalReview && typeof finalReview.status === 'string') summary.finalReview = masterOutcomeText(finalReview.status);
 
   return summary;
 }

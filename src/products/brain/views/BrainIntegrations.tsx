@@ -35,7 +35,7 @@ export default function BrainIntegrations({ settings, onApplied }: { settings: R
 
   useEffect(() => {
     let active = true;
-    setPlanError('');
+    setPlanError(''); setDone('');
     void integrationsPlan(desired).then(reply => {
       if (!active) return;
       if (!reply) { setPlan(null); setPlanError('Brain’e ulaşılamadı.'); return; }
@@ -51,6 +51,12 @@ export default function BrainIntegrations({ settings, onApplied }: { settings: R
     });
     return () => { active = false; };
   }, [JSON.stringify(desired)]);
+
+  useEffect(() => {
+    if (!done) return;
+    const timer = window.setTimeout(() => setDone(''), 4000);
+    return () => window.clearTimeout(timer);
+  }, [done]);
 
   async function apply() {
     setBusy(true); setError(''); setDone('');

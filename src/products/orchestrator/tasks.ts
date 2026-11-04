@@ -1,6 +1,24 @@
+import type { Run, RunUsage } from '../../shared/api.ts';
+
 export interface TaskForm {
   projectRoot: string; task: string; worker: string; kind: string; ownership: string;
   forbidden: string; acceptance: string; customCommand: string; timeout: number;
+}
+
+const number = (value?: number | null) => typeof value === 'number' ? value.toLocaleString('tr-TR') : '—';
+
+/** One readable line: weighted total first, then where it came from. Never fake a zero. */
+export function usageText(usage?: RunUsage | null): string {
+  if (!usage) return 'Token kullanımı bildirilmedi';
+  const reasoning = typeof usage.reasoning_tokens === 'number' ? ` · düşünme ${number(usage.reasoning_tokens)}` : '';
+  return `${number(usage.estimated_weighted_tokens)} ağırlıklı token · giriş ${number(usage.raw_input_tokens)}`
+    + ` (önbellek ${number(usage.cached_input_tokens)}) · çıkış ${number(usage.output_tokens)}${reasoning}`;
+}
+
+export function taskTitle(run: Run): string {
+  const task = run.request?.task?.trim();
+  if (!task) return run.run_id;
+  return task.split('\n')[0].slice(0, 100);
 }
 
 function argv(value: unknown): string[] {

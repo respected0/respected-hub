@@ -1,8 +1,24 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
 
 export interface Settings { python: string; orchestrator_root: string; brain_root: string; data_root: string }
-export interface Run { run_id: string; status: string; phase?: string; reason?: string; error?: string;
-  request?: { task: string; worker: string; project_root: string }; logs?: Record<string, string>; patch_preview?: string; }
+export interface RunUsage {
+  raw_input_tokens?: number; cached_input_tokens?: number; output_tokens?: number;
+  reasoning_tokens?: number | null; estimated_weighted_tokens?: number;
+}
+export interface RunRequest {
+  task: string; worker: string; project_root: string; master?: string; kind?: string;
+  ownership?: string[]; forbidden?: string[]; acceptance?: string[][]; worker_profile?: string;
+  created_at?: string; timeout_seconds?: number; workflow?: Record<string, unknown>;
+}
+export interface RunCheck { command: string[]; returncode: number }
+export interface Run {
+  run_id: string; status: string; phase?: string; reason?: string; error?: string;
+  request?: RunRequest; logs?: Record<string, string>; patch_preview?: string;
+  usage?: RunUsage | null; model?: string | null; usage_status?: string; token_budget?: number;
+  changed_files?: string[]; generated_artifacts?: string[]; generated_artifact_count?: number; artifact_images?: string[];
+  checks?: RunCheck[]; duration_seconds?: number; created_at?: string; updated_at?: string;
+  worker_incomplete?: string;
+}
 export const native = isTauri();
 
 export async function engine<T>(action: string, runId?: string, request?: unknown): Promise<T> {

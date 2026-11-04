@@ -10,7 +10,7 @@ pub async fn engine_request(app: tauri::AppHandle, action: String, run_id: Optio
 }
 
 #[tauri::command]
-pub async fn campaign_list(app: tauri::AppHandle) -> Result<Vec<String>, String> {
+pub async fn campaign_list(app: tauri::AppHandle) -> Result<Vec<crate::products::orchestrator::CampaignEntry>, String> {
     let settings = resolved_settings(&app)?;
     tauri::async_runtime::spawn_blocking(move || list_campaigns(&settings)).await.map_err(|e| e.to_string())?
 }

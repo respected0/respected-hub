@@ -81,7 +81,7 @@ function EvidencePage({ runs }: { runs: Run[] }) {
   const [campaignIds, setCampaignIds] = useState<string[]>([]);
   useEffect(() => {
     if (!native) return;
-    listCampaigns().then(setCampaignIds).catch(() => setCampaignIds([]));
+    listCampaigns().then(items => setCampaignIds(items.map(item => item.id))).catch(() => setCampaignIds([]));
   }, []);
   return <EvidencePanel runs={runs} campaignIds={campaignIds} />;
 }

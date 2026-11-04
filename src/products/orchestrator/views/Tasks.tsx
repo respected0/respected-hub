@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
-import { buildRequest, terminal, type TaskForm } from '../tasks';
+import { buildRequest, taskTitle, terminal, usageText, type TaskForm } from '../tasks';
 import { engine, native, products, type Products as ProductCatalog, type Run } from '../../../shared/api';
 
 const initial: TaskForm = { projectRoot: '', task: '', worker: 'codex', kind: 'write', ownership: '', forbidden: '.env\ncredentials',
   acceptance: '[["python", "-m", "unittest", "discover", "-s", "tests"]]', customCommand: '["your-cli", "{prompt}"]', timeout: 900 };
+
+const when = (value?: string) => {
+  const date = value ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.toLocaleString('tr-TR') : '—';
+};
 
 // Task creation and run inspection. Moved verbatim from the former single-page App; engine owns task state.
 export default function Tasks() {
@@ -16,6 +21,7 @@ export default function Tasks() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [artifacts, setArtifacts] = useState<Record<string, string>>({});
   const field = (key: keyof TaskForm, value: string | number) => setForm(current => ({ ...current, [key]: value }));
   async function refresh() {
     const [inventory, tasks] = await Promise.all([products(), engine<{ runs: Run[] }>('list')]);
@@ -40,6 +46,19 @@ export default function Tasks() {
     const timer = window.setInterval(poll, 1500);
     return () => { active = false; window.clearInterval(timer); };
   }, [selectedId]);
+
+  const artifactKey = (selected?.artifact_images ?? []).join('|');
+  useEffect(() => {
+    setArtifacts({});
+    if (!selectedId || !artifactKey) return;
+    let active = true;
+    for (const name of artifactKey.split('|')) {
+      engine<{ data_url: string }>('artifact', selectedId, { name })
+        .then(image => { if (active) setArtifacts(current => ({ ...current, [name]: image.data_url })); })
+        .catch(() => { /* an old or removed image is simply not shown */ });
+    }
+    return () => { active = false; };
+  }, [selectedId, artifactKey]);
 
   async function action(work: () => Promise<void>) {
     setBusy(true); setError(''); setMessage('');
@@ -75,8 +94,23 @@ export default function Tasks() {
         </form></section>
         <section className="panel-glass"><h2>Görevler <span className="count">{runs.length}</span></h2>
           {!runs.length && <p className="empty">Henüz bir görev yok. İlk sonucu burada takip edebilirsin.</p>}
-          <div className="run-list">{runs.map(run => <button className={`run ${selectedId === run.run_id ? 'selected' : ''}`} key={run.run_id} onClick={() => { setSelected(null); setSelectedId(run.run_id); }}><span>{run.request?.task ?? run.run_id}</span><small>{run.request?.worker} · <span className={`status ${run.status}`}>{run.status}</span></small></button>)}</div>
-          {selected && <div className="detail"><h3>{selected.request?.task ?? selected.run_id}</h3><p><span className={`status ${selected.status}`}>{selected.status}</span> {selected.phase ?? selected.reason ?? ''}</p><small>{selected.run_id}</small>
+          <div className="run-list">{runs.map(run => <button className={`run ${selectedId === run.run_id ? 'selected' : ''}`} key={run.run_id} onClick={() => { setSelected(null); setSelectedId(run.run_id); }}><span>{taskTitle(run)}</span><small>{run.request?.worker ?? '—'}{run.model ? ` · ${run.model}` : ''} · <span className={`status ${run.status}`}>{run.status}</span></small><small className="muted">{usageText(run.usage)}</small></button>)}</div>
+          {selected && <div className="detail"><h3>{taskTitle(selected)}</h3><p><span className={`status ${selected.status}`}>{selected.status}</span> {selected.phase ?? selected.reason ?? ''}</p><small>{selected.run_id}{selected.worker_incomplete ? ` · ${selected.worker_incomplete}` : ''}</small>
+            <div className="facts">
+              <span><strong>Proje</strong> {selected.request?.project_root ?? '—'}</span>
+              <span><strong>İş türü</strong> {selected.request?.kind ?? '—'}</span>
+              <span><strong>Master</strong> {selected.request?.master ?? '—'}</span>
+              <span><strong>Worker / CLI</strong> {selected.request?.worker ?? '—'}{selected.request?.worker_profile ? ` · ${selected.request.worker_profile}` : ''}</span>
+              <span><strong>Model</strong> {selected.model ?? 'bildirilmedi'}</span>
+              <span><strong>Süre</strong> {selected.duration_seconds != null ? `${selected.duration_seconds} sn` : '—'}</span>
+              <span><strong>Oluşturuldu</strong> {when(selected.request?.created_at ?? selected.created_at)}</span>
+              <span><strong>Güncellendi</strong> {when(selected.updated_at)}</span>
+            </div>
+            <p className="muted">{usageText(selected.usage)}{selected.usage_status ? ` · ${selected.usage_status}` : ''}{selected.token_budget != null ? ` · bütçe ${selected.token_budget}` : ''}</p>
+            <h3>Görev</h3><pre className="task-text">{selected.request?.task || 'Görev metni yok.'}</pre>
+            <p><strong>İzin verilen:</strong> {(selected.request?.ownership ?? []).join(', ') || '—'}</p>
+            <p><strong>Yasak:</strong> {(selected.request?.forbidden ?? []).join(', ') || '—'}</p>
+            <p><strong>Doğrulama:</strong> {(selected.request?.acceptance ?? []).map(command => command.join(' ')).join(' · ') || '—'}</p>
             {selected.error && <p className="error">{selected.error}</p>}
             <div className="actions">
               {!terminal(selected.status) && <button disabled={busy} onClick={() => void action(async () => { await engine('cancel', selected.run_id); setMessage('İptal istendi; motorun terminal durumunu bekliyoruz.'); })}>Durdur</button>}
@@ -84,6 +118,10 @@ export default function Tasks() {
               {selected.status === 'completed' && <button disabled={busy} onClick={() => void action(async () => { await engine('check', selected.run_id); setMessage('Sonuç bütünlüğü ve güncel projeyle uyumu doğrulandı. Apply yapılmadı.'); })}>Sonucu doğrula</button>}
               {['failed', 'timed_out', 'cancelled', 'interrupted'].includes(selected.status) && <button disabled={busy} onClick={() => void action(async () => { const task = await engine<Run>('retry', selected.run_id); setSelectedId(task.run_id); await engine('start', task.run_id); })}>Yeniden dene</button>}
             </div>
+            <h3>Değişen dosyalar</h3>{(selected.changed_files ?? []).length ? <ul>{selected.changed_files!.map(file => <li key={file}><code>{file}</code></li>)}</ul> : <p className="muted">Henüz değişen dosya yok.</p>}
+            <h3>Artefaktlar / ekran görüntüleri</h3>{(selected.generated_artifacts ?? []).length ? <ul>{selected.generated_artifacts!.map(file => <li key={file}><code>{file}</code></li>)}</ul> : <p className="muted">Üretilen artefakt yok.</p>}
+            {(selected.artifact_images ?? []).length > 0 && <div className="artifacts">{selected.artifact_images!.map(name => artifacts[name] ? <a key={name} href={artifacts[name]} target="_blank" rel="noreferrer"><img src={artifacts[name]} alt={name} loading="lazy" /></a> : <p className="muted" key={name}>{name} yükleniyor…</p>)}</div>}
+            {(selected.checks ?? []).length > 0 && <><h3>Doğrulama sonuçları</h3><ul>{selected.checks!.map((check, index) => <li key={index}><code>{check.command.join(' ')}</code> · {check.returncode === 0 ? 'geçti' : `çıkış ${check.returncode}`}</li>)}</ul></>}
             <h3>Sonuç / patch</h3><pre>{selected.patch_preview || 'Patch henüz yok.'}</pre><h3>Loglar</h3>{Object.entries(selected.logs ?? {}).map(([name, log]) => <details key={name}><summary>{name}</summary><pre>{log || 'Boş log'}</pre></details>)}
           </div>}
         </section>

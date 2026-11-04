@@ -45,7 +45,7 @@ fn campaign_list_returns_only_valid_directories_newest_first() {
     campaign_folder(&data.0, "camp-UPPER");
     std::fs::write(data.0.join("campaigns").join("notes.txt"), b"x").unwrap();
 
-    let listed = list_campaigns(&settings).unwrap();
+    let listed: Vec<String> = list_campaigns(&settings).unwrap().into_iter().map(|item| item.id).collect();
     assert_eq!(listed, vec![
         "camp-20260202000000-bbbbbbbb".to_string(),
         "camp-20260101000000-aaaaaaaa".to_string(),

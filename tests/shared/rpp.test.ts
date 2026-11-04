@@ -87,6 +87,8 @@ test('describeError covers every contract code in Turkish with an English fallba
   assert.ok(unknown.message.includes('Detay.'));
   assert.equal(unknown.hint, undefined);
   assert.equal(describeError(null).message.length > 0, true);
+  // A known code must not swallow the product's own diagnosis.
+  assert.ok(describeError({ code: 'BAD_REQUEST', message: 'notify ayarı okunamadı' }).message.includes('notify ayarı okunamadı'));
 });
 
 

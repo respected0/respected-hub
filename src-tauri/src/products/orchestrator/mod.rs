@@ -1,6 +1,7 @@
 //! The Orchestrator as the Hub runs it: engine operations and campaign listing (installing it is its own installer's work).
 pub mod mcp;
 use serde_json::Value;
+use serde::Serialize;
 use std::time::Duration;
 use crate::{rpp, Settings};
 use crate::process::pump;
@@ -16,7 +17,7 @@ pub fn valid_campaign_id(id: &str) -> bool {
 }
 
 pub fn call_engine(settings: Settings, action: &str, run_id: Option<String>, request: Option<Value>) -> Result<Value, String> {
-    if !["status", "create", "start", "list", "inspect", "cancel", "check", "retry", "campaign-start", "campaign-status", "campaign-list"].contains(&action) {
+    if !["status", "create", "start", "list", "inspect", "artifact", "cancel", "check", "retry", "campaign-start", "campaign-status", "campaign-list"].contains(&action) {
         return Err("Unsupported engine operation".into());
     }
     match action {
@@ -46,9 +47,24 @@ pub fn call_engine(settings: Settings, action: &str, run_id: Option<String>, req
     Ok(value)
 }
 
-/// Newest-first identities of the campaigns in the data root, as the engine itself reports them.
-pub fn list_campaigns(settings: &Settings) -> Result<Vec<String>, String> {
+#[derive(Serialize, Debug, PartialEq)]
+pub struct CampaignEntry {
+    pub id: String,
+    pub goal: String,
+    pub created_at: String,
+}
+
+/// Newest-first campaigns in the data root, as the engine itself reports them.
+pub fn list_campaigns(settings: &Settings) -> Result<Vec<CampaignEntry>, String> {
     let reply = call_engine(settings.clone(), "campaign-list", None, None)?;
     let names = reply["campaigns"].as_array().ok_or("Engine campaign list is not an array")?;
-    Ok(names.iter().filter_map(Value::as_str).filter(|name| valid_campaign_id(name)).map(str::to_string).collect())
+    Ok(names.iter().filter_map(|entry| {
+        let id = entry["id"].as_str()?;
+        if !valid_campaign_id(id) { return None; }
+        Some(CampaignEntry {
+            id: id.to_string(),
+            goal: entry["goal"].as_str().unwrap_or("").to_string(),
+            created_at: entry["created_at"].as_str().unwrap_or("").to_string(),
+        })
+    }).collect())
 }

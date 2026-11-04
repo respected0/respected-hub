@@ -119,9 +119,12 @@ const PLAIN: Record<string, { tr: string; en: string }> = {
 
 export function describeError(error: RppError | null | undefined): PlainError {
   const known = error ? PLAIN[error.code] : undefined;
+  const detail = error?.message?.trim();
   const base = known ?? {
-    tr: error?.message ? `İşlem başarısız: ${error.message}` : 'İşlem başarısız ve nedeni bilinmiyor.',
-    en: error?.message ?? 'The operation failed for an unknown reason.',
+    tr: detail ? `İşlem başarısız: ${detail}` : 'İşlem başarısız ve nedeni bilinmiyor.',
+    en: detail ?? 'The operation failed for an unknown reason.',
   };
-  return error?.hint ? { message: base.tr, messageEn: base.en, hint: error.hint } : { message: base.tr, messageEn: base.en };
+  // A known code alone hid the product's own diagnosis (e.g. an unparsable notify setting); keep it visible.
+  const message = known && detail ? `${known.tr} ${detail}` : base.tr;
+  return error?.hint ? { message, messageEn: base.en, hint: error.hint } : { message, messageEn: base.en };
 }

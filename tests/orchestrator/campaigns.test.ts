@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { startCampaign, summarizeCampaign } from '../../src/products/orchestrator/campaigns.ts';
+import { buildCampaignSpec, emptyCampaignForm, startCampaign, summarizeCampaign } from '../../src/products/orchestrator/campaigns.ts';
 
 test('summary: a running campaign with a live supervisor polls as running', () => {
   const summary = summarizeCampaign({
@@ -92,4 +92,53 @@ test('startCampaign rejects non-object specs before touching the engine', async 
   await assert.rejects(() => startCampaign('not json'), /JSON/);
   await assert.rejects(() => startCampaign('[1,2]'), /nesne/);
   await assert.rejects(() => startCampaign('null'), /nesne/);
+});
+
+test('summary: shows campaign goal, full workstreams, created time and total tokens', () => {
+  const summary = summarizeCampaign({
+    campaign_id: 'camp-20260101000000-aaaaaaaa', status: 'LANES_APPROVED', supervisor_alive: false,
+    goal: 'Kampanya hedefi', created_at: '2026-01-01T00:00:00Z',
+    workstreams: [{ name: 'hub', after: [], request: { task: 'Tam görev metni' } }],
+    final_review: { status: 'COMPLETE' },
+    result: { status: 'LANES_APPROVED', lanes: [{ name: 'hub', status: 'MASTER_APPROVED', token_usage: 100 },
+                                               { name: 'view', status: 'MASTER_APPROVED', token_usage: { input: 20, output: 5 } }] },
+    events: [],
+  });
+  assert.equal(summary.goal, 'Kampanya hedefi');
+  assert.equal(summary.createdAt, '2026-01-01T00:00:00Z');
+  assert.deepEqual(summary.workstreams, [{ name: 'hub', task: 'Tam görev metni', after: [] }]);
+  assert.equal(summary.totalTokens, 125);
+  assert.equal(summary.finalReview, 'tamamlandı');
+});
+
+test('summary: legacy campaigns without spec fields still summarize safely', () => {
+  const summary = summarizeCampaign({ status: 'running', supervisor_alive: true, events: [] });
+  assert.deepEqual(summary.workstreams, []);
+  assert.equal(summary.totalTokens, null);
+  assert.equal(summary.goal, undefined);
+  assert.equal(summary.finalReview, undefined);
+});
+
+test('form builder: turns the simple form into the engine spec', () => {
+  const spec = buildCampaignSpec({
+    ...emptyCampaignForm(), goal: ' Hedef ', projectRoot: 'C:\\repo', ownership: 'src\ntests',
+    acceptance: 'python -m unittest\n"npm" "run" "check"', timeout: 600, finalSkip: true,
+    streams: [{ name: 'api', task: 'API yaz', after: '' }, { name: 'ui', task: 'Arayüzü bağla', after: 'api' }],
+  }) as any;
+  assert.equal(spec.goal, 'Hedef');
+  assert.deepEqual(spec.final, { skip: true });
+  assert.equal(spec.workstreams.length, 2);
+  assert.deepEqual(spec.workstreams[1].after, ['api']);
+  assert.equal(spec.workstreams[0].request.project_root, 'C:\\repo');
+  assert.deepEqual(spec.workstreams[0].request.ownership, ['src', 'tests']);
+  assert.deepEqual(spec.workstreams[0].request.acceptance, [['python', '-m', 'unittest'], ['npm', 'run', 'check']]);
+  assert.equal(spec.workstreams[0].request.timeout_seconds, 600);
+});
+
+test('form builder: rejects missing goal, duplicate or invalid names and empty tasks', () => {
+  const base = { ...emptyCampaignForm(), goal: 'Hedef', projectRoot: 'C:\\repo', ownership: 'src' };
+  assert.throws(() => buildCampaignSpec({ ...base, goal: ' ' }), /hedef/i);
+  assert.throws(() => buildCampaignSpec({ ...base, streams: [{ name: 'API', task: 'x', after: '' }] }), /küçük harf/);
+  assert.throws(() => buildCampaignSpec({ ...base, streams: [{ name: 'main', task: 'x', after: '' }, { name: 'main', task: 'y', after: '' }] }), /tekrar/);
+  assert.throws(() => buildCampaignSpec({ ...base, streams: [{ name: 'main', task: ' ', after: '' }] }), /görev/);
 });

@@ -151,10 +151,14 @@ fieldset { border: none; padding: 0; margin: 0 0 var(--s-4); min-width: 0; } leg
 .card-actions, .actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: var(--s-3) 0; }
 .status-line { font-size: 13px; margin: var(--s-3) 0; }
 .products-view { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 18px; }
-.run-list { max-height: 290px; overflow: auto; }
+.run-list { max-height: 55vh; overflow: auto; }
 .run { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: var(--s-2); padding: var(--s-3) 14px; border-radius: var(--r-md); border: 1px solid var(--line-soft); background: var(--surface-2); text-align: left; transition: border-color .15s, background .15s; }
 .run:hover { border-color: var(--line-strong); background: var(--surface-3); } .run.selected { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
 .detail { border-top: 1px solid var(--line-soft); margin-top: 18px; padding-top: 14px; }
+.detail .facts { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 0; margin: var(--s-3) 0; font-size: 12.5px; color: var(--text-2); }
+.artifacts { display: flex; flex-wrap: wrap; gap: 8px; margin: var(--s-3) 0; }
+.artifacts img { max-width: min(100%, 420px); max-height: 320px; border: 1px solid var(--line-soft); border-radius: 6px; }
+.task-text { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface-2); border: 1px solid var(--line-soft); border-radius: var(--r-md); padding: 12px; font-size: 12.5px; margin: 0 0 var(--s-3); }
 
 /* ---------- Product art (emblem + weave) ---------- */
 .emblem-tile { display: grid; place-items: center; flex: none; border-radius: var(--r-lg); background: color-mix(in srgb, var(--accent) 26%, #17212d); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); color: color-mix(in srgb, var(--accent) 45%, white); }

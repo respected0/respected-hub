@@ -29,7 +29,7 @@ test('summarizeProduct: no response is unreachable', () => {
 test('summarizeProduct: manifest error envelope is explained in Turkish', () => {
   const summary = summarizeProduct(fail('UNKNOWN_OP', 'unknown op'), undefined);
   assert.equal(summary.statusKind, 'error');
-  assert.equal(summary.errorText, 'Bu işlem ürün tarafından tanınmıyor.');
+  assert.equal(summary.errorText, 'Bu işlem ürün tarafından tanınmıyor. unknown op');
 });
 
 test('summarizeProduct: healthy product is ok with capabilities and checks', () => {
@@ -68,7 +68,7 @@ test('summarizeProduct: unhealthy and degraded map to error and warn', () => {
 test('summarizeProduct: health failure and missing health are warnings', () => {
   const failed = summarizeProduct(ok(manifest), fail('BAD_REQUEST', 'bad'));
   assert.equal(failed.statusKind, 'warn');
-  assert.equal(failed.errorText, 'İstek biçimi geçersiz.');
+  assert.equal(failed.errorText, 'İstek biçimi geçersiz. bad');
   const missing = summarizeProduct(ok(manifest), undefined);
   assert.equal(missing.statusKind, 'warn');
   assert.ok(missing.errorText && missing.errorText.includes('sağlık bilgisi alınamadı'));
