@@ -103,6 +103,13 @@ bir web görünümü Hub'ın hangi programı başlatacağını seçemez.
 
 ## 6. RPP köprüsü
 
+### Entegrasyon IPC'si
+
+`commands/integrations.rs` yalnızca kapalı biçimli `integrations_request` isteğini sunar. İstek gövdesi
+`{ "action": "inventory" }` ile sınırlıdır; bilinmeyen eylem veya alan reddedilir. Web görünümü bu yüzeyden dosya yolu,
+kabuk komutu, URL, plan digest'i ya da rastgele işlem adı geçiremez. M1/M2'de yanıt salt okunurdur ve tarayıcı henüz
+yoksa `scan_unavailable` kaydı döner; yazma komutu M3 kapısı açılana kadar yoktur.
+
 `rpp.rs`, `commands/`. Ürünler bir alt süreç olarak çağrılır: `<ürün>.exe rpp`, stdin'de bir JSON istek, stdout'ta bir
 yanıt. Ağ dinleyicisi, servis ya da kabuk yoktur.
 

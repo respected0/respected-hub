@@ -33,3 +33,12 @@ export interface Inventory {
   assets: Asset[]; bindings: Binding[]; clients: ClientState[];
   capabilities: Capability[]; issues: ScanIssue[];
 }
+
+// Mirror of src-tauri/src/integrations/api.rs.
+export type IntegrationAction = 'inventory';
+export interface IntegrationRequest { action: IntegrationAction }
+export interface IntegrationReply {
+  ok: boolean;
+  result: { read_only: boolean; inventory: Inventory } | null;
+  error: { code: string; message: string } | null;
+}

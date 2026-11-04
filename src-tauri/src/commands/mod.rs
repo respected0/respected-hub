@@ -5,6 +5,7 @@ use crate::{get_settings, lifecycle, Settings};
 use serde_json::{json, Value};
 
 pub mod engine;
+pub mod integrations;
 pub mod manage;
 pub mod memory;
 

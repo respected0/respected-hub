@@ -31,6 +31,7 @@ pub fn run() {
             commands::manage::lifecycle_apply, commands::manage::activity_list, commands::manage::catalog_refresh, commands::manage::catalog_set_channel,
             commands::manage::hub_update_status, commands::manage::hub_update_install, commands::manage::orchestrator_mcp_plan,
             commands::manage::orchestrator_mcp_apply,
+            commands::integrations::integrations_request,
             commands::memory::memory_access_status, commands::memory::memory_access_enable, commands::memory::memory_access_disable,
             commands::memory::memory_index_status, commands::memory::memory_index_refresh, commands::memory::memory_semantic_status,
             commands::memory::memory_semantic_enable, commands::memory::memory_semantic_disable, commands::memory::memory_capture_run,
