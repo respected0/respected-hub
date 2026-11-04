@@ -114,6 +114,9 @@ pub struct Source {
     /// Stable identity of the path bytes (Windows: UTF-16 units, Unix: raw bytes).
     pub path_id: String,
     pub fingerprint: Option<String>,
+    /// Symlink target for a deployed skill; the original location stays in `path`.
+    #[serde(default)]
+    pub symlink_target: Option<String>,
     pub owner: Owner,
     pub format: SourceFormat,
     pub integrity: SourceIntegrity,
@@ -125,6 +128,7 @@ impl Source {
             path: path.to_string_lossy().into_owned(),
             path_id: path_identity(path),
             fingerprint: None,
+            symlink_target: None,
             owner,
             format,
             integrity: SourceIntegrity::Ok,

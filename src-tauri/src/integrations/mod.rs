@@ -7,3 +7,4 @@ pub mod api;
 pub mod security;
 pub mod discovery;
 pub mod adapters;
+pub mod skills;

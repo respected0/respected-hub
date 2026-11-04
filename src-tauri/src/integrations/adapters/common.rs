@@ -1,8 +1,7 @@
 //! Helpers shared by read-only client adapters.
 
 use crate::integrations::model::{
-    Asset, AssetKind, Binding, Capability, ClientId, Inventory, ObservedStatus, Owner, Project,
-    ScanIssue, Scope, Source, SourceFormat,
+    Capability, ClientId, Inventory, Owner, Project, ScanIssue, Scope, Source, SourceFormat,
 };
 use crate::integrations::security::{self, Limits};
 use serde_json::{Map, Value};
@@ -236,36 +235,5 @@ fn add_skill_manifest(
     parent: Option<String>,
     owner: Owner,
 ) {
-    match fs::metadata(manifest) {
-        Ok(metadata) if metadata.is_file() => {}
-        Ok(_) => return,
-        Err(error) if error.kind() == ErrorKind::NotFound => return,
-        Err(error) => {
-            issue(inventory, "unreadable", manifest, &error.to_string());
-            return;
-        }
-    }
-    let text = match security::read_text(manifest, Limits::default()) {
-        Ok(text) => text,
-        Err(error) => {
-            inventory.issues.push(error);
-            return;
-        }
-    };
-    let name = manifest.parent().and_then(Path::file_name).map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
-    if name.is_empty() { return; }
-    let source = source(manifest, owner, SourceFormat::SkillDirectory, Some(digest(&text)));
-    let identity = format!("skill:{}", source.path_id);
-    let asset = Asset::new(AssetKind::Skill, &name, &identity);
-    inventory.add_binding(asset, Binding {
-        asset_key: Asset::stable_key(AssetKind::Skill, &name, &identity),
-        client,
-        scope,
-        project,
-        source,
-        status: ObservedStatus::Configured,
-        enabled: None,
-        managed: false,
-        parent_asset_key: parent,
-    });
+    crate::integrations::skills::inspect(inventory, client, manifest, scope, project, parent, owner);
 }
