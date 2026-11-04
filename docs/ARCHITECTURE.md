@@ -16,6 +16,7 @@ Giriş: [README.md](../README.md). Yayın: [common/release/RELEASE.md](../common
   redaksiyon ve yazma kapısı: [ADR-THIRD-PARTY-INTEGRATIONS.md](ADR-THIRD-PARTY-INTEGRATIONS.md).
 - Keşif tek motordur (`integrations/discovery.rs`): klasör/dosya varlığı yalnızca kaynak kanıtıdır; programın yolu `installed`, ikisi birlikte `configured` demektir. Hiçbir durum tek başına `enabled` veya kullanımda sayılmaz; okunamayan yol kontrollü bir uyarıdır.
 - Claude Code adapter'ı (`integrations/adapters/claude.rs`) yalnızca doğrulanmış kaynakları okur: kullanıcı `~/.claude.json`, proje `<kök>/.mcp.json`, kullanıcı/proje `skills/<ad>/SKILL.md` klasörleri ve `.claude-plugin/plugin.json` manifestli plugin'ler. Proje kökü kullanıcı seçimidir; adapter diskte proje taraması yapmaz. Brain/Orchestrator girdileri `Owner::Product` olarak işaretlenir ve yazılmaz.
+- Codex adapter'ı (`integrations/adapters/codex.rs`) `$CODEX_HOME/config.toml` (yoksa `~/.codex/config.toml`), `skills/` ve yalnızca `[projects."<yol>"] trust_level = "trusted"` olan projelerin `.codex` kaynaklarını okur. Güvenilmeyen proje dosyası okunmaz; `project_untrusted` uyarısı dosya yolunu gösterir. Aynı MCP kimliği Claude ve Codex'te tek `asset_key` taşır.
 
 ## 2. Kurucuyu çalıştırma
 

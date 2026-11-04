@@ -16,12 +16,10 @@ tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
+toml = "0.8"
 tauri-plugin-single-instance = "2"
 ed25519-dalek = "2"
 base64 = "0.22"
-
-[dev-dependencies]
-toml = "0.8"
 
 [features]
 # Development trust: dev signing key + the explicit unsigned opt-in. NEVER enabled for production builds (debug builds have it implicitly).
@@ -59,6 +57,10 @@ path = "tests/integrations/inventory_e2e.rs"
 [[test]]
 name = "claude_adapter_e2e"
 path = "tests/integrations/claude_adapter_e2e.rs"
+
+[[test]]
+name = "codex_adapter_e2e"
+path = "tests/integrations/codex_adapter_e2e.rs"
 
 
 [profile.release]
