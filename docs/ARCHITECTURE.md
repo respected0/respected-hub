@@ -14,6 +14,7 @@ Giriş: [README.md](../README.md). Yayın: [common/release/RELEASE.md](../common
   ürün kendi klasörlerini bilir.
 - Üçüncü taraf MCP/Skill/Plugin envanteri ayrı `integrations` motorundadır ve M1/M2'de salt okunurdur. Sahiplik,
   redaksiyon ve yazma kapısı: [ADR-THIRD-PARTY-INTEGRATIONS.md](ADR-THIRD-PARTY-INTEGRATIONS.md).
+- Keşif tek motordur (`integrations/discovery.rs`): klasör/dosya varlığı yalnızca kaynak kanıtıdır; programın yolu `installed`, ikisi birlikte `configured` demektir. Hiçbir durum tek başına `enabled` veya kullanımda sayılmaz; okunamayan yol kontrollü bir uyarıdır.
 
 ## 2. Kurucuyu çalıştırma
 

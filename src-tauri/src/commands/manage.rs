@@ -1,6 +1,7 @@
 //! Product lifecycle, catalog, Hub update and activity commands.
 use super::{lifecycle_reply, lifecycle_roots, resolved_settings};
 use crate::hub::{hub_apply, hub_plan, hub_status};
+use crate::integrations::discovery::{self, Environment};
 use crate::lifecycle::catalog;
 use crate::{lifecycle, orchestrator::mcp as orchestrator_mcp};
 use serde_json::{json, Value};
@@ -29,19 +30,7 @@ pub async fn lifecycle_apply(app: tauri::AppHandle, product: String, action: Str
 /// Which AI clients have a config folder on this computer (read-only; same rules as Brain's `detect_clients`), for the install wizard before Brain exists.
 #[tauri::command]
 pub fn detect_ai_clients() -> Value {
-    let home = std::path::PathBuf::from(std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME")).unwrap_or_default());
-    let appdata = if cfg!(windows) { home.join("AppData/Roaming") } else if cfg!(target_os = "macos") { home.join("Library/Application Support") } else { home.join(".config") };
-    let storage = appdata.join("Code/User/globalStorage");
-    json!({
-        "claude": home.join(".claude").is_dir() || home.join(".claude.json").is_file(),
-        "codex": home.join(".codex").is_dir(),
-        "gemini": home.join(".gemini").is_dir(),
-        "antigravity": home.join(".gemini").is_dir(),
-        "cursor": home.join(".cursor").is_dir(),
-        "windsurf": home.join(".codeium").is_dir(),
-        "claude-desktop": appdata.join("Claude").is_dir(),
-        "vscode-agents": storage.join("saoudrizwan.claude-dev").is_dir() || storage.join("rooveterinaryinc.roo-cline").is_dir(),
-    })
+    json!(discovery::presence(&Environment::current()))
 }
 
 #[tauri::command]
