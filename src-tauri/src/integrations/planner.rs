@@ -9,7 +9,7 @@ use crate::integrations::model::{
 };
 use crate::integrations::security::{self, Limits};
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::Path;
@@ -97,8 +97,8 @@ pub fn plan_at(inventory: &Inventory, projects: &[Project], request: &PlanReques
         return Err(fail("SOURCE_CHANGED", "Hedef dosya taramadan sonra değişti; planı yenileyin."));
     }
     let (before, after_sha256, diff) = match binding.source.format {
-        SourceFormat::Json => plan_json(&text, container, &asset.name, &before_sha256)?,
-        SourceFormat::Toml => plan_toml(&text, container, &asset.name, &before_sha256)?,
+        SourceFormat::Json | SourceFormat::Jsonc | SourceFormat::Toml =>
+            plan_document(&text, binding.source.format, container, &asset.name)?,
         _ => return Err(fail("UNSUPPORTED_CAPABILITY", "Bu kaynak biçimi için biçim korumalı plan henüz desteklenmiyor.")),
     };
     let mut risks = Vec::new();
@@ -106,7 +106,7 @@ pub fn plan_at(inventory: &Inventory, projects: &[Project], request: &PlanReques
         risks.push("Genel kayıt kaldırıldığında bu istemciyi kullanan tüm projeler etkilenebilir.".to_string());
     }
     if binding.source.format == SourceFormat::Toml {
-        risks.push("TOML önizlemesi yeniden serileştirir; yazma OPS-002 biçim korumasına kadar kapalıdır.".to_string());
+        risks.push("TOML düzenlemesi biçim korumalıdır; yazma kapısı ürün sahibi onayına kadar kapalıdır.".to_string());
     }
     let affected_projects = match binding.scope {
         Scope::Global => projects.to_vec(),
@@ -194,42 +194,47 @@ fn find_binding<'a>(inventory: &'a Inventory, request: &PlanRequest) -> Result<&
     }
 }
 
-fn plan_json(text: &str, container: &str, name: &str, before_sha256: &str) -> Result<(Value, String, Vec<String>), PlanError> {
+fn plan_document(text: &str, format: SourceFormat, container: &str, name: &str) -> Result<(Value, String, Vec<String>), PlanError> {
     let body = text.strip_prefix('\u{feff}').unwrap_or(text);
-    let mut document: Value = serde_json::from_str(body)
-        .map_err(|_| fail("SOURCE_CHANGED", "Hedef dosya artık geçerli JSON değil; planı yenileyin."))?;
-    let entry = document.get(container).and_then(Value::as_object).and_then(|servers| servers.get(name)).cloned()
-        .ok_or_else(|| fail("SOURCE_CHANGED", "Hedef kayıt dosyada artık yok; planı yenileyin."))?;
-    if !entry.is_object() {
-        return Err(fail("SOURCE_CHANGED", "Hedef kayıt beklenen biçimde değil; planı yenileyin."));
-    }
-    let servers = document.get_mut(container).and_then(Value::as_object_mut)
-        .ok_or_else(|| fail("SOURCE_CHANGED", "Hedef bölüm dosyada artık yok; planı yenileyin."))?;
-    remove_entry(servers, name);
-    let mut after = serde_json::to_vec_pretty(&document)
-        .map_err(|_| fail("INTERNAL", "Plan çıktısı serileştirilemedi."))?;
-    after.push(b'\n');
-    Ok((security::redact_json(&entry), sha256(&after), vec![format!("- {container}.{name}")]))
-}
-
-fn plan_toml(text: &str, container: &str, name: &str, _before_sha256: &str) -> Result<(Value, String, Vec<String>), PlanError> {
-    let body = text.strip_prefix('\u{feff}').unwrap_or(text);
-    let mut document: toml::Value = body.parse()
-        .map_err(|_| fail("SOURCE_CHANGED", "Hedef dosya artık geçerli TOML değil; planı yenileyin."))?;
-    let entry = document.get(container).and_then(toml::Value::as_table).and_then(|servers| servers.get(name)).cloned()
-        .ok_or_else(|| fail("SOURCE_CHANGED", "Hedef kayıt dosyada artık yok; planı yenileyin."))?;
-    let before = serde_json::to_value(&entry)
-        .map_err(|_| fail("INTERNAL", "TOML kaydı önizlemeye dönüştürülemedi."))?;
-    let servers = document.get_mut(container).and_then(toml::Value::as_table_mut)
-        .ok_or_else(|| fail("SOURCE_CHANGED", "Hedef bölüm dosyada artık yok; planı yenileyin."))?;
-    servers.remove(name);
-    let after = toml::to_string(&document)
-        .map_err(|_| fail("INTERNAL", "TOML önizlemesi serileştirilemedi."))?;
-    Ok((security::redact_json(&before), sha256(after.as_bytes()), vec![format!("- {container}.{name}")]))
-}
-
-fn remove_entry(servers: &mut Map<String, Value>, name: &str) {
-    servers.remove(name);
+    let (before, after_text) = match format {
+        SourceFormat::Json => {
+            let document: Value = serde_json::from_str(body)
+                .map_err(|_| fail("SOURCE_CHANGED", "Hedef dosya artık geçerli JSON değil; planı yenileyin."))?;
+            let entry = document.get(container).and_then(Value::as_object).and_then(|servers| servers.get(name)).cloned()
+                .ok_or_else(|| fail("SOURCE_CHANGED", "Hedef kayıt dosyada artık yok; planı yenileyin."))?;
+            if !entry.is_object() {
+                return Err(fail("SOURCE_CHANGED", "Hedef kayıt beklenen biçimde değil; planı yenileyin."));
+            }
+            let after = crate::integrations::apply::remove_member(text, format, container, name)
+                .map_err(|error| fail(error.code, &error.message))?;
+            (security::redact_json(&entry), after)
+        }
+        SourceFormat::Jsonc => {
+            let document = crate::integrations::apply::parse_jsonc(text)
+                .map_err(|error| fail(error.code, &error.message))?;
+            let entry = document.get(container).and_then(Value::as_object).and_then(|servers| servers.get(name)).cloned()
+                .ok_or_else(|| fail("SOURCE_CHANGED", "Hedef kayıt dosyada artık yok; planı yenileyin."))?;
+            if !entry.is_object() {
+                return Err(fail("SOURCE_CHANGED", "Hedef kayıt beklenen biçimde değil; planı yenileyin."));
+            }
+            let after = crate::integrations::apply::remove_member(text, format, container, name)
+                .map_err(|error| fail(error.code, &error.message))?;
+            (security::redact_json(&entry), after)
+        }
+        SourceFormat::Toml => {
+            let document: toml::Value = body.parse()
+                .map_err(|_| fail("SOURCE_CHANGED", "Hedef dosya artık geçerli TOML değil; planı yenileyin."))?;
+            let entry = document.get(container).and_then(toml::Value::as_table).and_then(|servers| servers.get(name)).cloned()
+                .ok_or_else(|| fail("SOURCE_CHANGED", "Hedef kayıt dosyada artık yok; planı yenileyin."))?;
+            let before = serde_json::to_value(&entry)
+                .map_err(|_| fail("INTERNAL", "TOML kaydı önizlemeye dönüştürülemedi."))?;
+            let after = crate::integrations::apply::remove_member(text, format, container, name)
+                .map_err(|error| fail(error.code, &error.message))?;
+            (security::redact_json(&before), after)
+        }
+        _ => return Err(fail("UNSUPPORTED_CAPABILITY", "Bu kaynak biçimi için biçim korumalı plan yok.")),
+    };
+    Ok((before, sha256(after_text.as_bytes()), vec![format!("- {container}.{name}")]))
 }
 
 fn container_for(client: ClientId) -> &'static str {
@@ -266,7 +271,7 @@ mod tests {
     use crate::integrations::discovery::Environment;
     use crate::integrations::inventory;
     use std::collections::BTreeMap;
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
 
     struct Temp(PathBuf);
     impl Temp {

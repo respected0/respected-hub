@@ -86,5 +86,6 @@ açtıysanız ve araç bilgisayarınızda kuruluysa. Hub yalnızca önizleme gö
 
 **`Temp` klasöründeki dosyalar ne?** `is-XXXX.tmp` kurucunun geçici açılımıdır; bitince silinir. Hub ve ürünler
 dosyaları güvenli yazmak için hedefin yanına geçici `.tmp` açıp yer değiştirir; işlem sonunda kalmaz.
+ Üçüncü taraf yazma motoru etkinleştirildiğinde aynı dizinde `.respected-<tx>.tmp` ve `.respected-<tx>.backup` oluşur; tmp başarılı işlemde silinir, yedek geri alma için tutulur. Bugünkü kullanıcı akışında bu motorun IPC kapısı kapalıdır; üçüncü taraf ayarlarına yazma yapılmaz.
 
 **Ne gönderiliyor?** Bkz. [PRIVACY.md](../PRIVACY.md): Hub yalnızca GitHub'dan katalog ve kurucu indirir; telemetri yoktur.
