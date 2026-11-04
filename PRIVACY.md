@@ -23,7 +23,7 @@ bir yere göndermez. Ürünlerin ne yaptığı için kendi gizlilik metinlerine 
 
 Hub, üçüncü taraf AI istemcilerinin MCP/Skill/Plugin yapılandırmalarını yalnızca **yerelde ve salt okunur** olarak
 tarar; dosyaların kopyasını saklamaz, dışarı göndermez. Tespit edilen token, parola ve benzeri değerler arayüzde
-redakte edilir. Ayrıntı: [ADR](docs/ADR-THIRD-PARTY-INTEGRATIONS.md).
+redakte edilir; ${DATABASE_URL} gibi ortam değişkeni referansları gösterilir, değerleri gösterilmez. Tarama yalnızca sınırlı derinlikte ve boyutta okur; symlink hedefi kökün dışına çıkıyorsa ya da döngü oluşturuyorsa izlenmez ve kontrollü bir uyarı olarak raporlanır. Bozuk yapılandırma dosyasının içeriği gösterilmez. Ayrıntı: [ADR](docs/ADR-THIRD-PARTY-INTEGRATIONS.md).
 
 ## Bilgisayardan ne çıkar, kime gider
 
