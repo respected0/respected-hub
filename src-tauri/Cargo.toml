@@ -59,6 +59,10 @@ name = "claude_adapter_e2e"
 path = "tests/integrations/claude_adapter_e2e.rs"
 
 [[test]]
+name = "catalog_e2e"
+path = "tests/integrations/catalog_e2e.rs"
+
+[[test]]
 name = "codex_adapter_e2e"
 path = "tests/integrations/codex_adapter_e2e.rs"
 

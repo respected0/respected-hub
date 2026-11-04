@@ -1,0 +1,970 @@
+[
+  {
+    "id": "mcp-servers",
+    "name": "MCP Servers",
+    "type": "mcp",
+    "category": "Geliştirici Araçları",
+    "source_url": "https://github.com/modelcontextprotocol/servers",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Resmi Model Context Protocol sunucu koleksiyonu.",
+    "provenance": "official"
+  },
+  {
+    "id": "github-mcp-server",
+    "name": "GitHub MCP Server",
+    "type": "mcp",
+    "category": "Geliştirici Araçları",
+    "source_url": "https://github.com/github/github-mcp-server",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "GitHub depoları ve pull requestleri için resmi MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "playwright-mcp",
+    "name": "Playwright MCP",
+    "type": "mcp",
+    "category": "Tarayıcı",
+    "source_url": "https://github.com/microsoft/playwright-mcp",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Tarayıcı otomasyonu için Microsoft Playwright MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "context7",
+    "name": "Context7",
+    "type": "mcp",
+    "category": "Dokümantasyon",
+    "source_url": "https://github.com/upstash/context7",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Kütüphane belgelerini güncel bağlam olarak sunar.",
+    "provenance": "official"
+  },
+  {
+    "id": "supabase-mcp",
+    "name": "Supabase MCP",
+    "type": "mcp",
+    "category": "Veritabanı",
+    "source_url": "https://github.com/supabase-community/supabase-mcp",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Supabase projeleri için MCP sunucusu.",
+    "provenance": "community"
+  },
+  {
+    "id": "stripe-agent-toolkit",
+    "name": "Stripe Agent Toolkit",
+    "type": "mcp",
+    "category": "Ödeme",
+    "source_url": "https://github.com/stripe/agent-toolkit",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Stripe API işlemleri için ajan araçları.",
+    "provenance": "official"
+  },
+  {
+    "id": "cloudflare-workers-mcp",
+    "name": "Cloudflare Workers MCP",
+    "type": "mcp",
+    "category": "Bulut",
+    "source_url": "https://github.com/cloudflare/workers-mcp",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Cloudflare Workers üzerinde MCP geliştirme araçları.",
+    "provenance": "official"
+  },
+  {
+    "id": "serena",
+    "name": "Serena",
+    "type": "mcp",
+    "category": "Kod Arama",
+    "source_url": "https://github.com/oraios/serena",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Kod tabanında semantik arama ve düzenleme yapan MCP ajanı.",
+    "provenance": "community"
+  },
+  {
+    "id": "mcp-playwright",
+    "name": "MCP Playwright",
+    "type": "mcp",
+    "category": "Tarayıcı",
+    "source_url": "https://github.com/executeautomation/mcp-playwright",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Playwright tabanlı tarayıcı otomasyonu MCP sunucusu.",
+    "provenance": "community"
+  },
+  {
+    "id": "browserbase-mcp",
+    "name": "Browserbase MCP",
+    "type": "mcp",
+    "category": "Tarayıcı",
+    "source_url": "https://github.com/browserbase/mcp-server-browserbase",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Bulut tarayıcı oturumları için MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "firecrawl-mcp",
+    "name": "Firecrawl MCP",
+    "type": "mcp",
+    "category": "Web",
+    "source_url": "https://github.com/mendableai/firecrawl-mcp-server",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Web kazima ve icerik cikarma icin MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "tavily-mcp",
+    "name": "Tavily MCP",
+    "type": "mcp",
+    "category": "Arama",
+    "source_url": "https://github.com/tavily-ai/tavily-mcp",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Ajanlar icin web arama MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "exa-mcp-server",
+    "name": "Exa MCP Server",
+    "type": "mcp",
+    "category": "Arama",
+    "source_url": "https://github.com/exa-labs/exa-mcp-server",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Exa arama API icin MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "mem0",
+    "name": "Mem0",
+    "type": "mcp",
+    "category": "Hafiza",
+    "source_url": "https://github.com/mem0ai/mem0",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Ajanlar icin kalici hafiza katmani.",
+    "provenance": "official"
+  },
+  {
+    "id": "chroma-mcp",
+    "name": "Chroma MCP",
+    "type": "mcp",
+    "category": "Veritabani",
+    "source_url": "https://github.com/chroma-core/chroma-mcp",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Chroma vektor veritabani icin MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "qdrant-mcp",
+    "name": "Qdrant MCP",
+    "type": "mcp",
+    "category": "Veritabani",
+    "source_url": "https://github.com/qdrant/mcp-server-qdrant",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Qdrant vektor aramasi icin MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "grafana-mcp",
+    "name": "Grafana MCP",
+    "type": "mcp",
+    "category": "Gozlemlenebilirlik",
+    "source_url": "https://github.com/grafana/mcp-grafana",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Grafana panolari ve metrikleri icin MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "elasticsearch-mcp",
+    "name": "Elasticsearch MCP",
+    "type": "mcp",
+    "category": "Veritabani",
+    "source_url": "https://github.com/elastic/mcp-server-elasticsearch",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Elasticsearch sorgulari icin MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "mongodb-mcp",
+    "name": "MongoDB MCP",
+    "type": "mcp",
+    "category": "Veritabani",
+    "source_url": "https://github.com/mongodb-js/mongodb-mcp-server",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "MongoDB veritabanlari icin resmi MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "redis-mcp",
+    "name": "Redis MCP",
+    "type": "mcp",
+    "category": "Veritabani",
+    "source_url": "https://github.com/redis/mcp-redis",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Redis anahtar-deger islemleri icin MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "neon-mcp",
+    "name": "Neon MCP",
+    "type": "mcp",
+    "category": "Veritabani",
+    "source_url": "https://github.com/neondatabase/mcp-server-neon",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Neon Postgres projeleri icin MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "slack-mcp",
+    "name": "Slack MCP",
+    "type": "mcp",
+    "category": "Iletisim",
+    "source_url": "https://github.com/korotovsky/slack-mcp-server",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Slack kanallari ve mesajlari icin MCP sunucusu.",
+    "provenance": "community"
+  },
+  {
+    "id": "sentry-mcp",
+    "name": "Sentry MCP",
+    "type": "mcp",
+    "category": "Gozlemlenebilirlik",
+    "source_url": "https://github.com/getsentry/sentry-mcp",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Sentry hata ve olay verileri icin MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "notion-mcp",
+    "name": "Notion MCP",
+    "type": "mcp",
+    "category": "Uretkenlik",
+    "source_url": "https://github.com/makenotion/notion-mcp-server",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Notion sayfalari ve veritabanlari icin MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "atlassian-mcp",
+    "name": "Atlassian MCP",
+    "type": "mcp",
+    "category": "Uretkenlik",
+    "source_url": "https://github.com/sooperset/mcp-atlassian",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Jira ve Confluence icin MCP sunucusu.",
+    "provenance": "community"
+  },
+  {
+    "id": "apify-mcp",
+    "name": "Apify MCP",
+    "type": "mcp",
+    "category": "Web",
+    "source_url": "https://github.com/apify/actors-mcp-server",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Apify aktorleri icin MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "milvus-mcp",
+    "name": "Milvus MCP",
+    "type": "mcp",
+    "category": "Veritabani",
+    "source_url": "https://github.com/zilliztech/mcp-server-milvus",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Milvus vektor veritabani icin MCP sunucusu.",
+    "provenance": "official"
+  },
+  {
+    "id": "markitdown",
+    "name": "MarkItDown",
+    "type": "mcp",
+    "category": "Dokumantasyon",
+    "source_url": "https://github.com/microsoft/markitdown",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Belgeleri Markdown a ceviren Microsoft araci.",
+    "provenance": "official"
+  },
+  {
+    "id": "fastmcp",
+    "name": "FastMCP",
+    "type": "mcp",
+    "category": "Gelistirici Araclari",
+    "source_url": "https://github.com/jlowin/fastmcp",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Python ile hizli MCP sunucusu gelistirme catisi.",
+    "provenance": "community"
+  },
+  {
+    "id": "fastapi-mcp",
+    "name": "FastAPI MCP",
+    "type": "mcp",
+    "category": "Gelistirici Araclari",
+    "source_url": "https://github.com/tadata-org/fastapi_mcp",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "FastAPI uc noktalarini MCP araclarina donusturur.",
+    "provenance": "community"
+  },
+  {
+    "id": "langchain-mcp-adapters",
+    "name": "LangChain MCP Adapters",
+    "type": "mcp",
+    "category": "Ajan Catisi",
+    "source_url": "https://github.com/langchain-ai/langchain-mcp-adapters",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "LangChain ve LangGraph icin MCP istemci adaptorleri.",
+    "provenance": "official"
+  },
+  {
+    "id": "mcp-inspector",
+    "name": "MCP Inspector",
+    "type": "mcp",
+    "category": "Gelistirici Araclari",
+    "source_url": "https://github.com/modelcontextprotocol/inspector",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "MCP sunucularini test etmek icin resmi denetci.",
+    "provenance": "official"
+  },
+  {
+    "id": "mcp-registry",
+    "name": "MCP Registry",
+    "type": "mcp",
+    "category": "Koleksiyon",
+    "source_url": "https://github.com/modelcontextprotocol/registry",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Model Context Protocol sunucu kayit defteri.",
+    "provenance": "official"
+  },
+  {
+    "id": "claude-skills",
+    "name": "Claude Skills",
+    "type": "skill",
+    "category": "Skill",
+    "source_url": "https://github.com/anthropics/skills",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Anthropic resmi Skill ornekleri ve sablonlari.",
+    "provenance": "official"
+  },
+  {
+    "id": "superpowers",
+    "name": "Superpowers",
+    "type": "skill",
+    "category": "Skill",
+    "source_url": "https://github.com/obra/superpowers",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Yazilim gelistirme is akislari icin Skill koleksiyonu.",
+    "provenance": "community"
+  },
+  {
+    "id": "awesome-claude-skills-composio",
+    "name": "Awesome Claude Skills",
+    "type": "skill",
+    "category": "Koleksiyon",
+    "source_url": "https://github.com/ComposioHQ/awesome-claude-skills",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Topluluk tarafindan derlenen Claude Skill listesi.",
+    "provenance": "community"
+  },
+  {
+    "id": "awesome-claude-skills-travisvn",
+    "name": "Awesome Claude Skills Travis",
+    "type": "skill",
+    "category": "Koleksiyon",
+    "source_url": "https://github.com/travisvn/awesome-claude-skills",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Kuratorlu Claude Skill ve arac koleksiyonu.",
+    "provenance": "community"
+  },
+  {
+    "id": "awesome-claude-code",
+    "name": "Awesome Claude Code",
+    "type": "skill",
+    "category": "Koleksiyon",
+    "source_url": "https://github.com/hesreallyhim/awesome-claude-code",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Claude Code komutlari ve is akislari.",
+    "provenance": "community"
+  },
+  {
+    "id": "wshobson-agents",
+    "name": "Claude Code Agents",
+    "type": "skill",
+    "category": "Ajan Catisi",
+    "source_url": "https://github.com/wshobson/agents",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Claude Code icin hazir ajan ve komut tanimlari.",
+    "provenance": "community"
+  },
+  {
+    "id": "claude-code-templates",
+    "name": "Claude Code Templates",
+    "type": "skill",
+    "category": "Sablonlar",
+    "source_url": "https://github.com/davila7/claude-code-templates",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Claude Code yapilandirma ve proje sablonlari.",
+    "provenance": "community"
+  },
+  {
+    "id": "claude-code",
+    "name": "Claude Code",
+    "type": "plugin",
+    "category": "Istemci",
+    "source_url": "https://github.com/anthropics/claude-code",
+    "supported_clients": [
+      "claude"
+    ],
+    "description": "Anthropic terminal tabanli kodlama ajani.",
+    "provenance": "official"
+  },
+  {
+    "id": "codex",
+    "name": "Codex CLI",
+    "type": "plugin",
+    "category": "Istemci",
+    "source_url": "https://github.com/openai/codex",
+    "supported_clients": [
+      "codex"
+    ],
+    "description": "OpenAI terminal tabanli kodlama ajani.",
+    "provenance": "official"
+  },
+  {
+    "id": "gemini-cli",
+    "name": "Gemini CLI",
+    "type": "plugin",
+    "category": "Istemci",
+    "source_url": "https://github.com/google-gemini/gemini-cli",
+    "supported_clients": [
+      "gemini"
+    ],
+    "description": "Google terminal tabanli Gemini ajani.",
+    "provenance": "official"
+  },
+  {
+    "id": "opencode",
+    "name": "OpenCode",
+    "type": "plugin",
+    "category": "Istemci",
+    "source_url": "https://github.com/sst/opencode",
+    "supported_clients": [
+      "open_code"
+    ],
+    "description": "Acik kaynak terminal kodlama ajani.",
+    "provenance": "official"
+  },
+  {
+    "id": "goose",
+    "name": "Goose",
+    "type": "plugin",
+    "category": "Istemci",
+    "source_url": "https://github.com/block/goose",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Block acik kaynak yerel AI ajani.",
+    "provenance": "official"
+  },
+  {
+    "id": "cline",
+    "name": "Cline",
+    "type": "plugin",
+    "category": "Istemci",
+    "source_url": "https://github.com/cline/cline",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "VS Code icinde calisan otonom kodlama ajani.",
+    "provenance": "official"
+  },
+  {
+    "id": "continue",
+    "name": "Continue",
+    "type": "plugin",
+    "category": "Istemci",
+    "source_url": "https://github.com/continuedev/continue",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Acik kaynak AI kod asistani ve IDE eklentisi.",
+    "provenance": "official"
+  },
+  {
+    "id": "roo-code",
+    "name": "Roo Code",
+    "type": "plugin",
+    "category": "Istemci",
+    "source_url": "https://github.com/RooCodeInc/Roo-Code",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "VS Code icin ozellestirilebilir kodlama ajani.",
+    "provenance": "official"
+  },
+  {
+    "id": "openhands",
+    "name": "OpenHands",
+    "type": "plugin",
+    "category": "Ajan Catisi",
+    "source_url": "https://github.com/All-Hands-AI/OpenHands",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Yazilim gorevlerini uctan uca yuruten acik kaynak ajan.",
+    "provenance": "official"
+  },
+  {
+    "id": "aider",
+    "name": "Aider",
+    "type": "plugin",
+    "category": "Istemci",
+    "source_url": "https://github.com/Aider-AI/aider",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Terminalde calisan AI esliginde kodlama araci.",
+    "provenance": "official"
+  },
+  {
+    "id": "awesome-cursorrules",
+    "name": "Awesome Cursor Rules",
+    "type": "rule",
+    "category": "Kural",
+    "source_url": "https://github.com/PatrickJS/awesome-cursorrules",
+    "supported_clients": [
+      "cursor"
+    ],
+    "description": "Cursor icin hazir kural koleksiyonu.",
+    "provenance": "community"
+  },
+  {
+    "id": "awesome-cursor-rules-mdc",
+    "name": "Awesome Cursor Rules MDC",
+    "type": "rule",
+    "category": "Kural",
+    "source_url": "https://github.com/sanjeed5/awesome-cursor-rules-mdc",
+    "supported_clients": [
+      "cursor"
+    ],
+    "description": "Cursor MDC biciminde kural sablonlari.",
+    "provenance": "community"
+  },
+  {
+    "id": "awesome-mcp-servers",
+    "name": "Awesome MCP Servers",
+    "type": "other",
+    "category": "Koleksiyon",
+    "source_url": "https://github.com/punkpeye/awesome-mcp-servers",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Topluluk tarafindan derlenen MCP sunucu listesi.",
+    "provenance": "community"
+  },
+  {
+    "id": "awesome-mcp-servers-wong2",
+    "name": "Awesome MCP Servers Wong2",
+    "type": "other",
+    "category": "Koleksiyon",
+    "source_url": "https://github.com/wong2/awesome-mcp-servers",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "MCP sunuculari icin alternatif kuratorlu liste.",
+    "provenance": "community"
+  },
+  {
+    "id": "dify",
+    "name": "Dify",
+    "type": "plugin",
+    "category": "Ajan Catisi",
+    "source_url": "https://github.com/langgenius/dify",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "LLM uygulamalari ve ajanlar icin acik kaynak platform.",
+    "provenance": "official"
+  },
+  {
+    "id": "n8n",
+    "name": "n8n",
+    "type": "plugin",
+    "category": "Otomasyon",
+    "source_url": "https://github.com/n8n-io/n8n",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Otomasyon is akislari icin acik kaynak platform.",
+    "provenance": "official"
+  },
+  {
+    "id": "activepieces",
+    "name": "Activepieces",
+    "type": "plugin",
+    "category": "Otomasyon",
+    "source_url": "https://github.com/activepieces/activepieces",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Acik kaynak is akisi otomasyonu.",
+    "provenance": "official"
+  },
+  {
+    "id": "librechat",
+    "name": "LibreChat",
+    "type": "plugin",
+    "category": "Sohbet",
+    "source_url": "https://github.com/danny-avila/LibreChat",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Coklu model destekli acik kaynak sohbet arayuzu.",
+    "provenance": "official"
+  },
+  {
+    "id": "open-webui",
+    "name": "Open WebUI",
+    "type": "plugin",
+    "category": "Sohbet",
+    "source_url": "https://github.com/open-webui/open-webui",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Yerel ve bulut modelleri icin acik kaynak arayuz.",
+    "provenance": "official"
+  },
+  {
+    "id": "lobe-chat",
+    "name": "LobeChat",
+    "type": "plugin",
+    "category": "Sohbet",
+    "source_url": "https://github.com/lobehub/lobe-chat",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Acik kaynak AI sohbet ve ajan platformu.",
+    "provenance": "official"
+  },
+  {
+    "id": "vercel-ai",
+    "name": "Vercel AI SDK",
+    "type": "plugin",
+    "category": "Gelistirici Araclari",
+    "source_url": "https://github.com/vercel/ai",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "AI uygulamalari gelistirmek icin TypeScript SDK.",
+    "provenance": "official"
+  },
+  {
+    "id": "langgraph",
+    "name": "LangGraph",
+    "type": "plugin",
+    "category": "Ajan Catisi",
+    "source_url": "https://github.com/langchain-ai/langgraph",
+    "supported_clients": [
+      "claude",
+      "codex",
+      "cursor",
+      "gemini",
+      "open_code"
+    ],
+    "description": "Durum bilgili cok adimli ajanlar icin cati.",
+    "provenance": "official"
+  }
+]

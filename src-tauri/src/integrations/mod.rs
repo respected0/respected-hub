@@ -10,3 +10,4 @@ pub mod adapters;
 pub mod skills;
 pub mod plugins;
 pub mod resolver;
+pub mod catalog;
