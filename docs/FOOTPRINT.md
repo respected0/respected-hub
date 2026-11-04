@@ -12,7 +12,8 @@ belgelerine bakın:
 - Hub **bir yönetici ve görüntüleyicidir.** Ürünleri kendi başına değiştirmez: bir ürünü kurmak, güncellemek, onarmak ya da
   kaldırmak için o ürünün **kendi imzalı kurucusunu / kaldırıcısını** sessiz modda çalıştırır.
 - Hub **AI araçlarının hiçbir dosyasına yazmaz** (`.claude`, `.codex`, `.gemini` vb.). Bunları Brain ve Orchestrator yazar;
-  Hub yalnızca "şunu uygula" der ve ürünün komutunu çağırır.
+  Hub yalnızca "şunu uygula" der ve ürünün komutunu çağırır. Üçüncü taraf MCP/Skill/Plugin envanterini M1/M2'de yalnızca
+  okur; okuma sırasında dosya oluşturmaz, kimlik bilgilerini göstermez ([ADR](ADR-THIRD-PARTY-INTEGRATIONS.md)).
 - Hub **projelerinize ve not kasanıza yazmaz.** Brain sayfasında kasadan son kayıtları yerelde okuyup gösterir.
 - Hub ürünler hakkında veri saklamaz; "kurulu mu, hangi sürüm" bilgisini ürünlerin kendisinden ve "Yüklü uygulamalar"
   kayıtlarından okur.
@@ -80,7 +81,8 @@ bulur.
 ## 7. Sık sorulanlar
 
 **Hub Claude/Codex ayarlarıma bir şey yazıyor mu?** Hayır. Yazan Brain ve Orchestrator'dır, o da yalnızca bağlantıyı siz
-açtıysanız ve araç bilgisayarınızda kuruluysa. Hub yalnızca önizleme gösterir ve "uygula" dediğinizde ürünün komutunu çağırır.
+açtıysanız ve araç bilgisayarınızda kuruluysa. Hub yalnızca önizleme gösterir ve "uygula" dediğinizde ürünün komutunu
+çağırır. M1/M2'de üçüncü taraf istemci yapılandırmalarını yalnızca okur; Brain/Orchestrator kayıtlarını doğrudan değiştirmez.
 
 **`Temp` klasöründeki dosyalar ne?** `is-XXXX.tmp` kurucunun geçici açılımıdır; bitince silinir. Hub ve ürünler
 dosyaları güvenli yazmak için hedefin yanına geçici `.tmp` açıp yer değiştirir; işlem sonunda kalmaz.

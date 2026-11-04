@@ -12,6 +12,8 @@ Giriş: [README.md](../README.md). Yayın: [common/release/RELEASE.md](../common
   "Güncelleme var".
 - Ayarlar, sağlık, hafıza ve bağlantılar her seferinde ürünün `rpp` komutuyla sorulur. Hub ürünlere klasör geçirmez;
   ürün kendi klasörlerini bilir.
+- Üçüncü taraf MCP/Skill/Plugin envanteri ayrı `integrations` motorundadır ve M1/M2'de salt okunurdur. Sahiplik,
+  redaksiyon ve yazma kapısı: [ADR-THIRD-PARTY-INTEGRATIONS.md](ADR-THIRD-PARTY-INTEGRATIONS.md).
 
 ## 2. Kurucuyu çalıştırma
 

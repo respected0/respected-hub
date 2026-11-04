@@ -21,6 +21,10 @@ bir yere göndermez. Ürünlerin ne yaptığı için kendi gizlilik metinlerine 
 [Brain](https://github.com/respected0/respected-brain/blob/main/PRIVACY.md) ·
 [Orchestrator](https://github.com/respected0/respected-orchestrator/blob/main/PRIVACY.md).
 
+Hub, üçüncü taraf AI istemcilerinin MCP/Skill/Plugin yapılandırmalarını yalnızca **yerelde ve salt okunur** olarak
+tarar; dosyaların kopyasını saklamaz, dışarı göndermez. Tespit edilen token, parola ve benzeri değerler arayüzde
+redakte edilir. Ayrıntı: [ADR](docs/ADR-THIRD-PARTY-INTEGRATIONS.md).
+
 ## Bilgisayardan ne çıkar, kime gider
 
 | Ne zaman | Ne gider | Nereye |

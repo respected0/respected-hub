@@ -18,6 +18,9 @@ Bu, Respected Hub'dır: Tauri 2, Rust, React ve TypeScript. Belgeler: `README.md
   ayarları ürünün şemasıyla değiştirir; Orchestrator'ı Brain'e Orchestrator'ın `memory.connect`'i ile bağlar.
   Yönetilen kopya, Hub'ın yazdığı Yüklü uygulamalar girdisi, ürünlere geçirilen veri klasörü yok. RPP yalnızca `"1"`.
 - Orchestrator çalışmaları Hub kapansa da sürer; görev durumu ve iptal motorundadır.
+- Hub, üçüncü taraf AI istemci yapılandırmalarını (`.claude`, `.codex`, `.gemini`, Cursor, OpenCode) M1/M2'de
+  yalnızca okur; yazma kapısı `docs/ADR-THIRD-PARTY-INTEGRATIONS.md` ile tanımlıdır. Kimlik bilgileri gösterilmez,
+  üçüncü taraf kod çalıştırılmaz.
 - Kardeş depoların kaynağını bulmak yalnızca geliştirme sürümündedir. Yayın imzası ve gerçek makinede kabul ayrı
   kapılardır; kanıtsız iddia edilmez.
 
