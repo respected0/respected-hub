@@ -74,6 +74,10 @@ path = "tests/integrations/skills_e2e.rs"
 name = "plugins_e2e"
 path = "tests/integrations/plugins_e2e.rs"
 
+[[test]]
+name = "resolver_e2e"
+path = "tests/integrations/resolver_e2e.rs"
+
 
 [profile.release]
 codegen-units = 1  # slower release builds, smaller and faster binary
