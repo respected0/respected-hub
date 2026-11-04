@@ -114,19 +114,24 @@ where
         message: error.message,
         recovery_backup: None,
     })?;
+    if plan.noop {
+        return Ok(Applied { plan_digest: plan.plan_digest.clone(), transaction_id: transaction_id.to_string(), files: Vec::new() });
+    }
     if plan.targets.is_empty() {
         return Err(apply_error("INVALID_PLAN", "Plan hi\u{00e7}bir hedef dosya i\u{00e7}ermiyor."));
     }
     let source = fresh_binding(plan, inventory, projects)?;
-    let container = container_for(plan.client);
-    let entry_text = if matches!(plan.operation, Operation::MoveMcp | Operation::CopyMcp) {
+    let target_client = plan.target_client.unwrap_or(plan.client);
+    let source_container = container_for(source.client);
+    let target_container = container_for(target_client);
+    let entry_text = if matches!(plan.operation, Operation::MoveMcp | Operation::CopyMcp | Operation::BindMcp) {
         let text = security::read_text(Path::new(&source.source.path), Limits::default())
             .map_err(|error| apply_error("SOURCE_CHANGED", &error.message))?;
         let hash = sha256(text.as_bytes());
         if source.source.fingerprint.as_deref().is_some_and(|fingerprint| fingerprint != hash) {
             return Err(apply_error("SOURCE_CHANGED", "Kaynak dosya taramadan sonra de\u{011f}i\u{015f}ti; plan\u{0131} yenileyin."));
         }
-        Some(read_entry(&text, source.source.format, container, &plan.name)
+        Some(read_entry(&text, source.source.format, source_container, &plan.name)
             .map_err(|error| ApplyError { code: error.code.into(), message: error.message, recovery_backup: None })?.0)
     } else {
         None
@@ -134,7 +139,7 @@ where
 
     let mut prepared = Vec::new();
     for target in &plan.targets {
-        let binding = binding_by_path_id(inventory, plan.client, &target.path_id)?;
+        let binding = binding_by_path_id(inventory, target_client, &target.path_id)?;
         if binding.managed || matches!(binding.source.owner, Owner::Product { .. } | Owner::Catalog) {
             return Err(apply_error("OWNER_PROTECTED", "Hedef kay\u{0131}t Respected \u{00fc}r\u{00fc}n\u{00fc}ne veya katalo\u{011f}a ait."));
         }
@@ -160,16 +165,23 @@ where
         }
         let is_source = binding.source.path_id == source.source.path_id;
         let after_text = match plan.operation {
-            Operation::RemoveMcp => remove_member(&text, target.format, container, &plan.name),
-            Operation::EnableMcp => set_enabled(&text, target.format, container, &plan.name, true),
-            Operation::DisableMcp => set_enabled(&text, target.format, container, &plan.name, false),
-            Operation::MoveMcp if is_source => remove_member(&text, target.format, container, &plan.name),
+            Operation::RemoveMcp => remove_member(&text, target.format, target_container, &plan.name),
+            Operation::EnableMcp => set_enabled(&text, target.format, target_container, &plan.name, true),
+            Operation::DisableMcp => set_enabled(&text, target.format, target_container, &plan.name, false),
+            Operation::MoveMcp if is_source => remove_member(&text, target.format, target_container, &plan.name),
             Operation::MoveMcp | Operation::CopyMcp => {
                 if is_source {
                     return Err(apply_error("BAD_REQUEST", "Kopyalama plan\u{0131} kaynak dosyay\u{0131} de\u{011f}i\u{015f}tiremez."));
                 }
                 let entry = entry_text.as_deref().unwrap_or_default();
-                insert_member(&text, target.format, container, &plan.name, entry)
+                insert_member(&text, target.format, target_container, &plan.name, entry)
+            }
+            Operation::BindMcp => {
+                if is_source {
+                    return Err(apply_error("BAD_REQUEST", "Bind plan\u{0131} kaynak dosyay\u{0131} de\u{011f}i\u{015f}tiremez."));
+                }
+                let entry = entry_text.as_deref().unwrap_or_default();
+                insert_member(&text, target.format, target_container, &plan.name, entry)
             }
         }.map_err(|error| ApplyError {
             code: error.code.into(),
@@ -359,17 +371,32 @@ fn fresh_binding<'a>(
             return Err(apply_error("TARGET_NOT_FOUND", "Plan projesi kayıtlı değil."));
         }
     }
-    let matches: Vec<&Binding> = inventory.bindings.iter()
-        .filter(|binding| binding.asset_key == plan.asset_key && binding.client == plan.client)
-        .filter(|binding| match plan.scope {
-            Scope::Global => binding.scope == Scope::Global,
-            Scope::Project => binding.scope == Scope::Project
-                && binding.project.as_ref().map(|project| project.id.as_str())
-                    == plan.project.as_ref().map(|project| project.id.as_str()),
-        })
-        .collect();
+    let matches: Vec<&Binding> = if plan.operation == Operation::BindMcp {
+        let path_id = plan.source_path_id.as_deref()
+            .ok_or_else(|| apply_error("INVALID_PLAN", "Bind planı kaynak dosyayı tanımlamıyor."))?;
+        inventory.bindings.iter()
+            .filter(|binding| binding.asset_key == plan.asset_key && binding.source.path_id == path_id)
+            .collect()
+    } else {
+        inventory.bindings.iter()
+            .filter(|binding| binding.asset_key == plan.asset_key && binding.client == plan.client)
+            .filter(|binding| match plan.scope {
+                Scope::Global => binding.scope == Scope::Global,
+                Scope::Project => binding.scope == Scope::Project
+                    && binding.project.as_ref().map(|project| project.id.as_str())
+                        == plan.project.as_ref().map(|project| project.id.as_str()),
+            })
+            .collect()
+    };
     match matches.as_slice() {
-        [binding] => Ok(*binding),
+        [binding] => {
+            if plan.operation == Operation::BindMcp
+                && (binding.managed || matches!(binding.source.owner, Owner::Product { .. } | Owner::Catalog))
+            {
+                return Err(apply_error("OWNER_PROTECTED", "Kaynak kayıt Respected ürününe veya kataloğa ait."));
+            }
+            Ok(*binding)
+        }
         [] => Err(apply_error("TARGET_NOT_FOUND", "Plan kaydı güncel envanterde bulunamadı.")),
         _ => Err(apply_error("AMBIGUOUS_TARGET", "Aynı kayıt birden fazla dosyada bulundu.")),
     }
@@ -1469,6 +1496,7 @@ mod tests {
             project: None,
             target_scope: None,
             target_project: None,
+            target_client: None,
         };
         plan(inventory, &[], &request).unwrap()
     }
@@ -1482,6 +1510,7 @@ mod tests {
             project: None,
             target_scope: None,
             target_project: None,
+            target_client: None,
         };
         plan(inventory, &[], &request).unwrap()
     }
@@ -1793,6 +1822,7 @@ mod tests {
             project: None,
             target_scope: Some(Scope::Project),
             target_project: Some(project.id.clone()),
+            target_client: (operation == Operation::BindMcp).then_some(client),
         };
         let projects = vec![project];
         let plan = plan(&inventory, &projects, &request).unwrap();
@@ -1801,6 +1831,44 @@ mod tests {
 
     const GLOBAL_JSON: &str = "{\"mcpServers\":{\"postgres\":{\"command\":\"npx\",\"args\":[\"server\"]},\"other\":{\"command\":\"x\"}}}";
     const PROJECT_JSON: &str = "{\"mcpServers\":{\"local\":{\"command\":\"local\"}}}";
+
+    #[test]
+    fn bind_writes_only_the_target_keeps_source_and_undo_restores() {
+        let (temp, global, project_file, inventory, projects, plan) = transfer_fixture(
+            "bind-undo", Operation::BindMcp, ClientId::Claude, SourceFormat::Json, GLOBAL_JSON, PROJECT_JSON,
+        );
+        let global_before = fs::read(&global).unwrap();
+        let project_before = fs::read(&project_file).unwrap();
+        assert_eq!(plan.targets.len(), 1);
+        assert_eq!(plan.targets[0].path, project_file.to_string_lossy());
+        let journal = Journal::at(temp.0.join("journal"));
+        let applied = apply_at_journaled(&plan, &inventory, &projects, "tx-bind", plan.created_at, &journal).unwrap();
+        assert_eq!(applied.files.len(), 1);
+        assert_eq!(fs::read(&global).unwrap(), global_before, "source must never change");
+        let after = fs::read_to_string(&project_file).unwrap();
+        assert!(after.contains("postgres") && after.contains("local"));
+        assert_eq!(sha256(&fs::read(&project_file).unwrap()), plan.targets[0].after_sha256);
+
+        journal.undo("tx-bind").unwrap();
+        assert_eq!(fs::read(&project_file).unwrap(), project_before);
+        assert_eq!(fs::read(&global).unwrap(), global_before);
+    }
+
+    #[test]
+    fn bind_preview_redacts_secret_but_apply_copies_it() {
+        let global = "{\"mcpServers\":{\"postgres\":{\"command\":\"npx\",\"env\":{\"API_KEY\":\"sk-live-secret\"}}}}";
+        let (temp, global_path, project_file, inventory, projects, plan) = transfer_fixture(
+            "bind-secret", Operation::BindMcp, ClientId::Claude, SourceFormat::Json, global, PROJECT_JSON,
+        );
+        let preview = plan.targets[0].after.to_string();
+        assert!(preview.contains("[redacted]"));
+        assert!(!preview.contains("sk-live-secret"));
+        let global_before = fs::read(&global_path).unwrap();
+        let journal = Journal::at(temp.0.join("journal"));
+        apply_at_journaled(&plan, &inventory, &projects, "tx-secret", plan.created_at, &journal).unwrap();
+        assert!(fs::read_to_string(&project_file).unwrap().contains("sk-live-secret"));
+        assert_eq!(fs::read(&global_path).unwrap(), global_before);
+    }
 
     #[test]
     fn move_then_undo_restores_both_scope_hashes() {

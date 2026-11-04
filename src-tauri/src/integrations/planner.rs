@@ -25,6 +25,7 @@ pub enum Operation {
     DisableMcp,
     MoveMcp,
     CopyMcp,
+    BindMcp,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -40,6 +41,8 @@ pub struct PlanRequest {
     pub target_scope: Option<Scope>,
     #[serde(default)]
     pub target_project: Option<String>,
+    #[serde(default)]
+    pub target_client: Option<ClientId>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -78,6 +81,12 @@ pub struct OperationPlan {
     pub created_at: u64,
     pub expires_at: u64,
     pub read_only: bool,
+    #[serde(default)]
+    pub target_client: Option<ClientId>,
+    #[serde(default)]
+    pub source_path_id: Option<String>,
+    #[serde(default)]
+    pub noop: bool,
 }
 
 pub fn plan(inventory: &Inventory, projects: &[Project], request: &PlanRequest) -> Result<OperationPlan, PlanError> {
@@ -94,7 +103,7 @@ pub fn plan_at(inventory: &Inventory, projects: &[Project], request: &PlanReques
         Operation::RemoveMcp => item.plan,
         Operation::EnableMcp => item.enable,
         Operation::DisableMcp => item.disable,
-        Operation::MoveMcp | Operation::CopyMcp => item.plan,
+        Operation::MoveMcp | Operation::CopyMcp | Operation::BindMcp => item.plan,
     }).unwrap_or(false);
     if !supported || asset.kind != AssetKind::Mcp {
         let reason = capability.and_then(|item| item.toggle_reason.as_deref())
@@ -105,6 +114,9 @@ pub fn plan_at(inventory: &Inventory, projects: &[Project], request: &PlanReques
     }
     if binding.managed || matches!(binding.source.owner, Owner::Product { .. } | Owner::Catalog) {
         return Err(fail("OWNER_PROTECTED", "Bu kayıt Respected ürününe veya kataloğa ait; harici motorla değiştirilemez."));
+    }
+    if request.operation == Operation::BindMcp {
+        return plan_bind(inventory, projects, request, binding, asset, now);
     }
     if matches!(request.operation, Operation::MoveMcp | Operation::CopyMcp) {
         return plan_transfer(inventory, projects, request, binding, asset, now);
@@ -162,6 +174,9 @@ pub fn plan_at(inventory: &Inventory, projects: &[Project], request: &PlanReques
         created_at: now,
         expires_at: now.saturating_add(PLAN_TTL_SECONDS),
         read_only: true,
+        target_client: None,
+        source_path_id: None,
+        noop: false,
     };
     result.plan_digest = digest_for(&result);
     Ok(result)
@@ -191,16 +206,20 @@ pub fn verify(plan: &OperationPlan, now: u64) -> Result<(), PlanError> {
 
 fn validate_scope(request: &PlanRequest, projects: &[Project]) -> Result<(), PlanError> {
     validate_scope_pair(request.scope, request.project.as_deref(), projects, "Kaynak")?;
-    let transfer = matches!(request.operation, Operation::MoveMcp | Operation::CopyMcp);
+    let transfer = matches!(request.operation, Operation::MoveMcp | Operation::CopyMcp | Operation::BindMcp);
     match (transfer, request.target_scope) {
-        (true, None) => Err(fail("BAD_REQUEST", "Taşıma/kopyalama için hedef kapsam gerekli.")),
-        (false, Some(_)) => Err(fail("BAD_REQUEST", "Bu işlem hedef kapsam taşıyamaz.")),
+        (true, None) => return Err(fail("BAD_REQUEST", "Taşıma/kopyalama için hedef kapsam gerekli.")),
+        (false, Some(_)) => return Err(fail("BAD_REQUEST", "Bu işlem hedef kapsam taşıyamaz.")),
         _ => {
             if let Some(scope) = request.target_scope {
                 validate_scope_pair(scope, request.target_project.as_deref(), projects, "Hedef")?;
             }
-            Ok(())
         }
+    }
+    match (request.operation == Operation::BindMcp, request.target_client) {
+        (true, None) => Err(fail("BAD_REQUEST", "Bind icin hedef istemci gerekli.")),
+        (false, Some(_)) => Err(fail("BAD_REQUEST", "Bu islem hedef istemci tasiyamaz.")),
+        _ => Ok(()),
     }
 }
 
@@ -233,6 +252,148 @@ fn find_binding<'a>(inventory: &'a Inventory, request: &PlanRequest) -> Result<&
     }
 }
 
+
+fn plan_bind(
+    inventory: &Inventory,
+    projects: &[Project],
+    request: &PlanRequest,
+    binding: &Binding,
+    asset: &Asset,
+    now: u64,
+) -> Result<OperationPlan, PlanError> {
+    let target_client = request.target_client.ok_or_else(|| fail("BAD_REQUEST", "Bind icin hedef istemci gerekli."))?;
+    let target_scope = request.target_scope.ok_or_else(|| fail("BAD_REQUEST", "Bind icin hedef kapsam gerekli."))?;
+    let target_project = match target_scope {
+        Scope::Global => None,
+        Scope::Project => projects.iter()
+            .find(|project| Some(project.id.as_str()) == request.target_project.as_deref())
+            .cloned(),
+    };
+    if !inventory.capabilities.iter().any(|item| item.client == target_client && item.plan) {
+        return Err(fail("UNSUPPORTED_CAPABILITY", "Hedef istemci bind islemini desteklemiyor."));
+    }
+    if !matches!(binding.source.format, SourceFormat::Json | SourceFormat::Jsonc | SourceFormat::Toml) {
+        return Err(fail("UNSUPPORTED_CAPABILITY", "Bu kaynak bicimi ice alinamiyor."));
+    }
+    if is_symlink(&binding.source.path) {
+        return Err(fail("SYMLINK_TARGET", "Kaynak yapilandirma dosyasi symlink; guvenli ice alma icin reddedildi."));
+    }
+
+    let in_target = |candidate: &Binding| candidate.client == target_client
+        && candidate.scope == target_scope
+        && (target_scope == Scope::Global
+            || candidate.project.as_ref().map(|project| project.id.as_str())
+                == target_project.as_ref().map(|project| project.id.as_str()));
+    let target_bindings: Vec<&Binding> = inventory.bindings.iter().filter(|candidate| in_target(candidate)).collect();
+    let mut path_ids: Vec<&str> = target_bindings.iter().map(|candidate| candidate.source.path_id.as_str()).collect();
+    path_ids.sort_unstable();
+    path_ids.dedup();
+    if path_ids.is_empty() {
+        return Err(fail("TARGET_NOT_FOUND", "Hedef istemcide ice alinacak yapilandirma dosyasi bulunamadi."));
+    }
+    if path_ids.len() > 1 {
+        return Err(fail("AMBIGUOUS_TARGET", "Hedef istemcide birden fazla yapilandirma dosyasi var; kaynak secimi gerekli."));
+    }
+    let destination = target_bindings.iter().find(|candidate| candidate.source.path_id == path_ids[0])
+        .copied().ok_or_else(|| fail("TARGET_NOT_FOUND", "Hedef yapilandirma dosyasi bulunamadi."))?;
+    if same_path(&binding.source.path, &destination.source.path) {
+        return Err(fail("BAD_REQUEST", "Kaynak ve hedef ayni yapilandirma dosyasi."));
+    }
+    if (binding.source.format == SourceFormat::Toml) != (destination.source.format == SourceFormat::Toml) {
+        return Err(fail("UNSUPPORTED_CAPABILITY", "JSON ve TOML istemcileri arasinda ice alma henuz desteklenmiyor."));
+    }
+    let same_name = |candidate: &&Binding| candidate.asset_key != asset.key && inventory.assets.iter()
+        .any(|other| other.key == candidate.asset_key && other.name == asset.name);
+    if target_bindings.iter().any(same_name) {
+        return Err(fail("TARGET_EXISTS", "Hedef kapsamda ayni adli farkli bir kayit zaten var."));
+    }
+
+    if target_bindings.iter().any(|candidate| candidate.asset_key == asset.key) {
+        return Ok(OperationPlan {
+            plan_digest: String::new(),
+            operation: request.operation,
+            asset_key: asset.key.clone(),
+            name: asset.name.clone(),
+            kind: asset.kind,
+            client: target_client,
+            scope: target_scope,
+            project: target_project,
+            owner: binding.source.owner.clone(),
+            managed: false,
+            targets: Vec::new(),
+            affected_projects: Vec::new(),
+            risks: vec!["Bu kayit hedef kapsamda zaten bagli; yazma yapilmayacak.".to_string()],
+            created_at: now,
+            expires_at: now.saturating_add(PLAN_TTL_SECONDS),
+            read_only: true,
+            target_client: Some(target_client),
+            source_path_id: Some(binding.source.path_id.clone()),
+            noop: true,
+        });
+    }
+
+    if is_symlink(&destination.source.path) {
+        return Err(fail("SYMLINK_TARGET", "Hedef yapilandirma dosyasi symlink; guvenli yazma icin reddedildi."));
+    }
+    let source_text = security::read_text(Path::new(&binding.source.path), Limits::default())
+        .map_err(|error| fail("SOURCE_CHANGED", &format!("Kaynak dosya okunamadi: {}", error.message)))?;
+    let source_hash = sha256(source_text.as_bytes());
+    if binding.source.fingerprint.as_deref().is_some_and(|fingerprint| fingerprint != source_hash) {
+        return Err(fail("SOURCE_CHANGED", "Kaynak dosya taramadan sonra degisti; plani yenileyin."));
+    }
+    let destination_text = security::read_text(Path::new(&destination.source.path), Limits::default())
+        .map_err(|error| fail("SOURCE_CHANGED", &format!("Hedef dosya okunamadi: {}", error.message)))?;
+    let destination_hash = sha256(destination_text.as_bytes());
+    if destination.source.fingerprint.as_deref().is_some_and(|fingerprint| fingerprint != destination_hash) {
+        return Err(fail("SOURCE_CHANGED", "Hedef dosya taramadan sonra degisti; plani yenileyin."));
+    }
+    let (entry_text, entry_value) = crate::integrations::apply::read_entry(
+        &source_text, binding.source.format, container_for(binding.client), &asset.name,
+    ).map_err(|error| fail(error.code, &error.message))?;
+    let after = crate::integrations::apply::insert_member(
+        &destination_text, destination.source.format, container_for(target_client), &asset.name, &entry_text,
+    ).map_err(|error| fail(error.code, &error.message))?;
+    let affected_projects = match target_scope {
+        Scope::Global => projects.to_vec(),
+        Scope::Project => target_project.iter().cloned().collect(),
+    };
+    let mut result = OperationPlan {
+        plan_digest: String::new(),
+        operation: request.operation,
+        asset_key: asset.key.clone(),
+        name: asset.name.clone(),
+        kind: asset.kind,
+        client: target_client,
+        scope: target_scope,
+        project: target_project.clone(),
+        owner: binding.source.owner.clone(),
+        managed: false,
+        targets: vec![PlanTarget {
+            path: destination.source.path.clone(),
+            path_id: destination.source.path_id.clone(),
+            format: destination.source.format,
+            before_sha256: destination_hash,
+            after_sha256: sha256(after.as_bytes()),
+            before: Value::Null,
+            after: security::redact_json(&entry_value),
+            diff: vec![format!("+ {}.{} ({})", container_for(target_client), asset.name, scope_label(target_scope, target_project.as_ref()))],
+        }],
+        affected_projects,
+        risks: vec!["Kaynak dosya degismez; mevcut gizli degerler hedefe kopyalanir ve onizlemede gizlenir.".to_string()],
+        created_at: now,
+        expires_at: now.saturating_add(PLAN_TTL_SECONDS),
+        read_only: true,
+        target_client: Some(target_client),
+        source_path_id: Some(binding.source.path_id.clone()),
+        noop: false,
+    };
+    result.plan_digest = digest_for(&result);
+    Ok(result)
+}
+
+fn is_symlink(path: &str) -> bool {
+    fs::symlink_metadata(Path::new(path)).map(|metadata| metadata.file_type().is_symlink()).unwrap_or(false)
+}
 
 fn plan_transfer(
     inventory: &Inventory,
@@ -359,6 +520,9 @@ fn plan_transfer(
         created_at: now,
         expires_at: now.saturating_add(PLAN_TTL_SECONDS),
         read_only: true,
+        target_client: None,
+        source_path_id: None,
+        noop: false,
     };
     result.plan_digest = digest_for(&result);
     Ok(result)
@@ -514,6 +678,7 @@ mod tests {
             project: None,
             target_scope: None,
             target_project: None,
+            target_client: None,
         }
     }
 
@@ -536,6 +701,7 @@ mod tests {
             project: None,
             target_scope: None,
             target_project: None,
+            target_client: None,
         }
     }
 
@@ -742,6 +908,7 @@ mod tests {
             project,
             target_scope: Some(target_scope),
             target_project,
+            target_client: None,
         }
     }
 
@@ -889,6 +1056,112 @@ mod tests {
         fs::write(project_root.join(".mcp.json"), r#"{"mcpServers":{"local":{"command":"x"}}}"#).unwrap();
         let inventory = inventory::scan(&env, std::slice::from_ref(&project));
         let request = scope_request(&inventory, "respected-brain", ClientId::Claude, Operation::CopyMcp, Scope::Global, None, Scope::Project, Some(project.id.clone()));
+        let error = plan(&inventory, std::slice::from_ref(&project), &request).unwrap_err();
+        assert_eq!(error.code, "OWNER_PROTECTED");
+    }
+
+    fn bind_request(
+        inventory: &Inventory,
+        name: &str,
+        client: ClientId,
+        target_client: ClientId,
+        target_project: Option<&str>,
+    ) -> PlanRequest {
+        let asset = inventory.assets.iter().find(|asset| asset.name == name).unwrap();
+        PlanRequest {
+            operation: Operation::BindMcp,
+            asset_key: asset.key.clone(),
+            client,
+            scope: Scope::Global,
+            project: None,
+            target_scope: Some(Scope::Project),
+            target_project: target_project.map(str::to_string),
+            target_client: Some(target_client),
+        }
+    }
+
+    #[test]
+    fn bind_preview_targets_only_the_project_and_keeps_source() {
+        let (temp, env) = fixture("bind-preview");
+        let project_root = temp.0.join("work/demo");
+        fs::create_dir_all(&project_root).unwrap();
+        fs::write(project_root.join(".mcp.json"), r#"{"mcpServers":{"local":{"command":"x"}}}"#).unwrap();
+        let project = Project { id: "project:demo".into(), root: project_root.to_string_lossy().into_owned() };
+        let inventory = inventory::scan(&env, std::slice::from_ref(&project));
+        let source_before = fs::read(temp.config()).unwrap();
+        let request = bind_request(&inventory, "postgres", ClientId::Claude, ClientId::Claude, Some(&project.id));
+        let plan = plan(&inventory, std::slice::from_ref(&project), &request).unwrap();
+        assert_eq!(source_before, fs::read(temp.config()).unwrap());
+        assert_eq!(plan.client, ClientId::Claude);
+        assert_eq!(plan.scope, Scope::Project);
+        assert_eq!(plan.affected_projects, vec![project]);
+        assert_eq!(plan.targets.len(), 1);
+        assert!(plan.targets[0].path.ends_with(".mcp.json"));
+        assert!(plan.targets[0].after.to_string().contains("[redacted]"));
+        assert!(!plan.noop);
+    }
+
+    #[test]
+    fn bind_is_idempotent_when_target_already_has_the_same_asset() {
+        let (temp, env) = fixture("bind-duplicate");
+        let project_root = temp.0.join("work/demo");
+        fs::create_dir_all(&project_root).unwrap();
+        fs::write(project_root.join(".mcp.json"), r#"{"mcpServers":{"postgres":{"command":"npx","args":["server-postgres"],"env":{"API_KEY":"sk-live-secret"}},"local":{"command":"x"}}}"#).unwrap();
+        let project = Project { id: "project:demo".into(), root: project_root.to_string_lossy().into_owned() };
+        let inventory = inventory::scan(&env, std::slice::from_ref(&project));
+        let request = bind_request(&inventory, "postgres", ClientId::Claude, ClientId::Claude, Some(&project.id));
+        let plan = plan(&inventory, std::slice::from_ref(&project), &request).unwrap();
+        assert!(plan.noop);
+        assert!(plan.targets.is_empty());
+    }
+
+    #[test]
+    fn bind_without_a_target_config_is_rejected() {
+        let (temp, env) = fixture("bind-missing");
+        let project_root = temp.0.join("work/empty");
+        fs::create_dir_all(&project_root).unwrap();
+        let project = Project { id: "project:empty".into(), root: project_root.to_string_lossy().into_owned() };
+        let inventory = inventory::scan(&env, std::slice::from_ref(&project));
+        let request = bind_request(&inventory, "postgres", ClientId::Claude, ClientId::Claude, Some(&project.id));
+        let error = plan(&inventory, std::slice::from_ref(&project), &request).unwrap_err();
+        assert_eq!(error.code, "TARGET_NOT_FOUND");
+    }
+
+    #[test]
+    fn bind_to_two_clients_keeps_each_target_separate() {
+        let temp = Temp::new("bind-two-clients");
+        let env = temp.env();
+        let project_root = temp.0.join("work/demo");
+        fs::create_dir_all(project_root.join(".codex")).unwrap();
+        fs::write(temp.config(), r#"{"mcpServers":{"postgres":{"command":"npx","args":["server"]}}}"#).unwrap();
+        fs::write(project_root.join(".mcp.json"), r#"{"mcpServers":{"local":{"command":"x"}}}"#).unwrap();
+        let project_key = project_root.to_string_lossy().replace('\\', "/");
+        fs::create_dir_all(env.home.join(".codex")).unwrap();
+        fs::write(env.home.join(".codex/config.toml"), format!(
+            "[projects.\"{project_key}\"]\ntrust_level = \"trusted\"\n\n[mcp_servers.postgres]\ncommand = \"npx\"\nargs = [\"server\"]\n\n[mcp_servers.local]\ncommand = \"x\"\n"
+        )).unwrap();
+        fs::write(project_root.join(".codex/config.toml"), "[mcp_servers.project]\ncommand = \"project\"\n").unwrap();
+        let project = Project { id: "project:demo".into(), root: project_root.to_string_lossy().into_owned() };
+        let inventory = inventory::scan(&env, std::slice::from_ref(&project));
+        let claude = bind_request(&inventory, "postgres", ClientId::Claude, ClientId::Claude, Some(&project.id));
+        let codex = bind_request(&inventory, "postgres", ClientId::Codex, ClientId::Codex, Some(&project.id));
+        let claude_plan = plan(&inventory, std::slice::from_ref(&project), &claude).unwrap();
+        let codex_plan = plan(&inventory, std::slice::from_ref(&project), &codex).unwrap();
+        assert_eq!(claude_plan.client, ClientId::Claude);
+        assert_eq!(codex_plan.client, ClientId::Codex);
+        assert!(claude_plan.targets[0].path.ends_with(".mcp.json"));
+        assert!(codex_plan.targets[0].path.ends_with("config.toml"));
+    }
+
+    #[test]
+    fn bind_rejects_respected_owned_source() {
+        let (temp, env) = fixture("bind-owned");
+        let project_root = temp.0.join("work/demo");
+        fs::create_dir_all(&project_root).unwrap();
+        fs::write(project_root.join(".mcp.json"), r#"{"mcpServers":{"local":{"command":"x"}}}"#).unwrap();
+        let project = Project { id: "project:demo".into(), root: project_root.to_string_lossy().into_owned() };
+        let inventory = inventory::scan(&env, std::slice::from_ref(&project));
+        let request = bind_request(&inventory, "respected-brain", ClientId::Claude, ClientId::Claude, Some(&project.id));
         let error = plan(&inventory, std::slice::from_ref(&project), &request).unwrap_err();
         assert_eq!(error.code, "OWNER_PROTECTED");
     }

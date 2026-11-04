@@ -72,7 +72,7 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
 - [x] `SEC-002` Üçüncü taraf katalog için ayrı alan ayrımlı imza/sequence doğrulaması.
 - [x] `CAT-003` İsteğe bağlı imzalı katalog tazeleme, internet yokken son doğrulanmış katalog.
 - [x] `SEC-003` Kaynak/komut/izin risk önizlemesi; güvenliği garanti eden etiket kullanma.
-- [ ] `OPS-006` Kullanıcı onaylı var olan entegrasyonu içe alma/bağlama.
+- [x] `OPS-006` Kullanıcı onaylı var olan entegrasyonu içe alma/bağlama.
 - [ ] `OPS-007` Kaynağın sahibini koruyan kaldırma/ayırma ve güncelleme.
 - [ ] `OPS-008` Birden çok AI aracına toplu uygulama ve kısmi hata kurtarma.
 
