@@ -5,7 +5,7 @@
 //! it survives precedence, integrity and explicit disable checks.
 
 use crate::integrations::model::{
-    Asset, AssetKind, Binding, ClientId, Inventory, Project, ScanIssue, Scope, SourceIntegrity,
+    Asset, AssetKind, Binding, ClientId, Inventory, Owner, Project, ScanIssue, Scope, SourceIntegrity,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -32,6 +32,8 @@ pub struct ResolvedEntry {
     pub configured: bool,
     pub effective: bool,
     pub enabled: Option<bool>,
+    pub managed: bool,
+    pub owner: Owner,
     pub state: ResolutionState,
 }
 
@@ -84,6 +86,8 @@ pub fn resolve(inventory: &Inventory) -> Resolution {
             configured: true,
             effective: state == ResolutionState::Effective,
             enabled: binding.enabled,
+            managed: binding.managed,
+            owner: binding.source.owner.clone(),
             state,
         });
     }

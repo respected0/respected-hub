@@ -1,5 +1,5 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
-import type { CatalogEntry, IntegrationReply } from './integrationsTypes.ts';
+import type { CatalogEntry, IntegrationReply, InventoryResult } from './integrationsTypes.ts';
 
 export interface Settings { python: string; orchestrator_root: string; brain_root: string; data_root: string }
 export interface RunUsage {
@@ -36,6 +36,14 @@ export interface Products { development: boolean; brain_available: boolean; orch
   hub_version: string; engine: { version?: string; workers?: Record<string, string[] | null>; error?: string } }
 export const products = () => invoke<Products>('product_status');
 export const developmentBuild = () => invoke<boolean>('development_build');
+
+/** Read-only third-party inventory. Never writes to a client configuration. */
+export async function thirdPartyInventory(): Promise<InventoryResult> {
+  if (!native) throw new Error('Entegrasyon envanteri yalnızca masaüstü uygulamasında okunur.');
+  const reply = await invoke<IntegrationReply>('integrations_request', { request: { action: 'inventory' } });
+  if (!reply.ok || !reply.result || !('inventory' in reply.result)) throw new Error(reply.error?.message ?? 'Envanter okunamadı.');
+  return reply.result;
+}
 
 /** Compiled-in third-party catalog. Read-only and local: it works with the network offline. */
 export async function thirdPartyCatalog(): Promise<CatalogEntry[]> {

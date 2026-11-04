@@ -474,3 +474,33 @@ main.content:has(.lib-shell) { padding: 0; }
 .catalog-card-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-top: auto; padding-top: var(--s-2); }
 .catalog-clients { display: flex; flex-wrap: wrap; gap: 4px; }
 .catalog-empty { padding: var(--s-6); border: 1px dashed var(--line-strong); border-radius: var(--r-lg); color: var(--muted); text-align: center; }
+
+/* UI-001: read-only integration matrix in the library. No control here writes a client config. */
+.lib-viewtabs { display: flex; gap: 2px; padding: 3px; margin-bottom: var(--s-3); background: #0e151e; border: 1px solid var(--line); border-radius: var(--r-md); }
+.lib-viewtabs button { flex: 1; padding: 7px 8px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--muted); font: 600 12px var(--font-sans); cursor: pointer; }
+.lib-viewtabs button:hover { color: var(--text); }
+.lib-viewtabs button.on { background: var(--surface-3); color: #fff; }
+.integration-library { display: flex; flex-direction: column; gap: var(--s-3); }
+.integration-library h2, .integration-library h3, .integration-library p { margin: 0; }
+.integration-clients { display: flex; flex-wrap: wrap; gap: 6px; }
+.integration-count { margin-bottom: var(--s-2); }
+.integration-issues { padding: var(--s-3) var(--s-4); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-2); font-size: 12.5px; }
+.integration-issues summary { cursor: pointer; color: var(--text-2); }
+.integration-issues ul { margin: var(--s-2) 0 0; padding-left: var(--s-4); display: grid; gap: 4px; }
+.integration-issues code { font: 11.5px/1.5 var(--font-mono); word-break: break-all; }
+.integration-groups { display: grid; gap: var(--s-3); }
+.integration-group { padding: var(--s-4); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
+.integration-group-head { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; margin-bottom: var(--s-3); }
+.integration-group-head h3 { font-size: var(--t-lg); }
+.integration-group-head .meta { margin-left: auto; }
+.integration-rows { display: grid; gap: 2px; }
+.integration-row { display: grid; grid-template-columns: minmax(150px, 1.1fr) minmax(140px, .9fr) minmax(120px, .8fr) minmax(150px, 1fr); gap: var(--s-3); align-items: start; padding: var(--s-3); border-radius: var(--r-md); background: var(--surface-2); }
+.integration-where, .integration-state, .integration-owner { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: 13px; }
+.integration-state { align-items: flex-start; }
+.integration-root { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: var(--muted); }
+.integration-owner small { font-size: 11.5px; }
+.integration-source summary { cursor: pointer; color: var(--accent); font-size: 12.5px; }
+.integration-source code { display: block; margin-top: 6px; font: 11.5px/1.5 var(--font-mono); color: var(--text-2); word-break: break-all; }
+.integration-library .catalog-toolbar select { min-width: 135px; }
+@media (max-width: 900px) { .integration-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 620px) { .integration-row { grid-template-columns: 1fr; } .integration-group-head .meta { margin-left: 0; } }

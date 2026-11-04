@@ -6,6 +6,7 @@ import type { LifecycleAction } from '../lifecycle.ts';
 import { Emblem, Icon } from '../../shared/ui.tsx';
 import type { Go } from './Home.tsx';
 import AppWorkspace from './AppWorkspace.tsx';
+import IntegrationsLibrary from './IntegrationsLibrary.tsx';
 
 // The library: installed products listed on the left, the selected product's page on the right (install state and its actions on top, then its tabs).
 // Not-yet-installed products are installed from Discover.
@@ -21,6 +22,7 @@ export default function Library({ eco, appId, page, select, go, ask, onAsked }: 
   const [query, setQuery] = useState('');
   const [wanted, setWanted] = useState({ update: false, problem: false });
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<'apps' | 'integrations'>('apps');
   const tools = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -36,11 +38,20 @@ export default function Library({ eco, appId, page, select, go, ask, onAsked }: 
   const matches = listed.filter(app => app.name.toLowerCase().includes(query.trim().toLowerCase())
     && (!active || (wanted.update && hasUpdate(app.id)) || (wanted.problem && hasProblem(app.id))));
 
-  if (!current) return <div className="page"><section className="card"><h2>{native && !eco.lifecycle ? 'Kurulu uygulamalar okunuyor…' : 'Henüz kurulu uygulama yok'}</h2>
+  if (view === 'integrations') return <div className="lib-shell">
+    <nav className="lib-side" aria-label="Kütüphane görünümü">
+      <ViewTabs view={view} onChange={setView} />
+      <p className="muted lib-none">Kurulu MCP, skill ve plugin'lerin salt okunur dökümü.</p>
+    </nav>
+    <div className="lib-main"><IntegrationsLibrary /></div>
+  </div>;
+
+  if (!current) return <div className="page"><section className="card"><ViewTabs view={view} onChange={setView} /><h2>{native && !eco.lifecycle ? 'Kurulu uygulamalar okunuyor…' : 'Henüz kurulu uygulama yok'}</h2>
     {eco.lifecycle && <><p style={{ margin: '8px 0 16px' }}>Brain ve Orchestrator'ı Keşfet sayfasından kurabilirsiniz.</p><button className="cta" onClick={() => go('discover')}>Keşfet'e git</button></>}</section></div>;
 
   return <div className="lib-shell">
     <nav className="lib-side" aria-label="Kurulu uygulamalar">
+      <ViewTabs view={view} onChange={setView} />
       <div className="lib-tools" ref={tools}>
         <div className="lib-searchbox"><input type="search" placeholder="Ada göre ara" aria-label="Uygulama ara" value={query} onChange={event => setQuery(event.target.value)} />
           {query && <button type="button" className="lib-clear" aria-label="Aramayı temizle" onClick={() => setQuery('')}><Icon name="x" /></button>}</div>
@@ -57,5 +68,12 @@ export default function Library({ eco, appId, page, select, go, ask, onAsked }: 
           <Emblem app={app.id} small /><strong>{app.name.replace('Respected ', '')}</strong>{hasUpdate(app.id) && <span className="lib-upd" title="Güncelleme var"><Icon name="download" /></span>}
           <span className={`dot ${runtime?.loading || eco.busy === app.id ? '' : runtime?.summary.statusKind ?? ''}`} aria-hidden="true" /></button>; })}</nav>
     <div className="lib-main"><AppWorkspace key={current.id} appId={current.id} page={page} eco={eco} go={target => select(current.id, target)} ask={ask} onAsked={onAsked} /></div>
+  </div>;
+}
+
+function ViewTabs({ view, onChange }: { view: 'apps' | 'integrations'; onChange: (view: 'apps' | 'integrations') => void }) {
+  return <div className="lib-viewtabs" role="tablist" aria-label="Kütüphane görünümü">
+    <button type="button" role="tab" aria-selected={view === 'integrations'} className={view === 'integrations' ? 'on' : ''} onClick={() => onChange('integrations')}>Entegrasyonlar</button>
+    <button type="button" role="tab" aria-selected={view === 'apps'} className={view === 'apps' ? 'on' : ''} onClick={() => onChange('apps')}>Uygulamalar</button>
   </div>;
 }

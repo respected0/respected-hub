@@ -22,7 +22,9 @@ Giriş: [README.md](../README.md). Yayın: [common/release/RELEASE.md](../common
 - JSONC okuyan adapter'lar yorumları ve sondaki virgülleri ayıklar; hatalı dosya yalnızca yol ve sabit neden bildirir, içerik yankılanmaz. Tüm adaptörler şu an `read = true`, `plan/apply/undo = false` yeteneğini ilan eder.
 - Skill envanteri (`integrations/skills.rs`) kimliği `SKILL.md`'nin kanonik hedef yolundan üretir: aynı klasöre işaret eden symlink'ler tek asset, farklı kopyalar ayrı asset olur. `source.path` dağıtım konumunu, `source.symlink_target` orijinal hedefi, `fingerprint` içerik hash'ini gösterir. Boş manifest `skill_empty`, kapanmayan frontmatter `skill_invalid_manifest`, çözülemeyen hedef `orphan_skill`/`broken_link` uyarısıdır; hiçbir Skill kodu çalıştırılmaz.
 - Plugin envanteri (`integrations/plugins.rs`) `.claude-plugin/plugin.json` manifestini okur ve plugin'i kendi `asset_key`'iyle ekler. Alt öğeler (plugin içi `skills/`, `commands/*.md`, `agents/*.md`, `hooks/hooks.json`, Claude MCP'leri) ayrı kimlik ve `parent_asset_key` taşır; iki farklı plugin'deki aynı adlı alt öğe birleşmez. Manifestteki `enabled` yalnızca ipucudur: devre dışı plugin'in dosyaları görünür kalır ama `enabled` durumuna yükselmez; istemci seviyesindeki etkin plugin çözümü `DISC-007` resolver işidir. Bozuk manifest `invalid_json` uyarısı üretir ve hayali alt öğe oluşturmaz. Komut/agent kaynakları `Markdown`, hook kaynağı `Json` biçimindedir.
-- Etkin kapsam çözümleyicisi (`integrations/resolver.rs`) adapter'ların düşük→yüksek öncelik sırasıyla eklediği binding'leri `configured`/`effective`/`disabled`/`unknown`/`overridden` durumlarına indirger. Global kayıt tüm projelerde geçerlidir; aynı MCP/plugin adı proje dosyasında varsa yalnız o projede global kayıt gölgelenir. Açık `enabled=false`, bozuk/kırık kaynak ve devre dışı plugin'in alt öğeleri etkin sayılmaz. Codex `project_untrusted` kayıtları `untrusted` listesinde döner ve proje dosyasından binding üretilmez. Dosya varlığı tek başına 'kullanılıyor' kanıtı değildir.
+- Etkin kapsam çözümleyicisi (`integrations/resolver.rs`) adapter'ların düşük→yüksek öncelik sırasıyla eklediği binding'leri `configured`/`effective`/`disabled`/`unknown`/`overridden` durumlarına indirger. Global kayıt tüm projelerde geçerlidir; aynı MCP/plugin adı proje dosyasında varsa yalnız o projede global kayıt gölgelenir. Açık `enabled=false`, bozuk/kırık kaynak ve devre dışı plugin'in alt öğeleri etkin sayılmaz. Codex `project_untrusted` kayıtları `untrusted` listesinde döner ve proje dosyasından binding üretilmez. Her çözümlenmiş giriş kaynak sahibini (`owner`) ve Hub yazımı olup olmadığını (`managed`) taşır; dosya varlığı tek başına 'kullanılıyor' kanıtı değildir.
+- Envanter birleştirici (`integrations/inventory.rs`) Claude, Codex, Cursor, Gemini CLI ve OpenCode taramalarını tek snapshot'ta toplar; aynı `asset_key` tek varlık, her istemci/kapsam ayrı binding olur. Aynı hata kodu ve kaynak yolu tek kez bildirilir; `clients` beş istemcinin gerçek keşif durumundan gelir.
+- Kütüphane'nin entegrasyon görünümü (`src/shell/views/IntegrationsLibrary.tsx`, `src/shell/integrationMatrix.ts`) bu snapshot'ı asset × istemci × kapsam matrisi olarak gösterir: tür/istemci/kapsam filtreleri, kaynak yolu, sahiplik ve `managed` etiketi vardır. Görünüm salt okunurdur; "kullanılıyor" yargısını resolver üretir, UI kendi başına etkinlik uydurmaz.
 
 ## 2. Kurucuyu çalıştırma
 
@@ -115,9 +117,11 @@ bir web görünümü Hub'ın hangi programı başlatacağını seçemez.
 ### Entegrasyon IPC'si
 
 `commands/integrations.rs` yalnızca kapalı biçimli `integrations_request` isteğini sunar. İstek gövdesi
-`{ "action": "inventory" }` ile sınırlıdır; bilinmeyen eylem veya alan reddedilir. Web görünümü bu yüzeyden dosya yolu,
-kabuk komutu, URL, plan digest'i ya da rastgele işlem adı geçiremez. M1/M2'de yanıt salt okunurdur ve tarayıcı henüz
-yoksa `scan_unavailable` kaydı döner; yazma komutu M3 kapısı açılana kadar yoktur.
+`{ "action": "inventory" | "clients" | "catalog" }` ile sınırlıdır; bilinmeyen eylem veya alan reddedilir. Web görünümü bu
+yüzeyden dosya yolu, kabuk komutu, URL, plan digest'i ya da rastgele işlem adı geçiremez. M1/M2'de yanıt salt okunurdur:
+`inventory` beş istemcinin okuma adapter'larını birleştirir, `resolution` her binding'in kaynak yolunu, sahipliğini,
+`managed` bilgisini ve `effective|overridden|disabled|unknown|untrusted` durumunu döndürür. "Etkin" yalnızca istemcinin
+kendi bağlamında kullanacağı kaydı anlatır; gerçek çağrı kanıtı değildir. Yazma komutu M3 kapısı açılana kadar yoktur.
 
 `rpp.rs`, `commands/`. Ürünler bir alt süreç olarak çağrılır: `<ürün>.exe rpp`, stdin'de bir JSON istek, stdout'ta bir
 yanıt. Ağ dinleyicisi, servis ya da kabuk yoktur.

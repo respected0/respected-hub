@@ -3,7 +3,7 @@
 
 use crate::integrations::catalog;
 use crate::integrations::discovery::{self, Environment};
-use crate::integrations::model::{Inventory, ScanIssue};
+use crate::integrations::{inventory, resolver};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -26,15 +26,9 @@ pub fn execute(request: Request) -> Value { execute_with(request, &Environment::
 pub fn execute_with(request: Request, env: &Environment) -> Value {
     match request.action {
         Action::Inventory => {
-            let inventory = Inventory {
-                issues: vec![ScanIssue {
-                    code: "scan_unavailable".into(),
-                    message: "The read-only inventory scanner is not available in this build.".into(),
-                    source_path: None,
-                }],
-                ..Inventory::default()
-            };
-            json!({ "ok": true, "result": { "read_only": true, "inventory": inventory }, "error": Value::Null })
+            let inventory = inventory::scan(env, &[]);
+            let resolution = resolver::resolve(&inventory);
+            json!({ "ok": true, "result": { "read_only": true, "inventory": inventory, "resolution": resolution }, "error": Value::Null })
         }
         Action::Clients => {
             let discovery = discovery::scan(env);
@@ -72,12 +66,22 @@ mod tests {
     }
 
     #[test]
-    fn inventory_is_read_only_and_reports_the_missing_scanner() {
-        let reply = execute(Request { action: Action::Inventory });
+    fn inventory_is_read_only_and_scans_all_five_clients() {
+        let root = std::env::temp_dir().join(format!("hub-api-inventory-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("home/.claude")).unwrap();
+        let env = Environment {
+            home: root.join("home"), app_data: root.join("roaming"), local_app_data: root.join("local"),
+            path: Vec::new(), path_ext: Vec::new(), vars: std::collections::BTreeMap::new(),
+        };
+        let reply = execute_with(Request { action: Action::Inventory }, &env);
         assert_eq!(reply["ok"], true);
         assert_eq!(reply["result"]["read_only"], true);
-        assert_eq!(reply["result"]["inventory"]["issues"][0]["code"], "scan_unavailable");
+        assert_eq!(reply["result"]["inventory"]["clients"].as_array().unwrap().len(), 5);
         assert!(reply["result"]["inventory"]["assets"].as_array().unwrap().is_empty());
+        assert!(reply["result"]["resolution"]["entries"].as_array().unwrap().is_empty());
+        assert!(reply["result"]["inventory"]["issues"].as_array().unwrap().iter().all(|issue| issue["code"] != "scan_unavailable"));
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]

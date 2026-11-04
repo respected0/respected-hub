@@ -35,6 +35,15 @@ export interface Inventory {
   capabilities: Capability[]; issues: ScanIssue[];
 }
 
+export type ResolutionState = 'effective' | 'overridden' | 'disabled' | 'unknown' | 'untrusted';
+export interface ResolvedEntry {
+  asset_key: string; name: string; kind: AssetKind; client: ClientId; scope: Scope;
+  project: Project | null; source_path: string; configured: boolean; effective: boolean;
+  enabled: boolean | null; managed: boolean; owner: Owner; state: ResolutionState;
+}
+export interface Resolution { entries: ResolvedEntry[]; issues: ScanIssue[]; untrusted: ScanIssue[] }
+export interface InventoryResult { read_only: boolean; inventory: Inventory; resolution: Resolution }
+
 // Mirror of src-tauri/src/integrations/api.rs.
 export type IntegrationAction = 'inventory' | 'clients' | 'catalog';
 export interface IntegrationRequest { action: IntegrationAction }
@@ -47,6 +56,6 @@ export interface CatalogEntry {
 export interface CatalogResult { read_only: boolean; entries: CatalogEntry[] }
 export interface IntegrationReply {
   ok: boolean;
-  result: { read_only: boolean; inventory: Inventory } | ClientsResult | CatalogResult | null;
+  result: InventoryResult | ClientsResult | CatalogResult | null;
   error: { code: string; message: string } | null;
 }
