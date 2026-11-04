@@ -20,6 +20,9 @@ tauri-plugin-single-instance = "2"
 ed25519-dalek = "2"
 base64 = "0.22"
 
+[dev-dependencies]
+toml = "0.8"
+
 [features]
 # Development trust: dev signing key + the explicit unsigned opt-in. NEVER enabled for production builds (debug builds have it implicitly).
 dev-trust = []
@@ -48,6 +51,10 @@ path = "tests/brain/memory_index_e2e.rs"
 [[test]]
 name = "campaign_e2e"
 path = "tests/orchestrator/campaign_e2e.rs"
+
+[[test]]
+name = "inventory_e2e"
+path = "tests/integrations/inventory_e2e.rs"
 
 
 [profile.release]
