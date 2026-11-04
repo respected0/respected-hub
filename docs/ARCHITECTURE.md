@@ -165,3 +165,11 @@ yanıt. Ağ dinleyicisi, servis ya da kabuk yoktur.
 - Temiz makinede ilk kurulum, Hub'ın kendini güncellemesi ve Yüklü uygulamalar'dan
   kaldırma bir kişi tarafından denenmedi (kod ve uçtan uca testlerle kapsanıyor).
 - Ürünler bir kez internetten indirilir; kurumsal vekil sunucular Windows'un `curl.exe`'sinin desteklediği kadardır.
+
+## 10. Üçüncü taraf katalog kanalı
+
+- `integrations/catalog.rs` içindeki uzak belge, derlenmiş katalogdan ve Respected ürün kurucu indeksinden ayrı bir şemadır: `schema: 1`, `sequence`, `channel`, `digest` ve `entries`. Bilinmeyen kayıt alanı, tekrarlanan kimlik, güvenilmeyen kaynak URL'si veya geçersiz istemci belgenin tamamını reddeder.
+- İmza ayrı alan ayrımıyla doğrulanır: `respected-thirdparty-catalog-v1\n` öneki + belge baytları. Ürün paketi imzası bu kanalda, katalog imzası da ürün paketi kanalında geçersizdir.
+- `sequence` önceki doğrulanmış değerden küçük olamaz; eşitlik yeniden yayına izin verir, geriye gitme (replay/downgrade) reddedilir. `digest`, `entries` dizisinin kanonik JSON özetidir ve imza doğru olsa bile uyuşmazsa belge reddedilir.
+- 4 MiB'tan büyük gövde ayrıştırılmadan reddedilir. Son doğrulanmış belge `managed/integrations/third-party-catalog/` altından çevrimdışı okunur; her okumada imza yeniden denetlenir, bozuk/kesik önbellek kayıt üretmez.
+- Bu imza yalnızca metadata bütünlüğünü kanıtlar; bağlantılı kaynak kodun veya üçüncü taraf komutların güvenli olduğunu garanti etmez. Keşfet ekranı bunu açıkça yazar.

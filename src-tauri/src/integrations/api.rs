@@ -44,7 +44,10 @@ pub fn execute_with(request: Request, env: &Environment) -> Value {
             json!({ "ok": true, "result": { "read_only": true, "clients": discovery.clients, "issues": discovery.issues }, "error": Value::Null })
         }
         Action::Catalog => match catalog::entries() {
-            Ok(entries) => json!({ "ok": true, "result": { "read_only": true, "entries": entries }, "error": Value::Null }),
+            Ok(entries) => json!({ "ok": true, "result": {
+                "read_only": true, "entries": entries,
+                "trust": { "signature_verified": false, "scope": "metadata_only", "note": catalog::SIGNATURE_SCOPE_NOTE }
+            }, "error": Value::Null }),
             Err(message) => json!({ "ok": false, "result": Value::Null, "error": { "code": "catalog_invalid", "message": message } }),
         },
         Action::Plan => {

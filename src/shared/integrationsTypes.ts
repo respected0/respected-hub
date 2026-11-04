@@ -53,7 +53,7 @@ export interface CatalogEntry {
   id: string; name: string; type: CatalogKind; description: string; category: string;
   source_url: string; supported_clients: ClientId[]; license: string | null; provenance: string | null;
 }
-export interface CatalogResult { read_only: boolean; entries: CatalogEntry[] }
+export interface CatalogResult { read_only: boolean; entries: CatalogEntry[]; trust?: { signature_verified: boolean; scope: 'metadata_only'; note: string } }
 export interface IntegrationReply {
   ok: boolean;
   result: InventoryResult | ClientsResult | CatalogResult | null;

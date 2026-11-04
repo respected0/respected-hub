@@ -24,7 +24,7 @@ export default function ThirdPartyCatalog() {
 
   return <section aria-label="Üçüncü taraf kataloğu">
     <div className="section-head" style={{ marginBottom: 'var(--s-4)' }}>
-      <div><h2>MCP, Skill ve Plugin'ler</h2><p className="meta">Bağlantılar GitHub'da açılır. Hub bu sürümde üçüncü taraf içerik kurmaz.</p></div>
+      <div><h2>MCP, Skill ve Plugin'ler</h2><p className="meta">Bağlantılar GitHub'da açılır. Hub bu sürümde üçüncü taraf içerik kurmaz. Katalog imzası yalnızca metadata bütünlüğünü doğrular; bağlantılı kaynak kodun güvenli olduğunu garanti etmez.</p></div>
       {entries && <p className="meta">{shown.length} / {entries.length} kayıt</p>}
     </div>
     <div className="catalog-toolbar">

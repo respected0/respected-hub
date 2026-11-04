@@ -96,9 +96,14 @@ pub fn verify(doc: &Value, product: &str, kind: &str, version: &str, digest: &st
 /// A detached `<key_id> <base64 signature>` line over `message` (the remote catalog index; same format as SHA256SUMS.sig).
 /// No unsigned opt-in: an index is always signed.
 pub fn verify_detached(message: &[u8], signature_line: &str) -> Result<Trust, String> {
+    verify_detached_with(&parse_key_lines(PRODUCTION_KEYS), &dev_keys(), message, signature_line)
+}
+
+/// Same as `verify_detached`, with caller-supplied key sets (domain-separated callers and tests).
+pub fn verify_detached_with(production: &[(String, Vec<u8>)], development: &[(String, Vec<u8>)], message: &[u8], signature_line: &str) -> Result<Trust, String> {
     let mut parts = signature_line.split_whitespace();
     let (Some(id), Some(value), None) = (parts.next(), parts.next(), parts.next()) else { return Err("imza satırı geçersiz".into()) };
-    check(&parse_key_lines(PRODUCTION_KEYS), &dev_keys(), id, value, message)
+    check(production, development, id, value, message)
 }
 
 #[cfg(test)]
