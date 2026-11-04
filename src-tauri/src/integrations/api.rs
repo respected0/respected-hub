@@ -6,6 +6,7 @@ use crate::integrations::discovery::{self, Environment};
 use crate::integrations::{inventory, planner, projects, resolver};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::path::Path;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -13,6 +14,7 @@ pub enum Action {
     Inventory,
     Clients,
     Catalog,
+    CatalogRefresh,
     Plan,
 }
 
@@ -24,9 +26,9 @@ pub struct Request {
     pub plan: Option<planner::PlanRequest>,
 }
 
-pub fn execute(request: Request) -> Value { execute_with(request, &Environment::current()) }
+pub fn execute(request: Request) -> Value { execute_with(request, &Environment::current(), &crate::hub::standard_roots().managed) }
 
-pub fn execute_with(request: Request, env: &Environment) -> Value {
+pub fn execute_with(request: Request, env: &Environment, managed: &Path) -> Value {
     if request.action != Action::Plan && request.plan.is_some() {
         return reply(false, Value::Null, "bad_request", "Bu eylem plan verisi kabul etmez.");
     }
@@ -43,12 +45,19 @@ pub fn execute_with(request: Request, env: &Environment) -> Value {
             let discovery = discovery::scan(env);
             json!({ "ok": true, "result": { "read_only": true, "clients": discovery.clients, "issues": discovery.issues }, "error": Value::Null })
         }
-        Action::Catalog => match catalog::entries() {
-            Ok(entries) => json!({ "ok": true, "result": {
-                "read_only": true, "entries": entries,
-                "trust": { "signature_verified": false, "scope": "metadata_only", "note": catalog::SIGNATURE_SCOPE_NOTE }
+        Action::Catalog => match catalog::load(managed) {
+            Ok((entries, verified, sequence)) => json!({ "ok": true, "result": {
+                "read_only": true, "entries": entries, "sequence": sequence,
+                "trust": { "signature_verified": verified, "scope": "metadata_only", "note": catalog::SIGNATURE_SCOPE_NOTE }
             }, "error": Value::Null }),
             Err(message) => json!({ "ok": false, "result": Value::Null, "error": { "code": "catalog_invalid", "message": message } }),
+        },
+        Action::CatalogRefresh => match catalog::refresh(managed) {
+            Ok(catalog) => json!({ "ok": true, "result": {
+                "read_only": false, "entries": catalog.entries, "sequence": catalog.sequence,
+                "trust": { "signature_verified": true, "scope": "metadata_only", "note": catalog::SIGNATURE_SCOPE_NOTE }
+            }, "error": Value::Null }),
+            Err(message) => json!({ "ok": false, "result": Value::Null, "error": { "code": "catalog_refresh_failed", "message": message } }),
         },
         Action::Plan => {
             let Some(selector) = request.plan else {
@@ -80,6 +89,7 @@ mod tests {
         assert!(serde_json::from_str::<Request>(r#"{"action":"inventory"}"#).is_ok());
         assert!(serde_json::from_str::<Request>(r#"{"action":"clients"}"#).is_ok());
         assert!(serde_json::from_str::<Request>(r#"{"action":"catalog"}"#).is_ok());
+        assert!(serde_json::from_str::<Request>(r#"{"action":"catalog_refresh"}"#).is_ok());
         assert!(serde_json::from_str::<Request>(r#"{"action":"plan","plan":{"operation":"remove_mcp","asset_key":"mcp:demo","client":"claude","scope":"global"}}"#).is_ok());
         for body in [
             r#"{"action":"apply"}"#,
@@ -90,6 +100,7 @@ mod tests {
             r#"{"action":"inventory","path":"C:\\Users\\person\\.claude.json"}"#,
             r#"{"action":"inventory","command":"npx evil"}"#,
             r#"{"action":"inventory","url":"https://example.invalid"}"#,
+            r#"{"action":"catalog_refresh","url":"https://example.invalid"}"#,
             r#"{"action":"inventory","plan_digest":"deadbeef"}"#,
             r#"{"action":"plan","path":"C:\Users\person\.claude.json"}"#,
             r#"{"action":"plan","plan":{"operation":"remove_mcp","asset_key":"mcp:demo","client":"claude","scope":"global","path":"C:\Users\person\.claude.json"}}"#,
@@ -108,7 +119,7 @@ mod tests {
             home: root.join("home"), app_data: root.join("roaming"), local_app_data: root.join("local"),
             path: Vec::new(), path_ext: Vec::new(), vars: std::collections::BTreeMap::new(),
         };
-        let reply = execute_with(Request { action: Action::Inventory, plan: None }, &env);
+        let reply = execute_with(Request { action: Action::Inventory, plan: None }, &env, &root.join("managed"));
         assert_eq!(reply["ok"], true);
         assert_eq!(reply["result"]["read_only"], true);
         assert_eq!(reply["result"]["inventory"]["clients"].as_array().unwrap().len(), 5);
@@ -147,7 +158,7 @@ mod tests {
         let before: Vec<_> = registered[..3].iter()
             .map(|project| std::fs::read(std::path::Path::new(&project.root).join(".mcp.json")).unwrap()).collect();
 
-        let reply = execute_with(Request { action: Action::Inventory, plan: None }, &env);
+        let reply = execute_with(Request { action: Action::Inventory, plan: None }, &env, &root.join("managed"));
         assert_eq!(reply["ok"], true);
         let entries = reply["result"]["resolution"]["entries"].as_array().unwrap();
         for name in ["alpha", "beta", "gamma"] {
@@ -163,9 +174,17 @@ mod tests {
 
     #[test]
     fn catalog_is_compiled_in_and_needs_no_network() {
-        let reply = execute(Request { action: Action::Catalog, plan: None });
+        let root = std::env::temp_dir().join(format!("hub-api-catalog-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let env = Environment {
+            home: root.join("home"), app_data: root.join("roaming"), local_app_data: root.join("local"),
+            path: Vec::new(), path_ext: Vec::new(), vars: std::collections::BTreeMap::new(),
+        };
+        let reply = execute_with(Request { action: Action::Catalog, plan: None }, &env, &root.join("managed"));
         assert_eq!(reply["ok"], true);
         assert_eq!(reply["result"]["read_only"], true);
+        assert_eq!(reply["result"]["trust"]["signature_verified"], false);
+        assert_eq!(reply["result"]["sequence"], Value::Null);
         let entries = reply["result"]["entries"].as_array().unwrap();
         assert!(entries.len() >= 50, "only {} catalog entries", entries.len());
         for entry in entries {
@@ -198,7 +217,7 @@ mod tests {
                 target_scope: None,
                 target_project: None,
             }),
-        }, &env);
+        }, &env, &root.join("managed"));
         assert_eq!(reply["ok"], true, "{reply}");
         assert_eq!(reply["result"]["read_only"], true);
         assert_eq!(reply["result"]["plan"]["targets"].as_array().unwrap().len(), 1);
@@ -216,7 +235,7 @@ mod tests {
             home: root.join("home"), app_data: root.join("roaming"), local_app_data: root.join("local"),
             path: Vec::new(), path_ext: Vec::new(), vars: std::collections::BTreeMap::new(),
         };
-        let reply = execute_with(Request { action: Action::Clients, plan: None }, &env);
+        let reply = execute_with(Request { action: Action::Clients, plan: None }, &env, &root.join("managed"));
         assert_eq!(reply["result"]["read_only"], true);
         assert_eq!(reply["result"]["clients"].as_array().unwrap().len(), 5);
         assert_eq!(reply["result"]["clients"][0]["status"], "configured");

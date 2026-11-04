@@ -16,6 +16,8 @@ pub const CATALOG_JSON: &str = include_str!("../../assets/third-party-catalog.js
 pub const REMOTE_DOMAIN: &str = "respected-thirdparty-catalog-v1\n";
 pub const MAX_REMOTE_BYTES: usize = 4 * 1024 * 1024;
 pub const CHANNELS: [&str; 2] = ["stable", "beta"];
+pub const REMOTE_URL: &str = "https://github.com/respected0/respected-hub/releases/download/third-party-catalog/catalog.json";
+const MAX_SIGNATURE_BYTES: u64 = 4096;
 
 /// What a third-party catalog signature proves: the metadata was not changed in transit. It says nothing about the
 /// safety of the linked source code.
@@ -163,6 +165,74 @@ pub fn cache_files(managed: &Path) -> (PathBuf, PathBuf) {
     (dir.join("catalog.json"), dir.join("catalog.json.sig"))
 }
 
+/// What the Discover view opens: the last verified download, otherwise the compiled-in list. No network.
+pub fn load(managed: &Path) -> Result<(Vec<CatalogEntry>, bool, Option<u64>), String> {
+    if let Some(catalog) = cached(managed) {
+        return Ok((catalog.entries, true, Some(catalog.sequence)));
+    }
+    Ok((entries()?, false, None))
+}
+
+fn remote_url() -> String {
+    crate::trust::dev_env("RESPECTED_HUB_THIRD_PARTY_CATALOG_URL")
+        .and_then(|value| value.into_string().ok())
+        .unwrap_or_else(|| REMOTE_URL.into())
+}
+
+/// Download, verify and atomically keep a newer signed catalog. The previous verified copy is restored if any write
+/// fails, so an offline or broken refresh never destroys what already worked.
+pub fn refresh(managed: &Path) -> Result<RemoteCatalog, String> {
+    refresh_with(managed,
+        |url, output, seconds, max| crate::lifecycle::catalog::curl(url, output, seconds, max),
+        verify_remote)
+}
+
+fn refresh_with(
+    managed: &Path,
+    fetch: impl Fn(&str, &Path, u32, u64) -> Result<(), String>,
+    verify: impl Fn(&[u8], &str, Option<u64>) -> Result<RemoteCatalog, String>,
+) -> Result<RemoteCatalog, String> {
+    let (body, signature) = cache_files(managed);
+    let dir = body.parent().ok_or("katalog dizini geçersiz")?;
+    std::fs::create_dir_all(dir).map_err(|error| format!("katalog dizini oluşturulamadı: {error}"))?;
+    let staged_body = dir.join("catalog.json.body.part");
+    let staged_signature = dir.join("catalog.json.sig.part");
+    let cleanup = |_: &String| {
+        let _ = std::fs::remove_file(&staged_body);
+        let _ = std::fs::remove_file(&staged_signature);
+    };
+    let url = remote_url();
+    fetch(&url, &staged_body, 60, MAX_REMOTE_BYTES as u64)
+        .and_then(|_| fetch(&format!("{url}.sig"), &staged_signature, 60, MAX_SIGNATURE_BYTES))
+        .map_err(|error| format!("katalog alınamadı: {error}"))
+        .inspect_err(cleanup)?;
+    let bytes = std::fs::read(&staged_body).map_err(|error| format!("katalog okunamadı: {error}"))?;
+    let signature_text = std::fs::read_to_string(&staged_signature).map_err(|error| format!("imza okunamadı: {error}"))?;
+    cleanup(&String::new());
+    let previous = cached_check(managed, |bytes, signature| verify(bytes, signature, None)).map(|catalog| catalog.sequence);
+    let catalog = verify(&bytes, &signature_text, previous).map_err(|error| format!("katalog doğrulanamadı: {error}"))?;
+    let old = std::fs::read(&body).ok().zip(std::fs::read(&signature).ok());
+    let restore = |old: Option<(Vec<u8>, Vec<u8>)>| match old {
+        Some((old_body, old_signature)) => {
+            let _ = crate::lifecycle::write_atomic(&body, &old_body);
+            let _ = crate::lifecycle::write_atomic(&signature, &old_signature);
+        }
+        None => {
+            let _ = std::fs::remove_file(&body);
+            let _ = std::fs::remove_file(&signature);
+        }
+    };
+    if let Err(error) = crate::lifecycle::write_atomic(&body, &bytes).and_then(|_| crate::lifecycle::write_atomic(&signature, signature_text.as_bytes())) {
+        restore(old);
+        return Err(format!("katalog yazılamadı: {}", error.message));
+    }
+    if cached_check(managed, |bytes, signature| verify(bytes, signature, None)).as_ref() != Some(&catalog) {
+        restore(old);
+        return Err("yazılan katalog yeniden doğrulanamadı".into());
+    }
+    Ok(catalog)
+}
+
 /// The shipped catalog. Reading it performs no filesystem or network I/O.
 pub fn entries() -> Result<Vec<CatalogEntry>, String> {
     parse_catalog(CATALOG_JSON)
@@ -287,5 +357,60 @@ mod tests {
     #[test]
     fn the_compiled_catalog_still_parses_without_the_network() {
         assert!(entries().unwrap().len() >= 50);
+    }
+
+    #[test]
+    fn a_verified_download_replaces_the_cache_and_failed_refreshes_leave_it_intact() {
+        let root = std::env::temp_dir().join(format!("hub-thirdparty-refresh-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let (_, keys) = key(7);
+        let verify = |bytes: &[u8], signature: &str, previous: Option<u64>| verify_remote_with(&keys, &[], bytes, signature, previous);
+        let (bytes, signature) = sign(7, 2, "beta", None, json!([entry("fresh")]));
+        let download = |_: &str, output: &Path, _: u32, _: u64| {
+            if output.extension().is_some_and(|ext| ext == "part") && output.to_string_lossy().ends_with("sig.part") {
+                std::fs::write(output, &signature)
+            } else {
+                std::fs::write(output, &bytes)
+            }.map_err(|error| error.to_string())
+        };
+        let catalog = refresh_with(&root, download, verify).unwrap();
+        assert_eq!((catalog.sequence, catalog.entries[0].id.as_str()), (2, "fresh"));
+        assert_eq!(cached_check(&root, |b, s| verify(b, s, None)).unwrap(), catalog);
+        assert_eq!(load(&root).unwrap().2, None, "test keys are not production trust roots");
+
+        let failed = refresh_with(&root, |_, _, _, _| Err("timeout".into()), verify);
+        assert!(failed.unwrap_err().contains("timeout"));
+        let (old, signature) = sign(7, 1, "beta", None, json!([entry("old")]));
+        let downgrade = |_: &str, output: &Path, _: u32, _: u64| {
+            std::fs::write(output, if output.to_string_lossy().ends_with("sig.part") { signature.as_bytes() } else { old.as_slice() })
+                .map_err(|error| error.to_string())
+        };
+        assert!(refresh_with(&root, downgrade, verify).is_err());
+        assert_eq!(cached_check(&root, |b, s| verify(b, s, None)).unwrap().sequence, 2, "a failed refresh changed the cache");
+
+        let partial = |_: &str, output: &Path, _: u32, _: u64| {
+            let written = if output.to_string_lossy().ends_with("sig.part") { signature.as_bytes() } else { &bytes[..bytes.len() / 2] };
+            std::fs::write(output, written).map_err(|error| error.to_string())
+        };
+        assert!(refresh_with(&root, partial, verify).is_err());
+        assert_eq!(cached_check(&root, |b, s| verify(b, s, None)).unwrap().sequence, 2, "a partial download changed the cache");
+
+        let bad_signature = |_: &str, output: &Path, _: u32, _: u64| {
+            std::fs::write(output, if output.to_string_lossy().ends_with("sig.part") { b"k1 AAAA" as &[u8] } else { bytes.as_slice() })
+                .map_err(|error| error.to_string())
+        };
+        assert!(refresh_with(&root, bad_signature, verify).is_err());
+        assert_eq!(cached_check(&root, |b, s| verify(b, s, None)).unwrap().sequence, 2, "a bad signature changed the cache");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn an_empty_cache_opens_the_compiled_catalog_without_network_or_signature_claim() {
+        let root = std::env::temp_dir().join(format!("hub-thirdparty-static-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let (entries, verified, sequence) = load(&root).unwrap();
+        assert!(entries.len() >= 50);
+        assert_eq!((verified, sequence), (false, None));
+        let _ = std::fs::remove_dir_all(&root);
     }
 }

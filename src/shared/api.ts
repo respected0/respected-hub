@@ -53,6 +53,14 @@ export async function thirdPartyCatalog(): Promise<CatalogEntry[]> {
   return reply.result.entries;
 }
 
+/** User-triggered signed catalog refresh. Offline or invalid downloads leave the last verified catalog intact. */
+export async function refreshThirdPartyCatalog(): Promise<CatalogEntry[]> {
+  if (!native) throw new Error('Katalog yalnızca masaüstü uygulamasında yenilenir.');
+  const reply = await invoke<IntegrationReply>('integrations_request', { request: { action: 'catalog_refresh' } });
+  if (!reply.ok || !reply.result || !('entries' in reply.result)) throw new Error(reply.error?.message ?? 'Katalog yenilenemedi.');
+  return reply.result.entries;
+}
+
 /** Hub-owned project registry; selecting a root never writes an AI client config. */
 export const listProjects = () => invoke<Project[]>('projects_list');
 export const addProject = (root: string) => invoke<Project[]>('projects_add', { root });

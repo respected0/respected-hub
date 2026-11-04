@@ -70,7 +70,7 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
 
 ### M4 — Güvenli harici katalog ve kurulum yaşam döngüsü
 - [x] `SEC-002` Üçüncü taraf katalog için ayrı alan ayrımlı imza/sequence doğrulaması.
-- [ ] `CAT-003` İsteğe bağlı imzalı katalog tazeleme, internet yokken son doğrulanmış katalog.
+- [x] `CAT-003` İsteğe bağlı imzalı katalog tazeleme, internet yokken son doğrulanmış katalog.
 - [ ] `SEC-003` Kaynak/komut/izin risk önizlemesi; güvenliği garanti eden etiket kullanma.
 - [ ] `OPS-006` Kullanıcı onaylı var olan entegrasyonu içe alma/bağlama.
 - [ ] `OPS-007` Kaynağın sahibini koruyan kaldırma/ayırma ve güncelleme.

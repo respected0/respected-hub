@@ -45,7 +45,7 @@ export interface Resolution { entries: ResolvedEntry[]; issues: ScanIssue[]; unt
 export interface InventoryResult { read_only: boolean; inventory: Inventory; resolution: Resolution }
 
 // Mirror of src-tauri/src/integrations/api.rs.
-export type IntegrationAction = 'inventory' | 'clients' | 'catalog';
+export type IntegrationAction = 'inventory' | 'clients' | 'catalog' | 'catalog_refresh';
 export interface IntegrationRequest { action: IntegrationAction }
 export interface ClientsResult { read_only: boolean; clients: ClientState[]; issues: ScanIssue[] }
 export type CatalogKind = 'mcp' | 'skill' | 'plugin' | 'rule' | 'other';
@@ -53,7 +53,7 @@ export interface CatalogEntry {
   id: string; name: string; type: CatalogKind; description: string; category: string;
   source_url: string; supported_clients: ClientId[]; license: string | null; provenance: string | null;
 }
-export interface CatalogResult { read_only: boolean; entries: CatalogEntry[]; trust?: { signature_verified: boolean; scope: 'metadata_only'; note: string } }
+export interface CatalogResult { read_only: boolean; entries: CatalogEntry[]; sequence?: number | null; trust?: { signature_verified: boolean; scope: 'metadata_only'; note: string } }
 export interface IntegrationReply {
   ok: boolean;
   result: InventoryResult | ClientsResult | CatalogResult | null;

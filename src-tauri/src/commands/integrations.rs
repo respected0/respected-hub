@@ -6,8 +6,8 @@ use crate::integrations::projects;
 use serde_json::Value;
 
 #[tauri::command]
-pub fn integrations_request(request: Request) -> Value {
-    api::execute(request)
+pub async fn integrations_request(request: Request) -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(move || api::execute(request)).await.map_err(|error| error.to_string())
 }
 
 /// Hub-owned project registry. The dialog path arrives here and is validated

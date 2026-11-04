@@ -31,3 +31,14 @@ test('categories are unique and sorted for Turkish readers', () => {
   assert.deepEqual(catalogCategories(entries), ['Geliştirme', 'Güvenlik', 'Test']);
   assert.deepEqual(catalogCategories([]), []);
 });
+
+test('filtering stays exact across 100 catalog records', () => {
+  const many: CatalogEntry[] = Array.from({ length: 100 }, (_, index) => ({
+    id: `e${index}`, name: index === 73 ? 'Special Server' : `Server ${index}`, type: index % 2 ? 'mcp' : 'skill',
+    description: 'demo', category: index % 3 ? 'Dev' : 'Test', source_url: 'https://github.com/example/demo',
+    supported_clients: index % 4 ? ['claude'] : ['codex'], license: null, provenance: null,
+  }));
+  assert.deepEqual(filterCatalog(many, { query: 'special server' }).map(entry => entry.id), ['e73']);
+  assert.equal(filterCatalog(many, { client: 'codex' }).length, 25);
+  assert.equal(filterCatalog(many, { kind: 'mcp', category: 'Test' }).length, 17);
+});

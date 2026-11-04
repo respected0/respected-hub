@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { thirdPartyCatalog } from '../../shared/api.ts';
+import { refreshThirdPartyCatalog, thirdPartyCatalog } from '../../shared/api.ts';
 import type { CatalogEntry, CatalogKind, ClientId } from '../../shared/integrationsTypes.ts';
 import { CATALOG_CLIENT_LABEL, CATALOG_KIND_LABEL, catalogCategories, filterCatalog } from '../thirdPartyCatalog.ts';
 
@@ -7,6 +7,7 @@ import { CATALOG_CLIENT_LABEL, CATALOG_KIND_LABEL, catalogCategories, filterCata
 export default function ThirdPartyCatalog() {
   const [entries, setEntries] = useState<CatalogEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState<CatalogKind | 'all'>('all');
   const [client, setClient] = useState<ClientId | 'all'>('all');
@@ -22,10 +23,21 @@ export default function ThirdPartyCatalog() {
   const categories = useMemo(() => catalogCategories(entries ?? []), [entries]);
   const shown = useMemo(() => filterCatalog(entries ?? [], { query, kind, client, category }), [entries, query, kind, client, category]);
 
+  async function refresh() {
+    setRefreshing(true);
+    setError(null);
+    try { setEntries(await refreshThirdPartyCatalog()); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : 'Katalog yenilenemedi.'); }
+    finally { setRefreshing(false); }
+  }
+
   return <section aria-label="Üçüncü taraf kataloğu">
     <div className="section-head" style={{ marginBottom: 'var(--s-4)' }}>
       <div><h2>MCP, Skill ve Plugin'ler</h2><p className="meta">Bağlantılar GitHub'da açılır. Hub bu sürümde üçüncü taraf içerik kurmaz. Katalog imzası yalnızca metadata bütünlüğünü doğrular; bağlantılı kaynak kodun güvenli olduğunu garanti etmez.</p></div>
-      {entries && <p className="meta">{shown.length} / {entries.length} kayıt</p>}
+      <div className="catalog-clients">
+        {entries && <p className="meta">{shown.length} / {entries.length} kayıt</p>}
+        <button className="button" onClick={refresh} disabled={refreshing}>{refreshing ? 'Yenileniyor…' : 'Kataloğu yenile'}</button>
+      </div>
     </div>
     <div className="catalog-toolbar">
       <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Ara: MCP, skill, plugin…" aria-label="Katalogda ara" />

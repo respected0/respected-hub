@@ -41,7 +41,7 @@ pub fn set_channel(roots: &Roots, channel: &str) -> Result<(), LifecycleError> {
 }
 
 /// Windows' own curl (System32, never a PATH lookup). Production downloads are https only, redirects included.
-fn curl(url: &str, output: &Path, max_seconds: u32, max_bytes: u64) -> Result<(), String> {
+pub(crate) fn curl(url: &str, output: &Path, max_seconds: u32, max_bytes: u64) -> Result<(), String> {
     let program = if cfg!(windows) { std::env::var_os("SystemRoot").map(PathBuf::from).unwrap_or_else(|| PathBuf::from(r"C:\Windows")).join("System32").join("curl.exe") } else { PathBuf::from("curl") };
     let mut command = Command::new(program);
     command.args(["--location", "--fail", "--silent", "--show-error", "--max-time", &max_seconds.to_string(), "--max-filesize", &max_bytes.to_string()]);
