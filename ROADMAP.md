@@ -62,11 +62,11 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
 - [ ] `UI-002` Kullanıcının seçtiği projeler için salt okunur global/proje görünümü.
 
 ### M3 — Safe Control Engine: aç/kapat, proje/global, güvenli geri alma
-- [ ] `OPS-001` Mutasyonsuz işlem planı, maskeleme ve değişiklik önizlemesi.
-- [ ] `OPS-002` Sahipliği/biçimi koruyan, hash kontollü atomik yazıcı ve readback.
-- [ ] `OPS-003` Yalnızca desteklenen client capability'leriyle etkinleştir/devre dışı bırak.
-- [ ] `OPS-004` Global ↔ proje taşıma/kopyalama, diğer projelere etki analizi.
-- [ ] `OPS-005` Transaction journal, undo ve çökme sonrası güvenli kurtarma.
+- [x] `OPS-001` Mutasyonsuz işlem planı, maskeleme ve değişiklik önizlemesi.
+- [x] `OPS-002` Sahipliği/biçimi koruyan, hash kontrollü atomik yazıcı ve readback.
+- [x] `OPS-003` Yalnızca desteklenen client capability'leriyle etkinleştir/devre dışı bırak.
+- [x] `OPS-004` Global ↔ proje taşıma/kopyalama, diğer projelere etki analizi.
+- [x] `OPS-005` Transaction journal, undo ve çökme sonrası güvenli kurtarma.
 
 ### M4 — Güvenli harici katalog ve kurulum yaşam döngüsü
 - [ ] `SEC-002` Üçüncü taraf katalog için ayrı alan ayrımlı imza/sequence doğrulaması.

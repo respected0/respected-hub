@@ -39,6 +39,8 @@ pub fn run() {
             commands::memory::memory_search, commands::memory::memory_note_read, commands::memory::memory_capture_note,
             commands::memory::memory_briefing_run])
         .setup(|app| { if let Ok(roots) = commands::lifecycle_roots(app.handle()) {
+            // a third-party write interrupted by a crash: restore only its own recorded files
+            let _ = integrations::undo::Journal::default().recover();
             lifecycle::close_interrupted(&roots); // a run this Hub was closed in the middle of: the product's installer kept it consistent
             let handle = app.handle().clone();
             std::thread::spawn(move || { use tauri::Emitter; let _ = lifecycle::catalog::refresh(&roots); let _ = handle.emit("catalog-updated", ()); });

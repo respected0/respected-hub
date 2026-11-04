@@ -1,36 +1,41 @@
-//! Transactional writer for one planned third-party integration change.
+//! Transactional writer for a planned third-party integration change.
 //!
 //! The writer accepts only a server-issued `OperationPlan`; it never takes a path
-//! from the UI. It re-verifies the plan digest, TTL and source hash, re-derives the
-//! binding from a fresh inventory, edits text without reserializing the document,
-//! then performs an allowlisted atomic replace with a sidecar backup and readback.
+//! from the UI. It re-verifies the plan digest, TTL and source hashes, re-derives
+//! every binding from a fresh inventory, edits text without reserializing the
+//! document, then performs allowlisted atomic replaces with sidecar backups,
+//! readback and an undo journal.
 
 use crate::integrations::model::{
     AssetKind, Binding, ClientId, Inventory, Owner, Project, Scope, SourceFormat,
 };
 use crate::integrations::planner::{self, Operation, OperationPlan};
 use crate::integrations::security::{self, Limits};
+use crate::integrations::undo::{self, Journal, JournalFile};
 use serde::Serialize;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-static APPLY_LOCK: Mutex<()> = Mutex::new(());
-
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub struct Applied {
-    pub plan_digest: String,
-    pub transaction_id: String,
+pub struct AppliedFile {
+    pub path: String,
     pub path_id: String,
     pub before_sha256: String,
     pub after_sha256: String,
     pub backup_name: String,
     pub bytes_before: usize,
     pub bytes_after: usize,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct Applied {
+    pub plan_digest: String,
+    pub transaction_id: String,
+    pub files: Vec<AppliedFile>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -47,17 +52,29 @@ pub struct EditError {
     pub message: String,
 }
 
-/// Apply a remove_mcp plan. This is an internal engine entry point; the IPC
-/// `integrations.apply` action stays closed until the write gate is approved.
+struct Prepared {
+    path: PathBuf,
+    path_id: String,
+    text: String,
+    after_text: String,
+    before_sha256: String,
+    after_sha256: String,
+    permissions: fs::Permissions,
+    backup: PathBuf,
+}
+
+/// Apply a plan and record it in the managed integration journal, so the write can
+/// be undone and a killed process can be recovered on the next start.
 pub fn apply(
     plan: &OperationPlan,
     inventory: &Inventory,
     projects: &[Project],
     transaction_id: &str,
 ) -> Result<Applied, ApplyError> {
-    apply_at(plan, inventory, projects, transaction_id, unix_now())
+    apply_at_journaled(plan, inventory, projects, transaction_id, unix_now(), &Journal::default())
 }
 
+/// Apply without a journal. Only tests use this; production goes through `apply`.
 pub fn apply_at(
     plan: &OperationPlan,
     inventory: &Inventory,
@@ -65,7 +82,18 @@ pub fn apply_at(
     transaction_id: &str,
     now: u64,
 ) -> Result<Applied, ApplyError> {
-    apply_with(plan, inventory, projects, transaction_id, now, &mut default_writer)
+    apply_with(plan, inventory, projects, transaction_id, now, &mut default_writer, None)
+}
+
+pub fn apply_at_journaled(
+    plan: &OperationPlan,
+    inventory: &Inventory,
+    projects: &[Project],
+    transaction_id: &str,
+    now: u64,
+    journal: &Journal,
+) -> Result<Applied, ApplyError> {
+    apply_with(plan, inventory, projects, transaction_id, now, &mut default_writer, Some(journal))
 }
 
 fn apply_with<F>(
@@ -75,124 +103,246 @@ fn apply_with<F>(
     transaction_id: &str,
     now: u64,
     writer: &mut F,
+    journal: Option<&Journal>,
 ) -> Result<Applied, ApplyError>
 where
     F: FnMut(&Path, &[u8]) -> io::Result<()>,
 {
     validate_transaction_id(transaction_id)?;
-    if !matches!(plan.operation, Operation::RemoveMcp | Operation::EnableMcp | Operation::DisableMcp) {
-        return Err(apply_error("UNSUPPORTED_CAPABILITY", "Bu işlem için transactional writer yok."));
-    }
     planner::verify(plan, now).map_err(|error| ApplyError {
         code: error.code,
         message: error.message,
         recovery_backup: None,
     })?;
-    if plan.targets.len() != 1 {
-        return Err(apply_error("UNSUPPORTED_CAPABILITY", "Bu sürüm yalnızca tek dosyalık işlemleri uygular."));
+    if plan.targets.is_empty() {
+        return Err(apply_error("INVALID_PLAN", "Plan hi\u{00e7}bir hedef dosya i\u{00e7}ermiyor."));
     }
-    let target = &plan.targets[0];
-    let binding = fresh_binding(plan, inventory, projects)?;
-    if binding.managed || matches!(binding.source.owner, Owner::Product { .. } | Owner::Catalog) {
-        return Err(apply_error("OWNER_PROTECTED", "Hedef kayıt Respected ürününe veya kataloğa ait."));
-    }
-    if binding.source.path_id != target.path_id {
-        return Err(apply_error("TARGET_NOT_FOUND", "Plan hedefi güncel envanterdeki kaynakla eşleşmiyor."));
-    }
-    let path = PathBuf::from(&binding.source.path);
-    if !same_file(Path::new(&target.path), &path)? {
-        return Err(apply_error("TARGET_NOT_FOUND", "Plan hedefi güncel kaynak dosyasıyla aynı değil."));
-    }
-    let metadata = fs::symlink_metadata(&path)
-        .map_err(|_| apply_error("TARGET_NOT_FOUND", "Hedef dosya artık okunamıyor."))?;
-    if metadata.file_type().is_symlink() {
-        return Err(apply_error("SYMLINK_TARGET", "Hedef symlink; güvenli yazma için reddedildi."));
-    }
-    if !metadata.is_file() {
-        return Err(apply_error("UNSUPPORTED_CAPABILITY", "Hedef normal bir dosya değil."));
-    }
-    let text = security::read_text(&path, Limits::default())
-        .map_err(|error| apply_error("SOURCE_CHANGED", &error.message))?;
-    let before_sha256 = sha256(text.as_bytes());
-    if before_sha256 != target.before_sha256
-        || binding.source.fingerprint.as_deref() != Some(before_sha256.as_str())
-    {
-        return Err(apply_error("SOURCE_CHANGED", "Hedef dosya plan veya taramadan sonra değişti; planı yenileyin."));
-    }
+    let source = fresh_binding(plan, inventory, projects)?;
     let container = container_for(plan.client);
-    let after_text = match plan.operation {
-        Operation::RemoveMcp => remove_member(&text, target.format, container, &plan.name),
-        Operation::EnableMcp => set_enabled(&text, target.format, container, &plan.name, true),
-        Operation::DisableMcp => set_enabled(&text, target.format, container, &plan.name, false),
-        Operation::MoveMcp | Operation::CopyMcp => return Err(apply_error(
-            "UNSUPPORTED_CAPABILITY",
-            "Çok dosyalı kapsam taşıma OPS-005 transaction altyapısıyla açılacak.",
-        )),
-    }.map_err(|error| ApplyError {
-        code: error.code.into(),
-        message: error.message,
-        recovery_backup: None,
-    })?;
-    let after_sha256 = sha256(after_text.as_bytes());
-    if after_sha256 != target.after_sha256 {
-        return Err(apply_error("INVALID_PLAN", "Plan önizlemesi deterministik düzenlemeyle eşleşmiyor."));
-    }
+    let entry_text = if matches!(plan.operation, Operation::MoveMcp | Operation::CopyMcp) {
+        let text = security::read_text(Path::new(&source.source.path), Limits::default())
+            .map_err(|error| apply_error("SOURCE_CHANGED", &error.message))?;
+        let hash = sha256(text.as_bytes());
+        if source.source.fingerprint.as_deref().is_some_and(|fingerprint| fingerprint != hash) {
+            return Err(apply_error("SOURCE_CHANGED", "Kaynak dosya taramadan sonra de\u{011f}i\u{015f}ti; plan\u{0131} yenileyin."));
+        }
+        Some(read_entry(&text, source.source.format, container, &plan.name)
+            .map_err(|error| ApplyError { code: error.code.into(), message: error.message, recovery_backup: None })?.0)
+    } else {
+        None
+    };
 
-    let _guard = APPLY_LOCK.lock().map_err(|_| apply_error("INTERNAL", "Yazma kilidi kullanılamıyor."))?;
-    let backup = backup_path(&path, transaction_id)?;
-    let mut backup_file = OpenOptions::new().write(true).create_new(true).open(&backup)
-        .map_err(|error| match error.kind() {
-            io::ErrorKind::AlreadyExists => apply_error("TRANSACTION_REUSED", "Bu işlem kimliği daha önce kullanıldı."),
-            _ => apply_error("WRITE_FAILED", &format!("Yedek oluşturulamadı: {error}")),
-        })?;
-    if let Err(error) = backup_file.write_all(text.as_bytes()).and_then(|_| backup_file.sync_all()) {
-        let _ = fs::remove_file(&backup);
-        return Err(apply_error("WRITE_FAILED", &format!("Yedek yazılamadı: {error}")));
-    }
-    drop(backup_file);
-
-    let temp = temp_path(&path, transaction_id)?;
-    if let Err(error) = writer(&temp, after_text.as_bytes()) {
-        let _ = fs::remove_file(&temp);
-        let _ = fs::remove_file(&backup);
-        return Err(apply_error("WRITE_FAILED", &format!("Geçici dosya yazılamadı: {error}")));
-    }
-    if let Err(error) = fs::set_permissions(&temp, metadata.permissions()) {
-        let _ = fs::remove_file(&temp);
-        let _ = fs::remove_file(&backup);
-        return Err(apply_error("WRITE_FAILED", &format!("Dosya izinleri korunamadı: {error}")));
-    }
-    if let Err(error) = fs::rename(&temp, &path) {
-        let _ = fs::remove_file(&temp);
-        let _ = fs::remove_file(&backup);
-        return Err(apply_error("WRITE_FAILED", &format!("Atomik değiştirme başarısız: {error}")));
-    }
-    sync_parent(&path);
-
-    let readback = fs::read(&path).map_err(|error| apply_error("READBACK_FAILED", &format!("Sonuç okunamadı: {error}")))?;
-    if sha256(&readback) != after_sha256 || readback != after_text.as_bytes() {
-        return match restore(&path, &backup, metadata.permissions()) {
-            Ok(()) => {
-                let _ = fs::remove_file(&backup);
-                Err(apply_error("READBACK_FAILED", "Yazma sonrası doğrulama başarısız; önceki dosya geri yüklendi."))
+    let mut prepared = Vec::new();
+    for target in &plan.targets {
+        let binding = binding_by_path_id(inventory, plan.client, &target.path_id)?;
+        if binding.managed || matches!(binding.source.owner, Owner::Product { .. } | Owner::Catalog) {
+            return Err(apply_error("OWNER_PROTECTED", "Hedef kay\u{0131}t Respected \u{00fc}r\u{00fc}n\u{00fc}ne veya katalo\u{011f}a ait."));
+        }
+        let path = PathBuf::from(&binding.source.path);
+        if !same_file(Path::new(&target.path), &path)? {
+            return Err(apply_error("TARGET_NOT_FOUND", "Plan hedefi g\u{00fc}ncel kaynak dosyas\u{0131}yla ayn\u{0131} de\u{011f}il."));
+        }
+        let metadata = fs::symlink_metadata(&path)
+            .map_err(|_| apply_error("TARGET_NOT_FOUND", "Hedef dosya art\u{0131}k okunam\u{0131}yor."))?;
+        if metadata.file_type().is_symlink() {
+            return Err(apply_error("SYMLINK_TARGET", "Hedef symlink; g\u{00fc}venli yazma i\u{00e7}in reddedildi."));
+        }
+        if !metadata.is_file() {
+            return Err(apply_error("UNSUPPORTED_CAPABILITY", "Hedef normal bir dosya de\u{011f}il."));
+        }
+        let text = security::read_text(&path, Limits::default())
+            .map_err(|error| apply_error("SOURCE_CHANGED", &error.message))?;
+        let before_sha256 = sha256(text.as_bytes());
+        if before_sha256 != target.before_sha256
+            || binding.source.fingerprint.as_deref().is_some_and(|fingerprint| fingerprint != before_sha256)
+        {
+            return Err(apply_error("SOURCE_CHANGED", "Hedef dosya plan veya taramadan sonra de\u{011f}i\u{015f}ti; plan\u{0131} yenileyin."));
+        }
+        let is_source = binding.source.path_id == source.source.path_id;
+        let after_text = match plan.operation {
+            Operation::RemoveMcp => remove_member(&text, target.format, container, &plan.name),
+            Operation::EnableMcp => set_enabled(&text, target.format, container, &plan.name, true),
+            Operation::DisableMcp => set_enabled(&text, target.format, container, &plan.name, false),
+            Operation::MoveMcp if is_source => remove_member(&text, target.format, container, &plan.name),
+            Operation::MoveMcp | Operation::CopyMcp => {
+                if is_source {
+                    return Err(apply_error("BAD_REQUEST", "Kopyalama plan\u{0131} kaynak dosyay\u{0131} de\u{011f}i\u{015f}tiremez."));
+                }
+                let entry = entry_text.as_deref().unwrap_or_default();
+                insert_member(&text, target.format, container, &plan.name, entry)
             }
-            Err(error) => Err(ApplyError {
-                code: "RECOVERY_REQUIRED".into(),
-                message: format!("Yazma doğrulanamadı ve geri yükleme başarısız: {error}"),
-                recovery_backup: Some(backup.to_string_lossy().into_owned()),
-            }),
-        };
+        }.map_err(|error| ApplyError {
+            code: error.code.into(),
+            message: error.message,
+            recovery_backup: None,
+        })?;
+        let after_sha256 = sha256(after_text.as_bytes());
+        if after_sha256 != target.after_sha256 {
+            return Err(apply_error("INVALID_PLAN", "Plan \u{00f6}nizlemesi deterministik d\u{00fc}zenlemeyle e\u{015f}le\u{015f}miyor."));
+        }
+        let backup = backup_path(&path, transaction_id)?;
+        prepared.push(Prepared {
+            path,
+            path_id: target.path_id.clone(),
+            text,
+            after_text,
+            before_sha256,
+            after_sha256,
+            permissions: metadata.permissions(),
+            backup,
+        });
     }
-    Ok(Applied {
-        plan_digest: plan.plan_digest.clone(),
-        transaction_id: transaction_id.to_string(),
-        path_id: target.path_id.clone(),
-        before_sha256,
-        after_sha256,
-        backup_name: backup.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default(),
-        bytes_before: text.len(),
-        bytes_after: after_text.len(),
-    })
+
+    let _guard = undo::WRITE_LOCK.lock().unwrap_or_else(|error| error.into_inner());
+    for item in &prepared {
+        let bytes = fs::read(&item.path)
+            .map_err(|_| apply_error("SOURCE_CHANGED", "Hedef dosya art\u{0131}k okunam\u{0131}yor; plan\u{0131} yenileyin."))?;
+        if sha256(&bytes) != item.before_sha256 {
+            return Err(apply_error("SOURCE_CHANGED", "Hedef dosya kilitten \u{00f6}nce de\u{011f}i\u{015f}ti; plan\u{0131} yenileyin."));
+        }
+    }
+
+    if let Some(journal) = journal {
+        let files = prepared.iter().map(|item| JournalFile {
+            path: item.path.clone(),
+            path_id: item.path_id.clone(),
+            before_sha256: item.before_sha256.clone(),
+            after_sha256: item.after_sha256.clone(),
+            backup_name: item.backup.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default(),
+            bytes_before: item.text.len(),
+            bytes_after: item.after_text.len(),
+        }).collect();
+        journal.prepare(&plan.plan_digest, &operation_name(plan.operation), transaction_id, files, unix_now())
+            .map_err(|error| apply_error(&error.code, &error.message))?;
+    }
+
+    let mut backups = Vec::new();
+    for item in &prepared {
+        let mut file = match OpenOptions::new().write(true).create_new(true).open(&item.backup) {
+            Ok(file) => file,
+            Err(error) => {
+                cleanup_backups(&backups);
+                if let Some(journal) = journal { let _ = journal.mark_failed(transaction_id); }
+                let code = if error.kind() == io::ErrorKind::AlreadyExists { "TRANSACTION_REUSED" } else { "WRITE_FAILED" };
+                return Err(apply_error(code, &format!("Yedek olu\u{015f}turulamad\u{0131}: {error}")));
+            }
+        };
+        if let Err(error) = file.write_all(item.text.as_bytes()).and_then(|_| file.sync_all()) {
+            drop(file);
+            let _ = fs::remove_file(&item.backup);
+            cleanup_backups(&backups);
+            if let Some(journal) = journal { let _ = journal.mark_failed(transaction_id); }
+            return Err(apply_error("WRITE_FAILED", &format!("Yedek yaz\u{0131}lamad\u{0131}: {error}")));
+        }
+        drop(file);
+        backups.push(item.backup.clone());
+    }
+
+    let mut written = Vec::new();
+    for (index, item) in prepared.iter().enumerate() {
+        let temp = temp_path(&item.path, transaction_id)?;
+        let result = writer(&temp, item.after_text.as_bytes())
+            .and_then(|_| fs::set_permissions(&temp, item.permissions.clone()))
+            .and_then(|_| fs::rename(&temp, &item.path));
+        if let Err(error) = result {
+            let _ = fs::remove_file(&temp);
+            return rollback(&prepared, &written, journal, transaction_id, "WRITE_FAILED", format!("Ge\u{00e7}ici dosya yaz\u{0131}lamad\u{0131}: {error}"));
+        }
+        sync_parent(&item.path);
+        written.push(index);
+    }
+
+    for item in &prepared {
+        let ok = fs::read(&item.path)
+            .map(|bytes| bytes == item.after_text.as_bytes() && sha256(&bytes) == item.after_sha256)
+            .unwrap_or(false);
+        if !ok {
+            return rollback(&prepared, &written, journal, transaction_id, "READBACK_FAILED", "Yazma sonras\u{0131} do\u{011f}rulama ba\u{015f}ar\u{0131}s\u{0131}z; \u{00f6}nceki dosyalar geri y\u{00fc}klendi.".to_string());
+        }
+    }
+
+    if let Some(journal) = journal {
+        if let Err(error) = journal.mark_committed(transaction_id) {
+            return rollback(&prepared, &written, Some(journal), transaction_id, "WRITE_FAILED", format!("\u{0130}\u{015f}lem g\u{00fc}nl\u{00fc}\u{011f}\u{00fc} tamamlanamad\u{0131}: {}", error.message));
+        }
+    }
+
+    let files = prepared.iter().map(|item| AppliedFile {
+        path: item.path.to_string_lossy().into_owned(),
+        path_id: item.path_id.clone(),
+        before_sha256: item.before_sha256.clone(),
+        after_sha256: item.after_sha256.clone(),
+        backup_name: item.backup.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default(),
+        bytes_before: item.text.len(),
+        bytes_after: item.after_text.len(),
+    }).collect();
+    Ok(Applied { plan_digest: plan.plan_digest.clone(), transaction_id: transaction_id.to_string(), files })
+}
+
+fn rollback(
+    prepared: &[Prepared],
+    written: &[usize],
+    journal: Option<&Journal>,
+    transaction_id: &str,
+    code: &str,
+    message: String,
+) -> Result<Applied, ApplyError> {
+    let mut recovery = None;
+    let mut restored = vec![false; prepared.len()];
+    for &index in written {
+        let item = &prepared[index];
+        match restore(&item.path, &item.backup, item.permissions.clone()) {
+            Ok(()) => {
+                restored[index] = true;
+                let _ = fs::remove_file(&item.backup);
+            }
+            Err(_) => recovery = Some(item.backup.to_string_lossy().into_owned()),
+        }
+    }
+    for (index, item) in prepared.iter().enumerate() {
+        if written.contains(&index) && !restored[index] {
+            continue;
+        }
+        let _ = fs::remove_file(&item.backup);
+    }
+    if let Some(journal) = journal {
+        let _ = journal.mark_failed(transaction_id);
+    }
+    if let Some(backup) = recovery {
+        return Err(ApplyError {
+            code: "RECOVERY_REQUIRED".into(),
+            message: format!("{message} Geri y\u{00fc}kleme tamamlanamad\u{0131}; yedek korunuyor."),
+            recovery_backup: Some(backup),
+        });
+    }
+    Err(apply_error(code, &message))
+}
+
+fn cleanup_backups(backups: &[PathBuf]) {
+    for backup in backups {
+        let _ = fs::remove_file(backup);
+    }
+}
+
+fn operation_name(operation: Operation) -> String {
+    serde_json::to_value(operation).ok()
+        .and_then(|value| value.as_str().map(str::to_string))
+        .unwrap_or_default()
+}
+
+fn binding_by_path_id<'a>(
+    inventory: &'a Inventory,
+    client: ClientId,
+    path_id: &str,
+) -> Result<&'a Binding, ApplyError> {
+    let matches: Vec<&Binding> = inventory.bindings.iter()
+        .filter(|binding| binding.client == client && binding.source.path_id == path_id)
+        .collect();
+    match matches.as_slice() {
+        [binding] => Ok(*binding),
+        [] => Err(apply_error("TARGET_NOT_FOUND", "Plan hedefi g\u{00fc}ncel envanterde bulunamad\u{0131}.")),
+        _ => Err(apply_error("AMBIGUOUS_TARGET", "Ayn\u{0131} dosya birden fazla kay\u{0131}tla e\u{015f}le\u{015f}iyor.")),
+    }
 }
 
 fn fresh_binding<'a>(
@@ -1272,9 +1422,11 @@ fn edit_error(code: &'static str, message: &str) -> EditError {
 mod tests {
     use super::*;
     use crate::integrations::model::{
-        Asset, Binding, Capability, ObservedStatus, Owner, Scope, Source,
+        Asset, Binding, Capability, ObservedStatus, Owner, Project, Scope, Source,
     };
     use crate::integrations::planner::{plan, PlanRequest};
+    use crate::integrations::undo::{Journal, JournalFile, RecordStatus};
+    use std::sync::{Arc, Barrier};
 
     struct Temp(PathBuf);
     impl Temp {
@@ -1349,11 +1501,11 @@ mod tests {
         let plan = make_plan(&inventory, ClientId::Claude);
         let before = fs::read(&path).unwrap();
         let applied = apply_at(&plan, &inventory, &[], "tx-json", plan.created_at).unwrap();
-        assert_eq!(applied.before_sha256, sha256(&before));
-        assert_eq!(applied.after_sha256, sha256(&fs::read(&path).unwrap()));
+        assert_eq!(applied.files[0].before_sha256, sha256(&before));
+        assert_eq!(applied.files[0].after_sha256, sha256(&fs::read(&path).unwrap()));
         let expected = "{\n  \"theme\": \"dark\",\n  \"mcpServers\": {\n    \"keep\": { \"command\": \"keep\" },\n    \"after\": { \"command\": \"after\" }\n  },\n  \"tail\": true\n}\n";
         assert_eq!(fs::read_to_string(&path).unwrap(), expected);
-        assert_eq!(fs::read(temp.0.join(&applied.backup_name)).unwrap(), before);
+        assert_eq!(fs::read(temp.0.join(&applied.files[0].backup_name)).unwrap(), before);
         assert!(serde_json::from_str::<Value>(&fs::read_to_string(&path).unwrap()).is_ok());
         assert!(!inventory.capabilities[0].apply);
     }
@@ -1416,7 +1568,7 @@ mod tests {
             file.sync_all()?;
             Err(io::Error::new(io::ErrorKind::Other, "disk full (simulated)"))
         };
-        let error = apply_with(&plan, &inventory, &[], "tx-full", plan.created_at, &mut writer).unwrap_err();
+        let error = apply_with(&plan, &inventory, &[], "tx-full", plan.created_at, &mut writer, None).unwrap_err();
         assert_eq!(error.code, "WRITE_FAILED");
         assert_eq!(fs::read_to_string(&path).unwrap(), text);
         let leftovers: Vec<_> = fs::read_dir(&temp.0).unwrap().flatten()
@@ -1435,7 +1587,7 @@ mod tests {
             file.write_all(b"{}\n")?;
             file.sync_all()
         };
-        let error = apply_with(&plan, &inventory, &[], "tx-readback", plan.created_at, &mut writer).unwrap_err();
+        let error = apply_with(&plan, &inventory, &[], "tx-readback", plan.created_at, &mut writer, None).unwrap_err();
         assert_eq!(error.code, "READBACK_FAILED");
         assert_eq!(fs::read_to_string(&path).unwrap(), text);
     }
@@ -1562,6 +1714,232 @@ mod tests {
         let json = "{\"mcpServers\":{\"postgres\":{\"command\":\"npx\",\"enabled\":1}}}";
         let error = set_enabled(json, SourceFormat::Json, "mcpServers", "postgres", false).unwrap_err();
         assert_eq!(error.code, "UNSUPPORTED_FORMAT");
+    }
+
+    fn outcome<'a>(report: &'a crate::integrations::undo::RecoveryReport, transaction_id: &str) -> &'a crate::integrations::undo::RecoveryOutcome {
+        report.outcomes.iter().find(|outcome| outcome.transaction_id == transaction_id).unwrap()
+    }
+
+    fn journal_files(plan: &OperationPlan, transaction_id: &str) -> Vec<JournalFile> {
+        plan.targets.iter().map(|target| {
+            let backup = backup_path(Path::new(&target.path), transaction_id).unwrap();
+            JournalFile {
+                path: PathBuf::from(&target.path),
+                path_id: target.path_id.clone(),
+                before_sha256: target.before_sha256.clone(),
+                after_sha256: target.after_sha256.clone(),
+                backup_name: backup.file_name().unwrap().to_string_lossy().into_owned(),
+                bytes_before: 0,
+                bytes_after: 0,
+            }
+        }).collect()
+    }
+
+    fn transfer_fixture(
+        label: &str,
+        operation: Operation,
+        client: ClientId,
+        format: SourceFormat,
+        global_text: &str,
+        project_text: &str,
+    ) -> (Temp, PathBuf, PathBuf, Inventory, Vec<Project>, OperationPlan) {
+        let temp = Temp::new(label);
+        let global = temp.0.join("global.json");
+        let project_dir = temp.0.join("project");
+        fs::create_dir_all(&project_dir).unwrap();
+        let project_file = project_dir.join(".mcp.json");
+        fs::write(&global, global_text).unwrap();
+        fs::write(&project_file, project_text).unwrap();
+        let project = Project { id: "p1".into(), root: project_dir.to_string_lossy().into_owned() };
+
+        let asset = Asset::new(AssetKind::Mcp, "postgres", "command: npx server-postgres");
+        let destination_asset = Asset::new(AssetKind::Mcp, "local", "command: local");
+        let mut global_source = Source::from_path(&global, Owner::User, format);
+        global_source.fingerprint = Some(sha256(&fs::read(&global).unwrap()));
+        let mut project_source = Source::from_path(&project_file, Owner::User, format);
+        project_source.fingerprint = Some(sha256(&fs::read(&project_file).unwrap()));
+        let mut inventory = Inventory::default();
+        inventory.add_binding(asset.clone(), Binding {
+            asset_key: asset.key.clone(),
+            client,
+            scope: Scope::Global,
+            project: None,
+            source: global_source,
+            status: ObservedStatus::Configured,
+            enabled: None,
+            managed: false,
+            parent_asset_key: None,
+        });
+        inventory.add_binding(destination_asset.clone(), Binding {
+            asset_key: destination_asset.key.clone(),
+            client,
+            scope: Scope::Project,
+            project: Some(project.clone()),
+            source: project_source,
+            status: ObservedStatus::Configured,
+            enabled: None,
+            managed: false,
+            parent_asset_key: None,
+        });
+        inventory.capabilities.push(Capability {
+            client, read: true, plan: true, apply: true, undo: true,
+            enable: true, disable: true, toggle_reason: None,
+        });
+        let request = PlanRequest {
+            operation,
+            asset_key: asset.key.clone(),
+            client,
+            scope: Scope::Global,
+            project: None,
+            target_scope: Some(Scope::Project),
+            target_project: Some(project.id.clone()),
+        };
+        let projects = vec![project];
+        let plan = plan(&inventory, &projects, &request).unwrap();
+        (temp, global, project_file, inventory, projects, plan)
+    }
+
+    const GLOBAL_JSON: &str = "{\"mcpServers\":{\"postgres\":{\"command\":\"npx\",\"args\":[\"server\"]},\"other\":{\"command\":\"x\"}}}";
+    const PROJECT_JSON: &str = "{\"mcpServers\":{\"local\":{\"command\":\"local\"}}}";
+
+    #[test]
+    fn move_then_undo_restores_both_scope_hashes() {
+        let (temp, global, project_file, inventory, projects, plan) = transfer_fixture(
+            "move-undo", Operation::MoveMcp, ClientId::Claude, SourceFormat::Json, GLOBAL_JSON, PROJECT_JSON,
+        );
+        let global_before = fs::read(&global).unwrap();
+        let project_before = fs::read(&project_file).unwrap();
+        let journal = Journal::at(temp.0.join("journal"));
+        let applied = apply_at_journaled(&plan, &inventory, &projects, "tx-move", plan.created_at, &journal).unwrap();
+        assert_eq!(applied.files.len(), 2);
+        assert!(!fs::read_to_string(&global).unwrap().contains("postgres"));
+        assert!(fs::read_to_string(&project_file).unwrap().contains("postgres"));
+        assert_eq!(journal.read("tx-move").unwrap().status, RecordStatus::Committed);
+
+        let undo = journal.undo("tx-move").unwrap();
+        assert_eq!(undo.restored.len(), 2);
+        assert_eq!(sha256(&fs::read(&global).unwrap()), sha256(&global_before));
+        assert_eq!(sha256(&fs::read(&project_file).unwrap()), sha256(&project_before));
+        assert_eq!(journal.read("tx-move").unwrap().status, RecordStatus::RolledBack);
+    }
+
+    #[test]
+    fn copy_toml_preserves_nested_env_and_undo_restores() {
+        let global = "[mcp_servers.other]\ncommand = \"x\"\n\n[mcp_servers.postgres]\ncommand = \"npx\"\n[mcp_servers.postgres.env]\nTOKEN = \"sk-live\"\n";
+        let project = "[mcp_servers.local]\ncommand = \"local\"\n";
+        let (temp, global_path, project_path, inventory, projects, plan) = transfer_fixture(
+            "copy-toml", Operation::CopyMcp, ClientId::Codex, SourceFormat::Toml, global, project,
+        );
+        let global_before = fs::read(&global_path).unwrap();
+        let project_before = fs::read(&project_path).unwrap();
+        let journal = Journal::at(temp.0.join("journal"));
+        apply_at_journaled(&plan, &inventory, &projects, "tx-copy", plan.created_at, &journal).unwrap();
+        let after = fs::read_to_string(&project_path).unwrap();
+        assert!(after.contains("[mcp_servers.postgres.env]"));
+        assert!(after.contains("TOKEN = \"sk-live\""));
+        assert!(!after.contains("\n[env]"));
+        journal.undo("tx-copy").unwrap();
+        assert_eq!(fs::read(&global_path).unwrap(), global_before);
+        assert_eq!(fs::read(&project_path).unwrap(), project_before);
+    }
+
+    #[test]
+    fn crash_points_recover_without_data_loss() {
+        let text = "{\"mcpServers\":{\"postgres\":{\"command\":\"npx\"},\"keep\":{\"command\":\"keep\"}}}";
+        let (temp, path, inventory) = fixture("crash", "config.json", text, SourceFormat::Json, ClientId::Claude);
+        let plan = make_plan(&inventory, ClientId::Claude);
+        let after = remove_member(text, SourceFormat::Json, "mcpServers", "postgres").unwrap();
+        let journal = Journal::at(temp.0.join("journal"));
+
+        journal.prepare(&plan.plan_digest, "remove_mcp", "tx-before-backup", journal_files(&plan, "tx-before-backup"), plan.created_at).unwrap();
+        let report = journal.recover();
+        assert_eq!(outcome(&report, "tx-before-backup").status, RecordStatus::RolledBack);
+        assert_eq!(fs::read_to_string(&path).unwrap(), text);
+
+        journal.prepare(&plan.plan_digest, "remove_mcp", "tx-mid-write", journal_files(&plan, "tx-mid-write"), plan.created_at).unwrap();
+        let name = path.file_name().unwrap().to_str().unwrap();
+        fs::write(path.with_file_name(format!(".{name}.respected-tx-mid-write.tmp")), &after[..after.len() / 2]).unwrap();
+        let report = journal.recover();
+        assert_eq!(outcome(&report, "tx-mid-write").status, RecordStatus::RolledBack);
+        assert_eq!(fs::read_to_string(&path).unwrap(), text);
+        assert!(!path.with_file_name(format!(".{name}.respected-tx-mid-write.tmp")).exists());
+
+        journal.prepare(&plan.plan_digest, "remove_mcp", "tx-before-readback", journal_files(&plan, "tx-before-readback"), plan.created_at).unwrap();
+        let backup = backup_path(&path, "tx-before-readback").unwrap();
+        fs::write(&backup, text).unwrap();
+        fs::write(&path, &after).unwrap();
+        let report = journal.recover();
+        assert_eq!(outcome(&report, "tx-before-readback").status, RecordStatus::RolledBack);
+        assert_eq!(fs::read_to_string(&path).unwrap(), text);
+        assert_eq!(sha256(&fs::read(&path).unwrap()), plan.targets[0].before_sha256);
+    }
+
+    #[test]
+    fn partial_multi_file_failure_rolls_back_the_first_file() {
+        let (temp, global, project_file, inventory, projects, plan) = transfer_fixture(
+            "partial", Operation::MoveMcp, ClientId::Claude, SourceFormat::Json, GLOBAL_JSON, PROJECT_JSON,
+        );
+        let global_before = fs::read(&global).unwrap();
+        let project_before = fs::read(&project_file).unwrap();
+        let journal = Journal::at(temp.0.join("journal"));
+        let mut calls = 0;
+        let mut writer = |target: &Path, bytes: &[u8]| -> io::Result<()> {
+            calls += 1;
+            if calls == 2 {
+                return Err(io::Error::new(io::ErrorKind::Other, "disk full (simulated)"));
+            }
+            let mut file = OpenOptions::new().write(true).create_new(true).open(target)?;
+            file.write_all(bytes)?;
+            file.sync_all()
+        };
+        let error = apply_with(&plan, &inventory, &projects, "tx-partial", plan.created_at, &mut writer, Some(&journal)).unwrap_err();
+        assert_eq!(error.code, "WRITE_FAILED");
+        assert_eq!(fs::read(&global).unwrap(), global_before);
+        assert_eq!(fs::read(&project_file).unwrap(), project_before);
+        assert_eq!(journal.read("tx-partial").unwrap().status, RecordStatus::Failed);
+    }
+
+    #[test]
+    fn external_change_blocks_undo_without_writing() {
+        let text = "{\"mcpServers\":{\"postgres\":{\"command\":\"npx\"},\"keep\":{\"command\":\"keep\"}}}";
+        let (temp, path, inventory) = fixture("conflict", "config.json", text, SourceFormat::Json, ClientId::Claude);
+        let plan = make_plan(&inventory, ClientId::Claude);
+        let journal = Journal::at(temp.0.join("journal"));
+        apply_at_journaled(&plan, &inventory, &[], "tx-conflict", plan.created_at, &journal).unwrap();
+        let external = "{\"mcpServers\":{\"postgres\":{\"command\":\"externally-edited\"}}}";
+        fs::write(&path, external).unwrap();
+        let error = journal.undo("tx-conflict").unwrap_err();
+        assert_eq!(error.code, "CONFLICT");
+        assert_eq!(fs::read_to_string(&path).unwrap(), external);
+        assert_eq!(journal.read("tx-conflict").unwrap().status, RecordStatus::Committed);
+    }
+
+    #[test]
+    fn concurrent_applies_serialize_without_corruption() {
+        let text = "{\"mcpServers\":{\"postgres\":{\"command\":\"npx\"},\"keep\":{\"command\":\"keep\"}}}";
+        let (_temp, path, inventory) = fixture("concurrent", "config.json", text, SourceFormat::Json, ClientId::Claude);
+        let plan = make_plan(&inventory, ClientId::Claude);
+        let expected = remove_member(text, SourceFormat::Json, "mcpServers", "postgres").unwrap();
+        let barrier = Arc::new(Barrier::new(2));
+        let results: Vec<_> = std::thread::scope(|scope| {
+            let handles: Vec<_> = (0..2).map(|index| {
+                let barrier = Arc::clone(&barrier);
+                let inventory = inventory.clone();
+                let plan = plan.clone();
+                let path = path.clone();
+                scope.spawn(move || {
+                    barrier.wait();
+                    let result = apply_at(&plan, &inventory, &[], &format!("tx-concurrent-{index}"), plan.created_at);
+                    (result, path)
+                })
+            }).collect();
+            handles.into_iter().map(|handle| handle.join().unwrap().0).collect()
+        });
+        assert_eq!(results.iter().filter(|result| result.is_ok()).count(), 1);
+        assert_eq!(fs::read_to_string(&path).unwrap(), expected);
+        for result in results.into_iter().filter_map(Result::err) {
+            assert!(matches!(result.code.as_str(), "SOURCE_CHANGED" | "PLAN_EXPIRED"), "{}", result.code);
+        }
     }
 
 }
