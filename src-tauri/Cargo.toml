@@ -62,6 +62,10 @@ path = "tests/integrations/claude_adapter_e2e.rs"
 name = "codex_adapter_e2e"
 path = "tests/integrations/codex_adapter_e2e.rs"
 
+[[test]]
+name = "cursor_gemini_opencode_adapter_e2e"
+path = "tests/integrations/cursor_gemini_opencode_adapter_e2e.rs"
+
 
 [profile.release]
 codegen-units = 1  # slower release builds, smaller and faster binary

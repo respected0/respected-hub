@@ -2,5 +2,8 @@
 //! that the client officially documents; it never writes or executes anything.
 
 mod common;
+pub mod cursor;
+pub mod gemini;
+pub mod opencode;
 pub mod claude;
 pub mod codex;
