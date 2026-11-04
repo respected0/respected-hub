@@ -1,5 +1,6 @@
 pub mod commands;
 pub mod hub;
+pub mod integrations;
 pub mod lifecycle;
 pub mod process;
 pub mod products;
