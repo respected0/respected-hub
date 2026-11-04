@@ -15,6 +15,7 @@ Giriş: [README.md](../README.md). Yayın: [common/release/RELEASE.md](../common
 - Üçüncü taraf MCP/Skill/Plugin envanteri ayrı `integrations` motorundadır ve M1/M2'de salt okunurdur. Sahiplik,
   redaksiyon ve yazma kapısı: [ADR-THIRD-PARTY-INTEGRATIONS.md](ADR-THIRD-PARTY-INTEGRATIONS.md).
 - Keşif tek motordur (`integrations/discovery.rs`): klasör/dosya varlığı yalnızca kaynak kanıtıdır; programın yolu `installed`, ikisi birlikte `configured` demektir. Hiçbir durum tek başına `enabled` veya kullanımda sayılmaz; okunamayan yol kontrollü bir uyarıdır.
+- Claude Code adapter'ı (`integrations/adapters/claude.rs`) yalnızca doğrulanmış kaynakları okur: kullanıcı `~/.claude.json`, proje `<kök>/.mcp.json`, kullanıcı/proje `skills/<ad>/SKILL.md` klasörleri ve `.claude-plugin/plugin.json` manifestli plugin'ler. Proje kökü kullanıcı seçimidir; adapter diskte proje taraması yapmaz. Brain/Orchestrator girdileri `Owner::Product` olarak işaretlenir ve yazılmaz.
 
 ## 2. Kurucuyu çalıştırma
 

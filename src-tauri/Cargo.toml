@@ -56,6 +56,10 @@ path = "tests/orchestrator/campaign_e2e.rs"
 name = "inventory_e2e"
 path = "tests/integrations/inventory_e2e.rs"
 
+[[test]]
+name = "claude_adapter_e2e"
+path = "tests/integrations/claude_adapter_e2e.rs"
+
 
 [profile.release]
 codegen-units = 1  # slower release builds, smaller and faster binary
