@@ -504,3 +504,19 @@ main.content:has(.lib-shell) { padding: 0; }
 .integration-library .catalog-toolbar select { min-width: 135px; }
 @media (max-width: 900px) { .integration-row { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 620px) { .integration-row { grid-template-columns: 1fr; } .integration-group-head .meta { margin-left: 0; } }
+
+
+/* UI-002: Hub-owned project roots. Read-only with respect to AI client configs. */
+.project-scope { display: flex; flex-direction: column; gap: var(--s-3); }
+.project-scope h2, .project-scope h3, .project-scope p { margin: 0; }
+.project-actions { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.project-grid { display: grid; gap: var(--s-3); }
+.project-card { padding: var(--s-4); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
+.project-card > header { display: flex; align-items: start; justify-content: space-between; gap: var(--s-3); }
+.project-card > header div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.project-root { font: 11.5px/1.5 var(--font-mono); color: var(--muted); word-break: break-all; }
+.project-warning { margin-top: var(--s-3) !important; padding: var(--s-2) var(--s-3); border-radius: var(--r-md); background: var(--surface-2); color: var(--text-2); font-size: 12.5px; }
+.project-missing { border-color: var(--danger, #b45555); }
+.project-clients { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--s-2); margin-top: var(--s-3); }
+.project-client { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: var(--s-3); border-radius: var(--r-md); background: var(--surface-2); font-size: 13px; min-width: 0; }
+.project-client .badge { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }

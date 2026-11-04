@@ -6,12 +6,24 @@ use crate::integrations::adapters::{claude, codex, cursor, gemini, opencode};
 use crate::integrations::discovery::{self, Environment};
 use crate::integrations::model::{Inventory, Project, ScanIssue};
 use std::collections::HashSet;
+use std::path::Path;
 
 pub fn scan(env: &Environment, projects: &[Project]) -> Inventory {
     let mut merged = Inventory::default();
     let mut assets = HashSet::new();
     let mut capabilities = HashSet::new();
     let mut issues = HashSet::new();
+
+    for project in projects {
+        if !Path::new(&project.root).is_dir() {
+            let issue = ScanIssue {
+                code: "project_missing".into(),
+                message: "Kayıtlı proje klasörü bulunamadı; bu proje taranmadı.".into(),
+                source_path: Some(project.root.clone()),
+            };
+            push_issue(&mut issues, &mut merged.issues, issue);
+        }
+    }
 
     for part in [claude::scan(env, projects), codex::scan(env, projects), cursor::scan(env, projects),
         gemini::scan(env, projects), opencode::scan(env, projects)] {

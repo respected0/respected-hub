@@ -12,3 +12,4 @@ pub mod plugins;
 pub mod resolver;
 pub mod catalog;
 pub mod inventory;
+pub mod projects;

@@ -1,5 +1,5 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
-import type { CatalogEntry, IntegrationReply, InventoryResult } from './integrationsTypes.ts';
+import type { CatalogEntry, IntegrationReply, InventoryResult, Project } from './integrationsTypes.ts';
 
 export interface Settings { python: string; orchestrator_root: string; brain_root: string; data_root: string }
 export interface RunUsage {
@@ -52,3 +52,8 @@ export async function thirdPartyCatalog(): Promise<CatalogEntry[]> {
   if (!reply.ok || !reply.result || !('entries' in reply.result)) throw new Error(reply.error?.message ?? 'Katalog okunamadı.');
   return reply.result.entries;
 }
+
+/** Hub-owned project registry; selecting a root never writes an AI client config. */
+export const listProjects = () => invoke<Project[]>('projects_list');
+export const addProject = (root: string) => invoke<Project[]>('projects_add', { root });
+export const removeProject = (id: string) => invoke<Project[]>('projects_remove', { id });

@@ -7,6 +7,7 @@ import { Emblem, Icon } from '../../shared/ui.tsx';
 import type { Go } from './Home.tsx';
 import AppWorkspace from './AppWorkspace.tsx';
 import IntegrationsLibrary from './IntegrationsLibrary.tsx';
+import Projects from './Projects.tsx';
 
 // The library: installed products listed on the left, the selected product's page on the right (install state and its actions on top, then its tabs).
 // Not-yet-installed products are installed from Discover.
@@ -22,7 +23,7 @@ export default function Library({ eco, appId, page, select, go, ask, onAsked }: 
   const [query, setQuery] = useState('');
   const [wanted, setWanted] = useState({ update: false, problem: false });
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<'apps' | 'integrations'>('apps');
+  const [view, setView] = useState<'apps' | 'integrations' | 'projects'>('apps');
   const tools = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -44,6 +45,14 @@ export default function Library({ eco, appId, page, select, go, ask, onAsked }: 
       <p className="muted lib-none">Kurulu MCP, skill ve plugin'lerin salt okunur dökümü.</p>
     </nav>
     <div className="lib-main"><IntegrationsLibrary /></div>
+  </div>;
+
+  if (view === 'projects') return <div className="lib-shell">
+    <nav className="lib-side" aria-label="Kütüphane görünümü">
+      <ViewTabs view={view} onChange={setView} />
+      <p className="muted lib-none">Açıkça seçilmiş proje kökleri ve etkin kapsam.</p>
+    </nav>
+    <div className="lib-main"><Projects /></div>
   </div>;
 
   if (!current) return <div className="page"><section className="card"><ViewTabs view={view} onChange={setView} /><h2>{native && !eco.lifecycle ? 'Kurulu uygulamalar okunuyor…' : 'Henüz kurulu uygulama yok'}</h2>
@@ -71,9 +80,10 @@ export default function Library({ eco, appId, page, select, go, ask, onAsked }: 
   </div>;
 }
 
-function ViewTabs({ view, onChange }: { view: 'apps' | 'integrations'; onChange: (view: 'apps' | 'integrations') => void }) {
+function ViewTabs({ view, onChange }: { view: 'apps' | 'integrations' | 'projects'; onChange: (view: 'apps' | 'integrations' | 'projects') => void }) {
   return <div className="lib-viewtabs" role="tablist" aria-label="Kütüphane görünümü">
     <button type="button" role="tab" aria-selected={view === 'integrations'} className={view === 'integrations' ? 'on' : ''} onClick={() => onChange('integrations')}>Entegrasyonlar</button>
+    <button type="button" role="tab" aria-selected={view === 'projects'} className={view === 'projects' ? 'on' : ''} onClick={() => onChange('projects')}>Projeler</button>
     <button type="button" role="tab" aria-selected={view === 'apps'} className={view === 'apps' ? 'on' : ''} onClick={() => onChange('apps')}>Uygulamalar</button>
   </div>;
 }
