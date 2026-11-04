@@ -1,6 +1,7 @@
 //! The only IPC surface for third-party integrations. Every request is a closed shape:
 //! no filesystem path, command line, URL or plan digest crosses this boundary.
 
+use crate::integrations::catalog;
 use crate::integrations::discovery::{self, Environment};
 use crate::integrations::model::{Inventory, ScanIssue};
 use serde::{Deserialize, Serialize};
@@ -11,6 +12,7 @@ use serde_json::{json, Value};
 pub enum Action {
     Inventory,
     Clients,
+    Catalog,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
@@ -38,6 +40,10 @@ pub fn execute_with(request: Request, env: &Environment) -> Value {
             let discovery = discovery::scan(env);
             json!({ "ok": true, "result": { "read_only": true, "clients": discovery.clients, "issues": discovery.issues }, "error": Value::Null })
         }
+        Action::Catalog => match catalog::entries() {
+            Ok(entries) => json!({ "ok": true, "result": { "read_only": true, "entries": entries }, "error": Value::Null }),
+            Err(message) => json!({ "ok": false, "result": Value::Null, "error": { "code": "catalog_invalid", "message": message } }),
+        },
     }
 }
 
@@ -49,6 +55,7 @@ mod tests {
     fn only_closed_actions_are_accepted() {
         assert!(serde_json::from_str::<Request>(r#"{"action":"inventory"}"#).is_ok());
         assert!(serde_json::from_str::<Request>(r#"{"action":"clients"}"#).is_ok());
+        assert!(serde_json::from_str::<Request>(r#"{"action":"catalog"}"#).is_ok());
         for body in [
             r#"{"action":"apply"}"#,
             r#"{"action":"undo"}"#,
@@ -71,6 +78,18 @@ mod tests {
         assert_eq!(reply["result"]["read_only"], true);
         assert_eq!(reply["result"]["inventory"]["issues"][0]["code"], "scan_unavailable");
         assert!(reply["result"]["inventory"]["assets"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn catalog_is_compiled_in_and_needs_no_network() {
+        let reply = execute(Request { action: Action::Catalog });
+        assert_eq!(reply["ok"], true);
+        assert_eq!(reply["result"]["read_only"], true);
+        let entries = reply["result"]["entries"].as_array().unwrap();
+        assert!(entries.len() >= 50, "only {} catalog entries", entries.len());
+        for entry in entries {
+            assert!(entry["source_url"].as_str().unwrap().starts_with("https://github.com/"));
+        }
     }
 
     #[test]

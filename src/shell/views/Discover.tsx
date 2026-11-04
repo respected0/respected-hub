@@ -5,6 +5,7 @@ import { STATE_LABEL, type LifecycleAction } from '../lifecycle.ts';
 import { Emblem, Weave } from '../../shared/ui.tsx';
 import type { Go } from './Home.tsx';
 import LifecycleControls from './LifecycleControls.tsx';
+import ThirdPartyCatalog from './ThirdPartyCatalog.tsx';
 
 // Discover is the store: one featured app with its introduction and version, and the whole catalog as a strip below it.
 // Install here; an installed app opens in the Library. A product page per app can grow from the featured panel later.
@@ -33,5 +34,6 @@ export default function Discover({ eco, go, ask, onAsked, appId }: { eco: Ecosys
           <span className="store-tile-body"><strong>{app.name}</strong><small>{app.tagline}</small>
             <span className="store-tile-foot"><span className="ver">{item?.available?.version ?? item?.version ? `v${item?.available?.version ?? item?.version}` : ''}</span>{item?.install_state === 'installed' ? <span className="store-open">Kütüphanede aç</span> : item && item.install_state !== 'absent' ? <span className="badge-status warn">{STATE_LABEL[item.install_state]}</span> : null}</span></span>
         </button>; })}</div></section>
+    <ThirdPartyCatalog />
   </div>;
 }

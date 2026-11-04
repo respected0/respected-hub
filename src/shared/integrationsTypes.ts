@@ -1,6 +1,6 @@
 // Mirror of src-tauri/src/integrations/model.rs. Keep both sides in sync.
 export type AssetKind = 'mcp' | 'skill' | 'plugin' | 'hook' | 'command' | 'agent';
-export type ClientId = 'claude' | 'codex' | 'cursor' | 'gemini' | 'opencode' | 'unknown';
+export type ClientId = 'claude' | 'codex' | 'cursor' | 'gemini' | 'open_code' | 'unknown';
 export type Scope = 'global' | 'project';
 export type Owner =
   | { kind: 'user' }
@@ -36,11 +36,17 @@ export interface Inventory {
 }
 
 // Mirror of src-tauri/src/integrations/api.rs.
-export type IntegrationAction = 'inventory' | 'clients';
+export type IntegrationAction = 'inventory' | 'clients' | 'catalog';
 export interface IntegrationRequest { action: IntegrationAction }
 export interface ClientsResult { read_only: boolean; clients: ClientState[]; issues: ScanIssue[] }
+export type CatalogKind = 'mcp' | 'skill' | 'plugin' | 'rule' | 'other';
+export interface CatalogEntry {
+  id: string; name: string; type: CatalogKind; description: string; category: string;
+  source_url: string; supported_clients: ClientId[]; license: string | null; provenance: string | null;
+}
+export interface CatalogResult { read_only: boolean; entries: CatalogEntry[] }
 export interface IntegrationReply {
   ok: boolean;
-  result: { read_only: boolean; inventory: Inventory } | ClientsResult | null;
+  result: { read_only: boolean; inventory: Inventory } | ClientsResult | CatalogResult | null;
   error: { code: string; message: string } | null;
 }

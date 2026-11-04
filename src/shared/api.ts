@@ -1,4 +1,5 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
+import type { CatalogEntry, IntegrationReply } from './integrationsTypes.ts';
 
 export interface Settings { python: string; orchestrator_root: string; brain_root: string; data_root: string }
 export interface RunUsage {
@@ -35,3 +36,11 @@ export interface Products { development: boolean; brain_available: boolean; orch
   hub_version: string; engine: { version?: string; workers?: Record<string, string[] | null>; error?: string } }
 export const products = () => invoke<Products>('product_status');
 export const developmentBuild = () => invoke<boolean>('development_build');
+
+/** Compiled-in third-party catalog. Read-only and local: it works with the network offline. */
+export async function thirdPartyCatalog(): Promise<CatalogEntry[]> {
+  if (!native) throw new Error('Katalog yalnızca masaüstü uygulamasında okunur.');
+  const reply = await invoke<IntegrationReply>('integrations_request', { request: { action: 'catalog' } });
+  if (!reply.ok || !reply.result || !('entries' in reply.result)) throw new Error(reply.error?.message ?? 'Katalog okunamadı.');
+  return reply.result.entries;
+}
