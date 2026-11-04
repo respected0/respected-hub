@@ -5,7 +5,7 @@
 //! It never writes, creates backups or executes a client.
 
 use crate::integrations::model::{
-    AssetKind, Binding, ClientId, Inventory, Owner, Project, Scope, SourceFormat,
+    Asset, AssetKind, Binding, ClientId, Inventory, Owner, Project, Scope, SourceFormat,
 };
 use crate::integrations::security::{self, Limits};
 use serde::{Deserialize, Serialize};
@@ -23,6 +23,8 @@ pub enum Operation {
     RemoveMcp,
     EnableMcp,
     DisableMcp,
+    MoveMcp,
+    CopyMcp,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -34,6 +36,10 @@ pub struct PlanRequest {
     pub scope: Scope,
     #[serde(default)]
     pub project: Option<String>,
+    #[serde(default)]
+    pub target_scope: Option<Scope>,
+    #[serde(default)]
+    pub target_project: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -88,6 +94,7 @@ pub fn plan_at(inventory: &Inventory, projects: &[Project], request: &PlanReques
         Operation::RemoveMcp => item.plan,
         Operation::EnableMcp => item.enable,
         Operation::DisableMcp => item.disable,
+        Operation::MoveMcp | Operation::CopyMcp => item.plan,
     }).unwrap_or(false);
     if !supported || asset.kind != AssetKind::Mcp {
         let reason = capability.and_then(|item| item.toggle_reason.as_deref())
@@ -98,6 +105,9 @@ pub fn plan_at(inventory: &Inventory, projects: &[Project], request: &PlanReques
     }
     if binding.managed || matches!(binding.source.owner, Owner::Product { .. } | Owner::Catalog) {
         return Err(fail("OWNER_PROTECTED", "Bu kayıt Respected ürününe veya kataloğa ait; harici motorla değiştirilemez."));
+    }
+    if matches!(request.operation, Operation::MoveMcp | Operation::CopyMcp) {
+        return plan_transfer(inventory, projects, request, binding, asset, now);
     }
     let container = container_for(binding.client);
     let text = security::read_text(Path::new(&binding.source.path), Limits::default())
@@ -180,13 +190,28 @@ pub fn verify(plan: &OperationPlan, now: u64) -> Result<(), PlanError> {
 }
 
 fn validate_scope(request: &PlanRequest, projects: &[Project]) -> Result<(), PlanError> {
-    match request.scope {
-        Scope::Global if request.project.is_some() => Err(fail("BAD_REQUEST", "Genel kapsam proje kimliği taşıyamaz.")),
+    validate_scope_pair(request.scope, request.project.as_deref(), projects, "Kaynak")?;
+    let transfer = matches!(request.operation, Operation::MoveMcp | Operation::CopyMcp);
+    match (transfer, request.target_scope) {
+        (true, None) => Err(fail("BAD_REQUEST", "Taşıma/kopyalama için hedef kapsam gerekli.")),
+        (false, Some(_)) => Err(fail("BAD_REQUEST", "Bu işlem hedef kapsam taşıyamaz.")),
+        _ => {
+            if let Some(scope) = request.target_scope {
+                validate_scope_pair(scope, request.target_project.as_deref(), projects, "Hedef")?;
+            }
+            Ok(())
+        }
+    }
+}
+
+fn validate_scope_pair(scope: Scope, project: Option<&str>, projects: &[Project], label: &str) -> Result<(), PlanError> {
+    match scope {
+        Scope::Global if project.is_some() => Err(fail("BAD_REQUEST", &format!("{label} genel kapsamı proje kimliği taşıyamaz."))),
         Scope::Project => {
-            let id = request.project.as_deref().ok_or_else(|| fail("BAD_REQUEST", "Proje kapsamı için proje kimliği gerekli."))?;
-            projects.iter().any(|project| project.id == id)
+            let id = project.ok_or_else(|| fail("BAD_REQUEST", &format!("{label} proje kapsamı için proje kimliği gerekli.")))?;
+            projects.iter().any(|item| item.id == id)
                 .then_some(())
-                .ok_or_else(|| fail("BAD_REQUEST", "Proje kayıtlı değil."))
+                .ok_or_else(|| fail("BAD_REQUEST", &format!("{label} proje kayıtlı değil.")))
         }
         Scope::Global => Ok(()),
     }
@@ -205,6 +230,152 @@ fn find_binding<'a>(inventory: &'a Inventory, request: &PlanRequest) -> Result<&
         [] => Err(fail("TARGET_NOT_FOUND", "Seçilen kayıt güncel envanterde bulunamadı.")),
         [binding] => Ok(*binding),
         _ => Err(fail("AMBIGUOUS_TARGET", "Aynı kayıt birden fazla dosyada bulundu; kaynak seçimi gerekli.")),
+    }
+}
+
+
+fn plan_transfer(
+    inventory: &Inventory,
+    projects: &[Project],
+    request: &PlanRequest,
+    binding: &Binding,
+    asset: &Asset,
+    now: u64,
+) -> Result<OperationPlan, PlanError> {
+    let target_scope = request.target_scope.ok_or_else(|| fail("BAD_REQUEST", "Hedef kapsam gerekli."))?;
+    let target_project = match target_scope {
+        Scope::Global => None,
+        Scope::Project => projects.iter()
+            .find(|project| Some(project.id.as_str()) == request.target_project.as_deref())
+            .cloned(),
+    };
+    if target_scope == binding.scope
+        && target_project.as_ref().map(|project| project.id.as_str())
+            == binding.project.as_ref().map(|project| project.id.as_str())
+    {
+        return Err(fail("BAD_REQUEST", "Kaynak ve hedef kapsam aynı."));
+    }
+    let in_target = |candidate: &Binding| candidate.client == binding.client
+        && candidate.scope == target_scope
+        && (target_scope == Scope::Global
+            || candidate.project.as_ref().map(|project| project.id.as_str())
+                == target_project.as_ref().map(|project| project.id.as_str()));
+    if inventory.bindings.iter().any(|candidate| candidate.asset_key == asset.key && in_target(candidate)) {
+        return Err(fail("TARGET_EXISTS", "Hedef kapsamda aynı MCP kaydı zaten var; önce onu kaldırın."));
+    }
+    let destination = inventory.bindings.iter().find(|candidate| in_target(candidate))
+        .ok_or_else(|| fail("TARGET_NOT_FOUND", "Hedef kapsamda bu istemci için okunabilir yapılandırma dosyası yok; etkileri önizlemek için hedef dosya mevcut olmalı."))?;
+    if same_path(&binding.source.path, &destination.source.path) {
+        return Err(fail("BAD_REQUEST", "Kaynak ve hedef aynı dosyayı gösteriyor."));
+    }
+
+    let source_text = security::read_text(Path::new(&binding.source.path), Limits::default())
+        .map_err(|error| fail("SOURCE_CHANGED", &format!("Kaynak dosya okunamadı: {}", error.message)))?;
+    let source_hash = sha256(source_text.as_bytes());
+    if binding.source.fingerprint.as_deref().is_some_and(|fingerprint| fingerprint != source_hash) {
+        return Err(fail("SOURCE_CHANGED", "Kaynak dosya taramadan sonra değişti; planı yenileyin."));
+    }
+    let destination_text = security::read_text(Path::new(&destination.source.path), Limits::default())
+        .map_err(|error| fail("SOURCE_CHANGED", &format!("Hedef dosya okunamadı: {}", error.message)))?;
+    let destination_hash = sha256(destination_text.as_bytes());
+    if destination.source.fingerprint.as_deref().is_some_and(|fingerprint| fingerprint != destination_hash) {
+        return Err(fail("SOURCE_CHANGED", "Hedef dosya taramadan sonra değişti; planı yenileyin."));
+    }
+
+    let container = container_for(binding.client);
+    let (entry_text, entry_value) = crate::integrations::apply::read_entry(
+        &source_text, binding.source.format, container, &asset.name,
+    ).map_err(|error| fail(error.code, &error.message))?;
+    let destination_after = crate::integrations::apply::insert_member(
+        &destination_text, destination.source.format, container, &asset.name, &entry_text,
+    ).map_err(|error| fail(error.code, &error.message))?;
+
+    let mut targets = Vec::new();
+    if request.operation == Operation::MoveMcp {
+        let source_after = crate::integrations::apply::remove_member(
+            &source_text, binding.source.format, container, &asset.name,
+        ).map_err(|error| fail(error.code, &error.message))?;
+        targets.push(PlanTarget {
+            path: binding.source.path.clone(),
+            path_id: binding.source.path_id.clone(),
+            format: binding.source.format,
+            before_sha256: source_hash,
+            after_sha256: sha256(source_after.as_bytes()),
+            before: security::redact_json(&entry_value),
+            after: Value::Null,
+            diff: vec![format!("- {container}.{}", asset.name)],
+        });
+    }
+    targets.push(PlanTarget {
+        path: destination.source.path.clone(),
+        path_id: destination.source.path_id.clone(),
+        format: destination.source.format,
+        before_sha256: destination_hash,
+        after_sha256: sha256(destination_after.as_bytes()),
+        before: Value::Null,
+        after: security::redact_json(&entry_value),
+        diff: vec![format!("+ {container}.{} ({})", asset.name, scope_label(target_scope, target_project.as_ref()))],
+    });
+
+    let global_changed = target_scope == Scope::Global
+        || (request.operation == Operation::MoveMcp && binding.scope == Scope::Global);
+    let mut affected_projects = if global_changed { projects.to_vec() } else { Vec::new() };
+    if !global_changed {
+        if let Some(project) = binding.project.clone() {
+            affected_projects.push(project);
+        }
+        if let Some(project) = target_project.clone() {
+            if !affected_projects.iter().any(|item| item.id == project.id) {
+                affected_projects.push(project);
+            }
+        }
+    }
+    let mut risks = Vec::new();
+    if request.operation == Operation::MoveMcp && binding.scope == Scope::Global {
+        risks.push("Genel kayıt kaldırıldığında bu istemciyi kullanan diğer projelerde de görünmez olur.".to_string());
+    }
+    if request.operation == Operation::CopyMcp && binding.scope == Scope::Global {
+        risks.push("Proje kopyası aynı adlı genel kaydı yalnız bu projede gölgeler; diğer projeler genel kaydı kullanmaya devam eder.".to_string());
+    }
+    if target_scope == Scope::Global {
+        risks.push("Hedef genel kayıt tüm projelerde görünür olur.".to_string());
+    }
+    risks.push("İstemci yeniden başlatılmadan yeni kapsam görünmeyebilir.".to_string());
+
+    let mut result = OperationPlan {
+        plan_digest: String::new(),
+        operation: request.operation,
+        asset_key: asset.key.clone(),
+        name: asset.name.clone(),
+        kind: asset.kind,
+        client: binding.client,
+        scope: binding.scope,
+        project: binding.project.clone(),
+        owner: binding.source.owner.clone(),
+        managed: binding.managed,
+        targets,
+        affected_projects,
+        risks,
+        created_at: now,
+        expires_at: now.saturating_add(PLAN_TTL_SECONDS),
+        read_only: true,
+    };
+    result.plan_digest = digest_for(&result);
+    Ok(result)
+}
+
+fn same_path(left: &str, right: &str) -> bool {
+    let normalize = |value: &str| value.replace('\\', "/").trim_end_matches('/').to_string();
+    let left = normalize(left);
+    let right = normalize(right);
+    if cfg!(windows) { left.to_lowercase() == right.to_lowercase() } else { left == right }
+}
+
+fn scope_label(scope: Scope, project: Option<&Project>) -> String {
+    match (scope, project) {
+        (Scope::Global, _) => "genel".to_string(),
+        (Scope::Project, Some(project)) => format!("proje: {}", project.id),
+        _ => "proje".to_string(),
     }
 }
 
@@ -341,6 +512,8 @@ mod tests {
             client: ClientId::Claude,
             scope: Scope::Global,
             project: None,
+            target_scope: None,
+            target_project: None,
         }
     }
 
@@ -361,6 +534,8 @@ mod tests {
             client,
             scope: Scope::Global,
             project: None,
+            target_scope: None,
+            target_project: None,
         }
     }
 
@@ -473,4 +648,248 @@ mod tests {
         }
     }
 
+    struct ScopePaths {
+        global: PathBuf,
+        project: PathBuf,
+    }
+
+    fn write_scope_fixture(
+        client: ClientId,
+        temp: &Temp,
+        root: &PathBuf,
+        global_has: bool,
+        project_has: bool,
+        project_file: bool,
+    ) -> ScopePaths {
+        let _ = fs::remove_dir_all(root);
+        fs::create_dir_all(root).unwrap();
+        let global_entry = r#"{"command":"npx","args":["server"],"env":{"TOKEN":"sk-live-secret"}}"#;
+        let local_entry = r#"{"command":"local"}"#;
+        let paths = match client {
+            ClientId::Claude => ScopePaths {
+                global: temp.0.join("home/.claude.json"),
+                project: root.join(".mcp.json"),
+            },
+            ClientId::Codex => {
+                fs::create_dir_all(root.join(".codex")).unwrap();
+                ScopePaths { global: temp.0.join("home/.codex/config.toml"), project: root.join(".codex/config.toml") }
+            }
+            ClientId::OpenCode => {
+                fs::create_dir_all(temp.0.join("home/.config/opencode")).unwrap();
+                ScopePaths { global: temp.0.join("home/.config/opencode/opencode.jsonc"), project: root.join("opencode.jsonc") }
+            }
+            _ => unreachable!(),
+        };
+        let mut global_text = match client {
+            ClientId::Claude => format!(
+                "{{\"mcpServers\":{{\"other\":{local_entry}{}}}}}\n",
+                if global_has { format!(",\"postgres\":{global_entry}") } else { String::new() }
+            ),
+            ClientId::Codex => format!(
+                "[projects.'{}']\ntrust_level = \"trusted\"\n\n[mcp_servers.other]\ncommand = \"local\"\n{}",
+                root.to_string_lossy(),
+                if global_has { "\n[mcp_servers.postgres]\ncommand = \"npx\"\nargs = [\"server\"]\n[mcp_servers.postgres.env]\nTOKEN = \"sk-live-secret\"\n" } else { "" }
+            ),
+            ClientId::OpenCode => format!(
+                "{{\n  // global comment\n  \"mcp\": {{\"other\":{local_entry}{}}}\n}}\n",
+                if global_has { format!(",\"postgres\":{global_entry}") } else { String::new() }
+            ),
+            _ => unreachable!(),
+        };
+        if client == ClientId::Codex && !global_has {
+            global_text.push('\n');
+        }
+        fs::create_dir_all(paths.global.parent().unwrap()).unwrap();
+        fs::write(&paths.global, global_text).unwrap();
+        if project_file {
+            let project_text = match client {
+                ClientId::Claude => format!(
+                    "{{\n  \"mcpServers\": {{\"local\":{local_entry}{}}}\n}}\n",
+                    if project_has { format!(",\"postgres\":{global_entry}") } else { String::new() }
+                ),
+                ClientId::OpenCode => format!(
+                    "{{\n  // project comment\n  \"mcp\": {{\"local\":{local_entry}{}}}\n}}\n",
+                    if project_has { format!(",\"postgres\":{global_entry}") } else { String::new() }
+                ),
+                ClientId::Codex => format!(
+                    "[mcp_servers.local]\ncommand = \"local\"\n{}",
+                    if project_has { "\n[mcp_servers.postgres]\ncommand = \"npx\"\nargs = [\"server\"]\n[mcp_servers.postgres.env]\nTOKEN = \"sk-live-secret\"\n" } else { "" }
+                ),
+                _ => unreachable!(),
+            };
+            fs::create_dir_all(paths.project.parent().unwrap()).unwrap();
+            fs::write(&paths.project, project_text).unwrap();
+        }
+        paths
+    }
+
+    fn scope_request(
+        inventory: &Inventory,
+        name: &str,
+        client: ClientId,
+        operation: Operation,
+        scope: Scope,
+        project: Option<String>,
+        target_scope: Scope,
+        target_project: Option<String>,
+    ) -> PlanRequest {
+        let asset = inventory.assets.iter().find(|asset| asset.name == name).unwrap();
+        PlanRequest {
+            operation,
+            asset_key: asset.key.clone(),
+            client,
+            scope,
+            project,
+            target_scope: Some(target_scope),
+            target_project,
+        }
+    }
+
+    fn has_binding(inventory: &Inventory, client: ClientId, name: &str, scope: Scope, project: &str) -> bool {
+        inventory.bindings.iter().any(|binding| {
+            binding.client == client
+                && binding.scope == scope
+                && binding.project.as_ref().map(|item| item.id.as_str()) == Some(project)
+                && inventory.assets.iter().any(|asset| asset.key == binding.asset_key && asset.name == name)
+        })
+    }
+
+    fn simulate_transfer(client: ClientId, paths: &ScopePaths, plan: &OperationPlan) -> (String, String) {
+        let container = container_for(client);
+        let source_path = if plan.scope == Scope::Global { &paths.global } else { &paths.project };
+        let (entry, _) = crate::integrations::apply::read_entry(
+            &fs::read_to_string(source_path).unwrap(),
+            if client == ClientId::Codex { SourceFormat::Toml } else { SourceFormat::Jsonc },
+            container,
+            &plan.name,
+        ).unwrap();
+        let global_text = fs::read_to_string(&paths.global).unwrap();
+        let project_text = fs::read_to_string(&paths.project).unwrap();
+        let global_format = if client == ClientId::Codex { SourceFormat::Toml } else { SourceFormat::Jsonc };
+        let project_format = if client == ClientId::Codex { SourceFormat::Toml } else { SourceFormat::Jsonc };
+        let insert_global = || crate::integrations::apply::insert_member(&global_text, global_format, container, &plan.name, &entry).unwrap();
+        let insert_project = || crate::integrations::apply::insert_member(&project_text, project_format, container, &plan.name, &entry).unwrap();
+        let remove_global = || crate::integrations::apply::remove_member(&global_text, global_format, container, &plan.name).unwrap();
+        let remove_project = || crate::integrations::apply::remove_member(&project_text, project_format, container, &plan.name).unwrap();
+        let (global_after, project_after) = match (plan.operation, plan.scope) {
+            (Operation::CopyMcp, Scope::Global) => (global_text.clone(), insert_project()),
+            (Operation::CopyMcp, _) => (insert_global(), project_text.clone()),
+            (Operation::MoveMcp, Scope::Global) => (remove_global(), insert_project()),
+            (Operation::MoveMcp, _) => (insert_global(), remove_project()),
+            _ => unreachable!(),
+        };
+        (global_after, project_after)
+    }
+
+    #[test]
+    fn supported_clients_cover_six_scope_scenarios() {
+        for client in [ClientId::Claude, ClientId::Codex, ClientId::OpenCode] {
+            let root = std::env::temp_dir().join(format!("hub-scope-{}-{}", client.as_str(), std::process::id()));
+            let _ = fs::remove_dir_all(&root);
+            let temp = Temp::new(&format!("scope-{}", client.as_str()));
+            let project_root = temp.0.join("work/demo");
+            let project = Project { id: "project:demo".into(), root: project_root.to_string_lossy().into_owned() };
+
+            for (operation, source_scope, target_scope) in [
+                (Operation::CopyMcp, Scope::Global, Scope::Project),
+                (Operation::MoveMcp, Scope::Global, Scope::Project),
+                (Operation::CopyMcp, Scope::Project, Scope::Global),
+                (Operation::MoveMcp, Scope::Project, Scope::Global),
+            ] {
+                let paths = write_scope_fixture(client, &temp, &project_root, source_scope == Scope::Global, source_scope == Scope::Project, true);
+                let env = temp.env();
+                let inventory = inventory::scan(&env, std::slice::from_ref(&project));
+                let source_project = if source_scope == Scope::Project { Some(project.id.clone()) } else { None };
+                let target_project = if target_scope == Scope::Project { Some(project.id.clone()) } else { None };
+                let request = scope_request(&inventory, "postgres", client, operation, source_scope, source_project, target_scope, target_project);
+                let plan = plan(&inventory, std::slice::from_ref(&project), &request).unwrap();
+                verify(&plan, plan.created_at).unwrap();
+                assert_eq!(plan.read_only, true);
+                assert_eq!(plan.targets.len(), if operation == Operation::MoveMcp { 2 } else { 1 });
+                let in_project = target_scope == Scope::Project;
+                assert!(!plan.affected_projects.is_empty());
+                let _ = in_project;
+                assert!(plan.risks.iter().any(|risk| risk.contains("yeniden ba")));
+                let (global_after, project_after) = simulate_transfer(client, &paths, &plan);
+                if operation == Operation::MoveMcp && source_scope == Scope::Global {
+                    assert!(!global_after.contains("postgres"));
+                    assert!(project_after.contains("postgres"));
+                } else if operation == Operation::MoveMcp {
+                    assert!(!project_after.contains("postgres"));
+                    assert!(global_after.contains("postgres"));
+                } else {
+                    assert!(global_after.contains("postgres") && project_after.contains("postgres"));
+                }
+                if client == ClientId::Codex {
+                    let transferred = if target_scope == Scope::Project { &project_after } else { &global_after };
+                    assert!(transferred.contains("[mcp_servers.postgres.env]"), "nested env kept");
+                    assert!(!transferred.contains("\n[env]"), "env not lifted to root");
+                }
+                fs::write(&paths.global, global_after).unwrap();
+                fs::write(&paths.project, project_after).unwrap();
+                let reread = inventory::scan(&env, std::slice::from_ref(&project));
+                let project_expected = !(operation == Operation::MoveMcp && source_scope == Scope::Project);
+                assert_eq!(has_binding(&reread, client, "postgres", Scope::Project, &project.id), project_expected, "{client:?} project binding");
+                let global_expected = match (operation, source_scope) {
+                    (Operation::CopyMcp, _) => true,
+                    (Operation::MoveMcp, Scope::Global) => false,
+                    (Operation::MoveMcp, Scope::Project) => true,
+                    _ => true,
+                };
+                assert_eq!(reread.bindings.iter().any(|binding| binding.client == client && binding.scope == Scope::Global
+                    && reread.assets.iter().any(|asset| asset.key == binding.asset_key && asset.name == "postgres")), global_expected, "{client:?} global binding");
+            }
+
+            let paths = write_scope_fixture(client, &temp, &project_root, true, true, true);
+            let env = temp.env();
+            let inventory = inventory::scan(&env, std::slice::from_ref(&project));
+            let before_global = fs::read(&paths.global).unwrap();
+            let before_project = fs::read(&paths.project).unwrap();
+            let request = scope_request(&inventory, "postgres", client, Operation::CopyMcp, Scope::Global, None, Scope::Project, Some(project.id.clone()));
+            let error = plan(&inventory, std::slice::from_ref(&project), &request).unwrap_err();
+            assert_eq!(error.code, "TARGET_EXISTS");
+            assert_eq!(fs::read(&paths.global).unwrap(), before_global);
+            assert_eq!(fs::read(&paths.project).unwrap(), before_project);
+
+            let paths = write_scope_fixture(client, &temp, &project_root, true, false, false);
+            let env = temp.env();
+            let inventory = inventory::scan(&env, std::slice::from_ref(&project));
+            let request = scope_request(&inventory, "postgres", client, Operation::CopyMcp, Scope::Global, None, Scope::Project, Some(project.id.clone()));
+            let error = plan(&inventory, std::slice::from_ref(&project), &request).unwrap_err();
+            assert_eq!(error.code, "TARGET_NOT_FOUND");
+            let _ = paths;
+            let _ = fs::remove_dir_all(&root);
+        }
+    }
+
+    #[test]
+    fn codex_untrusted_project_cannot_receive_scope_copy() {
+        let temp = Temp::new("scope-untrusted");
+        let project_root = temp.0.join("work/untrusted");
+        fs::create_dir_all(project_root.join(".codex")).unwrap();
+        let global = temp.0.join("home/.codex/config.toml");
+        fs::create_dir_all(global.parent().unwrap()).unwrap();
+        fs::write(&global, "[mcp_servers.postgres]\ncommand = \"npx\"\n").unwrap();
+        fs::write(project_root.join(".codex/config.toml"), "[mcp_servers.local]\ncommand = \"local\"\n").unwrap();
+        let project = Project { id: "project:untrusted".into(), root: project_root.to_string_lossy().into_owned() };
+        let env = temp.env();
+        let inventory = inventory::scan(&env, std::slice::from_ref(&project));
+        assert!(inventory.issues.iter().any(|issue| issue.code == "project_untrusted"));
+        let request = scope_request(&inventory, "postgres", ClientId::Codex, Operation::CopyMcp, Scope::Global, None, Scope::Project, Some(project.id.clone()));
+        let error = plan(&inventory, std::slice::from_ref(&project), &request).unwrap_err();
+        assert_eq!(error.code, "TARGET_NOT_FOUND");
+    }
+
+    #[test]
+    fn owned_source_cannot_be_moved_or_copied() {
+        let (temp, env) = fixture("scope-owned");
+        let project_root = temp.0.join("work/demo");
+        fs::create_dir_all(&project_root).unwrap();
+        let project = Project { id: "project:demo".into(), root: project_root.to_string_lossy().into_owned() };
+        fs::write(project_root.join(".mcp.json"), r#"{"mcpServers":{"local":{"command":"x"}}}"#).unwrap();
+        let inventory = inventory::scan(&env, std::slice::from_ref(&project));
+        let request = scope_request(&inventory, "respected-brain", ClientId::Claude, Operation::CopyMcp, Scope::Global, None, Scope::Project, Some(project.id.clone()));
+        let error = plan(&inventory, std::slice::from_ref(&project), &request).unwrap_err();
+        assert_eq!(error.code, "OWNER_PROTECTED");
+    }
 }

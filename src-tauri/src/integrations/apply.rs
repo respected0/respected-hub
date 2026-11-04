@@ -124,6 +124,10 @@ where
         Operation::RemoveMcp => remove_member(&text, target.format, container, &plan.name),
         Operation::EnableMcp => set_enabled(&text, target.format, container, &plan.name, true),
         Operation::DisableMcp => set_enabled(&text, target.format, container, &plan.name, false),
+        Operation::MoveMcp | Operation::CopyMcp => return Err(apply_error(
+            "UNSUPPORTED_CAPABILITY",
+            "Çok dosyalı kapsam taşıma OPS-005 transaction altyapısıyla açılacak.",
+        )),
     }.map_err(|error| ApplyError {
         code: error.code.into(),
         message: error.message,
@@ -338,6 +342,164 @@ pub fn set_enabled(
         SourceFormat::Toml => edit_toml_enabled(text, container, name, enabled),
         _ => Err(edit_error("UNSUPPORTED_FORMAT", "Bu kaynak biçimi için biçim korumalı toggle yok.")),
     }
+}
+
+/// Read one MCP entry as its exact JSON text (or serialized TOML table) plus a parsed value.
+pub fn read_entry(
+    text: &str,
+    format: SourceFormat,
+    container: &str,
+    name: &str,
+) -> Result<(String, Value), EditError> {
+    let body = strip_bom(text);
+    match format {
+        SourceFormat::Json | SourceFormat::Jsonc => {
+            let jsonc = format == SourceFormat::Jsonc;
+            let document = if jsonc {
+                parse_jsonc(body)?
+            } else {
+                serde_json::from_str(body).map_err(|_| edit_error("INVALID_FORMAT", "JSON \u{00e7}\u{00f6}z\u{00fc}mlenemedi."))?
+            };
+            let entry = document.get(container).and_then(Value::as_object)
+                .and_then(|servers| servers.get(name)).cloned()
+                .ok_or_else(|| edit_error("SOURCE_CHANGED", "Hedef kay\u{0131}t dosyada art\u{0131}k yok."))?;
+            if !entry.is_object() {
+                return Err(edit_error("SOURCE_CHANGED", "Hedef kay\u{0131}t beklenen bi\u{00e7}imde de\u{011f}il."));
+            }
+            let mut scanner = JsonScan::new(body, jsonc);
+            scanner.skip()?;
+            let (_, root_members, _) = scanner.parse_object()?;
+            let section = root_members.iter().find(|member| member.key == container)
+                .ok_or_else(|| edit_error("SOURCE_CHANGED", "Hedef b\u{00f6}l\u{00fc}m dosyada yok."))?;
+            let mut inner = JsonScan::new(body, jsonc);
+            inner.index = section.value_start;
+            let (_, members, _) = inner.parse_object()?;
+            let member = members.iter().find(|member| member.key == name)
+                .ok_or_else(|| edit_error("SOURCE_CHANGED", "Hedef kay\u{0131}t dosyada yok."))?;
+            Ok((body[member.value_start..member.value_end].to_string(), entry))
+        }
+        SourceFormat::Toml => {
+            let document: toml::Value = body.parse()
+                .map_err(|_| edit_error("INVALID_FORMAT", "TOML \u{00e7}\u{00f6}z\u{00fc}mlenemedi."))?;
+            let entry = document.get(container).and_then(toml::Value::as_table)
+                .and_then(|servers| servers.get(name)).cloned()
+                .ok_or_else(|| edit_error("SOURCE_CHANGED", "Hedef kay\u{0131}t dosyada art\u{0131}k yok."))?;
+            let value = serde_json::to_value(&entry)
+                .map_err(|_| edit_error("INVALID_FORMAT", "TOML kayd\u{0131} \u{00f6}nizlemeye d\u{00f6}n\u{00fc}\u{015f}t\u{00fc}r\u{00fc}lemedi."))?;
+            let text = toml::to_string(&entry)
+                .map_err(|_| edit_error("INVALID_FORMAT", "TOML kayd\u{0131} yaz\u{0131}lamad\u{0131}."))?;
+            Ok((text, value))
+        }
+        _ => Err(edit_error("UNSUPPORTED_FORMAT", "Bu kaynak bi\u{00e7}imi i\u{00e7}in kapsam ta\u{015f}\u{0131}ma yok.")),
+    }
+}
+
+/// Insert one MCP entry into an existing container. The source entry text is copied as-is
+/// for JSON/JSONC; TOML reuses the source table values. Every other byte is kept.
+pub fn insert_member(
+    text: &str,
+    format: SourceFormat,
+    container: &str,
+    name: &str,
+    entry: &str,
+) -> Result<String, EditError> {
+    match format {
+        SourceFormat::Json => insert_json_member(text, container, name, entry, false),
+        SourceFormat::Jsonc => insert_json_member(text, container, name, entry, true),
+        SourceFormat::Toml => insert_toml_member(text, container, name, entry),
+        _ => Err(edit_error("UNSUPPORTED_FORMAT", "Bu kaynak bi\u{00e7}imi i\u{00e7}in kapsam ta\u{015f}\u{0131}ma yok.")),
+    }
+}
+
+fn insert_json_member(
+    text: &str,
+    container: &str,
+    name: &str,
+    entry: &str,
+    jsonc: bool,
+) -> Result<String, EditError> {
+    let body = strip_bom(text);
+    let document = if jsonc {
+        parse_jsonc(body)?
+    } else {
+        serde_json::from_str(body).map_err(|_| edit_error("INVALID_FORMAT", "JSON \u{00e7}\u{00f6}z\u{00fc}mlenemedi."))?
+    };
+    let servers = document.get(container).and_then(Value::as_object)
+        .ok_or_else(|| edit_error("SOURCE_CHANGED", "Hedef dosyada MCP b\u{00f6}l\u{00fc}m\u{00fc} yok."))?;
+    if servers.contains_key(name) {
+        return Err(edit_error("TARGET_EXISTS", "Hedef kapsamda ayn\u{0131} adl\u{0131} kay\u{0131}t zaten var."));
+    }
+    let mut scanner = JsonScan::new(body, jsonc);
+    scanner.skip()?;
+    let (_, root_members, _) = scanner.parse_object()?;
+    let section = root_members.iter().find(|member| member.key == container)
+        .ok_or_else(|| edit_error("SOURCE_CHANGED", "Hedef b\u{00f6}l\u{00fc}m dosyada yok."))?;
+    if body.as_bytes().get(section.value_start) != Some(&b'{') {
+        return Err(edit_error("SOURCE_CHANGED", "Hedef b\u{00f6}l\u{00fc}m nesne de\u{011f}il."));
+    }
+    let mut inner = JsonScan::new(body, jsonc);
+    inner.index = section.value_start;
+    let (object_start, members, _) = inner.parse_object()?;
+    let key = serde_json::to_string(name)
+        .map_err(|_| edit_error("INVALID_FORMAT", "Kay\u{0131}t ad\u{0131} JSON'a d\u{00f6}n\u{00fc}\u{015f}t\u{00fc}r\u{00fc}lemedi."))?;
+    let (at, inserted) = if let Some(first) = members.first() {
+        let line_start = body[..first.key_start].rfind('\n').map(|index| index + 1).unwrap_or(0);
+        let indent = &body[line_start..first.key_start];
+        if !indent.is_empty() && indent.chars().all(|ch| ch == ' ' || ch == '\t') {
+            let newline = body[line_start..].find('\n').map(|index| line_start + index).unwrap_or(body.len());
+            let eol = if newline > line_start && body.as_bytes().get(newline - 1) == Some(&b'\r') { "\r\n" } else { "\n" };
+            (line_start, format!("{indent}{key}: {entry},{eol}"))
+        } else {
+            (first.key_start, format!("{key}: {entry}, "))
+        }
+    } else {
+        (object_start + 1, format!("{key}: {entry}"))
+    };
+    let mut after = String::with_capacity(body.len() + inserted.len());
+    after.push_str(&body[..at]);
+    after.push_str(&inserted);
+    after.push_str(&body[at..]);
+    let parsed = if jsonc {
+        parse_jsonc(&after)?
+    } else {
+        serde_json::from_str(&after).map_err(|error| edit_error("INVALID_FORMAT", &format!("D\u{00fc}zenlenmi\u{015f} JSON ge\u{00e7}ersiz: {error}")))?
+    };
+    if parsed.get(container).and_then(Value::as_object).and_then(|servers| servers.get(name)).is_none() {
+        return Err(edit_error("INVALID_FORMAT", "Eklenen kay\u{0131}t do\u{011f}rulanamad\u{0131}."));
+    }
+    Ok(reattach_bom(text, after))
+}
+
+fn insert_toml_member(
+    text: &str,
+    container: &str,
+    name: &str,
+    entry: &str,
+) -> Result<String, EditError> {
+    let body = strip_bom(text);
+    let document: toml::Value = body.parse()
+        .map_err(|_| edit_error("INVALID_FORMAT", "TOML \u{00e7}\u{00f6}z\u{00fc}mlenemedi."))?;
+    if document.get(container).and_then(toml::Value::as_table).and_then(|servers| servers.get(name)).is_some() {
+        return Err(edit_error("TARGET_EXISTS", "Hedef kapsamda ayn\u{0131} adl\u{0131} kay\u{0131}t zaten var."));
+    }
+    let value: toml::Value = entry.parse()
+        .map_err(|_| edit_error("INVALID_FORMAT", "Ta\u{015f}\u{0131}nan TOML kayd\u{0131} \u{00e7}\u{00f6}z\u{00fc}mlenemedi."))?;
+    let mut servers = toml::value::Table::new();
+    servers.insert(name.to_string(), value);
+    let mut root = toml::value::Table::new();
+    root.insert(container.to_string(), toml::Value::Table(servers));
+    let section = toml::to_string(&toml::Value::Table(root))
+        .map_err(|_| edit_error("INVALID_FORMAT", "TOML kayd\u{0131} yaz\u{0131}lamad\u{0131}."))?;
+    let mut after = body.to_string();
+    if !after.ends_with('\n') { after.push('\n'); }
+    after.push('\n');
+    after.push_str(&section);
+    let parsed: toml::Value = after.parse()
+        .map_err(|_| edit_error("INVALID_FORMAT", "Eklenmi\u{015f} TOML ge\u{00e7}ersiz."))?;
+    if parsed.get(container).and_then(toml::Value::as_table).and_then(|servers| servers.get(name)).is_none() {
+        return Err(edit_error("INVALID_FORMAT", "Eklenen TOML kayd\u{0131} do\u{011f}rulanamad\u{0131}."));
+    }
+    Ok(reattach_bom(text, after))
 }
 
 fn edit_json_enabled(
@@ -1153,6 +1315,8 @@ mod tests {
             client,
             scope: Scope::Global,
             project: None,
+            target_scope: None,
+            target_project: None,
         };
         plan(inventory, &[], &request).unwrap()
     }
@@ -1164,6 +1328,8 @@ mod tests {
             client,
             scope: Scope::Global,
             project: None,
+            target_scope: None,
+            target_project: None,
         };
         plan(inventory, &[], &request).unwrap()
     }

@@ -192,6 +192,8 @@ mod tests {
                 client: crate::integrations::model::ClientId::Claude,
                 scope: crate::integrations::model::Scope::Global,
                 project: None,
+                target_scope: None,
+                target_project: None,
             }),
         }, &env);
         assert_eq!(reply["ok"], true, "{reply}");
