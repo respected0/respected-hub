@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 
 pub fn scan(env: &Environment, projects: &[Project]) -> Inventory {
     let mut inventory = Inventory::default();
-    read_only(&mut inventory, ClientId::Gemini);
+    read_only(&mut inventory, ClientId::Gemini, false, false, Some("Gemini CLI etkinliğini mcp-server-enablement.json içinde tutar; biçim doğrulanmadığı için Hub yazmaz."));
     add_mcp(&mut inventory, &env.home.join(".gemini/settings.json"), Scope::Global, None);
     for root in skill_roots(&env.home) {
         add_skills(&mut inventory, ClientId::Gemini, &root, Scope::Global, None, None, Owner::User);

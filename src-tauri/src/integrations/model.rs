@@ -208,6 +208,14 @@ pub struct Capability {
     pub plan: bool,
     pub apply: bool,
     pub undo: bool,
+    /// Native or documented enable support for an MCP entry.
+    #[serde(default)]
+    pub enable: bool,
+    #[serde(default)]
+    pub disable: bool,
+    /// User-facing reason when a toggle cannot be guaranteed.
+    #[serde(default)]
+    pub toggle_reason: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -19,7 +19,7 @@ use toml::Value;
 
 pub fn scan(env: &Environment, projects: &[Project]) -> Inventory {
     let mut inventory = Inventory::default();
-    read_only(&mut inventory, ClientId::Codex);
+    read_only(&mut inventory, ClientId::Codex, true, true, None);
     let root = env.vars.get("CODEX_HOME").map(PathBuf::from).unwrap_or_else(|| env.home.join(".codex"));
     let global_path = root.join("config.toml");
     let global = read_toml(&mut inventory, &global_path);

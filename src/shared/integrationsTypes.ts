@@ -28,7 +28,7 @@ export interface ClientState {
   client: ClientId; installed: boolean; configured: boolean; status: ObservedStatus;
   version: string | null; executable: string | null; config_paths: string[];
 }
-export interface Capability { client: ClientId; read: boolean; plan: boolean; apply: boolean; undo: boolean }
+export interface Capability { client: ClientId; read: boolean; plan: boolean; apply: boolean; undo: boolean; enable: boolean; disable: boolean; toggle_reason: string | null }
 export interface ScanIssue { code: string; message: string; source_path: string | null }
 export interface Inventory {
   assets: Asset[]; bindings: Binding[]; clients: ClientState[];

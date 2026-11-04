@@ -31,9 +31,25 @@ pub(super) fn source(path: &Path, owner: Owner, format: SourceFormat, fingerprin
 }
 
 /// Preview planning is available for the MCP formats the planner can read; apply/undo stay
-/// closed until the M3 write gate.
-pub(super) fn read_only(inventory: &mut Inventory, client: ClientId) {
-    inventory.capabilities.push(Capability { client, read: true, plan: true, apply: false, undo: false });
+/// closed until the M3 write gate. Enable/disable is opt-in per adapter and needs a
+/// format-preserving, single-file edit with a readback.
+pub(super) fn read_only(
+    inventory: &mut Inventory,
+    client: ClientId,
+    enable: bool,
+    disable: bool,
+    toggle_reason: Option<&str>,
+) {
+    inventory.capabilities.push(Capability {
+        client,
+        read: true,
+        plan: true,
+        apply: false,
+        undo: false,
+        enable,
+        disable,
+        toggle_reason: toggle_reason.map(str::to_string),
+    });
 }
 
 /// Read one JSON/JSONC file. Errors never include file contents, only the path and a fixed reason.

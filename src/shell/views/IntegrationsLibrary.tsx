@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { thirdPartyInventory } from '../../shared/api.ts';
-import type { AssetKind, ClientId, ClientState, InventoryResult, ResolutionState, Scope } from '../../shared/integrationsTypes.ts';
+import type { AssetKind, ClientId, ClientState, InventoryResult, ResolutionState, Scope, Capability } from '../../shared/integrationsTypes.ts';
 import {
   filterIntegrations, groupIntegrations, INTEGRATION_CLIENT_LABEL, INTEGRATION_CLIENT_ORDER,
   INTEGRATION_KINDS, INTEGRATION_KIND_LABEL, INTEGRATION_SCOPE_LABEL, INTEGRATION_STATE_LABEL, ownerLabel,
@@ -12,6 +12,14 @@ const STATE_TONE: Record<ResolutionState, string> = {
 
 const clientStatus = (client: ClientState | undefined) =>
   client ? (client.configured ? 'ayar var' : client.installed ? 'kurulu' : 'bulunamadı') : 'bilinmiyor';
+
+const ToggleBadge = ({ capability }: { capability: Capability | undefined }) => {
+  const toggle = Boolean(capability?.enable && capability?.disable);
+  return <span className={`badge ${toggle ? 'tone-ok' : 'tone-idle'}`}
+    title={toggle ? 'Native enabled alanı güvenli biçimde değiştirilebilir.' : capability?.toggle_reason ?? 'Bu istemci için güvenli toggle yok.'}>
+    {toggle ? 'Aç/kapa destekleniyor' : 'Toggle yok'}
+  </span>;
+};
 
 export default function IntegrationsLibrary() {
   const [result, setResult] = useState<InventoryResult | null>(null);
@@ -96,7 +104,7 @@ export default function IntegrationsLibrary() {
               {entry.project && <span className="mono integration-root" title={entry.project.root}>{entry.project.root}</span>}
             </div>
             <div className="integration-state"><span className={`badge ${STATE_TONE[entry.state]}`}>{INTEGRATION_STATE_LABEL[entry.state]}</span>
-              {entry.managed && <span className="badge tone-live">Hub yönetiyor</span>}</div>
+              {entry.managed && <span className="badge tone-live">Hub yönetiyor</span>}<ToggleBadge capability={result.inventory.capabilities.find(item => item.client === entry.client)} /></div>
             <div className="integration-owner"><span>{ownerLabel(entry.owner)}</span>
               <small className="muted">{entry.managed ? 'Hub tarafından yazıldı' : 'Dış kaynak'}</small></div>
             <details className="integration-source"><summary>Kaynağı göster</summary><code>{entry.source_path}</code></details>

@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 
 pub fn scan(env: &Environment, projects: &[Project]) -> Inventory {
     let mut inventory = Inventory::default();
-    read_only(&mut inventory, ClientId::Cursor);
+    read_only(&mut inventory, ClientId::Cursor, false, false, Some("Cursor toggle durumunu uygulama içinde tutar; yapılandırma dosyasında belgelenmiş alan yok ve değişiklik yeniden başlatma gerektirir."));
     add_mcp(&mut inventory, &env.home.join(".cursor/mcp.json"), Scope::Global, None);
     for root in skill_roots(&env.home) {
         add_skills_recursive(&mut inventory, ClientId::Cursor, &root, Scope::Global, None, Owner::User);

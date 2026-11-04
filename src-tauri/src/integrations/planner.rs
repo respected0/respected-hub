@@ -21,6 +21,8 @@ const PLAN_TTL_SECONDS: u64 = 300;
 #[serde(rename_all = "snake_case")]
 pub enum Operation {
     RemoveMcp,
+    EnableMcp,
+    DisableMcp,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -81,10 +83,18 @@ pub fn plan_at(inventory: &Inventory, projects: &[Project], request: &PlanReques
     let binding = find_binding(inventory, request)?;
     let asset = inventory.assets.iter().find(|asset| asset.key == request.asset_key)
         .ok_or_else(|| fail("TARGET_NOT_FOUND", "Seçilen varlık envanterde bulunamadı; envanteri yenileyin."))?;
-    let supported = inventory.capabilities.iter().find(|item| item.client == binding.client)
-        .map(|item| item.plan).unwrap_or(false);
+    let capability = inventory.capabilities.iter().find(|item| item.client == binding.client);
+    let supported = capability.map(|item| match request.operation {
+        Operation::RemoveMcp => item.plan,
+        Operation::EnableMcp => item.enable,
+        Operation::DisableMcp => item.disable,
+    }).unwrap_or(false);
     if !supported || asset.kind != AssetKind::Mcp {
-        return Err(fail("UNSUPPORTED_CAPABILITY", "Bu istemci veya varlık türü için değişiklik planı desteklenmiyor."));
+        let reason = capability.and_then(|item| item.toggle_reason.as_deref())
+            .filter(|_| request.operation != Operation::RemoveMcp)
+            .map(|reason| format!(" {reason}"))
+            .unwrap_or_default();
+        return Err(fail("UNSUPPORTED_CAPABILITY", &format!("Bu istemci veya varlık türü için değişiklik planı desteklenmiyor.{reason}")));
     }
     if binding.managed || matches!(binding.source.owner, Owner::Product { .. } | Owner::Catalog) {
         return Err(fail("OWNER_PROTECTED", "Bu kayıt Respected ürününe veya kataloğa ait; harici motorla değiştirilemez."));
@@ -98,12 +108,16 @@ pub fn plan_at(inventory: &Inventory, projects: &[Project], request: &PlanReques
     }
     let (before, after_sha256, diff) = match binding.source.format {
         SourceFormat::Json | SourceFormat::Jsonc | SourceFormat::Toml =>
-            plan_document(&text, binding.source.format, container, &asset.name)?,
+            plan_document(&text, binding.source.format, container, &asset.name, request.operation)?,
         _ => return Err(fail("UNSUPPORTED_CAPABILITY", "Bu kaynak biçimi için biçim korumalı plan henüz desteklenmiyor.")),
     };
     let mut risks = Vec::new();
-    if binding.scope == Scope::Global && !projects.is_empty() {
-        risks.push("Genel kayıt kaldırıldığında bu istemciyi kullanan tüm projeler etkilenebilir.".to_string());
+    if matches!(binding.scope, Scope::Global) && !projects.is_empty() {
+        let effect = if request.operation == Operation::RemoveMcp { "kaldırıldığında" } else { "değiştirildiğinde" };
+        risks.push(format!("Genel kayıt {effect} bu istemciyi kullanan tüm projeler etkilenebilir."));
+    }
+    if matches!(request.operation, Operation::EnableMcp | Operation::DisableMcp) {
+        risks.push("İstemci yeniden başlatılmadan yeni etkinlik durumu görünmeyebilir.".to_string());
     }
     if binding.source.format == SourceFormat::Toml {
         risks.push("TOML düzenlemesi biçim korumalıdır; yazma kapısı ürün sahibi onayına kadar kapalıdır.".to_string());
@@ -194,9 +208,16 @@ fn find_binding<'a>(inventory: &'a Inventory, request: &PlanRequest) -> Result<&
     }
 }
 
-fn plan_document(text: &str, format: SourceFormat, container: &str, name: &str) -> Result<(Value, String, Vec<String>), PlanError> {
+fn plan_document(
+    text: &str,
+    format: SourceFormat,
+    container: &str,
+    name: &str,
+    operation: Operation,
+) -> Result<(Value, String, Vec<String>), PlanError> {
     let body = text.strip_prefix('\u{feff}').unwrap_or(text);
-    let (before, after_text) = match format {
+    let enabled = operation == Operation::EnableMcp;
+    let (entry, after_text) = match format {
         SourceFormat::Json => {
             let document: Value = serde_json::from_str(body)
                 .map_err(|_| fail("SOURCE_CHANGED", "Hedef dosya artık geçerli JSON değil; planı yenileyin."))?;
@@ -205,9 +226,11 @@ fn plan_document(text: &str, format: SourceFormat, container: &str, name: &str) 
             if !entry.is_object() {
                 return Err(fail("SOURCE_CHANGED", "Hedef kayıt beklenen biçimde değil; planı yenileyin."));
             }
-            let after = crate::integrations::apply::remove_member(text, format, container, name)
-                .map_err(|error| fail(error.code, &error.message))?;
-            (security::redact_json(&entry), after)
+            let after = match operation {
+                Operation::RemoveMcp => crate::integrations::apply::remove_member(text, format, container, name),
+                _ => crate::integrations::apply::set_enabled(text, format, container, name, enabled),
+            }.map_err(|error| fail(error.code, &error.message))?;
+            (entry, after)
         }
         SourceFormat::Jsonc => {
             let document = crate::integrations::apply::parse_jsonc(text)
@@ -217,9 +240,11 @@ fn plan_document(text: &str, format: SourceFormat, container: &str, name: &str) 
             if !entry.is_object() {
                 return Err(fail("SOURCE_CHANGED", "Hedef kayıt beklenen biçimde değil; planı yenileyin."));
             }
-            let after = crate::integrations::apply::remove_member(text, format, container, name)
-                .map_err(|error| fail(error.code, &error.message))?;
-            (security::redact_json(&entry), after)
+            let after = match operation {
+                Operation::RemoveMcp => crate::integrations::apply::remove_member(text, format, container, name),
+                _ => crate::integrations::apply::set_enabled(text, format, container, name, enabled),
+            }.map_err(|error| fail(error.code, &error.message))?;
+            (entry, after)
         }
         SourceFormat::Toml => {
             let document: toml::Value = body.parse()
@@ -228,15 +253,21 @@ fn plan_document(text: &str, format: SourceFormat, container: &str, name: &str) 
                 .ok_or_else(|| fail("SOURCE_CHANGED", "Hedef kayıt dosyada artık yok; planı yenileyin."))?;
             let before = serde_json::to_value(&entry)
                 .map_err(|_| fail("INTERNAL", "TOML kaydı önizlemeye dönüştürülemedi."))?;
-            let after = crate::integrations::apply::remove_member(text, format, container, name)
-                .map_err(|error| fail(error.code, &error.message))?;
-            (security::redact_json(&before), after)
+            let after = match operation {
+                Operation::RemoveMcp => crate::integrations::apply::remove_member(text, format, container, name),
+                _ => crate::integrations::apply::set_enabled(text, format, container, name, enabled),
+            }.map_err(|error| fail(error.code, &error.message))?;
+            (before, after)
         }
-        _ => return Err(fail("UNSUPPORTED_CAPABILITY", "Bu kaynak biçimi için biçim korumalı plan yok.")),
+        _ => return Err(fail("UNSUPPORTED_CAPABILITY", "Bu kaynak biçimi için format korumalı plan yok.")),
     };
-    Ok((before, sha256(after_text.as_bytes()), vec![format!("- {container}.{name}")]))
+    let diff = if operation == Operation::RemoveMcp {
+        vec![format!("- {container}.{name}")]
+    } else {
+        vec![format!("~ {container}.{name}.enabled = {enabled}")]
+    };
+    Ok((security::redact_json(&entry), sha256(after_text.as_bytes()), diff))
 }
-
 fn container_for(client: ClientId) -> &'static str {
     match client {
         ClientId::Codex => "mcp_servers",
@@ -313,6 +344,26 @@ mod tests {
         }
     }
 
+    fn codex_fixture(label: &str) -> (Temp, Environment) {
+        let temp = Temp::new(label);
+        let dir = temp.0.join("home/.codex");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("config.toml"), "# codex comment\n[mcp_servers.postgres]\ncommand = \"npx\"\nenabled = true\n").unwrap();
+        let env = temp.env();
+        (temp, env)
+    }
+
+    fn toggle_selector(inventory: &Inventory, name: &str, client: ClientId, operation: Operation) -> PlanRequest {
+        let asset = inventory.assets.iter().find(|asset| asset.name == name).unwrap();
+        PlanRequest {
+            operation,
+            asset_key: asset.key.clone(),
+            client,
+            scope: Scope::Global,
+            project: None,
+        }
+    }
+
     #[test]
     fn plan_is_read_only_redacted_and_includes_hash_diff_and_projects() {
         let (temp, env) = fixture("preview");
@@ -369,4 +420,57 @@ mod tests {
         let error = plan(&inventory, &[], &selector(&inventory, "postgres")).unwrap_err();
         assert_eq!(error.code, "UNSUPPORTED_CAPABILITY");
     }
+    #[test]
+    fn codex_toggle_plan_is_read_only_and_explains_restart() {
+        let (temp, env) = codex_fixture("toggle");
+        let inventory = inventory::scan(&env, &[]);
+        let path = temp.0.join("home/.codex/config.toml");
+        let before = fs::read(&path).unwrap();
+        let plan = plan(&inventory, &[], &toggle_selector(&inventory, "postgres", ClientId::Codex, Operation::DisableMcp)).unwrap();
+        assert_eq!(fs::read(&path).unwrap(), before, "planning must not write");
+        assert_eq!(plan.targets[0].diff, vec!["~ mcp_servers.postgres.enabled = false".to_string()]);
+        assert!(plan.risks.iter().any(|risk| risk.contains("yeniden ba")));
+        assert_ne!(plan.targets[0].before_sha256, plan.targets[0].after_sha256);
+        verify(&plan, plan.created_at).unwrap();
+    }
+
+    #[test]
+    fn codex_toggle_does_not_touch_other_client_files_for_same_asset() {
+        let (temp, env) = codex_fixture("isolated");
+        let claude = temp.0.join("home/.claude.json");
+        let claude_text = r#"{"mcpServers":{"postgres":{"command":"npx","enabled":true}}}"#;
+        fs::write(&claude, claude_text).unwrap();
+        let inventory = inventory::scan(&env, &[]);
+        let codex = temp.0.join("home/.codex/config.toml");
+        let claude_before = fs::read(&claude).unwrap();
+        let codex_before = fs::read(&codex).unwrap();
+        let plan = plan(&inventory, &[], &toggle_selector(&inventory, "postgres", ClientId::Codex, Operation::DisableMcp)).unwrap();
+        assert!(plan.targets[0].path.contains(".codex") && plan.targets[0].path.ends_with("config.toml"));
+        assert_eq!(fs::read(&claude).unwrap(), claude_before);
+        assert_eq!(fs::read(&codex).unwrap(), codex_before);
+    }
+
+    #[test]
+    fn unsupported_clients_reject_toggle_without_touching_files() {
+        let temp = Temp::new("unsupported-toggle");
+        let home = temp.0.join("home");
+        fs::create_dir_all(home.join(".cursor")).unwrap();
+        fs::create_dir_all(home.join(".gemini")).unwrap();
+        let claude = home.join(".claude.json");
+        let cursor = home.join(".cursor/mcp.json");
+        let gemini = home.join(".gemini/settings.json");
+        let text = r#"{"mcpServers":{"postgres":{"command":"npx","enabled":true}}}"#;
+        fs::write(&claude, text).unwrap();
+        fs::write(&cursor, text).unwrap();
+        fs::write(&gemini, text).unwrap();
+        let env = temp.env();
+        let inventory = inventory::scan(&env, &[]);
+        for (client, path) in [(ClientId::Claude, &claude), (ClientId::Cursor, &cursor), (ClientId::Gemini, &gemini)] {
+            let before = fs::read(path).unwrap();
+            let error = plan(&inventory, &[], &toggle_selector(&inventory, "postgres", client, Operation::EnableMcp)).unwrap_err();
+            assert_eq!(error.code, "UNSUPPORTED_CAPABILITY");
+            assert_eq!(fs::read(path).unwrap(), before);
+        }
+    }
+
 }

@@ -1,4 +1,4 @@
-﻿//! Transactional writer for one planned third-party integration change.
+//! Transactional writer for one planned third-party integration change.
 //!
 //! The writer accepts only a server-issued `OperationPlan`; it never takes a path
 //! from the UI. It re-verifies the plan digest, TTL and source hash, re-derives the
@@ -80,7 +80,7 @@ where
     F: FnMut(&Path, &[u8]) -> io::Result<()>,
 {
     validate_transaction_id(transaction_id)?;
-    if plan.operation != Operation::RemoveMcp {
+    if !matches!(plan.operation, Operation::RemoveMcp | Operation::EnableMcp | Operation::DisableMcp) {
         return Err(apply_error("UNSUPPORTED_CAPABILITY", "Bu işlem için transactional writer yok."));
     }
     planner::verify(plan, now).map_err(|error| ApplyError {
@@ -119,7 +119,12 @@ where
     {
         return Err(apply_error("SOURCE_CHANGED", "Hedef dosya plan veya taramadan sonra değişti; planı yenileyin."));
     }
-    let after_text = remove_member(&text, target.format, container_for(plan.client), &plan.name).map_err(|error| ApplyError {
+    let container = container_for(plan.client);
+    let after_text = match plan.operation {
+        Operation::RemoveMcp => remove_member(&text, target.format, container, &plan.name),
+        Operation::EnableMcp => set_enabled(&text, target.format, container, &plan.name, true),
+        Operation::DisableMcp => set_enabled(&text, target.format, container, &plan.name, false),
+    }.map_err(|error| ApplyError {
         code: error.code.into(),
         message: error.message,
         recovery_backup: None,
@@ -318,6 +323,251 @@ pub fn remove_member(text: &str, format: SourceFormat, container: &str, name: &s
     }
 }
 
+/// Set only the native `enabled` field of one MCP entry. Every other byte is kept and
+/// the result is parsed again before it is returned.
+pub fn set_enabled(
+    text: &str,
+    format: SourceFormat,
+    container: &str,
+    name: &str,
+    enabled: bool,
+) -> Result<String, EditError> {
+    match format {
+        SourceFormat::Json => edit_json_enabled(text, container, name, false, enabled),
+        SourceFormat::Jsonc => edit_json_enabled(text, container, name, true, enabled),
+        SourceFormat::Toml => edit_toml_enabled(text, container, name, enabled),
+        _ => Err(edit_error("UNSUPPORTED_FORMAT", "Bu kaynak biçimi için biçim korumalı toggle yok.")),
+    }
+}
+
+fn edit_json_enabled(
+    text: &str,
+    container: &str,
+    name: &str,
+    jsonc: bool,
+    enabled: bool,
+) -> Result<String, EditError> {
+    let body = strip_bom(text);
+    let document = if jsonc {
+        parse_jsonc(body)?
+    } else {
+        serde_json::from_str(body).map_err(|_| edit_error("INVALID_FORMAT", "JSON çözümlenemedi."))?
+    };
+    if document.get(container).and_then(Value::as_object)
+        .and_then(|servers| servers.get(name)).and_then(Value::as_object).is_none()
+    {
+        return Err(edit_error("SOURCE_CHANGED", "Hedef kayıt dosyada nesne olarak yok."));
+    }
+
+    let mut scanner = JsonScan::new(body, jsonc);
+    scanner.skip()?;
+    let (_, root_members, _) = scanner.parse_object()?;
+    let section = root_members.iter().find(|member| member.key == container)
+        .ok_or_else(|| edit_error("SOURCE_CHANGED", "Hedef bölüm dosyada yok."))?;
+    if body.as_bytes().get(section.value_start) != Some(&b'{') {
+        return Err(edit_error("SOURCE_CHANGED", "Hedef bölüm nesne değil."));
+    }
+    let mut inner = JsonScan::new(body, jsonc);
+    inner.index = section.value_start;
+    let (_, members, _) = inner.parse_object()?;
+    let index = members.iter().position(|member| member.key == name)
+        .ok_or_else(|| edit_error("SOURCE_CHANGED", "Hedef kayıt dosyada yok."))?;
+    let server = &members[index];
+    if body.as_bytes().get(server.value_start) != Some(&b'{') {
+        return Err(edit_error("SOURCE_CHANGED", "Hedef kayıt nesne değil."));
+    }
+    let mut server_scan = JsonScan::new(body, jsonc);
+    server_scan.index = server.value_start;
+    let (object_start, server_members, _) = server_scan.parse_object()?;
+
+    let literal = if enabled { "true" } else { "false" };
+    let after = if let Some(member) = server_members.iter().find(|member| member.key == "enabled") {
+        if !matches!(body.as_bytes().get(member.value_start), Some(b't') | Some(b'f')) {
+            return Err(edit_error("UNSUPPORTED_FORMAT", "enabled alanı boolean değil; güvenli toggle yok."));
+        }
+        format!("{}{}{}", &body[..member.value_start], literal, &body[member.value_end..])
+    } else if let Some(first) = server_members.first() {
+        let line_start = body[..first.key_start].rfind('\n').map(|index| index + 1).unwrap_or(0);
+        let indent = &body[line_start..first.key_start];
+        if !indent.is_empty() && indent.chars().all(|ch| ch == ' ' || ch == '\t') {
+            let newline = body[line_start..].find('\n').map(|index| line_start + index).unwrap_or(body.len());
+            let eol = if newline > line_start && body.as_bytes().get(newline - 1) == Some(&b'\r') { "\r\n" } else { "\n" };
+            format!("{}{}\"enabled\": {literal},{eol}{}", &body[..line_start], indent, &body[line_start..])
+        } else {
+            format!("{}\"enabled\": {literal},{}", &body[..object_start + 1], &body[object_start + 1..])
+        }
+    } else {
+        format!("{}\"enabled\": {literal}{}", &body[..object_start + 1], &body[object_start + 1..])
+    };
+
+    let parsed = if jsonc { parse_jsonc(&after)? } else {
+        serde_json::from_str(&after).map_err(|_| edit_error("INVALID_FORMAT", "Düzenlenmiş JSON geçersiz."))?
+    };
+    let actual = parsed.get(container).and_then(Value::as_object).and_then(|servers| servers.get(name))
+        .and_then(Value::as_object).and_then(|entry| entry.get("enabled")).and_then(Value::as_bool);
+    if actual != Some(enabled) {
+        return Err(edit_error("INVALID_FORMAT", "JSON toggle hedef duruma ulaşmadı."));
+    }
+    Ok(reattach_bom(text, after))
+}
+
+fn edit_toml_enabled(text: &str, container: &str, name: &str, enabled: bool) -> Result<String, EditError> {
+    let body = strip_bom(text);
+    let document: toml::Value = body.parse()
+        .map_err(|_| edit_error("INVALID_FORMAT", "TOML çözümlenemedi."))?;
+    let entry = document.get(container).and_then(toml::Value::as_table).and_then(|table| table.get(name))
+        .ok_or_else(|| edit_error("SOURCE_CHANGED", "Hedef TOML kaydı dosyada yok."))?;
+    if !entry.is_table() {
+        return Err(edit_error("UNSUPPORTED_FORMAT", "Hedef TOML kaydı tablo değil."));
+    }
+    if let Some(value) = entry.as_table().and_then(|table| table.get("enabled")) {
+        if !matches!(value, toml::Value::Boolean(_)) {
+            return Err(edit_error("UNSUPPORTED_FORMAT", "enabled alanı boolean değil; güvenli toggle yok."));
+        }
+    }
+
+    let literal = if enabled { "true" } else { "false" };
+    let lines = line_spans(body);
+    let target = vec![container.to_string(), name.to_string()];
+    let mut headers = Vec::new();
+    for (index, (start, _, line)) in lines.iter().enumerate() {
+        if let Some((path, array)) = toml_header(line) {
+            headers.push((index, *start, path, array));
+        }
+    }
+    let starts_target = |path: &[String]| path.len() >= target.len() && path[..target.len()] == target[..];
+    let mut table_span: Option<(usize, usize)> = None;
+    let mut header_end: Option<usize> = None;
+    for (position, (_, start, path, array)) in headers.iter().enumerate() {
+        if !starts_target(path) { continue; }
+        if *array {
+            return Err(edit_error("UNSUPPORTED_FORMAT", "Hedef TOML tablo dizisi; güvenli toggle yok."));
+        }
+        if path != &target { continue; }
+        if table_span.is_some() {
+            return Err(edit_error("SOURCE_CHANGED", "Hedef TOML tablosu birden fazla kez tanımlanmış."));
+        }
+        let end = headers.iter().skip(position + 1)
+            .find(|(_, _, candidate, _)| !starts_target(candidate))
+            .map(|(_, next_start, _, _)| *next_start)
+            .unwrap_or(body.len());
+        table_span = Some((*start, end));
+        header_end = lines.iter().find(|(line_start, _, _)| line_start == start).map(|(_, line_end, _)| *line_end);
+    }
+
+    let mut value_span: Option<(usize, usize)> = None;
+    let mut inline_span: Option<(usize, usize)> = None;
+    let mut current: Option<Vec<String>> = None;
+    for (start, end, line) in &lines {
+        if let Some((path, _)) = toml_header(line) {
+            current = Some(path);
+            continue;
+        }
+        let Some((key_text, equals)) = split_assignment(line) else { continue };
+        let Some(path) = parse_key_path(key_text) else { continue };
+        let inside_target = current.as_deref() == Some(&target[..]);
+        let dotted_target = current.as_deref() != Some(&target[..])
+            && path.len() == 3 && path[0] == container && path[1] == name && path[2] == "enabled";
+        if (inside_target && path.len() == 1 && path[0] == "enabled") || dotted_target {
+            if value_span.is_some() {
+                return Err(edit_error("SOURCE_CHANGED", "enabled TOML içinde birden fazla kez tanımlanmış."));
+            }
+            let mut value_start = *start + equals + 1;
+            while matches!(body.as_bytes().get(value_start), Some(b' ') | Some(b'\t')) { value_start += 1; }
+            let mut value_end = value_start;
+            while matches!(body.as_bytes().get(value_end), Some(b'a'..=b'z')) { value_end += 1; }
+            value_span = Some((value_start, value_end));
+            continue;
+        }
+        if inside_target && path.first().map(String::as_str) == Some("enabled") {
+            return Err(edit_error("UNSUPPORTED_FORMAT", "enabled alt tablosu; güvenli toggle yok."));
+        }
+        let inline_target = (current.as_deref() == Some(&[container.to_string()][..])
+            && path.len() == 1 && path[0] == name)
+            || (current.is_none() && path.len() == 2 && path[0] == container && path[1] == name);
+        if inline_target {
+            let value_start = *start + equals + 1;
+            let trimmed = body[value_start..*end].trim_start();
+            if !trimmed.starts_with('{') {
+                return Err(edit_error("UNSUPPORTED_FORMAT", "Hedef TOML satır içi tablo değil."));
+            }
+            let brace = *end - trimmed.len();
+            let value_end = toml_inline_end(body, brace)?;
+            inline_span = Some((brace, value_end));
+        }
+    }
+
+    if table_span.is_some() && inline_span.is_some() {
+        return Err(edit_error("SOURCE_CHANGED", "Hedef TOML hem tablo hem satır olarak tanımlı."));
+    }
+    let after = if let Some((start, end)) = value_span {
+        format!("{}{}{}", &body[..start], literal, &body[end..])
+    } else if let Some((start, _end)) = table_span {
+        let insert = header_end.unwrap_or(start);
+        let eol = if body[..insert].ends_with("\r\n") { "\r\n" } else { "\n" };
+        format!("{}enabled = {literal}{eol}{}", &body[..insert], &body[insert..])
+    } else if let Some((start, end)) = inline_span {
+        let replacement = set_inline_enabled(&body[start..end], literal)?;
+        format!("{}{}{}", &body[..start], replacement, &body[end..])
+    } else {
+        return Err(edit_error("UNSUPPORTED_FORMAT", "Desteklenen TOML toggle biçimi bulunamadı."));
+    };
+
+    let parsed: toml::Value = after.parse()
+        .map_err(|error| edit_error("INVALID_FORMAT", &format!("Düzenlenmiş TOML geçersiz: {error}")))?;
+    let actual = parsed.get(container).and_then(toml::Value::as_table).and_then(|table| table.get(name))
+        .and_then(toml::Value::as_table).and_then(|table| table.get("enabled")).and_then(toml::Value::as_bool);
+    if actual != Some(enabled) {
+        return Err(edit_error("INVALID_FORMAT", "TOML toggle hedef duruma ulaşmadı."));
+    }
+    Ok(reattach_bom(text, after))
+}
+
+fn set_inline_enabled(inner: &str, literal: &str) -> Result<String, EditError> {
+    if !inner.starts_with('{') || !inner.ends_with('}') {
+        return Err(edit_error("UNSUPPORTED_FORMAT", "Satır içi tablo bekleniyordu."));
+    }
+    let bytes = inner.as_bytes();
+    let mut index = 1;
+    let mut in_string = false;
+    let mut escaped = false;
+    let mut depth = 0usize;
+    let mut member_start = 1usize;
+    while index + 1 < bytes.len() {
+        let byte = bytes[index];
+        if in_string {
+            if escaped { escaped = false; }
+            else if byte == b'\\' { escaped = true; }
+            else if byte == b'"' { in_string = false; }
+            index += 1;
+            continue;
+        }
+        match byte {
+            b'"' => { in_string = true; index += 1; }
+            b'{' | b'[' => { depth += 1; index += 1; }
+            b'}' | b']' => { depth = depth.saturating_sub(1); index += 1; }
+            b'=' if depth == 0 => {
+                let key = inner[member_start..index].trim();
+                if parse_key_path(key).as_deref() == Some(&["enabled".to_string()][..]) {
+                    let mut value_start = index + 1;
+                    while matches!(bytes.get(value_start), Some(b' ') | Some(b'\t')) { value_start += 1; }
+                    let mut value_end = value_start;
+                    while matches!(bytes.get(value_end), Some(b'a'..=b'z')) { value_end += 1; }
+                    return Ok(format!("{}{}{}", &inner[..value_start], literal, &inner[value_end..]));
+                }
+                index += 1;
+            }
+            b',' if depth == 0 => { member_start = index + 1; index += 1; }
+            _ => index += 1,
+        }
+    }
+    let content = inner[1..inner.len() - 1].trim();
+    if content.is_empty() {
+        Ok(format!("{{ enabled = {literal} }}"))
+    } else {
+        Ok(format!("{{ enabled = {literal}, {}", &inner[1..]))
+    }
+}
 pub fn parse_jsonc(text: &str) -> Result<Value, EditError> {
     let body = strip_bom(text);
     let cleaned = strip_jsonc_text(body)?;
@@ -783,6 +1033,34 @@ fn unquote_key(text: &str) -> Option<String> {
     if text.contains(['"', '\'', '[', ']', '{', '}']) { None } else { Some(text.to_string()) }
 }
 
+fn toml_inline_end(body: &str, start: usize) -> Result<usize, EditError> {
+    let bytes = body.as_bytes();
+    let mut index = start;
+    let mut depth = 0i32;
+    let mut quote = None;
+    while index < bytes.len() {
+        let byte = bytes[index];
+        if quote.is_some() {
+            if quote == Some(b'"') && byte == b'\\' { index += 2; continue; }
+            if Some(byte) == quote { quote = None; }
+            index += 1;
+            continue;
+        }
+        match byte {
+            b'"' | b'\'' => quote = Some(byte),
+            b'{' | b'[' => depth += 1,
+            b'}' | b']' => {
+                depth -= 1;
+                if depth == 0 { return Ok(index + 1); }
+                if depth < 0 { break; }
+            }
+            _ => {}
+        }
+        index += 1;
+    }
+    Err(edit_error("UNSUPPORTED_FORMAT", "TOML satır içi tablo kapanmıyor."))
+}
+
 fn toml_value_end(body: &str, value_start: usize) -> Result<usize, EditError> {
     let bytes = body.as_bytes();
     let mut index = value_start;
@@ -864,13 +1142,24 @@ mod tests {
         };
         let mut inventory = Inventory::default();
         inventory.add_binding(asset, binding);
-        inventory.capabilities.push(Capability { client, read: true, plan: true, apply: false, undo: false });
+        inventory.capabilities.push(Capability { client, read: true, plan: true, apply: false, undo: false, enable: true, disable: true, toggle_reason: None });
         inventory
     }
 
     fn make_plan(inventory: &Inventory, client: ClientId) -> OperationPlan {
         let request = PlanRequest {
             operation: Operation::RemoveMcp,
+            asset_key: inventory.assets[0].key.clone(),
+            client,
+            scope: Scope::Global,
+            project: None,
+        };
+        plan(inventory, &[], &request).unwrap()
+    }
+
+    fn make_toggle_plan(inventory: &Inventory, client: ClientId, operation: Operation) -> OperationPlan {
+        let request = PlanRequest {
+            operation,
             asset_key: inventory.assets[0].key.clone(),
             client,
             scope: Scope::Global,
@@ -1050,4 +1339,63 @@ mod tests {
         apply_at(&plan, &inventory, &[], "tx-mode", plan.created_at).unwrap();
         assert_eq!(fs::metadata(&path).unwrap().permissions().mode() & 0o777, 0o640);
     }
+    #[test]
+    fn jsonc_disable_keeps_comments_and_other_entries() {
+        let text = "{\n  // top comment\n  \"mcp\": {\n    /* postgres */\n    \"postgres\": { \"command\": \"npx\", \"enabled\": true }, // state\n    \"keep\": { \"command\": \"keep\", \"enabled\": true }\n  },\n  \"unknown\": { \"value\": 1 }\n}\n";
+        let (_temp, path, inventory) = fixture("jsonc-toggle", "opencode.jsonc", text, SourceFormat::Jsonc, ClientId::OpenCode);
+        let plan = make_toggle_plan(&inventory, ClientId::OpenCode, Operation::DisableMcp);
+        apply_at(&plan, &inventory, &[], "tx-toggle-jsonc", plan.created_at).unwrap();
+        let after = fs::read_to_string(&path).unwrap();
+        assert!(after.contains("// top comment"));
+        assert!(after.contains("/* postgres */"));
+        assert!(after.contains("\"postgres\": { \"command\": \"npx\", \"enabled\": false }"));
+        assert!(after.contains("\"keep\": { \"command\": \"keep\", \"enabled\": true }"));
+        assert_eq!(plan.targets[0].diff, vec!["~ mcp.postgres.enabled = false".to_string()]);
+        assert!(parse_jsonc(&after).is_ok());
+        assert!(!inventory.capabilities[0].apply && !inventory.capabilities[0].undo);
+    }
+
+    #[test]
+    fn toml_disable_keeps_comments_and_other_tables() {
+        let text = "# root comment\n[mcp_servers.keep]\ncommand = \"keep\"\nenabled = true\n\n# postgres section\n[mcp_servers.postgres]\ncommand = \"npx\"\nenabled = true # keep me\n\n[other]\nvalue = 1 # other note\n";
+        let (_temp, path, inventory) = fixture("toml-toggle", "config.toml", text, SourceFormat::Toml, ClientId::Codex);
+        let plan = make_toggle_plan(&inventory, ClientId::Codex, Operation::DisableMcp);
+        apply_at(&plan, &inventory, &[], "tx-toggle-toml", plan.created_at).unwrap();
+        let after = fs::read_to_string(&path).unwrap();
+        assert!(after.contains("# root comment"));
+        assert!(after.contains("# other note"));
+        assert!(after.contains("enabled = false # keep me"));
+        assert!(after.parse::<toml::Value>().is_ok());
+    }
+
+    #[test]
+    fn toml_toggle_adds_missing_enabled_after_header() {
+        let text = "[mcp_servers.postgres]\ncommand = \"npx\"\n\n[other]\nvalue = 1\n";
+        let (_temp, path, inventory) = fixture("toml-add", "config.toml", text, SourceFormat::Toml, ClientId::Codex);
+        let plan = make_toggle_plan(&inventory, ClientId::Codex, Operation::DisableMcp);
+        apply_at(&plan, &inventory, &[], "tx-add-toml", plan.created_at).unwrap();
+        let after = fs::read_to_string(&path).unwrap();
+        assert!(after.starts_with("[mcp_servers.postgres]\nenabled = false\ncommand = \"npx\""));
+        assert!(after.contains("[other]\nvalue = 1"));
+        assert!(after.parse::<toml::Value>().is_ok());
+    }
+
+    #[test]
+    fn toml_inline_toggle_changes_only_target_entry() {
+        let text = "[mcp_servers]\npostgres = { command = \"npx\", enabled = true }\nkeep = { command = \"keep\", enabled = true }\n";
+        let edited = set_enabled(text, SourceFormat::Toml, "mcp_servers", "postgres", false).unwrap();
+        assert!(edited.contains("postgres = { command = \"npx\", enabled = false }"));
+        assert!(edited.contains("keep = { command = \"keep\", enabled = true }"));
+        assert!(edited.parse::<toml::Value>().is_ok());
+    }
+
+    #[test]
+    fn non_boolean_enabled_is_rejected_without_edit() {
+        let error = set_enabled("[mcp_servers.postgres]\nenabled = \"yes\"\n", SourceFormat::Toml, "mcp_servers", "postgres", false).unwrap_err();
+        assert_eq!(error.code, "UNSUPPORTED_FORMAT");
+        let json = "{\"mcpServers\":{\"postgres\":{\"command\":\"npx\",\"enabled\":1}}}";
+        let error = set_enabled(json, SourceFormat::Json, "mcpServers", "postgres", false).unwrap_err();
+        assert_eq!(error.code, "UNSUPPORTED_FORMAT");
+    }
+
 }

@@ -25,7 +25,7 @@ const PLUGIN_DEPTH: usize = 8;
 /// No project is discovered by walking the disk.
 pub fn scan(env: &Environment, projects: &[Project]) -> Inventory {
     let mut inventory = Inventory::default();
-    read_only(&mut inventory, ClientId::Claude);
+    read_only(&mut inventory, ClientId::Claude, false, false, Some("Claude Code sunucu girdisinde enabled alanı yok; devre dışı bırakma proje bazlı listelerle yapılır. Hub bu sürümde güvenli tek dosyalık toggle sunmuyor."));
     let config = env.vars.get("CLAUDE_CONFIG_DIR").map(PathBuf::from).unwrap_or_else(|| env.home.join(".claude"));
     let user_mcp = if env.vars.contains_key("CLAUDE_CONFIG_DIR") { config.join(".claude.json") } else { env.home.join(".claude.json") };
 

@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
 
 pub fn scan(env: &Environment, projects: &[Project]) -> Inventory {
     let mut inventory = Inventory::default();
-    read_only(&mut inventory, ClientId::OpenCode);
+    read_only(&mut inventory, ClientId::OpenCode, true, true, None);
     let config_home = env.vars.get("XDG_CONFIG_HOME").map(PathBuf::from).unwrap_or_else(|| env.home.join(".config"));
     for (path, scope, project) in global_layers(env, &config_home) {
         add_mcp(&mut inventory, &path, scope, project);
