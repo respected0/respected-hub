@@ -18,12 +18,12 @@ export interface CatalogFilter {
 const fold = (value: string) => value.toLocaleLowerCase('tr');
 
 /** Categories in the catalog, sorted for Turkish readers. */
-export function catalogCategories(entries: CatalogEntry[]): string[] {
+export function catalogCategories<T extends CatalogEntry>(entries: T[]): string[] {
   return [...new Set(entries.map(entry => entry.category))].sort((a, b) => a.localeCompare(b, 'tr'));
 }
 
 /** Local-only filter: never touches the network, so it also works offline. */
-export function filterCatalog(entries: CatalogEntry[], filter: CatalogFilter): CatalogEntry[] {
+export function filterCatalog<T extends CatalogEntry>(entries: T[], filter: CatalogFilter): T[] {
   const query = fold(filter.query?.trim() ?? '');
   const kind = filter.kind ?? 'all';
   const client = filter.client ?? 'all';

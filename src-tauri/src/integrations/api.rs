@@ -47,14 +47,14 @@ pub fn execute_with(request: Request, env: &Environment, managed: &Path) -> Valu
         }
         Action::Catalog => match catalog::load(managed) {
             Ok((entries, verified, sequence)) => json!({ "ok": true, "result": {
-                "read_only": true, "entries": entries, "sequence": sequence,
+                "read_only": true, "entries": catalog::reviewed(entries), "sequence": sequence,
                 "trust": { "signature_verified": verified, "scope": "metadata_only", "note": catalog::SIGNATURE_SCOPE_NOTE }
             }, "error": Value::Null }),
             Err(message) => json!({ "ok": false, "result": Value::Null, "error": { "code": "catalog_invalid", "message": message } }),
         },
         Action::CatalogRefresh => match catalog::refresh(managed) {
             Ok(catalog) => json!({ "ok": true, "result": {
-                "read_only": false, "entries": catalog.entries, "sequence": catalog.sequence,
+                "read_only": false, "entries": catalog::reviewed(catalog.entries), "sequence": catalog.sequence,
                 "trust": { "signature_verified": true, "scope": "metadata_only", "note": catalog::SIGNATURE_SCOPE_NOTE }
             }, "error": Value::Null }),
             Err(message) => json!({ "ok": false, "result": Value::Null, "error": { "code": "catalog_refresh_failed", "message": message } }),
@@ -189,6 +189,10 @@ mod tests {
         assert!(entries.len() >= 50, "only {} catalog entries", entries.len());
         for entry in entries {
             assert!(entry["source_url"].as_str().unwrap().starts_with("https://github.com/"));
+            assert_eq!(entry["risk"]["approval_required"], true);
+            assert_eq!(entry["risk"]["permissions_status"], "unknown");
+            assert_eq!(entry["risk"]["severity"], "unknown");
+            assert_eq!(entry.get("safe"), None);
         }
     }
 

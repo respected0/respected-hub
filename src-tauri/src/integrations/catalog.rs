@@ -48,6 +48,40 @@ pub struct CatalogEntry {
     pub license: Option<String>,
     #[serde(default)]
     pub provenance: Option<String>,
+    /// Source facts used by the read-only security preview; absent values stay unknown.
+    #[serde(default)]
+    pub publisher: Option<String>,
+    #[serde(default)]
+    pub package_digest: Option<String>,
+    #[serde(default)]
+    pub install_commands: Vec<String>,
+    #[serde(default)]
+    pub permissions: Vec<String>,
+    #[serde(default)]
+    pub manifest: Option<String>,
+}
+
+/// A catalog entry plus the static source review. The review is computed, never trusted from the catalog.
+#[derive(Clone, Debug, Serialize)]
+pub struct CatalogItem {
+    #[serde(flatten)]
+    pub entry: CatalogEntry,
+    pub risk: crate::integrations::security::RiskReview,
+}
+
+pub fn reviewed(entries: Vec<CatalogEntry>) -> Vec<CatalogItem> {
+    entries.into_iter().map(|entry| {
+        let risk = crate::integrations::security::review_source(&crate::integrations::security::SourceReviewInput {
+            source_url: &entry.source_url,
+            publisher: entry.publisher.as_deref().or(entry.provenance.as_deref()),
+            declared_digest: entry.package_digest.as_deref(),
+            observed_digest: None,
+            install_commands: &entry.install_commands,
+            permissions: &entry.permissions,
+            manifest: entry.manifest.as_deref(),
+        });
+        CatalogItem { entry, risk }
+    }).collect()
 }
 
 /// A verified remote catalog document. Deliberately a different shape from the compiled-in list and from the Respected

@@ -49,11 +49,23 @@ export type IntegrationAction = 'inventory' | 'clients' | 'catalog' | 'catalog_r
 export interface IntegrationRequest { action: IntegrationAction }
 export interface ClientsResult { read_only: boolean; clients: ClientState[]; issues: ScanIssue[] }
 export type CatalogKind = 'mcp' | 'skill' | 'plugin' | 'rule' | 'other';
-export interface CatalogEntry {
-  id: string; name: string; type: CatalogKind; description: string; category: string;
-  source_url: string; supported_clients: ClientId[]; license: string | null; provenance: string | null;
-}
-export interface CatalogResult { read_only: boolean; entries: CatalogEntry[]; sequence?: number | null; trust?: { signature_verified: boolean; scope: 'metadata_only'; note: string } }
+  export interface CatalogEntry {
+    id: string; name: string; type: CatalogKind; description: string; category: string;
+    source_url: string; supported_clients: ClientId[]; license: string | null; provenance: string | null;
+    publisher?: string | null; package_digest?: string | null; install_commands?: string[]; permissions?: string[]; manifest?: string | null;
+  }
+  // Computed in Rust; never trusted from the catalog payload.
+  export type RiskSeverity = 'unknown' | 'review' | 'high';
+  export interface RiskReview {
+    source_host: string | null; publisher: string | null; package_digest: string | null;
+    digest_status: 'match' | 'mismatch' | 'unknown';
+    commands: { command: string; class: 'remote_shell' | 'package_runner' | 'hook_script' | 'installer' | 'unknown'; reasons: string[] }[];
+    permissions: { name: string; class: string }[];
+    permissions_status: 'declared' | 'unknown';
+    warnings: string[]; severity: RiskSeverity; approval_required: true; note: string;
+  }
+  export interface CatalogItem extends CatalogEntry { risk: RiskReview }
+  export interface CatalogResult { read_only: boolean; entries: CatalogItem[]; sequence?: number | null; trust?: { signature_verified: boolean; scope: 'metadata_only'; note: string } }
 export interface IntegrationReply {
   ok: boolean;
   result: InventoryResult | ClientsResult | CatalogResult | null;

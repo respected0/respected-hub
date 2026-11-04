@@ -1,5 +1,5 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
-import type { CatalogEntry, IntegrationReply, InventoryResult, Project } from './integrationsTypes.ts';
+import type { CatalogItem, IntegrationReply, InventoryResult, Project } from './integrationsTypes.ts';
 
 export interface Settings { python: string; orchestrator_root: string; brain_root: string; data_root: string }
 export interface RunUsage {
@@ -46,7 +46,7 @@ export async function thirdPartyInventory(): Promise<InventoryResult> {
 }
 
 /** Compiled-in third-party catalog. Read-only and local: it works with the network offline. */
-export async function thirdPartyCatalog(): Promise<CatalogEntry[]> {
+export async function thirdPartyCatalog(): Promise<CatalogItem[]> {
   if (!native) throw new Error('Katalog yalnızca masaüstü uygulamasında okunur.');
   const reply = await invoke<IntegrationReply>('integrations_request', { request: { action: 'catalog' } });
   if (!reply.ok || !reply.result || !('entries' in reply.result)) throw new Error(reply.error?.message ?? 'Katalog okunamadı.');
@@ -54,7 +54,7 @@ export async function thirdPartyCatalog(): Promise<CatalogEntry[]> {
 }
 
 /** User-triggered signed catalog refresh. Offline or invalid downloads leave the last verified catalog intact. */
-export async function refreshThirdPartyCatalog(): Promise<CatalogEntry[]> {
+export async function refreshThirdPartyCatalog(): Promise<CatalogItem[]> {
   if (!native) throw new Error('Katalog yalnızca masaüstü uygulamasında yenilenir.');
   const reply = await invoke<IntegrationReply>('integrations_request', { request: { action: 'catalog_refresh' } });
   if (!reply.ok || !reply.result || !('entries' in reply.result)) throw new Error(reply.error?.message ?? 'Katalog yenilenemedi.');

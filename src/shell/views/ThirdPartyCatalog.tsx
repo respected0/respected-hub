@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { refreshThirdPartyCatalog, thirdPartyCatalog } from '../../shared/api.ts';
-import type { CatalogEntry, CatalogKind, ClientId } from '../../shared/integrationsTypes.ts';
+import type { CatalogItem, CatalogKind, ClientId, RiskSeverity } from '../../shared/integrationsTypes.ts';
 import { CATALOG_CLIENT_LABEL, CATALOG_KIND_LABEL, catalogCategories, filterCatalog } from '../thirdPartyCatalog.ts';
+
+const RISK_LABEL: Record<RiskSeverity, string> = { unknown: 'unknown', review: 'inceleme gerekli', high: 'yüksek risk' };
 
 // Read-only Discover catalog. Links open GitHub; this release never installs third-party content.
 export default function ThirdPartyCatalog() {
-  const [entries, setEntries] = useState<CatalogEntry[] | null>(null);
+  const [entries, setEntries] = useState<CatalogItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState('');
@@ -57,6 +59,21 @@ export default function ThirdPartyCatalog() {
       : <div className="catalog-grid">{shown.map(entry => <article key={entry.id} className="catalog-card">
         <div className="catalog-clients"><span className="badge tone-live">{CATALOG_KIND_LABEL[entry.type]}</span><span className="badge tone-idle">{entry.category}</span>{entry.license && <span className="badge tone-idle">{entry.license}</span>}</div>
         <h3>{entry.name}</h3><p>{entry.description}</p>
+        <div className="catalog-clients">
+          <span className="badge tone-idle">risk: {RISK_LABEL[entry.risk.severity]}</span>
+          <span className="badge tone-idle">izin: {entry.risk.permissions_status === 'unknown' ? 'unknown' : entry.risk.permissions.length}</span>
+        </div>
+        <details>
+          <summary className="meta">Kaynak güvenlik önizlemesi</summary>
+          <p className="meta">Yayıncı: {entry.risk.publisher ?? 'unknown'} · Kaynak: {entry.risk.source_host ?? 'unknown'} · Digest: {entry.risk.package_digest ?? 'unknown'} ({entry.risk.digest_status})</p>
+          <p className="meta">İzinler: {entry.risk.permissions_status === 'unknown' ? 'unknown' : entry.risk.permissions.map(item => `${item.name} (${item.class})`).join(', ')}</p>
+          <p className="meta">Kurulum komutları (hiçbiri otomatik çalışmaz):</p>
+          {entry.risk.commands.length > 0
+            ? <ul>{entry.risk.commands.map((item, index) => <li key={index}><code>{item.command}</code> <span className="meta">{item.class}</span></li>)}</ul>
+            : <p className="meta">Komut bildirilmedi; çalıştırılabilir adım bilinmiyor.</p>}
+          {entry.risk.warnings.length > 0 && <p className="meta">Uyarılar: {entry.risk.warnings.join(', ')}</p>}
+          <p className="meta">{entry.risk.note}</p>
+        </details>
         <div className="catalog-card-foot">
           <div className="catalog-clients">{entry.supported_clients.map(item => <span key={item} className="badge tone-idle">{CATALOG_CLIENT_LABEL[item] ?? item}</span>)}</div>
           <a className="button" href={entry.source_url} target="_blank" rel="noreferrer">GitHub'da aç</a>
