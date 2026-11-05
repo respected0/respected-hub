@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ACTION_DONE, ACTION_LABEL, STATE_LABEL, activeTaskWarning, availableActions, describeLifecycleError, lifecycleApply, lifecyclePlan } from '../lifecycle.ts';
+import { ACTION_DONE, ACTION_LABEL, STATE_LABEL, activeTaskWarning, availableActions, catalogVersionLabel, describeLifecycleError, lifecycleApply, lifecyclePlan } from '../lifecycle.ts';
 import type { JournalEntry, LifecycleAction, LifecyclePlan, ProductLifecycle } from '../lifecycle.ts';
 import { Icon } from '../../shared/ui.tsx';
 import { FACTS, phaseOf, type FactSubject } from '../installFacts.ts';
@@ -48,7 +48,7 @@ export default function LifecycleControls({ name, lc, onChanged, onWizard, autoA
   return <div className={`lifecycle ${wide ? 'wide' : ''}`} aria-label={`${name} kurulumu`}>
     <p className="meta">{lc.install_state !== 'installed' && <span className={`badge-status ${lc.install_state === 'absent' ? 'unreachable' : 'warn'}`}>{STATE_LABEL[lc.install_state]}</span>}
       {lc.version && <span className="ver">v{lc.version}</span>}
-      {lc.available && lc.install_state !== 'installed' && <span className="ver">{lc.install_state === 'absent' ? 'Sürüm' : 'Yeni sürüm'}: v{lc.available.version}</span>}</p>
+      {lc.available && lc.install_state !== 'installed' && <span className="ver">{catalogVersionLabel(lc.install_state)}: v{lc.available.version}</span>}</p>
     {!lc.available && lc.install_state === 'absent' && <p className="muted">Ürün kataloğu henüz alınamadı{lc.catalog_skipped.length ? ` (${lc.catalog_skipped.length} geçersiz paket atlandı)` : ''}. İnternete bağlıyken Ayarlar › Güncellemeleri denetle'yi kullanın.</p>}
     {busy && !pending && <p className="muted" role="status">Hazırlanıyor… Gerekirse ürünün kurucusu indirilip doğrulanır.</p>}
     {!pending && <div className="actions">{actions.map(action => <button key={action} className={action === 'uninstall' ? '' : 'cta'} disabled={busy} onClick={() => void preview(action)}><Icon name={ICON[action]} />{ACTION_LABEL[action]}</button>)}</div>}

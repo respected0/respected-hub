@@ -76,6 +76,11 @@ export const STATE_LABEL: Record<InstallState, string> = {
   absent: 'Kurulu değil', installed: 'Kurulu ve doğrulandı', 'update-available': 'Güncelleme var', 'repair-needed': 'Onarım gerekli',
 };
 
+/** Only an update-available catalog version is new; a repair reinstalls the catalog version. */
+export function catalogVersionLabel(state: InstallState): string {
+  return state === 'absent' ? 'Sürüm' : state === 'update-available' ? 'Yeni sürüm' : 'Katalog sürümü';
+}
+
 const ERROR_TR: Record<string, string> = {
   LIFECYCLE_CONFLICT: 'Bu işlem şu an yapılamaz.',
   VERIFY_FAILED: 'Doğrulama başarısız oldu; hiçbir değişiklik uygulanmadı.',

@@ -7,7 +7,7 @@ kirmizi ise surum yayimlanmaz. Kosulmayan veya kaniti olmayan her satir `dogrula
 
 | Komut | Ne dogrular | Nerede |
 |---|---|---|
-| `npm run check` | `tsc --noEmit` + 133 arayuz birim testi | CI: windows, macOS, Linux |
+| `npm run check` | `tsc --noEmit` + 134 arayuz birim testi | CI: windows, macOS, Linux |
 | `cargo test --manifest-path src-tauri/Cargo.toml --no-fail-fast` | 151 birim + tum fixture/entegrasyon ikilileri | CI: windows |
 | `cargo test --release --manifest-path src-tauri/Cargo.toml --lib production_build` | Uretim guven kumesi; gelistirme anahtari kabul edilmez | CI: windows, macOS, Linux |
 | `python common/release/tools/acceptance/accept_hub.py` | Yukaridaki Rust + TS adimlari, ortak urun sozlesmesi ve gercek AI ayarlarinin once/sonra karsilastirmasi | elle |

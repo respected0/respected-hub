@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ACTION_LABEL, activeTaskWarning, availableActions, describeLifecycleError, journalSentence, formatWhen, newOperationId } from '../../src/shell/lifecycle.ts';
+import { ACTION_LABEL, activeTaskWarning, availableActions, catalogVersionLabel, describeLifecycleError, journalSentence, formatWhen, newOperationId } from '../../src/shell/lifecycle.ts';
 import type { JournalEntry } from '../../src/shell/lifecycle.ts';
 
 const entry = (over: Partial<JournalEntry> = {}): JournalEntry => ({
@@ -15,6 +15,13 @@ test('actions offered match the install state and the installer in the catalog',
   assert.deepEqual(availableActions('installed', false), ['uninstall'], 'a removal needs no catalog');
   assert.deepEqual(availableActions('update-available', true), ['update', 'uninstall']);
   assert.deepEqual(availableActions('repair-needed', false), ['uninstall']);
+});
+
+test('the catalog version is only called new when an update is available', () => {
+  assert.equal(catalogVersionLabel('absent'), 'Sürüm');
+  assert.equal(catalogVersionLabel('update-available'), 'Yeni sürüm');
+  assert.equal(catalogVersionLabel('repair-needed'), 'Katalog sürümü');
+  assert.equal(catalogVersionLabel('installed'), 'Katalog sürümü');
 });
 
 test('errors read as one sentence with the recovery hint', () => {
