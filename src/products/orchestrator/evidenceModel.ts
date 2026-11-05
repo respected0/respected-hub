@@ -210,3 +210,73 @@ export function evidenceFor(inspect: unknown, campaign: unknown, fallbackRunId =
     nextStepText: nextStepOf(verdict, hasPatch, runId, statuses, cli),
   };
 }
+
+// ---- Engine `evidence.view` (read-only, signed, already redacted by the engine) ----------------------------------
+
+const VIEW_SCHEMAS = [1, 2];
+const SECRET_LIKE = /((?:password|passwd|secret|token|api[_-]?key)\s*[:=]\s*)\S+|-----BEGIN [A-Z ]*PRIVATE KEY-----/gi;
+
+function mask(value: string): string {
+  return value.replace(SECRET_LIKE, (_all, prefix: string | undefined) => `${prefix ?? ''}[GİZLENDİ]`);
+}
+
+function viewStatusPlain(status: string, reason: string): string {
+  if (status === 'stale') return reason === 'patch_changed' ? 'Eski: patch değişmiş' : reason === 'project_changed' ? 'Eski: proje değişmiş' : 'Eski: proje okunamadı';
+  return reason && reason !== status ? `${status} · ${reasonPlain(reason)}` : status;
+}
+
+/**
+ * Builds the evidence card from the engine's `evidence.view` output. Only whitelisted fields are copied (so a field the engine
+ * adds later never reaches the screen unreviewed), every string is masked again, and anything that is not a known schema,
+ * stale, failed or tampered is never presented as ready to apply. Throws a plain Turkish message for an unusable payload.
+ */
+export function evidenceFromView(view: unknown, fallbackRunId = '', cli = 'respected-orchestrator'): Evidence {
+  if (!isRecord(view)) throw new Error('Motor kanıt yanıtı okunamadı.');
+  if (!VIEW_SCHEMAS.includes(view.schema_version as number)) {
+    throw new Error(`Kanıt şeması bu Hub sürümüyle uyumsuz (şema ${String(view.schema_version)}); Hub'ı veya Orchestrator'ı güncelleyin.`);
+  }
+  const status = text(view.status) || 'unknown';
+  const reason = text(view.reason);
+  const delivery = isRecord(view.delivery) ? view.delivery : null;
+  const tampered = delivery?.state === 'tampered';
+  const patch = isRecord(view.patch_summary) ? view.patch_summary : null;
+  const files = patch ? filesOf(patch) : [];
+  const items: EvidenceItem[] = [];
+  const push = (label: string, value: string) => { if (value) items.push({ label, text: mask(value) }); };
+
+  push('Durum', viewStatusPlain(status, reason));
+  if (patch) {
+    push('Patch SHA-256', text(patch.sha256));
+    if (files.length) push('Değişen dosyalar', `${files.length} dosya: ${files.slice(0, 20).join(', ')}${files.length > 20 ? ' …' : ''}`);
+  }
+  (Array.isArray(view.checks) ? view.checks : []).filter(isRecord).forEach((check, index) => {
+    const command = Array.isArray(check.command) ? check.command.map(String).join(' ') : text(check.command);
+    push(`Kontrol ${index + 1}`, `${command} → çıkış ${numberText(check.returncode) || '?'} · ağ: ${text(check.network) || 'bilinmiyor'}`);
+  });
+  const tests = isRecord(view.tests) ? view.tests : null;
+  if (tests) push('Test aşaması', `${text(tests.status) || 'bilinmiyor'} · ${numberText(tests.duration_seconds) || '?'} sn`);
+  const risks = (Array.isArray(view.risks) ? view.risks : []).filter((risk): risk is string => typeof risk === 'string');
+  if (risks.length) push('Kalan riskler', risks.join('; '));
+  if (delivery && !tampered) {
+    push('Taslak PR', [text(delivery.url), numberText(delivery.pr_number) && `#${numberText(delivery.pr_number)}`].filter(Boolean).join(' '));
+    const ci = isRecord(delivery.ci) ? delivery.ci : null;
+    push('CI sonucu', ci ? `${text(ci.conclusion) || 'bilinmiyor'} (${text(ci.completed_at) || 'zaman yok'})` : 'henüz gözlenmedi');
+  }
+  if (tampered) push('PR/CI kaydı', 'Kayıt imzası doğrulanamadı; güvenilmez.');
+
+  const reviewer = isRecord(view.reviewer) ? view.reviewer : null;
+  const reviews: ReviewItem[] = reviewer ? [{ stage: 'reviewer', profile: text(reviewer.profile) || text(reviewer.worker) || '(profil yok)',
+    decision: text(reviewer.decision) || '(karar yok)', reason: text(reviewer.reason) }] : [];
+
+  const bad = tampered || ['stale', 'failed', 'error', 'interrupted', 'cancelled', 'timed_out'].includes(status);
+  const verdict: Verdict = bad ? 'failed' : verdictOf([status], reviews, false);
+  const runId = firstText(view.task_id, fallbackRunId);
+  const hasPatch = files.length > 0 || Boolean(patch && text(patch.sha256));
+  const headline = tampered ? 'Kanıt kaydı doğrulanamadı; bu çalışma onaya hazır değil.'
+    : status === 'stale' ? 'Kanıt eski: patch veya proje değişti; yeniden doğrulanana kadar onaya hazır değil.'
+    : headlineOf(verdict);
+  const nextStepText = bad
+    ? 'Kanıt güncel ve geçerli değil. Hub hiçbir şey uygulamaz; çalışmayı Orchestrator\'da yeniden doğrulayın.'
+    : nextStepOf(verdict, hasPatch, runId, [status], cli);
+  return { headline, verdict, evidence: items, reviews, hasPatch: hasPatch && !bad, nextStepText };
+}

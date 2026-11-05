@@ -77,3 +77,59 @@ test('manual commands use the installed program and data folder, never Python', 
   assert.ok(text.includes(`${cli} maf-approve run-7`));
   assert.ok(!text.includes('python'));
 });
+
+// ---- evidence.view (FIX-03C) ----
+import { evidenceFromView } from '../../src/products/orchestrator/evidenceModel.ts';
+
+const goodView = (extra: Record<string, unknown> = {}) => ({
+  schema_version: 2, task_id: 'run-5', status: 'completed', reason: 'completed',
+  patch_summary: { sha256: 'a'.repeat(64), changed_files: ['solution.py'] },
+  checks: [{ command: ['python', '-m', 'unittest'], returncode: 0, network: 'deny' }],
+  reviewer: { profile: 'claude', decision: 'approved' }, tests: { status: 'passed', duration_seconds: 1.5 }, risks: [],
+  delivery: { state: 'ok', url: 'https://github.com/o/r/pull/7', pr_number: 7, head_sha: 'b'.repeat(40), ci: { conclusion: 'success', completed_at: '2026-11-05T10:00:00Z' } },
+  ...extra,
+});
+
+test('current evidence shows patch, checks with network state, tester, reviewer and the PR/CI result', () => {
+  const evidence = evidenceFromView(goodView());
+  assert.equal(evidence.verdict, 'approved');
+  const labels = Object.fromEntries(evidence.evidence.map(item => [item.label, item.text]));
+  assert.match(labels['Kontrol 1'], /ağ: deny/);
+  assert.match(labels['Taslak PR'], /pull\/7 #7/);
+  assert.match(labels['CI sonucu'], /^success/);
+  assert.equal(labels['Test aşaması'], 'passed · 1.5 sn');
+  assert.equal(evidence.reviews[0].decision, 'approved');
+  assert.ok(evidence.nextStepText.includes('apply run-5'));
+});
+
+test('stale, failed and tampered evidence is never ready to apply', () => {
+  for (const view of [goodView({ status: 'stale', reason: 'patch_changed' }), goodView({ status: 'failed', reason: 'test_failed' }),
+    goodView({ delivery: { state: 'tampered', receipt: 'github-pr-x.json' } })]) {
+    const evidence = evidenceFromView(view);
+    assert.equal(evidence.verdict, 'failed');
+    assert.equal(evidence.hasPatch, false);
+    assert.ok(!evidence.nextStepText.includes('apply run-5'));
+  }
+});
+
+test('an unknown schema or an unusable payload is refused with a plain message', () => {
+  assert.throws(() => evidenceFromView(goodView({ schema_version: 99 })), /uyumsuz/);
+  assert.throws(() => evidenceFromView(null), /okunamadı/);
+  assert.throws(() => evidenceFromView('text'), /okunamadı/);
+});
+
+test('secrets are masked again and fields outside the whitelist never reach the card', () => {
+  const evidence = evidenceFromView(goodView({
+    risks: ['api_key=SUPERSECRETVALUE leaked'], unreviewed_field: 'EXTRA-DATA',
+    checks: [{ command: ['run', 'token=abcd1234efgh'], returncode: 1, network: 'deny' }],
+  }));
+  const shown = JSON.stringify(evidence);
+  assert.ok(!shown.includes('SUPERSECRETVALUE') && !shown.includes('abcd1234efgh') && !shown.includes('EXTRA-DATA'));
+  assert.ok(shown.includes('GİZLENDİ'));
+});
+
+test('the card offers no approval or apply action of its own', () => {
+  const evidence = evidenceFromView(goodView());
+  assert.ok(evidence.nextStepText.includes('Hub güvenlik nedeniyle değişiklikleri kendisi uygulamaz'));
+  assert.ok(!('approve' in evidence) && !('apply' in evidence));
+});

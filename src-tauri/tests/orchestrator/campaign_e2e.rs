@@ -85,7 +85,11 @@ fn invalid_campaign_identity_is_rejected_before_any_process_spawns() {
 
     let mut settings = settings_for(&ecosystem());
     settings.python = "definitely-not-a-real-python".into();
-    assert!(call_engine(settings, "campaign-start", None, None).unwrap_err().contains("JSON body"));
+    assert!(call_engine(settings.clone(), "campaign-start", None, None).unwrap_err().contains("JSON body"));
+    // Read-only evidence is allowed; approval and apply never are (the human-approval contract, ADR-004).
+    for action in ["maf-approve", "apply", "integrate", "github-pr-create"] {
+        assert_eq!(call_engine(settings.clone(), action, Some("run-x".into()), None).unwrap_err(), "Unsupported engine operation", "{action}");
+    }
 }
 
 #[test]

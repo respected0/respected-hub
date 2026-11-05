@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { engine, native, products } from '../../../shared/api.ts';
 import type { Run } from '../../../shared/api.ts';
 import { campaignStatus } from '../campaigns.ts';
-import { evidenceFor } from '../evidenceModel.ts';
+import { evidenceFor, evidenceFromView } from '../evidenceModel.ts';
 import type { Evidence, Verdict } from '../evidenceModel.ts';
 import './evidence.css';
 
@@ -78,7 +78,7 @@ export default function EvidencePanel({ runs, campaignIds }: { runs: Run[]; camp
     try {
       const cli = (await products().catch(() => null))?.orchestrator_cli ?? undefined;
       const result = kind === 'run'
-        ? evidenceFor(await engine<unknown>('inspect', id), null, id, cli)
+        ? evidenceFromView(await engine<unknown>('evidence', id), id, cli)
         : evidenceFor(null, await campaignStatus(id), '', cli);
       if (requestRef.current !== token) return;
       setEvidence(result); setState('ready');

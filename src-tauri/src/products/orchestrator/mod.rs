@@ -17,7 +17,7 @@ pub fn valid_campaign_id(id: &str) -> bool {
 }
 
 pub fn call_engine(settings: Settings, action: &str, run_id: Option<String>, request: Option<Value>) -> Result<Value, String> {
-    if !["status", "create", "start", "list", "inspect", "artifact", "cancel", "check", "retry", "campaign-start", "campaign-status", "campaign-list"].contains(&action) {
+    if !["status", "create", "start", "list", "inspect", "evidence", "artifact", "cancel", "check", "retry", "campaign-start", "campaign-status", "campaign-list"].contains(&action) {
         return Err("Unsupported engine operation".into());
     }
     match action {
