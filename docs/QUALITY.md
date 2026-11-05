@@ -36,7 +36,7 @@ gorurse baslamaz, sahte bir kullanici klasoru kullanir ve gercek AI istemci ayar
 
 2026-11-05, Windows dev build (`npx tauri build --debug --no-bundle`):
 
-- `npm run check`: 133/133 gecti.
+- `npm run check`: 134/134 gecti (2026-11-05).
 - `cargo test --no-fail-fast`: 151 birim + tum entegrasyon ikilileri gecti (0 basarisiz).
 - `cargo test --release --lib production_build`: gecti (ayrinti icin CI isi).
 - Native E2E: 30 PASS, 0 FAIL; rapor ve ekran goruntuleri bu makinede
@@ -55,9 +55,22 @@ gorurse baslamaz, sahte bir kullanici klasoru kullanir ve gercek AI istemci ayar
   (commit `1716894`): macos 3m45s, ubuntu 5m59s, windows 8m30s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
 - Yerel `remote_catalog_e2e`: ag yokken onbellekten onarim basarili; bos onbellekte ilk indirme `CATALOG_UNAVAILABLE` ile reddedildi (2026-11-05).
 
+Yayin hijyeni denetimi (2026-11-05, yayimlanmis `catalog` ve `v0.1.0-beta.1` asset'leri indirilerek):
+
+- `catalog.json` (2586 bayt) ayrik Ed25519 imzasi derlenmis uretim anahtari `dabcb5265227bbdf` ile
+  `respected-catalog-v1\n` + dosya baytlari uzerinde dogrulandi; `catalog.json.sig` 106 bayt.
+- `catalog.json` SHA-256 `f2f9261797cc5771b119461cf3f45cd70b09ae636b2479ad1879cc226d564553`; GitHub asset ozetiyle ayni.
+- Hub kurucusu SHA-256 `38e8f32cd4622727ed467c4b28c43c187f7263442aa54a7b8ff7d648ceccf194` (4182482 bayt);
+  katalog kaydi ve GitHub asset ozetiyle ayni.
+- `Get-AuthenticodeSignature`: `NotSigned`. SmartScreen uyarisi suruyor; kod imzalama sertifikasi yok.
+- `0.1.0b1` (urun) ile `0.1.0-beta.1` (etiket) farki hata degil: `lifecycle::version_key` iki bicimi esit sayar ve
+  `lifecycle/mod.rs:287` bunu test eder.
+
 ## Dogrulanmadi
 
 - `--real-semantic`: anlamsal arama modelinin gercek indirmesi bu kosuda calistirilmadi.
 - Temiz VM'de ilk kurulum, Hub'in kendini guncellemesi ve Yüklü uygulamalar'dan kaldirma elle denenmedi
   (bkz. `docs/ARCHITECTURE.md` acik sinirlar).
+- Gercek eski surumden guncelleme/geri alma ve kendini guncelleme simdilik denenemez: yayimlanmis tek surum ve
+  gelistirme surumu de `0.1.0-beta.1`; daha yeni bir surum yok.
 - macOS/Linux'ta native GUI: `docs/PLATFORMS.md` geregi desteklenmiyor/dogrulanmadi.

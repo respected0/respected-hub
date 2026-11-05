@@ -1,8 +1,8 @@
 //! Authenticity of catalog bundles: Ed25519 over a canonical statement (product, kind, version, schema, digest).
 //!
 //! Fail closed: a bundle installs only when its signature verifies against a key this build trusts.
-//! * PRODUCTION keys are compiled in (`PRODUCTION_KEYS`, provisioned by the release owner). Empty today, so a production
-//!   build trusts no bundle until a release key exists.
+//! * PRODUCTION keys are compiled in (`PRODUCTION_KEYS`, provisioned by the release owner). An empty list makes a
+//!   production build trust no bundle (fail closed); a listed key is the only one it trusts.
 //! * DEVELOPMENT keys and the explicit `RESPECTED_HUB_ALLOW_UNSIGNED=1` opt-in exist only in debug builds or builds made
 //!   with `--features dev-trust`. In a production build that code is compiled out: an unsigned or dev-signed bundle
 //!   is rejected there whatever the environment says.
@@ -21,8 +21,8 @@ impl Trust {
     }
 }
 
-/// Public release keys, one `key_id base64-public-key` per line, compiled in from release-keys.txt (empty until the release
-/// owner runs common/release/tools/signing/release_keys.py). Never put a private key there.
+/// Public release keys, one `key_id base64-public-key` per line, compiled in from release-keys.txt (written by
+/// common/release/tools/signing/release_keys.py). Never put a private key there.
 const PRODUCTION_KEYS: &str = include_str!("../release-keys.txt");
 
 const DOMAIN: &str = "respected-bundle-v1\n";

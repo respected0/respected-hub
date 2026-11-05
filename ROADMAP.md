@@ -21,6 +21,7 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
 - [ ] Temiz bir makinede ilk kurulum henüz denenmedi (`tests/native/hub_native_e2e.mjs` kurulu ürün olan makinede başlamaz).
   Hub'ın katalogdan kendini güncellemesi (Ayarlar > Güncellemeler > Hub'ı güncelle) ilk sürümde denenemez, çünkü güncellenecek daha yeni sürüm yok; bir sonraki sürüm yayınlanınca gerçek yeni sürümle denenecek.
 - [ ] Kurucuyu Authenticode ile imzalamak (SmartScreen uyarısı). Kod imzalama sertifikası gerekir; yok.
+  Yayımlanan `v0.1.0-beta.1` kurucusu 2026-11-05'te `NotSigned` olarak doğrulandı.
 - [ ] macOS / Linux: doğrulanmadı. Bu geliştirme makinesi Windows.
 - [ ] Güncelleme yolu karara bağlandı: her sürümden en yeniye doğrudan (sözleşme §4: yedekli güncelleme, silinmeyen `STEPS`,
   sürüm başına gerçek veri fixture'ları). Kalan: yayınlanmış eski kurucuları gerçek Windows'ta yenisinin üzerine kuran CI işi
@@ -36,7 +37,9 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
 
 ### M0 — Önce mevcut ürünün yayın kalitesi (yeni özellik yok)
 - [ ] `REL-001` Eski sürümden gerçek güncelleme ve geri alma CI matrisi.
+  - Engel: yayımlanmış tek sürüm ve geliştirme sürümü de `0.1.0-beta.1`; gerçek eski→yeni güncelleme için yeni sürüm gerekir.
 - [ ] `REL-002` Temiz Windows VM kurulumu ve Hub'ın gerçek kendini güncelleme testi.
+  - Engel: temiz Windows VM yok; yayımlanan kurucu Authenticode imzasız ve kendini güncelleme için daha yeni sürüm yok.
 - [ ] `REL-003` Güncelleme bildirimi, çalışan görev uyarısı, aynı sürüm farklı digest ve yayın hataları.
   - [x] Çalışan Orchestrator görevi uyarısı (`8276c56`), aynı sürüm farklı digest (`4d72a6c`), çevrimdışı onarım ve bildirim testleri (`1716894`).
   - [ ] Hub'sız kurulan ürünlerin kendi sürüm bildirimi: ürün depolarında; bu depoda yapılamaz.
