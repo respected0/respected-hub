@@ -42,8 +42,8 @@ gorurse baslamaz, sahte bir kullanici klasoru kullanir ve gercek AI istemci ayar
 - Native E2E: 30 PASS, 0 FAIL; rapor ve ekran goruntuleri bu makinede
   `.build-cache/hub-native-qa001-e2e-fixed/` altinda. Sahte kullanici klasoru Hub'in kendi istemci kesfine de
   uygulanir; test gercek kullanici AI yapilandirmasini okumaz. Son satir: `real AI client configuration untouched by this run`.
-- CI: [run 41970876630](https://github.com/respected0/respected-hub/actions/runs/41970876630) uc iste de basarili:
-  windows 7m45s, ubuntu 5m26s, macos 3m19s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
+- CI: [run 41975371304](https://github.com/respected0/respected-hub/actions/runs/41975371304) uc iste de basarili
+  (commit `3f90dbd`): windows 10m56s, ubuntu 5m3s, macos 3m16s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
 
 ## Dogrulanmadi
 
