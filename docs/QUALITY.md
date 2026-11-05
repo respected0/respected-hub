@@ -51,6 +51,10 @@ gorurse baslamaz, sahte bir kullanici klasoru kullanir ve gercek AI istemci ayar
 - CI: [run 41985091963](https://github.com/respected0/respected-hub/actions/runs/41985091963) uc iste de basarili
   (commit `fe75a62`): ubuntu 6m22s, macos 4m45s, windows 11m25s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
 
+- CI: [run 41988123558](https://github.com/respected0/respected-hub/actions/runs/41988123558) uc iste de basarili
+  (commit `1716894`): macos 3m45s, ubuntu 5m59s, windows 8m30s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
+- Yerel `remote_catalog_e2e`: ag yokken onbellekten onarim basarili; bos onbellekte ilk indirme `CATALOG_UNAVAILABLE` ile reddedildi (2026-11-05).
+
 ## Dogrulanmadi
 
 - `--real-semantic`: anlamsal arama modelinin gercek indirmesi bu kosuda calistirilmadi.

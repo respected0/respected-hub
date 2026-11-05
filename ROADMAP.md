@@ -38,6 +38,8 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
 - [ ] `REL-001` Eski sürümden gerçek güncelleme ve geri alma CI matrisi.
 - [ ] `REL-002` Temiz Windows VM kurulumu ve Hub'ın gerçek kendini güncelleme testi.
 - [ ] `REL-003` Güncelleme bildirimi, çalışan görev uyarısı, aynı sürüm farklı digest ve yayın hataları.
+  - [x] Çalışan Orchestrator görevi uyarısı (`8276c56`), aynı sürüm farklı digest (`4d72a6c`), çevrimdışı onarım ve bildirim testleri (`1716894`).
+  - [ ] Hub'sız kurulan ürünlerin kendi sürüm bildirimi: ürün depolarında; bu depoda yapılamaz.
 
 ### M1 — Envanter motorunun temel sözleşmesi
 - [ ] `CORE-001` Brain/Orchestrator sahipliği ve üçüncü taraf konfigürasyon yazma sınırı için ADR; kod ve belge uyumu.
