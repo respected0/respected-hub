@@ -233,6 +233,9 @@ mod tests {
 
     fn ok(_: &Installed) -> Result<(), String> { Ok(()) }
 
+    // The Windows installer switches and product layout are Windows-only; the
+    // macOS/Linux matrix proves discovery and integration contracts instead.
+    #[cfg(windows)]
     #[test]
     fn install_passes_the_persons_choices_as_installer_switches_then_update_and_uninstall_follow_the_product() {
         let roots = fixture("brain", "RespectedBrain-Windows-Setup.exe", "0.2.0");

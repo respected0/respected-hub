@@ -63,8 +63,9 @@ jobs:
         run: cargo test --release --manifest-path src-tauri/Cargo.toml --lib production_build
 
   cross-platform:
-    # PORT-001: the same contract tests on real macOS and Linux runners. No
-    # support label is allowed from a matrix entry until this job is green.
+    # PORT-001: discovery, read-only scan and integration plan/apply contracts
+    # on real macOS and Linux runners. Product installers and the Windows
+    # packaging/campaign suites stay covered by the windows job.
     name: hub (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 75
@@ -72,41 +73,33 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-    env:
-      RESPECTED_ECOSYSTEM_ROOT: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           path: respected-hub
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          repository: respected0/respected-brain
-          path: respected-brain
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          repository: respected0/respected-orchestrator
-          path: respected-orchestrator
       - name: Tauri system libraries
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libgtk-3-dev libssl-dev
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
-        with:
-          python-version: "3.13"
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: "24"
-      - name: Install products and release tooling
-        run: python -m pip install -e "respected-brain[dev]" -e respected-orchestrator cryptography
       - name: TypeScript check and unit tests
         working-directory: respected-hub
         run: |
           npm ci
           npm run check
-      - name: Rust unit and end-to-end tests
+      - name: Rust unit tests
         working-directory: respected-hub
-        run: cargo test --manifest-path src-tauri/Cargo.toml --no-fail-fast
+        run: cargo test --manifest-path src-tauri/Cargo.toml --lib
+      - name: Integration contract tests
+        working-directory: respected-hub
+        run: >-
+          cargo test --manifest-path src-tauri/Cargo.toml --no-fail-fast
+          --test inventory_e2e --test claude_adapter_e2e --test catalog_e2e
+          --test codex_adapter_e2e --test cursor_gemini_opencode_adapter_e2e
+          --test skills_e2e --test plugins_e2e --test resolver_e2e
       - name: Production trust set (release profile, no development keys)
         working-directory: respected-hub
         run: cargo test --release --manifest-path src-tauri/Cargo.toml --lib production_build
