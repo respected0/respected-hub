@@ -108,6 +108,9 @@ fn add_plugins(inventory: &mut Inventory, root: &Path, enabled_plugins: &HashMap
         let is_manifest = file.file_name().map(|name| name == "plugin.json").unwrap_or(false)
             && file.parent().and_then(Path::file_name).map(|name| name == ".claude-plugin").unwrap_or(false);
         let Some(plugin_root) = file.parent().and_then(Path::parent) else { continue };
+        // Marketplace clones are catalogs, not installed plugins; only `cache` (and legacy direct folders) are installed.
+        if plugin_root.strip_prefix(root).ok().and_then(|relative| relative.components().next())
+            .map(|first| first.as_os_str() == "marketplaces").unwrap_or(false) { continue; }
         if is_manifest && seen.insert(Source::from_path(plugin_root, Owner::User, SourceFormat::Manifest).path_id) {
             add_plugin(inventory, &file, plugin_root, root, enabled_plugins);
         }

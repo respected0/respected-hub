@@ -169,3 +169,17 @@ fn installed_plugin_state_comes_from_the_enabled_plugins_map() {
     assert_eq!(enabled("off"), Some(false));
     assert_eq!(enabled("missing"), Some(false), "a cache plugin absent from the map is not loaded");
 }
+
+#[test]
+fn marketplace_clones_are_not_reported_as_installed_plugins() {
+    let temp = Temp::new("claude-plugin-marketplace");
+    let home = temp.0.join("home");
+    let environment = env(&home);
+    write(&home, ".claude/plugins/cache/market/demo/1.0.0/.claude-plugin/plugin.json", r#"{"name":"demo"}"#);
+    write(&home, ".claude/plugins/marketplaces/market/plugins/other/.claude-plugin/plugin.json", r#"{"name":"other"}"#);
+
+    let inventory = claude::scan(&environment, &[]);
+
+    let plugins: Vec<_> = inventory.assets.iter().filter(|asset| asset.kind == AssetKind::Plugin).map(|asset| asset.name.as_str()).collect();
+    assert_eq!(plugins, vec!["demo"]);
+}
