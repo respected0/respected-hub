@@ -41,7 +41,17 @@ export interface ResolvedEntry {
   project: Project | null; source_path: string; configured: boolean; effective: boolean;
   enabled: boolean | null; managed: boolean; owner: Owner; state: ResolutionState;
 }
-export interface Resolution { entries: ResolvedEntry[]; issues: ScanIssue[]; untrusted: ScanIssue[] }
+export type DriftCode =
+  | 'source_changed' | 'duplicate_copy' | 'shadowed' | 'broken_symlink'
+  | 'orphan_target' | 'target_missing' | 'owner_protected';
+export interface DriftFinding {
+  code: DriftCode; asset_key: string | null; name: string | null; asset_kind: AssetKind | null;
+  client: ClientId | null; scope: Scope | null; project: Project | null;
+  source_path: string | null; message: string;
+}
+export interface Resolution {
+  entries: ResolvedEntry[]; issues: ScanIssue[]; untrusted: ScanIssue[]; drift: DriftFinding[];
+}
 export interface InventoryResult { read_only: boolean; inventory: Inventory; resolution: Resolution }
 
 // Mirror of src-tauri/src/integrations/api.rs.

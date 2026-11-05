@@ -36,7 +36,10 @@ pub fn execute_with(request: Request, env: &Environment, managed: &Path) -> Valu
         Action::Inventory => match projects::load(env) {
             Ok(projects) => {
                 let inventory = inventory::scan(env, &projects);
-                let resolution = resolver::resolve(&inventory);
+                let previous = inventory::load_baseline(env);
+                let mut resolution = resolver::resolve(&inventory);
+                resolution.drift = resolver::drift(&inventory, &previous);
+                let _ = inventory::save_baseline(env, &inventory);
                 json!({ "ok": true, "result": { "read_only": true, "inventory": inventory, "resolution": resolution }, "error": Value::Null })
             }
             Err(message) => json!({ "ok": false, "result": Value::Null, "error": { "code": "projects_invalid", "message": message } }),

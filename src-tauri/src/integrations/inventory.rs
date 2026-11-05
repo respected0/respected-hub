@@ -5,8 +5,53 @@
 use crate::integrations::adapters::{claude, codex, cursor, gemini, opencode};
 use crate::integrations::discovery::{self, Environment};
 use crate::integrations::model::{Inventory, Project, ScanIssue};
-use std::collections::HashSet;
-use std::path::Path;
+use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::fs;
+use std::path::{Path, PathBuf};
+
+const BASELINE_VERSION: u32 = 1;
+
+#[derive(Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+struct Baseline {
+    version: u32,
+    fingerprints: BTreeMap<String, String>,
+}
+
+impl Default for Baseline {
+    fn default() -> Self { Self { version: BASELINE_VERSION, fingerprints: BTreeMap::new() } }
+}
+
+pub fn baseline_file(env: &Environment) -> PathBuf {
+    env.app_data.join("com.respected.hub").join("integration-baseline.json")
+}
+
+/// Previous scan fingerprints by stable path id. A corrupt or unknown store is
+/// ignored: drift analysis must never block a read-only inventory.
+pub fn load_baseline(env: &Environment) -> HashMap<String, String> {
+    let file = baseline_file(env);
+    let Ok(bytes) = fs::read(&file) else { return HashMap::new() };
+    match serde_json::from_slice::<Baseline>(&bytes) {
+        Ok(store) if store.version == BASELINE_VERSION => store.fingerprints.into_iter().collect(),
+        _ => HashMap::new(),
+    }
+}
+
+pub fn save_baseline(env: &Environment, inventory: &Inventory) -> Result<(), String> {
+    let file = baseline_file(env);
+    let store = Baseline {
+        version: BASELINE_VERSION,
+        fingerprints: inventory.bindings.iter()
+            .filter_map(|binding| Some((binding.source.path_id.clone(), binding.source.fingerprint.clone()?)))
+            .collect(),
+    };
+    fs::create_dir_all(file.parent().ok_or("Geçersiz baseline yolu")?).map_err(|error| error.to_string())?;
+    let temporary = file.with_extension("json.tmp");
+    fs::write(&temporary, serde_json::to_vec_pretty(&store).map_err(|error| error.to_string())?)
+        .map_err(|error| error.to_string())?;
+    fs::rename(temporary, file).map_err(|error| error.to_string())
+}
 
 pub fn scan(env: &Environment, projects: &[Project]) -> Inventory {
     let mut merged = Inventory::default();
@@ -51,7 +96,7 @@ fn push_issue(seen: &mut HashSet<(String, Option<String>)>, out: &mut Vec<ScanIs
 mod tests {
     use super::*;
     use crate::integrations::model::{AssetKind, ClientId, Scope};
-    use crate::integrations::resolver::resolve;
+    use crate::integrations::resolver::{drift, resolve};
     use std::collections::BTreeMap;
     use std::fs;
     use std::path::{Path, PathBuf};
@@ -107,5 +152,22 @@ mod tests {
         let report = resolve(&inventory);
         assert!(report.entries.iter().any(|entry| entry.scope == Scope::Project));
         assert!(report.entries.iter().any(|entry| entry.scope == Scope::Global));
+    }
+
+    #[test]
+    fn external_config_change_between_scans_is_source_changed() {
+        let temp = Temp::new("drift");
+        let env = env(&temp.0);
+        let config = env.home.join(".claude.json");
+        write(&config, r#"{"mcpServers":{"postgres":{"command":"npx","args":["pg"]}}}"#);
+        let first = scan(&env, &[]);
+        save_baseline(&env, &first).unwrap();
+        let previous = load_baseline(&env);
+        assert!(!previous.is_empty());
+
+        write(&config, r#"{"mcpServers":{"postgres":{"command":"npx","args":["pg","--changed"]}}}"#);
+        let second = scan(&env, &[]);
+        let findings = drift(&second, &previous);
+        assert!(findings.iter().any(|finding| finding.code == crate::integrations::resolver::DriftCode::SourceChanged));
     }
 }

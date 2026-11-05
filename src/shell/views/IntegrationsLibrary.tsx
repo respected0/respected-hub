@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { thirdPartyInventory } from '../../shared/api.ts';
-import type { AssetKind, ClientId, ClientState, InventoryResult, ResolutionState, Scope, Capability } from '../../shared/integrationsTypes.ts';
+import type { AssetKind, ClientId, ClientState, DriftCode, InventoryResult, ResolutionState, Scope, Capability } from '../../shared/integrationsTypes.ts';
 import {
   filterIntegrations, groupIntegrations, INTEGRATION_CLIENT_LABEL, INTEGRATION_CLIENT_ORDER,
   INTEGRATION_KINDS, INTEGRATION_KIND_LABEL, INTEGRATION_SCOPE_LABEL, INTEGRATION_STATE_LABEL, ownerLabel,
@@ -8,6 +8,12 @@ import {
 
 const STATE_TONE: Record<ResolutionState, string> = {
   effective: 'tone-ok', overridden: 'tone-idle', disabled: 'tone-idle', unknown: 'tone-error', untrusted: 'tone-error',
+};
+
+const DRIFT_LABEL: Record<DriftCode, string> = {
+  source_changed: 'Kaynak değişti', duplicate_copy: 'Kopya çakışması', shadowed: 'Gölgeleniyor',
+  broken_symlink: 'Bozuk symlink', orphan_target: 'Hedef silinmiş', target_missing: 'Hedef yok',
+  owner_protected: 'Sahipli kayıt',
 };
 
 const clientStatus = (client: ClientState | undefined) =>
@@ -83,6 +89,14 @@ export default function IntegrationsLibrary() {
         <ul>{result.resolution.issues.map((issue, index) => <li key={`${issue.code}-${index}`}>
           <strong>{issue.code}</strong> {issue.message}{issue.source_path && <> <code>{issue.source_path}</code></>}
         </li>)}</ul>
+      </details>}
+      {result.resolution.drift.length > 0 && <details className="integration-issues" open>
+        <summary>Drift ve çakışmalar ({result.resolution.drift.length})</summary>
+        <ul>{result.resolution.drift.map((finding, index) => <li key={`${finding.code}-${index}`}>
+          <strong>{DRIFT_LABEL[finding.code]}</strong> {finding.message}
+          {finding.source_path && <> <code>{finding.source_path}</code></>}
+        </li>)}</ul>
+        <p className="meta">Bu analiz salt okunurdur; Hub hiçbir kaynağı otomatik düzeltmez.</p>
       </details>}
     </>}
     {error ? <div className="catalog-empty" role="alert"><p>{error}</p>

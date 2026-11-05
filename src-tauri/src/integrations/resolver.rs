@@ -42,6 +42,35 @@ pub struct Resolution {
     pub entries: Vec<ResolvedEntry>,
     pub issues: Vec<ScanIssue>,
     pub untrusted: Vec<ScanIssue>,
+    #[serde(default)]
+    pub drift: Vec<DriftFinding>,
+}
+
+/// Read-only drift categories. Nothing here repairs a file; callers only show
+/// the source and the effect so the user can decide.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DriftCode {
+    SourceChanged,
+    DuplicateCopy,
+    Shadowed,
+    BrokenSymlink,
+    OrphanTarget,
+    TargetMissing,
+    OwnerProtected,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DriftFinding {
+    pub code: DriftCode,
+    pub asset_key: Option<String>,
+    pub name: Option<String>,
+    pub asset_kind: Option<AssetKind>,
+    pub client: Option<ClientId>,
+    pub scope: Option<Scope>,
+    pub project: Option<Project>,
+    pub source_path: Option<String>,
+    pub message: String,
 }
 
 /// Resolve every scanned binding to one observable state. Configured is always
@@ -93,7 +122,184 @@ pub fn resolve(inventory: &Inventory) -> Resolution {
     }
 
     let untrusted = inventory.issues.iter().filter(|issue| issue.code == "project_untrusted").cloned().collect();
-    Resolution { entries, issues: inventory.issues.clone(), untrusted }
+    Resolution { entries, issues: inventory.issues.clone(), untrusted, drift: Vec::new() }
+}
+
+/// Compare the scanned inventory with the fingerprints saved by the previous
+/// scan, then classify copy, shadowing, ownership and link conflicts. Every
+/// finding is explanatory: this function never writes or repairs anything.
+pub fn drift(inventory: &Inventory, previous: &HashMap<String, String>) -> Vec<DriftFinding> {
+    let assets: HashMap<&str, &Asset> = inventory.assets.iter().map(|asset| (asset.key.as_str(), asset)).collect();
+    let mut findings = Vec::new();
+    let mut seen = HashSet::new();
+
+    for binding in &inventory.bindings {
+        if let (Some(before), Some(after)) = (
+            previous.get(&binding.source.path_id),
+            binding.source.fingerprint.as_deref(),
+        ) {
+            if before != after {
+                let asset = assets.get(binding.asset_key.as_str());
+                push_drift(&mut findings, &mut seen, DriftFinding {
+                    code: DriftCode::SourceChanged,
+                    asset_key: Some(binding.asset_key.clone()),
+                    name: asset.map(|asset| asset.name.clone()),
+                    asset_kind: asset.map(|asset| asset.kind),
+                    client: Some(binding.client),
+                    scope: Some(binding.scope),
+                    project: binding.project.clone(),
+                    source_path: Some(binding.source.path.clone()),
+                    message: "Kaynak son taramadan sonra değişti; Hub bu değişikliği otomatik düzeltmez, plan yenilenmeli.".into(),
+                });
+            }
+        }
+    }
+
+    let mut copies: HashMap<(AssetKind, String), Vec<&Binding>> = HashMap::new();
+    for binding in &inventory.bindings {
+        let Some(asset) = assets.get(binding.asset_key.as_str()) else { continue };
+        if asset.kind == AssetKind::Skill {
+            copies.entry((asset.kind, asset.name.clone())).or_default().push(binding);
+        }
+    }
+    for ((kind, name), bindings) in &copies {
+        let paths: HashSet<&str> = bindings.iter().map(|binding| binding.source.path_id.as_str()).collect();
+        if paths.len() < 2 { continue; }
+        for binding in bindings {
+            push_drift(&mut findings, &mut seen, DriftFinding {
+                code: DriftCode::DuplicateCopy,
+                asset_key: Some(binding.asset_key.clone()),
+                name: Some(name.clone()),
+                asset_kind: Some(*kind),
+                client: Some(binding.client),
+                scope: Some(binding.scope),
+                project: binding.project.clone(),
+                source_path: Some(binding.source.path.clone()),
+                message: format!("Aynı adla {} farklı skill kopyası var; istemciler farklı içerik kullanabilir. Otomatik düzeltme yapılmaz.", paths.len()),
+            });
+        }
+    }
+
+    for binding in &inventory.bindings {
+        let asset = assets.get(binding.asset_key.as_str());
+        let code = match binding.source.integrity {
+            SourceIntegrity::Missing => DriftCode::TargetMissing,
+            SourceIntegrity::BrokenLink if binding.source.symlink_target.is_some() => DriftCode::OrphanTarget,
+            SourceIntegrity::BrokenLink => DriftCode::BrokenSymlink,
+            _ => continue,
+        };
+        let message = match code {
+            DriftCode::TargetMissing => "Kaynağın hedefi bulunamadı; istemci bu kaydı kullanamaz.",
+            DriftCode::OrphanTarget => "Symlink hedefi silinmiş; istemci bu skill'i çözemez.",
+            _ => "Bozuk symlink; istemci bu kaydı kullanamaz.",
+        };
+        push_drift(&mut findings, &mut seen, DriftFinding {
+            code,
+            asset_key: Some(binding.asset_key.clone()),
+            name: asset.map(|asset| asset.name.clone()),
+            asset_kind: asset.map(|asset| asset.kind),
+            client: Some(binding.client),
+            scope: Some(binding.scope),
+            project: binding.project.clone(),
+            source_path: Some(binding.source.path.clone()),
+            message: message.into(),
+        });
+    }
+
+    let report = resolve(inventory);
+    for entry in report.entries.iter().filter(|entry| entry.state == ResolutionState::Overridden) {
+        push_drift(&mut findings, &mut seen, DriftFinding {
+            code: DriftCode::Shadowed,
+            asset_key: Some(entry.asset_key.clone()),
+            name: Some(entry.name.clone()),
+            asset_kind: Some(entry.kind),
+            client: Some(entry.client),
+            scope: Some(entry.scope),
+            project: entry.project.clone(),
+            source_path: Some(entry.source_path.clone()),
+            message: "Aynı istemci ve kapsamda daha sonra gelen aynı adlı kayıt bu kaydı gölgeliyor.".into(),
+        });
+    }
+    for project_entry in report.entries.iter()
+        .filter(|entry| entry.effective && entry.scope == Scope::Project && matches!(entry.kind, AssetKind::Mcp | AssetKind::Plugin))
+    {
+        let Some(project) = &project_entry.project else { continue };
+        for global in report.entries.iter().filter(|entry| entry.effective
+            && entry.scope == Scope::Global
+            && entry.client == project_entry.client
+            && entry.kind == project_entry.kind
+            && entry.name == project_entry.name
+            && entry.asset_key != project_entry.asset_key)
+        {
+            push_drift(&mut findings, &mut seen, DriftFinding {
+                code: DriftCode::Shadowed,
+                asset_key: Some(global.asset_key.clone()),
+                name: Some(global.name.clone()),
+                asset_kind: Some(global.kind),
+                client: Some(global.client),
+                scope: Some(global.scope),
+                project: Some(project.clone()),
+                source_path: Some(global.source_path.clone()),
+                message: format!("Proje {} içindeki aynı adlı kayıt bu global kaydı gölgeliyor.", project.id),
+            });
+        }
+    }
+
+    let conflicts: HashSet<(ClientId, AssetKind, String)> = findings.iter()
+        .filter(|finding| matches!(finding.code, DriftCode::DuplicateCopy | DriftCode::Shadowed))
+        .filter_map(|finding| Some((finding.client?, finding.asset_kind?, finding.name.clone()?)))
+        .collect();
+    for binding in &inventory.bindings {
+        let Some(asset) = assets.get(binding.asset_key.as_str()) else { continue };
+        let owned = binding.managed || matches!(binding.source.owner, Owner::Product { .. } | Owner::Catalog);
+        if owned && conflicts.contains(&(binding.client, asset.kind, asset.name.clone())) {
+            push_drift(&mut findings, &mut seen, DriftFinding {
+                code: DriftCode::OwnerProtected,
+                asset_key: Some(binding.asset_key.clone()),
+                name: Some(asset.name.clone()),
+                asset_kind: Some(asset.kind),
+                client: Some(binding.client),
+                scope: Some(binding.scope),
+                project: binding.project.clone(),
+                source_path: Some(binding.source.path.clone()),
+                message: "Sahipli kayıt çakışıyor; Hub bu kaydın üzerine yazmaz ve otomatik düzeltme yapmaz.".into(),
+            });
+        }
+    }
+
+    for issue in &inventory.issues {
+        let code = match issue.code.as_str() {
+            "project_missing" => DriftCode::TargetMissing,
+            "orphan_skill" => DriftCode::OrphanTarget,
+            "broken_link" => DriftCode::BrokenSymlink,
+            _ => continue,
+        };
+        push_drift(&mut findings, &mut seen, DriftFinding {
+            code,
+            asset_key: None,
+            name: None,
+            asset_kind: None,
+            client: None,
+            scope: None,
+            project: None,
+            source_path: issue.source_path.clone(),
+            message: issue.message.clone(),
+        });
+    }
+
+    findings
+}
+
+fn push_drift(findings: &mut Vec<DriftFinding>, seen: &mut HashSet<String>, finding: DriftFinding) {
+    let key = format!(
+        "{:?}|{}|{:?}|{:?}|{:?}",
+        finding.code,
+        finding.source_path.as_deref().unwrap_or_default(),
+        finding.client,
+        finding.scope,
+        finding.project.as_ref().map(|project| project.id.as_str()),
+    );
+    if seen.insert(key) { findings.push(finding); }
 }
 
 /// Winning entries for one client and project context. Global records apply to
@@ -227,5 +433,89 @@ mod tests {
         let report = resolve(&inventory);
         assert!(report.entries.is_empty());
         assert_eq!(report.untrusted.len(), 1);
+    }
+
+    fn binding_at(asset: &Asset, client: ClientId, path: &str, fingerprint: Option<&str>) -> Binding {
+        let mut item = binding(asset, client, Scope::Global, None, None);
+        item.source = Source::from_path(Path::new(path), Owner::User, SourceFormat::SkillDirectory);
+        item.source.fingerprint = fingerprint.map(str::to_string);
+        item
+    }
+
+    #[test]
+    fn changed_source_since_previous_scan_is_reported() {
+        let asset = asset(AssetKind::Mcp, "db", "command: db");
+        let mut inventory = Inventory::default();
+        let mut item = binding(&asset, ClientId::Claude, Scope::Global, None, None);
+        item.source.fingerprint = Some("new".into());
+        let mut previous = HashMap::new();
+        previous.insert(item.source.path_id.clone(), "old".to_string());
+        inventory.add_binding(asset, item);
+        let report = drift(&inventory, &previous);
+        assert!(report.iter().any(|finding| finding.code == DriftCode::SourceChanged));
+    }
+
+    #[test]
+    fn same_skill_name_with_different_copies_is_duplicate_copy() {
+        let first = asset(AssetKind::Skill, "draft", "skill:first");
+        let second = asset(AssetKind::Skill, "draft", "skill:second");
+        let mut inventory = Inventory::default();
+        inventory.add_binding(first.clone(), binding_at(&first, ClientId::Claude, "C:/claude/draft/SKILL.md", Some("a")));
+        inventory.add_binding(second.clone(), binding_at(&second, ClientId::Codex, "C:/codex/draft/SKILL.md", Some("b")));
+        let report = drift(&inventory, &HashMap::new());
+        assert_eq!(report.iter().filter(|finding| finding.code == DriftCode::DuplicateCopy).count(), 2);
+    }
+
+    #[test]
+    fn project_copy_shadowing_a_global_copy_is_reported() {
+        let global = asset(AssetKind::Mcp, "db", "command: global");
+        let project = asset(AssetKind::Mcp, "db", "command: project");
+        let mut inventory = Inventory::default();
+        inventory.add_binding(global.clone(), binding(&global, ClientId::Cursor, Scope::Global, None, None));
+        inventory.add_binding(project.clone(), binding(&project, ClientId::Cursor, Scope::Project, Some("a"), None));
+        let report = drift(&inventory, &HashMap::new());
+        let shadowed: Vec<_> = report.iter().filter(|finding| finding.code == DriftCode::Shadowed).collect();
+        assert_eq!(shadowed.len(), 1);
+        assert_eq!(shadowed[0].asset_key.as_deref(), Some(global.key.as_str()));
+    }
+
+    #[test]
+    fn broken_symlink_orphan_target_and_missing_project_are_classified() {
+        let broken = asset(AssetKind::Skill, "broken", "skill:broken");
+        let orphan = asset(AssetKind::Skill, "orphan", "skill:orphan");
+        let missing = asset(AssetKind::Skill, "missing", "skill:missing");
+        let mut inventory = Inventory::default();
+        let mut broken_binding = binding_at(&broken, ClientId::Codex, "C:/codex/broken/SKILL.md", Some("a"));
+        broken_binding.source.integrity = SourceIntegrity::BrokenLink;
+        let mut orphan_binding = binding_at(&orphan, ClientId::Codex, "C:/codex/orphan/SKILL.md", Some("b"));
+        orphan_binding.source.integrity = SourceIntegrity::BrokenLink;
+        orphan_binding.source.symlink_target = Some("C:/gone".into());
+        let mut missing_binding = binding_at(&missing, ClientId::Codex, "C:/codex/missing/SKILL.md", Some("c"));
+        missing_binding.source.integrity = SourceIntegrity::Missing;
+        inventory.add_binding(broken, broken_binding);
+        inventory.add_binding(orphan, orphan_binding);
+        inventory.add_binding(missing, missing_binding);
+        inventory.issues.push(ScanIssue {
+            code: "project_missing".into(), message: "Kayıtlı proje klasörü bulunamadı.".into(),
+            source_path: Some("C:/work/gone".into()),
+        });
+        let report = drift(&inventory, &HashMap::new());
+        assert!(report.iter().any(|finding| finding.code == DriftCode::BrokenSymlink));
+        assert!(report.iter().any(|finding| finding.code == DriftCode::OrphanTarget));
+        assert_eq!(report.iter().filter(|finding| finding.code == DriftCode::TargetMissing).count(), 2);
+    }
+
+    #[test]
+    fn owned_entry_in_a_conflict_is_protected() {
+        let owned = asset(AssetKind::Skill, "respected-skill", "skill:owned");
+        let copy = asset(AssetKind::Skill, "respected-skill", "skill:copy");
+        let mut inventory = Inventory::default();
+        let mut owned_binding = binding_at(&owned, ClientId::Claude, "C:/claude/respected-skill/SKILL.md", Some("a"));
+        owned_binding.managed = true;
+        owned_binding.source.owner = Owner::Product { product: "orchestrator".into() };
+        inventory.add_binding(owned, owned_binding);
+        inventory.add_binding(copy.clone(), binding_at(&copy, ClientId::Codex, "C:/codex/respected-skill/SKILL.md", Some("b")));
+        let report = drift(&inventory, &HashMap::new());
+        assert!(report.iter().any(|finding| finding.code == DriftCode::OwnerProtected));
     }
 }
