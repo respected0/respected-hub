@@ -55,6 +55,14 @@ fn a_published_bundle_is_downloaded_verified_and_ready_to_install() {
     assert!(std::fs::read_dir(managed.join("downloads")).unwrap().flatten().all(|e| !e.file_name().to_string_lossy().ends_with(".zip")));
     catalog::ensure_bundle(&roots, "orchestrator", Some(&version)).expect("repair of the installed version needs no network");
 
+    // a real outage: the cached repair still works, while a first download needs the index
+    std::env::set_var("RESPECTED_HUB_CATALOG_URL", url(&work.0.join("offline-catalog.json")));
+    catalog::ensure_bundle(&roots, "orchestrator", Some(&version)).expect("cached repair survives an outage");
+    let cold = work.0.join("cold-managed");
+    let cold_roots = Roots { managed: cold.clone(), catalog: cold.join("catalog") };
+    assert_eq!(catalog::ensure_bundle(&cold_roots, "orchestrator", None).unwrap_err().code, "CATALOG_UNAVAILABLE", "a first download cannot be satisfied offline");
+    std::env::set_var("RESPECTED_HUB_CATALOG_URL", url(&served.join("catalog.json")));
+
     // a damaged cached copy is dropped and downloaded again
     let payload_file = found[0].dir.join("payload").join(&found[0].files[0].0);
     std::fs::write(&payload_file, b"tampered").unwrap();

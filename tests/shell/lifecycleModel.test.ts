@@ -26,6 +26,8 @@ test('the catalog version is only called new when an update is available', () =>
 
 test('errors read as one sentence with the recovery hint', () => {
   assert.equal(describeLifecycleError({ code: 'VERIFY_FAILED', message: 'Ürün çalışmadı.', hint: 'Onarın.' }), 'Ürün çalışmadı. Onarın.');
+  assert.match(describeLifecycleError({ code: 'CATALOG_UNAVAILABLE', message: '', hint: '' }), /kataloğuna ulaşılamadı/);
+  assert.match(describeLifecycleError({ code: 'HUB_TOO_OLD', message: '', hint: '' }), /daha yeni bir Hub/);
   assert.match(describeLifecycleError({ code: 'VERIFY_FAILED', message: '', hint: '' }), /Doğrulama başarısız/);
 });
 
