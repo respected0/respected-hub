@@ -20,21 +20,24 @@ pub struct Environment {
 
 impl Environment {
     pub fn current() -> Self {
-        let home = if cfg!(windows) {
+        let test_home = crate::trust::dev_abs("RESPECTED_HUB_TEST_HOME");
+        let home = test_home.clone().unwrap_or_else(|| if cfg!(windows) {
             std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME"))
         } else {
             std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))
-        }.map(PathBuf::from).unwrap_or_default();
-        let app_data = std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_else(|| {
-            if cfg!(windows) { home.join("AppData/Roaming") }
+        }.map(PathBuf::from).unwrap_or_default());
+        let default_app_data = |home: &PathBuf| if cfg!(windows) { home.join("AppData/Roaming") }
             else if cfg!(target_os = "macos") { home.join("Library/Application Support") }
-            else { home.join(".config") }
-        });
-        let local_app_data = std::env::var_os("LOCALAPPDATA").map(PathBuf::from).unwrap_or_else(|| {
-            if cfg!(windows) { home.join("AppData/Local") }
+            else { home.join(".config") };
+        let default_local_app_data = |home: &PathBuf| if cfg!(windows) { home.join("AppData/Local") }
             else if cfg!(target_os = "macos") { home.join("Library/Application Support") }
-            else { home.join(".local/share") }
-        });
+            else { home.join(".local/share") };
+        let app_data = if test_home.is_some() { default_app_data(&home) } else {
+            std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_else(|| default_app_data(&home))
+        };
+        let local_app_data = if test_home.is_some() { default_local_app_data(&home) } else {
+            std::env::var_os("LOCALAPPDATA").map(PathBuf::from).unwrap_or_else(|| default_local_app_data(&home))
+        };
         let path = std::env::var_os("PATH").map(|value| std::env::split_paths(&value).collect()).unwrap_or_default();
         let path_ext = if cfg!(windows) {
             std::env::var("PATHEXT").unwrap_or_else(|_| ".EXE;.CMD;.BAT".into()).split(';').map(str::to_string).collect()
