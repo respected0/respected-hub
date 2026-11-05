@@ -68,6 +68,7 @@ Entegrasyon kapsam denetimi (2026-11-05, yerel calisma agaci):
 - CI: [run 42014089759](https://github.com/respected0/respected-hub/actions/runs/42014089759) uc iste de basarili (commit `6547f8c`): windows 11m45s, macos 3m48s, ubuntu 4m49s. Indirilen `native-e2e` artefakti **30 PASS, 0 FAIL**, son satir `ALL PASSED`.
 - Yerel tam paket (2026-11-05, bu calisma agaci): `cargo test` **151 birim + 35 entegrasyon kontrati + 1 uretim guven testi** gecti (1 kurucu testi bilerek ignored); `npm run check` **134/134**.
 - CI: [run 42024512853](https://github.com/respected0/respected-hub/actions/runs/42024512853) uc iste de basarili (commit `b9f205d`): windows 10m12s, macos 3m55s, ubuntu 5m56s. Indirilen `native-e2e` artefakti **30 PASS, 0 FAIL**, son satir `ALL PASSED`. Bu commit yalnizca belge degisikligidir; kod degismedi.
+- CI: [run 42026915332](https://github.com/respected0/respected-hub/actions/runs/42026915332) (commit `14b1609`, belge-only): ilk denemede Windows native E2E `Orchestrator settings applied and read back` zaman asimina ugradi; ikinci denemede gecici dizin temizligi `EPERM` verdi; ucuncu denemede **Windows 8m9s, macOS 4m49s, Ubuntu 5m55s** ve `native-e2e` **30 PASS, 0 FAIL**, `ALL PASSED`. Ayni kod `b9f205d` kosusunda ilk denemede yesildi; hata test kosucusu kaynakli flake olarak kaydedildi.
 
 Yayin hijyeni denetimi (2026-11-05, yayimlanmis `catalog` ve `v0.1.0-beta.1` asset'leri indirilerek):
 

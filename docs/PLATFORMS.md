@@ -1,6 +1,6 @@
 # Platform yetenek matrisi
 
-`PORT-001`: bir platform ancak ayni kontrat testleri gercek bir kosucuda gecerse "destekleniyor" sayilir. Kanit: 2026-11-05 tarihli `ci` kosusu [42024512853](https://github.com/respected0/respected-hub/actions/runs/42024512853) (commit `b9f205d`).
+`PORT-001`: bir platform ancak ayni kontrat testleri gercek bir kosucuda gecerse "destekleniyor" sayilir. Kanit: 2026-11-05 tarihli `ci` kosusu [42026915332](https://github.com/respected0/respected-hub/actions/runs/42026915332) (commit `14b1609`).
 
 | Yetenek | Windows | macOS | Linux |
 |---|---|---|---|
