@@ -79,7 +79,7 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
 ### M5 — Farklılaştırıcı özellikler ve platform desteği
 - [x] `ADV-001` Proje profilleri ve idempotent toplu ayar şablonları.
 - [x] `ADV-002` Drift, gölgelenme, bozuk symlink ve kopya çakışması analizi.
-- [ ] `PORT-001` Gerçek CI/VM üzerinde doğrulanmış macOS ve Linux yetenek matrisi.
+- [x] `PORT-001` Gerçek CI/VM üzerinde doğrulanmış macOS ve Linux yetenek matrisi.
 
 ### Bütün aşamalarda kalite kapısı
 - [ ] `QA-001` Her PR için `npm run check`, `cargo test`, ilgili native E2E, gerçek kullanıcı ayarlarını koruma ve belgelerin güncellenmesi.
