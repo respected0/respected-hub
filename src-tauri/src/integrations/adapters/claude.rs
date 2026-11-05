@@ -6,6 +6,7 @@
 //! - personal skills: `~/.claude/skills/<name>/SKILL.md`
 //! - project skills: `<project>/.claude/skills/<name>/SKILL.md`
 //! - plugins: `~/.claude/plugins/**/.claude-plugin/plugin.json`
+//! - plugin state: `~/.claude/settings.json` (`enabledPlugins`)
 
 use super::common::{add_skills, entry_owner, issue, json_mcp_identity, read_json, read_only, source};
 use crate::integrations::discovery::Environment;
@@ -15,7 +16,7 @@ use crate::integrations::model::{
 use crate::integrations::security::{self, Limits};
 use crate::integrations::plugins;
 use serde_json::Value;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -33,7 +34,9 @@ pub fn scan(env: &Environment, projects: &[Project]) -> Inventory {
         add_mcp_document(&mut inventory, &user_mcp, &document, &fingerprint, Scope::Global, None, None);
     }
     add_skills(&mut inventory, ClientId::Claude, &config.join("skills"), Scope::Global, None, None, Owner::User);
-    add_plugins(&mut inventory, &config.join("plugins"));
+    let plugins_root = config.join("plugins");
+    let enabled_plugins = read_enabled_plugins(&mut inventory, &config.join("settings.json"));
+    add_plugins(&mut inventory, &plugins_root, &enabled_plugins);
 
     for project in projects {
         let root = PathBuf::from(&project.root);
@@ -86,7 +89,17 @@ fn add_mcp_document(
     }
 }
 
-fn add_plugins(inventory: &mut Inventory, root: &Path) {
+/// `enabledPlugins` maps `<name>@<marketplace>` to whether Claude loads the plugin.
+fn read_enabled_plugins(inventory: &mut Inventory, path: &Path) -> HashMap<String, bool> {
+    let Some((document, _)) = read_json(inventory, path, SourceFormat::Json) else { return HashMap::new() };
+    document
+        .get("enabledPlugins")
+        .and_then(Value::as_object)
+        .map(|map| map.iter().filter_map(|(id, enabled)| enabled.as_bool().map(|enabled| (id.clone(), enabled))).collect())
+        .unwrap_or_default()
+}
+
+fn add_plugins(inventory: &mut Inventory, root: &Path, enabled_plugins: &HashMap<String, bool>) {
     if !fs::metadata(root).map(|metadata| metadata.is_dir()).unwrap_or(false) { return; }
     let walk = security::walk_files(root, Limits { max_depth: PLUGIN_DEPTH, ..Limits::default() });
     inventory.issues.extend(walk.issues);
@@ -96,12 +109,12 @@ fn add_plugins(inventory: &mut Inventory, root: &Path) {
             && file.parent().and_then(Path::file_name).map(|name| name == ".claude-plugin").unwrap_or(false);
         let Some(plugin_root) = file.parent().and_then(Path::parent) else { continue };
         if is_manifest && seen.insert(Source::from_path(plugin_root, Owner::User, SourceFormat::Manifest).path_id) {
-            add_plugin(inventory, &file, plugin_root);
+            add_plugin(inventory, &file, plugin_root, root, enabled_plugins);
         }
     }
 }
 
-fn add_plugin(inventory: &mut Inventory, manifest_path: &Path, root: &Path) {
+fn add_plugin(inventory: &mut Inventory, manifest_path: &Path, root: &Path, plugins_root: &Path, enabled_plugins: &HashMap<String, bool>) {
     let Some((manifest, fingerprint)) = read_json(inventory, manifest_path, SourceFormat::Json) else { return };
     let name = manifest.get("name").and_then(Value::as_str).filter(|name| !name.trim().is_empty())
         .map(str::to_string)
@@ -110,8 +123,17 @@ fn add_plugin(inventory: &mut Inventory, manifest_path: &Path, root: &Path) {
     let identity = format!("plugin:{name}:{}", source.path_id);
     let asset = Asset::new(AssetKind::Plugin, &name, &identity);
     let parent = asset.key.clone();
-    // shortcut: the manifest `enabled` hint is read locally; Claude's enabledPlugins map is M3 work.
-    let enabled = manifest.get("enabled").and_then(Value::as_bool);
+    // Installed plugins live under `<plugins>/cache/<marketplace>/<name>/<version>` and Claude
+    // keys `enabledPlugins` by `<name>@<marketplace>`.
+    let relative = root.strip_prefix(plugins_root).ok();
+    let marketplace = relative
+        .filter(|relative| relative.components().next().map(|first| first.as_os_str() == "cache").unwrap_or(false))
+        .and_then(|relative| relative.components().nth(1))
+        .map(|marketplace| marketplace.as_os_str().to_string_lossy().into_owned());
+    let enabled = match marketplace {
+        Some(marketplace) => Some(enabled_plugins.get(&format!("{name}@{marketplace}")).copied().unwrap_or(false)),
+        None => manifest.get("enabled").and_then(Value::as_bool),
+    };
     inventory.add_binding(asset, Binding {
         asset_key: parent.clone(),
         client: ClientId::Claude,

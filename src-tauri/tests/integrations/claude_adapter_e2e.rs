@@ -147,3 +147,25 @@ fn same_name_with_different_commands_stays_two_assets() {
     assert_ne!(names[0].key, names[1].key);
     assert_eq!(inventory.bindings.len(), 2);
 }
+
+#[test]
+fn installed_plugin_state_comes_from_the_enabled_plugins_map() {
+    let temp = Temp::new("claude-plugin-enabled");
+    let home = temp.0.join("home");
+    let environment = env(&home);
+    write(&home, ".claude/settings.json", r#"{"enabledPlugins":{
+  "demo@demo-market": true,
+  "off@demo-market": false
+}}"#);
+    write(&home, ".claude/plugins/cache/demo-market/demo/1.0.0/.claude-plugin/plugin.json", r#"{"name":"demo","enabled":false}"#);
+    write(&home, ".claude/plugins/cache/demo-market/off/2.0.0/.claude-plugin/plugin.json", r#"{"name":"off"}"#);
+    write(&home, ".claude/plugins/cache/demo-market/missing/3.0.0/.claude-plugin/plugin.json", r#"{"name":"missing","enabled":true}"#);
+
+    let inventory = claude::scan(&environment, &[]);
+
+    let enabled = |name: &str| inventory.bindings.iter().find(|binding| inventory.assets.iter()
+        .any(|asset| asset.key == binding.asset_key && asset.name == name)).and_then(|binding| binding.enabled);
+    assert_eq!(enabled("demo"), Some(true), "the settings map must override the manifest hint");
+    assert_eq!(enabled("off"), Some(false));
+    assert_eq!(enabled("missing"), Some(false), "a cache plugin absent from the map is not loaded");
+}
