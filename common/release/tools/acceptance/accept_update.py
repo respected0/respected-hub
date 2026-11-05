@@ -14,6 +14,7 @@ import hashlib
 import os
 import subprocess
 import sys
+import time
 import winreg
 from pathlib import Path
 
@@ -78,7 +79,12 @@ def main() -> None:
         if uninstall:
             run([uninstall.strip('"'), *SILENT])
     check(entry("DisplayVersion") is None, "uninstaller removes the entry")
-    check(not DATA.exists(), "uninstaller removes the Hub's own data")
+    for _ in range(30):  # Inno's uninstaller finishes in a temp copy after the started process exits
+        if not DATA.exists():
+            break
+        time.sleep(1)
+    left = [str(f) for f in DATA.rglob("*")] if DATA.exists() else []
+    check(not DATA.exists(), f"uninstaller removes the Hub's own data (left: {left})")
     print(f"ALL PASSED ({len(checks)} checks)")
 
 
