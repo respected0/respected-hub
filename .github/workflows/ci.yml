@@ -61,6 +61,30 @@ jobs:
       - name: Production trust set (release profile, no development keys)
         working-directory: respected-hub
         run: cargo test --release --manifest-path src-tauri/Cargo.toml --lib production_build
+      - name: Inno Setup (product installers)
+        run: choco install innosetup --no-progress -y
+      - name: Development signing key
+        working-directory: respected-hub
+        run: python common/release/tools/signing/bundle_signing.py init
+      - name: Build Hub (debug)
+        working-directory: respected-hub
+        run: npx tauri build --debug --no-bundle
+      - name: Allow WebView2 DevTools on the runner (WebView2 150+ ignores the env var for elevated hosts)
+        shell: pwsh
+        run: |
+          $key = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments'
+          New-Item -Path $key -Force | Out-Null
+          New-ItemProperty -Path $key -Name 'respected-hub.exe' -Value '--remote-debugging-port=9333' -PropertyType String -Force
+      - name: Native E2E (WebView2, real installers)
+        working-directory: respected-hub
+        run: node tests/native/hub_native_e2e.mjs src-tauri/target/debug/respected-hub.exe --report ../native-report
+      - name: Upload native E2E report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-e2e
+          path: native-report
+          if-no-files-found: warn
 
   cross-platform:
     # PORT-001: discovery, read-only scan and integration plan/apply contracts

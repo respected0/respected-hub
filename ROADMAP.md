@@ -82,7 +82,7 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
 - [x] `PORT-001` Gerçek CI/VM üzerinde doğrulanmış macOS ve Linux yetenek matrisi.
 
 ### Bütün aşamalarda kalite kapısı
-- [ ] `QA-001` Her PR için `npm run check`, `cargo test`, ilgili native E2E, gerçek kullanıcı ayarlarını koruma ve belgelerin güncellenmesi.
+- [x] `QA-001` Her PR için `npm run check`, `cargo test`, ilgili native E2E, gerçek kullanıcı ayarlarını koruma ve belgelerin güncellenmesi.
 
 **MVP sınırı:** M2 bitene kadar üçüncü taraf MCP/Skill/Plugin kurma veya AI ayarlarına yazma yok.
 **M3 güvenlik kapısı:** `AGENTS.md`, `ARCHITECTURE.md`, `FOOTPRINT.md`, `PRIVACY.md` ve gerekiyorsa ürün sözleşmesi, açık onaylı üçüncü taraf yönetim kapsamı için güncellenmeden yazma komutları üretimde açılmaz.

@@ -18,7 +18,7 @@ const exe = resolve(args.find(a => !a.startsWith('--')) ?? '');
 const remote = args.includes('--remote-catalog');
 const hub = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const eco = resolve(hub, '..');
-const tools = join(hub, 'release', 'tools');
+const tools = join(hub, 'common', 'release', 'tools');
 const reportDir = resolve(args.includes('--report') ? args[args.indexOf('--report') + 1] : join(eco, '.build-cache', 'hub-native'));
 mkdirSync(reportDir, { recursive: true });
 if (!existsSync(exe)) { console.error('exe not found:', exe); process.exit(2); }
