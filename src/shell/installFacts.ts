@@ -70,12 +70,12 @@ export const FACTS: Record<FactSubject, Record<FactPhase, string[]>> = {
     install: [
       `Program: %LOCALAPPDATA%\\Respected\\RespectedOrchestrator\\app. ${NO_ADMIN} Windows Ayarlar › Uygulamalar listesinde bir giriş.`,
       'Veri klasörü: %LOCALAPPDATA%\\Respected\\RespectedOrchestrator\\data (ayarlar, işlem makbuzları, görev ve kampanya kayıtları, kanıtları imzalayan anahtar; anahtar yalnızca sizin hesabınıza açıktır).',
-      'İsteğe bağlı: seçtiğiniz AI araçlarına MCP kaydı (Claude Code, Codex, Cursor, Gemini, Windsurf) ve Brain hafızasına bağlantı.',
+      'İsteğe bağlı: seçtiğiniz AI araçlarına MCP kaydı (Claude Code, Codex, Cursor, Windsurf) ve Brain hafızasına bağlantı.',
     ],
     use: [
       'Her görev projenizin yalıtılmış bir Git çalışma ağacında çalışır (veri klasöründeki workspaces/ altında). Projenize ancak sizin onayınızla yama uygulanır.',
       'Görev durumu, kanıt ve kampanya kayıtları veri klasöründe birikir.',
-      'Görevi, bilgisayarınızda kurulu AI aracı (Codex, Claude, Gemini, agy, Cursor) komut satırından yapar; görev metni o aracın sağlayıcısına gider.',
+      'Görevi, bilgisayarınızda kurulu AI aracı (Codex, Claude, agy, Cursor) komut satırından yapar; görev metni o aracın sağlayıcısına gider.',
       'Doğrulama komutları kısıtlı bir Windows belirteciyle çalışır; çalışanın ortamından sır gibi görünen değişkenler çıkarılır.',
       'Çalışan araç bilgisayarınızda sıradan bir süreçtir: projenizin çalışma ağacı dışına yazmasını Orchestrator engellemez, koruma o aracın kendi kum havuzundan gelir.',
     ],
