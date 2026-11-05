@@ -57,6 +57,13 @@ gorurse baslamaz, sahte bir kullanici klasoru kullanir ve gercek AI istemci ayar
   (commit `94bab61`): ubuntu 5m57s, macos 5m22s, windows 8m34s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
 - Yerel `remote_catalog_e2e`: ag yokken onbellekten onarim basarili; bos onbellekte ilk indirme `CATALOG_UNAVAILABLE` ile reddedildi (2026-11-05).
 
+Entegrasyon kapsam denetimi (2026-11-05, yerel calisma agaci):
+
+- `cargo test` ile 8 entegrasyon ikilisi: **35/35 gecti** (catalog 6, claude 5, codex 4, cursor/gemini/opencode 5, inventory 3, plugins 4, resolver 5, skills 3).
+- `cargo test --lib integrations::`: **108 gecti**, 43 filtrelendi.
+- `npm run check`: **134/134 gecti**.
+- Derlenmis `src-tauri/assets/third-party-catalog.json`: **62 kayit**; `catalog_e2e` ag olmadan okur.
+
 Yayin hijyeni denetimi (2026-11-05, yayimlanmis `catalog` ve `v0.1.0-beta.1` asset'leri indirilerek):
 
 - `catalog.json` (2586 bayt) ayrik Ed25519 imzasi derlenmis uretim anahtari `dabcb5265227bbdf` ile

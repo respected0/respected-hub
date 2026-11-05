@@ -1,10 +1,10 @@
 # Respected Hub — Uygulanabilir Geliştirme Yol Haritası
 
-> **Durum:** Öneri / henüz uygulanmadı. **Tarih:** 2026-11-03. **Hedef:** Local-first, hesapsız, Steam-benzeri MCP/Skills/Plugin kataloğu + kurulu entegrasyon envanteri + AI aracı/proje/global kapsamında güvenli yönetim.
+> **Durum:** M1–M5 kaynak kodu ve testleri uygulandı; M0 yayın engelleri açıktır. **Tarih:** 2026-11-03, güncelleme 2026-11-05. **Hedef:** Local-first, hesapsız, Steam-benzeri MCP/Skills/Plugin kataloğu + kurulu entegrasyon envanteri + AI aracı/proje/global kapsamında güvenli yönetim.
 >
-> **Kaynaklar:** `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/PRODUCT_CONTRACT.md`, `docs/FOOTPRINT.md`, `AGENTS.md`, `PRIVACY.md`, `src-tauri/src/commands/manage.rs`, `src-tauri/src/lib.rs`, `src/shell/views/{Discover,Library}.tsx`, `src/shell/apps.ts`, `tests/native/hub_native_e2e.mjs` (respected0/respected-hub, main, 2026-11-03).
+> **Kaynaklar:** `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/PRODUCT_CONTRACT.md`, `docs/FOOTPRINT.md`, `AGENTS.md`, `PRIVACY.md`, `src-tauri/src/commands/manage.rs`, `src-tauri/src/lib.rs`, `src/shell/views/{Discover,Library}.tsx`, `src/shell/apps.ts`, `tests/native/hub_native_e2e.mjs` (respected0/respected-hub, main, 2026-11-03; durum 2026-11-05).
 >
-> **Önemli:** Bu plan henüz kaynak koda uygulanmış değildir. Dosya yollarının `önerilen` olarak belirtilenleri yeni açılacak dosyalardır. Gerçek makine üzerinde kontrol yapılmadı; kabul testleri uygulama geliştirilirken çalıştırılmalıdır.
+> **Önemli:** Aşağıdaki kartlar hâlâ sözleşmedir. `önerilen` etiketli yollar artık büyük ölçüde mevcuttur; kabul kanıtı `ROADMAP.md` ve `docs/QUALITY.md` içinde işaretli maddelerle izlenir. Üretim yazma IPC'si sözleşme kapısı kapalı olduğu için açılmaz.
 
 ## 0. Karar kayıtları ve kırmızı çizgiler
 

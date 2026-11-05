@@ -1,6 +1,6 @@
 # ADR: Üçüncü taraf entegrasyon sahipliği
 
-- **Durum:** Kabul edildi (M1/M2 salt okunur kapsamı)
+- **Durum:** Kabul edildi (M1/M2 salt okunur; M3–M5 motoru testli, üretim yazma IPC'si kapalı)
 - **Tarih:** 2026-11-04
 - **Bağlam:** Hub'ın MCP, Skill ve Plugin envanteri ile ileride bunları yönetmesi
 
@@ -51,6 +51,24 @@ belirsiz durumda `unknown` döner.
 - Dosya boyutu ve tarama derinliği sınırlıdır; aşım kontrollü hata üretir.
 - Yalnızca `https://github.com/...` katalog bağlantısı açılır; MVP kurulum yapmaz.
 - Testler geçici kök ve sahte kullanıcı klasörü kullanır; gerçek AI ayarlarına yazmaz.
+
+## Tehdit modeli
+
+**Varlıklar:** Kullanıcının AI istemci yapılandırmaları, Skill/Plugin kaynak dosyaları, config içindeki sırlar,
+journal ve geri alma yedekleri, katalog imza anahtarı ve sequence durumu.
+
+**Tehditler:** Kötü niyetli config/katalog içeriği, sır ifşası, symlink veya yol kaçışı ve döngü, plan ile yazma
+arasında TOCTOU/hash kayması, ürün/katalog sahipliğinin ezilmesi, aşırı büyük veya bozuk dosya, imza
+tekrarı/düşürme/alan karışması, çökme veya yarım yazma.
+
+**Kontroller:** Tipli ve kapalı IPC (keyfî yol, komut veya URL yok), plan → kullanıcı onayı → atomik yazma →
+geri okuma → undo zinciri, kanonik yol ve sabit istemci allowlist'i, sınırlı okuma/tarama, sır redaksiyonu,
+sahiplik koruması (`OWNER_PROTECTED`), alan ayrımlı Ed25519 imza ve sequence doğrulaması.
+Kanıt: `integrations/security.rs`, planner/apply testleri, adapter E2E sır ve symlink vakaları, `catalog_e2e`.
+
+**Kalan risk / kapsam dışı:** Aynı kullanıcı hesabında çalışan kötü niyetli yerel yazılım, kullanıcının kendi
+bozduğu istemci yapılandırması ve imzalı metadata'nın bağlı kaynak kodun güvenli olduğunu garanti etmemesi.
+Üretim yazma IPC'si bu ADR'nin kapısı açılana kadar kapalıdır; kurma/kaldırma yoktur.
 
 ## Sonuçlar
 

@@ -10,13 +10,14 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
 - [ ] Hata düzeltmeleri: beta.1 sonrası bulunanlar.
 - [ ] Var olanı iyileştirme: örneğin Hub'sız kullanıcıya sürüm bildirimi.
 ## Dış eklenti ve MCP keşfi
-- [ ] Keşfet sayfasında GitHub repoları, eklentiler ve MCP sunucularını listelemek (bugün yalnızca Brain ve
-  Orchestrator; `src/shell/views/Discover.tsx`).
+- [x] Keşfet sayfasında GitHub repoları, eklentiler ve MCP sunucularını listelemek.
+  - Kanıt: `src/shell/views/ThirdPartyCatalog.tsx`, `src/shell/thirdPartyCatalog.ts`, `integrations/catalog.rs`; 62 kayıtlık derlenmiş katalog ve `catalog_e2e`. Salt okunur, GitHub bağlantılı.
 - [ ] Bunları Hub'dan kurmak (örnek: ponytail) ve kaldırmak; ürünlerimizdeki gibi yalnızca kendi girdisini yazıp silerek.
-- [ ] "Hangi AI aracında kurulu" görünümü: her MCP/eklentinin Claude Code, Codex, Cursor, Gemini… ayarlarında olup
+- [x] "Hangi AI aracında kurulu" görünümü: her MCP/eklentinin Claude Code, Codex, Cursor, Gemini… ayarlarında olup
   olmadığını göstermek.
-- [ ] Dış eklentiler ve MCP sunucuları için de imzalı katalog: ürünlerimizin kataloğu GitHub'dan imzalı gelir (Hub imzayı
-  ve dosya özetlerini doğrular); dış eklentiler için böyle bir katalog ve güven modeli henüz yok.
+  - Kanıt: istemci × kapsam matrisi (`IntegrationsLibrary.tsx`, `integrationMatrix.ts`), proje görünümü (`Projects.tsx`) ve beş istemcili `resolver_e2e`.
+- [x] Dış eklentiler ve MCP sunucuları için imzalı katalog kanalı ve doğrulama modeli.
+  - Kanıt: `SEC-002` alan ayrımlı Ed25519 imza/sequence doğrulaması, `CAT-003` isteğe bağlı tazeleme ve çevrimdışı son doğrulanmış katalog. Yayımlanmış bir dış katalog içeriği ve Hub'dan kurma yoktur.
 ## Yayın
 - [ ] Temiz bir makinede ilk kurulum henüz denenmedi (`tests/native/hub_native_e2e.mjs` kurulu ürün olan makinede başlamaz).
   Hub'ın katalogdan kendini güncellemesi (Ayarlar > Güncellemeler > Hub'ı güncelle) ilk sürümde denenemez, çünkü güncellenecek daha yeni sürüm yok; bir sonraki sürüm yayınlanınca gerçek yeni sürümle denenecek.
@@ -31,9 +32,10 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
 
 ## Genişletilmiş ürün vizyonu — entegrasyon kataloğu ve yerel yönetici
 
-> **Bu bölüm beta.1 sonrası ilk stabilizasyon sürümünde uygulanmaz.** Detaylar, mimari değişiklik,
-> bağımlılık, test ve ölçülebilir kabul kriterleri: [`IMPLEMENTATION_ROADMAP.md`](IMPLEMENTATION_ROADMAP.md).
-> Buradaki görevler öneridir ve henüz gerçekleştirilmemiştir.
+> **Durum (2026-11-05):** M1–M5 kaynak kodu ve testleri uygulandı; M0 yayın engelleri açıktır.
+> Her işaretli maddede kısa kanıt verilir. Ayrıntı: [`IMPLEMENTATION_ROADMAP.md`](IMPLEMENTATION_ROADMAP.md),
+> [`docs/QUALITY.md`](docs/QUALITY.md), [`docs/ADR-THIRD-PARTY-INTEGRATIONS.md`](docs/ADR-THIRD-PARTY-INTEGRATIONS.md).
+> M3–M5 motoru hazırdır; üretim yazma IPC'si kullanıcı onayı ve sözleşme kapısı kapalı olduğu için açılmaz.
 
 ### M0 — Önce mevcut ürünün yayın kalitesi (yeni özellik yok)
 - [ ] `REL-001` Eski sürümden gerçek güncelleme ve geri alma CI matrisi.
@@ -45,24 +47,40 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
   - [ ] Hub'sız kurulan ürünlerin kendi sürüm bildirimi: ürün depolarında; bu depoda yapılamaz.
 
 ### M1 — Envanter motorunun temel sözleşmesi
-- [ ] `CORE-001` Brain/Orchestrator sahipliği ve üçüncü taraf konfigürasyon yazma sınırı için ADR; kod ve belge uyumu.
-- [ ] `CORE-002` `Asset`, `Client`, `Source`, `Binding`, `Scope`, `Capability`, `ObservedStatus` veri modeli.
-- [ ] `CORE-003` Sahte Windows kullanıcı kökü, config ve symlink fixture'ları, native E2E koruması.
-- [ ] `CORE-004` Rust `integrations` modülü ve tipli/allowlist'li Tauri IPC; genel shell/CLI yok.
-- [ ] `SEC-001` Kaynak sahipliği, path sınırları, sır redaksiyonu ve güvenlik tehdit modeli.
+- [x] `CORE-001` Brain/Orchestrator sahipliği ve üçüncü taraf konfigürasyon yazma sınırı için ADR; kod ve belge uyumu.
+  - Kanıt: `ADR-THIRD-PARTY-INTEGRATIONS.md`; planner ve apply `managed`, `Owner::Product`, `Owner::Catalog` için `OWNER_PROTECTED`.
+- [x] `CORE-002` `Asset`, `Client`, `Source`, `Binding`, `Scope`, `Capability`, `ObservedStatus` veri modeli.
+  - Kanıt: `src-tauri/src/integrations/model.rs`; yol kimliği ve serde round-trip testleri.
+- [x] `CORE-003` Sahte Windows kullanıcı kökü, config ve symlink fixture'ları, native E2E koruması.
+  - Kanıt: `inventory_e2e` (3 test), `RESPECTED_HUB_TEST_HOME` ile native E2E; gerçek AI ayarları karşılaştırması.
+- [x] `CORE-004` Rust `integrations` modülü ve tipli/allowlist'li Tauri IPC; genel shell/CLI yok.
+  - Kanıt: `commands/integrations.rs`, `lib.rs`; kapalı eylem kümesi `api.rs` ve `only_closed_actions_are_accepted` testi.
+- [x] `SEC-001` Kaynak sahipliği, path sınırları, sır redaksiyonu ve güvenlik tehdit modeli.
+  - Kanıt: `security.rs` redaksiyon/yol/symlink/boyut testleri, adapter E2E sır sızıntısı kontrolleri, ADR tehdit modeli.
 
 ### M2 — Local Discovery MVP: offline katalog + salt okunur kurulum envanteri
-- [ ] `DISC-001` Var olan `detect_ai_clients` işlevini kanıta dayalı istemci keşfine genişlet.
-- [ ] `DISC-002` Claude Code MCP/Skill/Plugin konfigürasyonlarını salt okunur tespit et.
-- [ ] `DISC-003` Codex MCP/Skill konfigürasyonlarını salt okunur tespit et.
-- [ ] `DISC-004` Cursor, Gemini CLI ve OpenCode adapter'larını ekle.
-- [ ] `DISC-005` Skills/symlink envanteri, managed/unmanaged kaynak ayrımı.
-- [ ] `DISC-006` Plugin ve alt bileşen (MCP/Skill/Hook/Command) ilişkileri.
-- [ ] `DISC-007` Araç bazlı etkin kapsam ve çakışma çözümleyicisi.
-- [ ] `CAT-001` Ürün kurucusu kataloğundan ayrı, uygulamayla gelen yerel üçüncü taraf katalog.
-- [ ] `CAT-002` Keşfet'te arama, kategori/istemci filtresi ve GitHub sayfası bağlantısı.
-- [ ] `UI-001` Kütüphanem'de MCP/Skills/Plugin × AI aracı × kapsam matrisi.
-- [ ] `UI-002` Kullanıcının seçtiği projeler için salt okunur global/proje görünümü.
+- [x] `DISC-001` Var olan `detect_ai_clients` işlevini kanıta dayalı istemci keşfine genişlet.
+  - Kanıt: `integrations/discovery.rs`; klasör varlığı tek başına `enabled` sayılmaz, okunamayan yol kontrollü uyarıdır.
+- [x] `DISC-002` Claude Code MCP/Skill/Plugin konfigürasyonlarını salt okunur tespit et.
+  - Kanıt: `adapters/claude.rs`, `claude_adapter_e2e` 5 test.
+- [x] `DISC-003` Codex MCP/Skill konfigürasyonlarını salt okunur tespit et.
+  - Kanıt: `adapters/codex.rs`, `codex_adapter_e2e` 4 test.
+- [x] `DISC-004` Cursor, Gemini CLI ve OpenCode adapter'larını ekle.
+  - Kanıt: `adapters/{cursor,gemini,opencode}.rs`, `cursor_gemini_opencode_adapter_e2e` 5 test.
+- [x] `DISC-005` Skills/symlink envanteri, managed/unmanaged kaynak ayrımı.
+  - Kanıt: `integrations/skills.rs`, `skills_e2e` 3 test.
+- [x] `DISC-006` Plugin ve alt bileşen (MCP/Skill/Hook/Command) ilişkileri.
+  - Kanıt: `integrations/plugins.rs`, `plugins_e2e` 4 test.
+- [x] `DISC-007` Araç bazlı etkin kapsam ve çakışma çözümleyicisi.
+  - Kanıt: `integrations/resolver.rs`, `resolver_e2e`; beş istemci × altı kapsam.
+- [x] `CAT-001` Ürün kurucusu kataloğundan ayrı, uygulamayla gelen yerel üçüncü taraf katalog.
+  - Kanıt: derlenmiş `src-tauri/assets/third-party-catalog.json` (62 kayıt), `integrations/catalog.rs`, `catalog_e2e` 6 test.
+- [x] `CAT-002` Keşfet'te arama, kategori/istemci filtresi ve GitHub sayfası bağlantısı.
+  - Kanıt: `ThirdPartyCatalog.tsx`, `thirdPartyCatalog.ts`; 4 arayüz filtre/arama testi.
+- [x] `UI-001` Kütüphanem'de MCP/Skills/Plugin × AI aracı × kapsam matrisi.
+  - Kanıt: `IntegrationsLibrary.tsx`, `integrationMatrix.ts`; matris/filtre testleri.
+- [x] `UI-002` Kullanıcının seçtiği projeler için salt okunur global/proje görünümü.
+  - Kanıt: `Projects.tsx`, `projectScope.ts`, `integrations/projects.rs`; global/proje gölgelenmesi ve eksik kök testleri.
 
 ### M3 — Safe Control Engine: aç/kapat, proje/global, güvenli geri alma
 - [x] `OPS-001` Mutasyonsuz işlem planı, maskeleme ve değişiklik önizlemesi.
