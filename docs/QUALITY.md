@@ -53,6 +53,8 @@ gorurse baslamaz, sahte bir kullanici klasoru kullanir ve gercek AI istemci ayar
 
 - CI: [run 41988123558](https://github.com/respected0/respected-hub/actions/runs/41988123558) uc iste de basarili
   (commit `1716894`): macos 3m45s, ubuntu 5m59s, windows 8m30s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
+- CI: [run 41992973591](https://github.com/respected0/respected-hub/actions/runs/41992973591) uc iste de basarili
+  (commit `94bab61`): ubuntu 5m57s, macos 5m22s, windows 8m34s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
 - Yerel `remote_catalog_e2e`: ag yokken onbellekten onarim basarili; bos onbellekte ilk indirme `CATALOG_UNAVAILABLE` ile reddedildi (2026-11-05).
 
 Yayin hijyeni denetimi (2026-11-05, yayimlanmis `catalog` ve `v0.1.0-beta.1` asset'leri indirilerek):
