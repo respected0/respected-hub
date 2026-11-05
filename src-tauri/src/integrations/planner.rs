@@ -21,6 +21,7 @@ const PLAN_TTL_SECONDS: u64 = 300;
 #[serde(rename_all = "snake_case")]
 pub enum Operation {
     RemoveMcp,
+    DetachMcp,
     EnableMcp,
     DisableMcp,
     MoveMcp,
@@ -100,20 +101,23 @@ pub fn plan_at(inventory: &Inventory, projects: &[Project], request: &PlanReques
         .ok_or_else(|| fail("TARGET_NOT_FOUND", "Seçilen varlık envanterde bulunamadı; envanteri yenileyin."))?;
     let capability = inventory.capabilities.iter().find(|item| item.client == binding.client);
     let supported = capability.map(|item| match request.operation {
-        Operation::RemoveMcp => item.plan,
+        Operation::RemoveMcp | Operation::DetachMcp => item.plan,
         Operation::EnableMcp => item.enable,
         Operation::DisableMcp => item.disable,
         Operation::MoveMcp | Operation::CopyMcp | Operation::BindMcp => item.plan,
     }).unwrap_or(false);
     if !supported || asset.kind != AssetKind::Mcp {
         let reason = capability.and_then(|item| item.toggle_reason.as_deref())
-            .filter(|_| request.operation != Operation::RemoveMcp)
+            .filter(|_| !matches!(request.operation, Operation::RemoveMcp | Operation::DetachMcp))
             .map(|reason| format!(" {reason}"))
             .unwrap_or_default();
         return Err(fail("UNSUPPORTED_CAPABILITY", &format!("Bu istemci veya varlık türü için değişiklik planı desteklenmiyor.{reason}")));
     }
     if binding.managed || matches!(binding.source.owner, Owner::Product { .. } | Owner::Catalog) {
         return Err(fail("OWNER_PROTECTED", "Bu kayıt Respected ürününe veya kataloğa ait; harici motorla değiştirilemez."));
+    }
+    if matches!(request.operation, Operation::RemoveMcp | Operation::DetachMcp) && is_symlink(&binding.source.path) {
+        return Err(fail("SYMLINK_TARGET", "Hedef symlink; güvenli ayırma için reddedildi."));
     }
     if request.operation == Operation::BindMcp {
         return plan_bind(inventory, projects, request, binding, asset, now);
@@ -135,7 +139,7 @@ pub fn plan_at(inventory: &Inventory, projects: &[Project], request: &PlanReques
     };
     let mut risks = Vec::new();
     if matches!(binding.scope, Scope::Global) && !projects.is_empty() {
-        let effect = if request.operation == Operation::RemoveMcp { "kaldırıldığında" } else { "değiştirildiğinde" };
+        let effect = if matches!(request.operation, Operation::RemoveMcp | Operation::DetachMcp) { "ayrıldığında" } else { "değiştirildiğinde" };
         risks.push(format!("Genel kayıt {effect} bu istemciyi kullanan tüm projeler etkilenebilir."));
     }
     if matches!(request.operation, Operation::EnableMcp | Operation::DisableMcp) {
@@ -562,7 +566,7 @@ fn plan_document(
                 return Err(fail("SOURCE_CHANGED", "Hedef kayıt beklenen biçimde değil; planı yenileyin."));
             }
             let after = match operation {
-                Operation::RemoveMcp => crate::integrations::apply::remove_member(text, format, container, name),
+                Operation::RemoveMcp | Operation::DetachMcp => crate::integrations::apply::remove_member(text, format, container, name),
                 _ => crate::integrations::apply::set_enabled(text, format, container, name, enabled),
             }.map_err(|error| fail(error.code, &error.message))?;
             (entry, after)
@@ -576,7 +580,7 @@ fn plan_document(
                 return Err(fail("SOURCE_CHANGED", "Hedef kayıt beklenen biçimde değil; planı yenileyin."));
             }
             let after = match operation {
-                Operation::RemoveMcp => crate::integrations::apply::remove_member(text, format, container, name),
+                Operation::RemoveMcp | Operation::DetachMcp => crate::integrations::apply::remove_member(text, format, container, name),
                 _ => crate::integrations::apply::set_enabled(text, format, container, name, enabled),
             }.map_err(|error| fail(error.code, &error.message))?;
             (entry, after)
@@ -589,14 +593,14 @@ fn plan_document(
             let before = serde_json::to_value(&entry)
                 .map_err(|_| fail("INTERNAL", "TOML kaydı önizlemeye dönüştürülemedi."))?;
             let after = match operation {
-                Operation::RemoveMcp => crate::integrations::apply::remove_member(text, format, container, name),
+                Operation::RemoveMcp | Operation::DetachMcp => crate::integrations::apply::remove_member(text, format, container, name),
                 _ => crate::integrations::apply::set_enabled(text, format, container, name, enabled),
             }.map_err(|error| fail(error.code, &error.message))?;
             (before, after)
         }
         _ => return Err(fail("UNSUPPORTED_CAPABILITY", "Bu kaynak biçimi için format korumalı plan yok.")),
     };
-    let diff = if operation == Operation::RemoveMcp {
+    let diff = if matches!(operation, Operation::RemoveMcp | Operation::DetachMcp) {
         vec![format!("- {container}.{name}")]
     } else {
         vec![format!("~ {container}.{name}.enabled = {enabled}")]
@@ -733,6 +737,72 @@ mod tests {
         let inventory = inventory::scan(&env, &[]);
         let error = plan(&inventory, &[], &selector(&inventory, "respected-brain")).unwrap_err();
         assert_eq!(error.code, "OWNER_PROTECTED");
+    }
+
+    #[test]
+    fn detach_plan_only_targets_the_requested_client() {
+        let (temp, env) = codex_fixture("detach-isolated");
+        let claude = temp.0.join("home/.claude.json");
+        fs::write(&claude, r#"{"mcpServers":{"postgres":{"command":"npx","args":["server"]}}}"#).unwrap();
+        let inventory = inventory::scan(&env, &[]);
+        let codex = temp.0.join("home/.codex/config.toml");
+        let claude_before = fs::read(&claude).unwrap();
+        let codex_before = fs::read(&codex).unwrap();
+        let plan = plan(&inventory, &[], &toggle_selector(&inventory, "postgres", ClientId::Claude, Operation::DetachMcp)).unwrap();
+        assert_eq!(plan.operation, Operation::DetachMcp);
+        assert_eq!(plan.targets.len(), 1);
+        assert!(plan.targets[0].path.ends_with(".claude.json"));
+        assert_eq!(plan.targets[0].diff, vec!["- mcpServers.postgres".to_string()]);
+        assert_eq!(fs::read(&claude).unwrap(), claude_before);
+        assert_eq!(fs::read(&codex).unwrap(), codex_before);
+        assert_eq!(share_owner(&inventory, &plan), Some(ClientId::Codex));
+    }
+
+    fn share_owner(inventory: &Inventory, plan: &OperationPlan) -> Option<ClientId> {
+        inventory.bindings.iter()
+            .find(|binding| binding.client != plan.client
+                && inventory.assets.iter().any(|asset| asset.key == binding.asset_key && asset.name == plan.name))
+            .map(|binding| binding.client)
+    }
+
+    #[test]
+    fn detach_rejects_symlink_at_plan_time() {
+        let (temp, env) = fixture("detach-symlink");
+        let inventory = inventory::scan(&env, &[]);
+        let real = temp.0.join("real.json");
+        fs::rename(temp.config(), &real).unwrap();
+        if link_file(&real, &temp.config()).is_err() {
+            eprintln!("symlink privilege unavailable; symlink test skipped");
+            return;
+        }
+        let error = plan(&inventory, &[], &toggle_selector(&inventory, "postgres", ClientId::Claude, Operation::DetachMcp)).unwrap_err();
+        assert_eq!(error.code, "SYMLINK_TARGET");
+    }
+
+    #[test]
+    fn detach_rejects_source_changed_after_scan() {
+        let (temp, env) = fixture("detach-changed");
+        let inventory = inventory::scan(&env, &[]);
+        fs::write(temp.config(), r#"{"mcpServers":{"postgres":{"command":"changed"}}}"#).unwrap();
+        let error = plan(&inventory, &[], &toggle_selector(&inventory, "postgres", ClientId::Claude, Operation::DetachMcp)).unwrap_err();
+        assert_eq!(error.code, "SOURCE_CHANGED");
+    }
+
+    #[test]
+    fn detach_keeps_respected_ownership_protected() {
+        let (_temp, env) = fixture("detach-owned");
+        let inventory = inventory::scan(&env, &[]);
+        let error = plan(&inventory, &[], &toggle_selector(&inventory, "respected-brain", ClientId::Claude, Operation::DetachMcp)).unwrap_err();
+        assert_eq!(error.code, "OWNER_PROTECTED");
+    }
+
+    #[cfg(windows)]
+    fn link_file(target: &Path, link: &Path) -> std::io::Result<()> {
+        std::os::windows::fs::symlink_file(target, link)
+    }
+    #[cfg(unix)]
+    fn link_file(target: &Path, link: &Path) -> std::io::Result<()> {
+        std::os::unix::fs::symlink(target, link)
     }
 
     #[test]

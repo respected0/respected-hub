@@ -165,7 +165,7 @@ where
         }
         let is_source = binding.source.path_id == source.source.path_id;
         let after_text = match plan.operation {
-            Operation::RemoveMcp => remove_member(&text, target.format, target_container, &plan.name),
+            Operation::RemoveMcp | Operation::DetachMcp => remove_member(&text, target.format, target_container, &plan.name),
             Operation::EnableMcp => set_enabled(&text, target.format, target_container, &plan.name, true),
             Operation::DisableMcp => set_enabled(&text, target.format, target_container, &plan.name, false),
             Operation::MoveMcp if is_source => remove_member(&text, target.format, target_container, &plan.name),
@@ -1889,6 +1889,71 @@ mod tests {
         assert_eq!(sha256(&fs::read(&global).unwrap()), sha256(&global_before));
         assert_eq!(sha256(&fs::read(&project_file).unwrap()), sha256(&project_before));
         assert_eq!(journal.read("tx-move").unwrap().status, RecordStatus::RolledBack);
+    }
+
+    #[test]
+    fn detach_removes_only_requested_client_and_undo_restores() {
+        let temp = Temp::new("detach-two-clients");
+        let claude = temp.0.join(".claude.json");
+        let codex = temp.0.join("config.toml");
+        let claude_text = "{\"mcpServers\":{\"postgres\":{\"command\":\"npx\"},\"keep\":{\"command\":\"keep\"}}}";
+        let codex_text = "[mcp_servers.postgres]\ncommand = \"npx\"\n\n[mcp_servers.keep]\ncommand = \"keep\"\n";
+        fs::write(&claude, claude_text).unwrap();
+        fs::write(&codex, codex_text).unwrap();
+
+        let asset = Asset::new(AssetKind::Mcp, "postgres", "command: npx");
+        let mut inventory = Inventory::default();
+        for (client, path, format) in [
+            (ClientId::Claude, &claude, SourceFormat::Json),
+            (ClientId::Codex, &codex, SourceFormat::Toml),
+        ] {
+            let mut source = Source::from_path(path, Owner::User, format);
+            source.fingerprint = Some(sha256(&fs::read(path).unwrap()));
+            inventory.add_binding(asset.clone(), Binding {
+                asset_key: asset.key.clone(),
+                client,
+                scope: Scope::Global,
+                project: None,
+                source,
+                status: ObservedStatus::Configured,
+                enabled: None,
+                managed: false,
+                parent_asset_key: None,
+            });
+            inventory.capabilities.push(Capability {
+                client, read: true, plan: true, apply: true, undo: true,
+                enable: true, disable: true, toggle_reason: None,
+            });
+        }
+        let request = PlanRequest {
+            operation: Operation::DetachMcp,
+            asset_key: asset.key.clone(),
+            client: ClientId::Claude,
+            scope: Scope::Global,
+            project: None,
+            target_scope: None,
+            target_project: None,
+            target_client: None,
+        };
+        let plan = plan(&inventory, &[], &request).unwrap();
+        let claude_before = fs::read(&claude).unwrap();
+        let codex_before = fs::read(&codex).unwrap();
+
+        let journal = Journal::at(temp.0.join("journal"));
+        let applied = apply_at_journaled(&plan, &inventory, &[], "tx-detach", plan.created_at, &journal).unwrap();
+        assert_eq!(applied.files.len(), 1);
+        assert_eq!(applied.files[0].path, claude.to_string_lossy());
+        let after = fs::read_to_string(&claude).unwrap();
+        assert!(!after.contains("postgres"));
+        assert!(after.contains("keep"));
+        assert_eq!(fs::read(&codex).unwrap(), codex_before);
+        assert_eq!(journal.read("tx-detach").unwrap().status, RecordStatus::Committed);
+
+        let undo = journal.undo("tx-detach").unwrap();
+        assert_eq!(undo.restored.len(), 1);
+        assert_eq!(sha256(&fs::read(&claude).unwrap()), sha256(&claude_before));
+        assert_eq!(sha256(&fs::read(&codex).unwrap()), sha256(&codex_before));
+        assert_eq!(journal.read("tx-detach").unwrap().status, RecordStatus::RolledBack);
     }
 
     #[test]
