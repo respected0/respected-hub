@@ -20,7 +20,11 @@ pub struct Environment {
 
 impl Environment {
     pub fn current() -> Self {
-        let home = std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME")).map(PathBuf::from).unwrap_or_default();
+        let home = if cfg!(windows) {
+            std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME"))
+        } else {
+            std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))
+        }.map(PathBuf::from).unwrap_or_default();
         let app_data = std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_else(|| {
             if cfg!(windows) { home.join("AppData/Roaming") }
             else if cfg!(target_os = "macos") { home.join("Library/Application Support") }
