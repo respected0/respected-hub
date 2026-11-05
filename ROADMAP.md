@@ -129,7 +129,7 @@ Bu maddeler beta.1 sonrası sürümün kabul kapısı değildir; v0.1.0 resmi s�
 ### M5 — Farklılaştırıcı özellikler ve platform desteği
 - [x] `ADV-001` Proje profilleri ve idempotent toplu ayar şablonları.
 - [x] `ADV-002` Drift, gölgelenme, bozuk symlink ve kopya çakışması analizi.
-- [x] `PORT-001` Gerçek CI üzerinde doğrulanmış macOS ve Linux **kontrat** yetenek matrisi (keşif, salt okunur envanter, plan/apply/undo, üretim güven kümesi). Masaüstü GUI/paketleme kapsam dışıdır; v0.1.0 resmi sürümünde doğrulanacak. Kanıt: `docs/PLATFORMS.md`, CI `42014089759`.
+- [x] `PORT-001` Gerçek CI üzerinde doğrulanmış macOS ve Linux **kontrat** yetenek matrisi (keşif, salt okunur envanter, plan/apply/undo, üretim güven kümesi). Masaüstü GUI/paketleme kapsam dışıdır; v0.1.0 resmi sürümünde doğrulanacak. Kanıt: `docs/PLATFORMS.md`, CI `42024512853`.
 
 ### Bütün aşamalarda kalite kapısı
 - [x] `QA-001` Her PR için `npm run check`, `cargo test`, ilgili native E2E, gerçek kullanıcı ayarlarını koruma ve belgelerin güncellenmesi.
