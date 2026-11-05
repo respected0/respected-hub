@@ -65,6 +65,8 @@ Entegrasyon kapsam denetimi (2026-11-05, yerel calisma agaci):
 - Derlenmis `src-tauri/assets/third-party-catalog.json`: **62 kayit**; `catalog_e2e` ag olmadan okur.
 - CI: [run 42007822877](https://github.com/respected0/respected-hub/actions/runs/42007822877) uc iste de basarili (commit `b49a966`): windows 12m08s, ubuntu 5m50s, macos 6m30s. Windows `native-e2e` artefakti **30 PASS, 0 FAIL**; rapor son satiri `ALL PASSED`.
 - CI: [run 42010197479](https://github.com/respected0/respected-hub/actions/runs/42010197479) uc iste de basarili (commit `e11b83d`): windows 11m24s, ubuntu 6m06s, macos 5m36s. Windows ilk denemede `Orchestrator settings applied and read back` adiminda zaman asimina ugradi; yalnizca basarisiz is yeniden kosuldu ve `native-e2e` **30 PASS, 0 FAIL**, `ALL PASSED` verdi.
+- CI: [run 42014089759](https://github.com/respected0/respected-hub/actions/runs/42014089759) uc iste de basarili (commit `6547f8c`): windows 11m45s, macos 3m48s, ubuntu 4m49s. Indirilen `native-e2e` artefakti **30 PASS, 0 FAIL**, son satir `ALL PASSED`.
+- Yerel tam paket (2026-11-05, bu calisma agaci): `cargo test` **151 birim + 35 entegrasyon kontrati + 1 uretim guven testi** gecti (1 kurucu testi bilerek ignored); `npm run check` **134/134**.
 
 Yayin hijyeni denetimi (2026-11-05, yayimlanmis `catalog` ve `v0.1.0-beta.1` asset'leri indirilerek):
 
@@ -84,4 +86,4 @@ Yayin hijyeni denetimi (2026-11-05, yayimlanmis `catalog` ve `v0.1.0-beta.1` ass
   (bkz. `docs/ARCHITECTURE.md` acik sinirlar).
 - Gercek eski surumden guncelleme/geri alma ve kendini guncelleme simdilik denenemez: yayimlanmis tek surum ve
   gelistirme surumu de `0.1.0-beta.1`; daha yeni bir surum yok.
-- macOS/Linux'ta native GUI: `docs/PLATFORMS.md` geregi desteklenmiyor/dogrulanmadi.
+- macOS/Linux'ta masaustu GUI ve paketleme: `docs/PLATFORMS.md` geregi dogrulanmadi; v0.1.0 resmi surum kapsamindadir, beta.1 sonrasi surumun kapisi degildir.

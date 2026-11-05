@@ -1,6 +1,6 @@
 # Platform yetenek matrisi
 
-`PORT-001`: bir platform ancak ayni kontrat testleri gercek bir kosucuda gecerse "destekleniyor" sayilir. Kanit: 2026-11-05 tarihli `ci` kosusu [41958104756](https://github.com/respected0/respected-hub/actions/runs/41958104756).
+`PORT-001`: bir platform ancak ayni kontrat testleri gercek bir kosucuda gecerse "destekleniyor" sayilir. Kanit: 2026-11-05 tarihli `ci` kosusu [42014089759](https://github.com/respected0/respected-hub/actions/runs/42014089759) (commit `6547f8c`).
 
 | Yetenek | Windows | macOS | Linux |
 |---|---|---|---|
@@ -14,6 +14,6 @@
 | Yayin paketleme (`build_installer.py`) | Evet, CI | Desteklenmiyor | Desteklenmiyor |
 | Masaustu paketleme/imzalama | Evet, CI | Dogrulanmadi | Dogrulanmadi |
 
-Kontrat sayilari: her iki platformda 149 birim + 34 entegrasyon + 1 uretim guven testi; `npm run check` 132 test. Windows isi tam `cargo test --no-fail-fast` paketini calistirmaya devam eder.
+Kontrat sayilari: her iki platformda 151 birim + 35 entegrasyon + 1 uretim guven testi; `npm run check` 134 test. Windows isi tam `cargo test --no-fail-fast` paketini calistirmaya devam eder.
 
-macOS/Linux'ta urun kurulumu ve urun motoru testleri bilerek kosulmaz: kurucu dosyalari Windows Setup bicimindedir. Bu yetenekler icin "destekleniyor" etiketi ancak hedef OS'te gercek bir kurulum/motor kosusu yesil oldugunda eklenir.
+macOS/Linux'ta urun kurulumu ve urun motoru testleri bilerek kosulmaz: kurucu dosyalari Windows Setup bicimindedir. Bu yetenekler icin "destekleniyor" etiketi ancak hedef OS'te gercek bir kurulum/motor kosusu yesil oldugunda eklenir. Masaustu GUI ve paketleme dogrulamasi v0.1.0 resmi surum kapsamindadir; beta.1 sonrasi surumun kapisi degildir.

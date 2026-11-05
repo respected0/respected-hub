@@ -1,10 +1,10 @@
 # Respected Hub — Uygulanabilir Geliştirme Yol Haritası
 
-> **Durum:** M1–M5 kaynak kodu ve testleri uygulandı; M0 yayın engelleri açıktır. **Tarih:** 2026-11-03, güncelleme 2026-11-05. **Hedef:** Local-first, hesapsız, Steam-benzeri MCP/Skills/Plugin kataloğu + kurulu entegrasyon envanteri + AI aracı/proje/global kapsamında güvenli yönetim.
+> **Durum (2026-11-05):** M1–M5 kaynak kodu ve testleri tamam; üretim yazma IPC'si bilinçli olarak kapalı. M0 yayın engelleri yeni sürüm artefaktı/temiz VM bekliyor. Authenticode imzası ile macOS/Linux masaüstü GUI/paketleme doğrulaması v0.1.0 resmi sürüm kapsamındadır; beta.1 sonrası sürümün kabul kapısı değildir. **Tarih:** 2026-11-03, güncelleme 2026-11-05. **Hedef:** Local-first, hesapsız, Steam-benzeri MCP/Skills/Plugin kataloğu + kurulu entegrasyon envanteri + AI aracı/proje/global kapsamında güvenli yönetim.
 >
 > **Kaynaklar:** `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/PRODUCT_CONTRACT.md`, `docs/FOOTPRINT.md`, `AGENTS.md`, `PRIVACY.md`, `src-tauri/src/commands/manage.rs`, `src-tauri/src/lib.rs`, `src/shell/views/{Discover,Library}.tsx`, `src/shell/apps.ts`, `tests/native/hub_native_e2e.mjs` (respected0/respected-hub, main, 2026-11-03; durum 2026-11-05).
 >
-> **Önemli:** Aşağıdaki kartlar hâlâ sözleşmedir. `önerilen` etiketli yollar artık büyük ölçüde mevcuttur; kabul kanıtı `ROADMAP.md` ve `docs/QUALITY.md` içinde işaretli maddelerle izlenir. Üretim yazma IPC'si sözleşme kapısı kapalı olduğu için açılmaz.
+> **Önemli:** Aşağıdaki kartlar hâlâ sözleşmedir. `önerilen` etiketli yollar artık büyük ölçüde mevcuttur; kabul kanıtı `ROADMAP.md` ve `docs/QUALITY.md` içinde işaretli maddelerle izlenir. Üretim yazma IPC'si sözleşme kapısı kapalı olduğu için açılmaz. Kalan doğrulama işleri `ROADMAP.md` içindeki üç sınıfa göre izlenir.
 
 ## 0. Karar kayıtları ve kırmızı çizgiler
 
@@ -288,11 +288,11 @@ QA-001 her aşamada; PORT-001 Windows kapsamının kararlılığından sonra.
 - **Test:** Hub kapalıyken config haricen değişir; aynı Skill farklı içerik; silinen target; üzerine yazılmaması gereken owned entry.
 - **Kabul:** Fixture'lardaki bütün drift durumları doğru kategoriye düşer; varsayılan olarak otomatik düzeltme yapılmaz; kullanıcı source ve etkilerini görür.
 
-#### PORT-001 — macOS/Linux yetenek bazlı destek [P3]
+#### PORT-001 — macOS/Linux kontrat yetenek matrisi [P3]
 - **Mimari / dosyalar:** Platform path discovery, permission/symlink değerlendirmesi ve gerçek OS test harness'i; platform başına capability matrisi.
 - **Bağımlılıklar:** M2+M3 Windows kalite kapıları, CORE-003.
 - **Test:** macOS ve Linux temiz kullanıcı profilinde client discovery, read-only scan, desteklenen kapsam işlemleri, crash/rollback.
-- **Kabul:** Hedef OS'te aynı kontrat testleri gerçek CI üzerinde geçmeden 'destekleniyor' etiketi yok; Windows testleri gerilemez.
+- **Kabul:** Hedef OS'te aynı kontrat testleri gerçek CI üzerinde geçmeden 'destekleniyor' etiketi yok; Windows testleri gerilemez. Masaüstü GUI/paketleme doğrulaması bu görevin dışındadır ve v0.1.0 resmi sürümünde kapatılır.
 
 #### QA-001 — Her aşamada kalite ve yayın kapıları [P0, sürekli]
 - **Mimari / dosyalar:** `npm run check`, `cargo test`, ilgili `cargo test --release --lib trust`, derlenmiş Windows native driver, fixture matrisi; gerektiğinde ayrı izole `integrations_native_e2e.mjs`.
