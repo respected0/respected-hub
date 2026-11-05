@@ -7,7 +7,7 @@ kirmizi ise surum yayimlanmaz. Kosulmayan veya kaniti olmayan her satir `dogrula
 
 | Komut | Ne dogrular | Nerede |
 |---|---|---|
-| `npm run check` | `tsc --noEmit` + 132 arayuz birim testi | CI: windows, macOS, Linux |
+| `npm run check` | `tsc --noEmit` + 133 arayuz birim testi | CI: windows, macOS, Linux |
 | `cargo test --manifest-path src-tauri/Cargo.toml --no-fail-fast` | 151 birim + tum fixture/entegrasyon ikilileri | CI: windows |
 | `cargo test --release --manifest-path src-tauri/Cargo.toml --lib production_build` | Uretim guven kumesi; gelistirme anahtari kabul edilmez | CI: windows, macOS, Linux |
 | `python common/release/tools/acceptance/accept_hub.py` | Yukaridaki Rust + TS adimlari, ortak urun sozlesmesi ve gercek AI ayarlarinin once/sonra karsilastirmasi | elle |
@@ -36,7 +36,7 @@ gorurse baslamaz, sahte bir kullanici klasoru kullanir ve gercek AI istemci ayar
 
 2026-11-05, Windows dev build (`npx tauri build --debug --no-bundle`):
 
-- `npm run check`: 132/132 gecti.
+- `npm run check`: 133/133 gecti.
 - `cargo test --no-fail-fast`: 151 birim + tum entegrasyon ikilileri gecti (0 basarisiz).
 - `cargo test --release --lib production_build`: gecti (ayrinti icin CI isi).
 - Native E2E: 30 PASS, 0 FAIL; rapor ve ekran goruntuleri bu makinede

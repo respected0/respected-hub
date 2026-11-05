@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { APPS } from '../apps.ts';
 import type { Ecosystem } from '../useEcosystem.ts';
 import { STATE_LABEL, type LifecycleAction } from '../lifecycle.ts';
+import { terminal } from '../../products/orchestrator/tasks.ts';
 import { Emblem, Weave } from '../../shared/ui.tsx';
 import type { Go } from './Home.tsx';
 import LifecycleControls from './LifecycleControls.tsx';
@@ -24,7 +25,7 @@ export default function Discover({ eco, go, ask, onAsked, appId }: { eco: Ecosys
         {installed
           ? <div className="actions"><button className="cta" onClick={() => go({ app: featured.id, page: 'overview' })}>Kütüphanede aç</button></div>
           : <LifecycleControls key={featured.id} name={featured.name} lc={lc} onChanged={eco.refresh} onWizard={featured.id === 'brain' ? () => go({ app: featured.id, page: 'settings' }) : undefined}
-              autoAction={ask?.product === featured.id ? ask.action : undefined} onAutoDone={onAsked} />}
+              autoAction={ask?.product === featured.id ? ask.action : undefined} onAutoDone={onAsked} runningTasks={eco.runs.filter(run => !terminal(run.status)).length} />}
       </aside>
     </section>
     <section aria-label="Katalog"><div className="section-head" style={{ marginBottom: 'var(--s-4)' }}><h2>Uygulamalar</h2></div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ACTION_DONE, ACTION_LABEL, STATE_LABEL, availableActions, describeLifecycleError, lifecycleApply, lifecyclePlan } from '../lifecycle.ts';
+import { ACTION_DONE, ACTION_LABEL, STATE_LABEL, activeTaskWarning, availableActions, describeLifecycleError, lifecycleApply, lifecyclePlan } from '../lifecycle.ts';
 import type { JournalEntry, LifecycleAction, LifecyclePlan, ProductLifecycle } from '../lifecycle.ts';
 import { Icon } from '../../shared/ui.tsx';
 import { FACTS, phaseOf, type FactSubject } from '../installFacts.ts';
@@ -9,7 +9,7 @@ const ICON: Record<LifecycleAction, string> = { install: 'download', update: 'sy
 
 // Install / update / repair / remove one product by running its own installer or uninstaller: plan first, confirm, apply.
 // `autoAction`: the person already chose this elsewhere (an update notice, a product installer), so its plan opens directly.
-export default function LifecycleControls({ name, lc, onChanged, onWizard, autoAction, onAutoDone, onBusy }: { name: string; lc: ProductLifecycle | null; onChanged: () => void; onWizard?: () => void; onBusy?: (busy: boolean) => void; autoAction?: LifecycleAction; onAutoDone?: () => void }) {
+export default function LifecycleControls({ name, lc, onChanged, onWizard, autoAction, onAutoDone, onBusy, runningTasks = 0 }: { name: string; lc: ProductLifecycle | null; onChanged: () => void; onWizard?: () => void; onBusy?: (busy: boolean) => void; autoAction?: LifecycleAction; onAutoDone?: () => void; runningTasks?: number }) {
   const [pending, setPending] = useState<LifecyclePlan | null>(null);
   const [purge, setPurge] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -55,6 +55,7 @@ export default function LifecycleControls({ name, lc, onChanged, onWizard, autoA
     {pending && <div className="panel-glass" role="group" aria-label="İşlem planı">
       <h3>{ACTION_LABEL[pending.action]}: {name}{pending.to_version && pending.action !== 'uninstall' && <> <Icon name="arrow" /> v{pending.to_version}</>}</h3>
       <ol className="plan-steps">{pending.plan.steps.map(step => <li key={step.id}>{step.summary}{!step.reversible && <em className="pill"> Geri alınamaz: {step.irreversible_reason}</em>}</li>)}</ol>
+      {activeTaskWarning(pending.product, pending.action, runningTasks) && <p className="notice warning" role="alert">{activeTaskWarning(pending.product, pending.action, runningTasks)}</p>}
       {pending.product in FACTS && <InstallFacts subject={pending.product as FactSubject} only={phaseOf(pending.action)} />}
       {pending.action === 'uninstall' && <label className="choice"><span><strong>Ayarlar ve çalışma verileri de silinsin</strong><small>Kapalıysa yeniden kurduğunda kaldığın yerden devam edersin. Not kasan hiçbir durumda silinmez.</small></span>
         <input type="checkbox" role="switch" checked={purge} disabled={busy} onChange={event => setPurge(event.target.checked)} /></label>}

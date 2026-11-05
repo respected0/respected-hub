@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { APPS, type AppDef } from '../apps.ts';
 import { loadSettings, native, type Run, type Settings } from '../../shared/api.ts';
+import { terminal } from '../../products/orchestrator/tasks.ts';
 import { listCampaigns } from '../../products/orchestrator/campaigns.ts';
 import { orchestratorWorkers, peekSettings, peekWorkers, settingsReadback } from '../../shared/settingsData.ts';
 import type { Ecosystem } from '../useEcosystem.ts';
@@ -125,7 +126,7 @@ export default function AppWorkspace({ appId, page, eco, go, ask, onAsked }: { a
       <div className="ws-title"><h1>{app.name}</h1><p>{app.tagline}</p>
         {!runtime.loading && eco.busy !== app.id && summary.statusKind !== 'ok' && view !== 'overview' && <span className="ws-meta"><button className="link-btn" onClick={() => go('overview')}>Ürün bir sorun bildiriyor: Genel bakışı aç</button></span>}
 </div>
-      <LifecycleControls name={app.name} lc={lc} onChanged={eco.refresh} onBusy={on => eco.setBusy(on ? app.id : null)} onWizard={app.id === 'brain' ? () => go('settings') : undefined} autoAction={ask?.product === app.id ? ask.action : undefined} onAutoDone={onAsked} />
+      <LifecycleControls name={app.name} lc={lc} onChanged={eco.refresh} onBusy={on => eco.setBusy(on ? app.id : null)} onWizard={app.id === 'brain' ? () => go('settings') : undefined} autoAction={ask?.product === app.id ? ask.action : undefined} onAutoDone={onAsked} runningTasks={eco.runs.filter(run => !terminal(run.status)).length} />
       <div className="ws-tabs" role="tablist" aria-label={`${app.name} bölümleri`}>{app.pages.map(item => <button key={item.id} role="tab" aria-selected={view === mountFor(app.id, item.id)} className="tab" onClick={() => go(item.id)}>{item.label}</button>)}</div>
     </header>
     <section className="ws-page" aria-label={pageInfo?.label}>

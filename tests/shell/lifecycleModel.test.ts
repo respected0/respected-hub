@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ACTION_LABEL, availableActions, describeLifecycleError, journalSentence, formatWhen, newOperationId } from '../../src/shell/lifecycle.ts';
+import { ACTION_LABEL, activeTaskWarning, availableActions, describeLifecycleError, journalSentence, formatWhen, newOperationId } from '../../src/shell/lifecycle.ts';
 import type { JournalEntry } from '../../src/shell/lifecycle.ts';
 
 const entry = (over: Partial<JournalEntry> = {}): JournalEntry => ({
@@ -20,6 +20,15 @@ test('actions offered match the install state and the installer in the catalog',
 test('errors read as one sentence with the recovery hint', () => {
   assert.equal(describeLifecycleError({ code: 'VERIFY_FAILED', message: 'Ürün çalışmadı.', hint: 'Onarın.' }), 'Ürün çalışmadı. Onarın.');
   assert.match(describeLifecycleError({ code: 'VERIFY_FAILED', message: '', hint: '' }), /Doğrulama başarısız/);
+});
+
+test('a running Orchestrator task warns before update, repair or removal', () => {
+  assert.match(activeTaskWarning('orchestrator', 'update', 2), /2 görev çalışıyor/);
+  assert.match(activeTaskWarning('orchestrator', 'repair', 1), /kesintiye uğratabilir/);
+  assert.match(activeTaskWarning('orchestrator', 'uninstall', 1), /kesintiye uğratabilir/);
+  assert.equal(activeTaskWarning('orchestrator', 'update', 0), '', 'no task, no warning');
+  assert.equal(activeTaskWarning('orchestrator', 'install', 3), '', 'an install has no running task to cut off');
+  assert.equal(activeTaskWarning('brain', 'update', 3), '', 'only Orchestrator runs tasks');
 });
 
 test('journal sentences describe applied, failed and running operations', () => {

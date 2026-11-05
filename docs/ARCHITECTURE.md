@@ -55,6 +55,8 @@ Hub geri alma tutmaz: kurucu programı yerinde değiştirir, kaldırıcı siler;
 `managed\journal\` altına bir kayıt yazar (Ayarlar › Etkinlik). Hub bir işlemin ortasında kapanırsa o kayıt bir sonraki
 açılışta "başarısız" olarak kapatılır; ürün meşgul görünüp kalmaz. Aynı ürün için ikinci bir işlem, birincisi bitmeden
 başlamaz.
+Orchestrator'da çalışan bir görev varken güncelleme, onarım veya kaldırma planı bunu söyler: kurucu çalışan görevleri
+kesintiye uğratabilir, bu yüzden önce bitmeleri beklenir.
 
 **Açılış niyetleri:** ürün kurucusunun "Hub ile devam et" yolu Hub'ı `--install=<ürün>` ile açar; `--manage=<ürün>` ürün
 sayfasını açar. Hub zaten açıksa ikinci pencere açılmaz; çalışan pencere öne gelir ve niyeti alır.

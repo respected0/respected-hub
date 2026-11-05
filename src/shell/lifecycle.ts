@@ -102,6 +102,12 @@ export function availableActions(state: InstallState, hasPackage: boolean): Life
   }
 }
 
+/** A running Orchestrator task would be cut off by an update, repair or removal; any other product has no tasks. */
+export function activeTaskWarning(product: string, action: LifecycleAction, runningTasks: number): string {
+  if (product !== 'orchestrator' || action === 'install' || runningTasks < 1) return '';
+  return `Orchestrator'da ${runningTasks} görev çalışıyor. Bu işlem çalışan görevleri kesintiye uğratabilir; önce bitmelerini bekleyin.`;
+}
+
 export function formatWhen(epochMs: string | null): string {
   const value = Number(epochMs);
   return Number.isFinite(value) && value > 0 ? new Date(value).toLocaleString('tr-TR') : '';
