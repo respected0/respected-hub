@@ -1,15 +1,9 @@
-Respected Hub'a hoş geldiniz. Hub, Respected ürünlerini komut satırı bilmeden kurup yönetmeniz için hazırlanmış masaüstü uygulamasıdır. Yaptığı her işin Hub'sız bir karşılığı vardır; Hub'ı kaldırsanız bile ürünleriniz olduğu gibi çalışmaya devam eder.
+Respected Hub, Respected ürünlerini tek yerden kurar, günceller ve ayarlar. Hub'ı kaldırsanız bile ürünleriniz olduğu gibi çalışmaya devam eder.
 
-Bu ilk beta sürümde her şey yenidir:
+beta.2'de neler değişti:
 
-- Kurun, güncelleyin, onarın, kaldırın: Keşfet sayfasındaki ürünler imzalı katalogdan indirilip kurulur; Kütüphane'den Güncelle, Onar ve Kaldır düğmeleriyle yönetirsiniz.
-- Güvenli indirme: Katalog ve paketler yayın anahtarıyla imzalıdır; imzası ya da özeti tutmayan hiçbir şey kurulmaz.
-- Siz onaylamadan hiçbir şey güncellenmez: Yeni sürüm olunca ilgili yerde küçük bir rozet çıkar, kurmadan önce sorulur. Beta ya da stable kanalını Ayarlar'dan seçersiniz.
-- Her ürüne bir çalışma alanı: Ürünlerin kendi sayfaları (görevler, kampanyalar, kanıtlar, hafıza arama ve hızlı not gibi) Hub'ın içinde açılır.
-- Ayarlar ve bağlantılar tek yerde: Her ürünün ayar formu ürünün kendi şemasından gelir; AI araçlarıyla bağlantıları görsel olarak açıp kapatırsınız. Ürünler yalnızca kendi girdilerini ekler ve kaldırır.
-- Etkinlik kaydı: Hub'dan yapılan kurulum işlemlerini, ürünlerin son kurulum kaydını ve görev geçmişini görürsünüz.
-- Hub yalnızca kolaylıktır: Hub'ı kaldırmak ürünlere dokunmaz; yeniden kurunca onları olduğu gibi bulur. Ürünler de Hub olmadan kurulur, ayarlanır, onarılır ve kaldırılır.
-- İlk açılışta karşılama ekranı, sonra ürünlerin gerçek durumu: Kurulu olan, sürüm, ayarlar ve sağlık her seferinde ürünün kendisinden okunur; Hub bunları kendi başına saklamaz.
-- Hesap yok, telemetri yok: Hub'ın sakladığı her şey kendi klasörlerindedir ve kaldırınca silinir.
-- Kullanıcı başına kurulum: Yönetici izni gerekmez; WebView2 gerekir (Windows 11'de hazırdır).
-- Kurucu imzasızdır: Windows uyarırsa dosyanın özetini sürüm sayfasında dosyanın yanında GitHub'ın gösterdiği SHA-256 değeriyle karşılaştırın.
+- Çalışan bir proje ya da kampanya varken ürünü güncellemek isterseniz önce uyarır; sormadan görev kesmez.
+- Aynı sürüm numarasıyla farklı içerikli yayın reddedilir; bozuk kurulumu çevrimdışı da onarırsınız.
+- AI araçlarınız (Claude Code, Codex, Cursor, Gemini CLI, OpenCode) salt okunur taranır: kurulu eklentiler, skill'ler, MCP sunucuları ve proje kapsamları matriste görünür. Hub bu ayarlara yazmaz, anahtarları göstermez.
+- Keşfet'te AI araçları için çevrimdışı, imzalı katalog gezilir; Hub oradan bir şey kurmaz.
+- Claude eklenti etkinliği ve marketplace kopyaları artık doğru sayılır.

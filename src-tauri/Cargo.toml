@@ -1,6 +1,6 @@
 [package]
 name = "respected-hub"
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 edition = "2021"
 description = "Respected Hub: desktop app that installs and manages the Respected products"
 authors = ["RESPECTED"]
