@@ -65,7 +65,8 @@ Bu maddeler beta.1 sonrası sürümün kabul kapısı değildir; v0.1.0 resmi s�
 
 ### M0 — Önce mevcut ürünün yayın kalitesi (yeni özellik yok)
 - [ ] `REL-001` Eski sürümden gerçek güncelleme ve geri alma CI matrisi.
-  - Engel: yayımlanmış tek sürüm ve geliştirme sürümü de `0.1.0-beta.1`; gerçek eski→yeni güncelleme için yeni sürüm gerekir.
+  - Hazır: `ci.yml` `update` işi (`accept_update.py`) yayımlanmış beta.1 kurucusunun üzerine bu derlemenin kurucusunu sessiz kurar; sürüm, exe, kullanıcı verisi ve kaldırmayı doğrular. CI'da henüz koşmadı.
+  - Engel: yayımlanmış tek sürüm ve geliştirme sürümü de `0.1.0-beta.1`; gerçek eski→yeni güncelleme için beta.2 gerekir (o zaman iş beta.2'ye karşı yeniden anlam kazanır).
 - [ ] `REL-002` Temiz Windows VM kurulumu ve Hub'ın gerçek kendini güncelleme testi.
   - Engel: temiz Windows VM yok; kendini güncelleme için daha yeni sürüm yok. Authenticode v0.1.0 kapsamına taşındı.
 - [ ] `REL-003` Güncelleme bildirimi, çalışan görev uyarısı, aynı sürüm farklı digest ve yayın hataları.
