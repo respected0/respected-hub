@@ -93,7 +93,7 @@ jobs:
     timeout-minutes: 60
     env:
       RESPECTED_ECOSYSTEM_ROOT: ${{ github.workspace }}
-      OLD_TAG: v0.1.0-beta.1
+      OLD_TAG: v0.1.0-beta.2
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
