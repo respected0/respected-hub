@@ -1,6 +1,6 @@
 # Gizlilik: Respected Hub
 
-Bu metin Hub `0.1.0-beta.1` için geçerlidir (2026-10-24). Kod okunarak yazıldı; kod değişirse metin de değişir.
+Bu metin Hub `0.1.0-beta.2` için geçerlidir (2026-11-06). Kod okunarak yazıldı; kod değişirse metin de değişir.
 
 ## Kısaca
 
@@ -14,6 +14,8 @@ Bu metin Hub `0.1.0-beta.1` için geçerlidir (2026-10-24). Kod okunarak yazıld
 |---|---|
 | Hub programı | `%LOCALAPPDATA%\Respected\RespectedHub\app` |
 | Güncelleme kanalı tercihi, indirilen katalog ve imzası | `%LOCALAPPDATA%\Respected\RespectedHub\managed` |
+| Üçüncü taraf katalog önbelleği (imzalı `catalog.json` ve imzası) | `%LOCALAPPDATA%\Respected\RespectedHub\managed\integrations\third-party-catalog` |
+| Envanter karşılaştırma kaydı (`integration-baseline.json`), sizin eklediğiniz proje klasörlerinin yolları (`projects.json`), profiller (`profiles.json`); yapılandırma içeriği ya da sır saklanmaz | `%APPDATA%\com.respected.hub` |
 | Pencere ve WebView2 verisi | `%LOCALAPPDATA%\com.respected.hub`, `%APPDATA%\com.respected.hub` |
 
 Hub, Brain ve Orchestrator'ın durumunu ve (Brain sayfasında) notlarınızdan son kayıtları **yerelde okuyup gösterir**; bunları
@@ -30,6 +32,7 @@ redakte edilir; ${DATABASE_URL} gibi ortam değişkeni referansları gösterilir
 | Ne zaman | Ne gider | Nereye |
 |---|---|---|
 | Güncelleme denetiminde | Sıradan bir indirme isteği (hiçbir kişisel veri eklenmez) | `github.com/respected0/respected-hub` sürümleri: imzalı ürün kataloğu |
+| Siz Keşfet'te katalog tazeleme düğmesine bastığınızda (kendiliğinden hiç) | Sıradan bir indirme isteği | `github.com/respected0/respected-hub` sürümleri: imzalı üçüncü taraf katalog; imza doğrulanmazsa kullanılmaz |
 | Siz bir ürünü kurmayı, güncellemeyi ya da onarmayı onayladığınızda | Sıradan bir indirme isteği | Katalogda adı geçen GitHub sürüm dosyası; indirilen dosya imza ve özetle doğrulanmadan çalıştırılmaz |
 
 GitHub, her web isteğinde olduğu gibi IP adresinizi görür ve isteği kendi gizlilik politikasına göre kaydedebilir. Hub bunun

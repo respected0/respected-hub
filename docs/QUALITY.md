@@ -34,41 +34,21 @@ gorurse baslamaz, sahte bir kullanici klasoru kullanir ve gercek AI istemci ayar
 
 ## Kanit
 
-2026-11-05, Windows dev build (`npx tauri build --debug --no-bundle`):
+Son kanit (2026-11-05, Windows dev build, `npx tauri build --debug --no-bundle`):
 
-- `npm run check`: 134/134 gecti (2026-11-05).
-- `cargo test --no-fail-fast`: 151 birim + tum entegrasyon ikilileri gecti (0 basarisiz).
-- `cargo test --release --lib production_build`: gecti (ayrinti icin CI isi).
-- Native E2E: 30 PASS, 0 FAIL; rapor ve ekran goruntuleri bu makinede
-  `.build-cache/hub-native-qa001-e2e-fixed/` altinda. Sahte kullanici klasoru Hub'in kendi istemci kesfine de
-  uygulanir; test gercek kullanici AI yapilandirmasini okumaz. Son satir: `real AI client configuration untouched by this run`.
-- CI: [run 41976817349](https://github.com/respected0/respected-hub/actions/runs/41976817349) uc iste de basarili
-  (commit `8276c56`): windows 8m36s, ubuntu 5m3s, macos 4m58s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
-
-- CI: [run 41981505058](https://github.com/respected0/respected-hub/actions/runs/41981505058) uc iste de basarili
-  (commit `4d72a6c`): ubuntu 4m53s, macos 5m13s, windows 11m9s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
-
-- CI: [run 41985091963](https://github.com/respected0/respected-hub/actions/runs/41985091963) uc iste de basarili
-  (commit `fe75a62`): ubuntu 6m22s, macos 4m45s, windows 11m25s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
-
-- CI: [run 41988123558](https://github.com/respected0/respected-hub/actions/runs/41988123558) uc iste de basarili
-  (commit `1716894`): macos 3m45s, ubuntu 5m59s, windows 8m30s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
-- CI: [run 41992973591](https://github.com/respected0/respected-hub/actions/runs/41992973591) uc iste de basarili
-  (commit `94bab61`): ubuntu 5m57s, macos 5m22s, windows 8m34s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
-- Yerel `remote_catalog_e2e`: ag yokken onbellekten onarim basarili; bos onbellekte ilk indirme `CATALOG_UNAVAILABLE` ile reddedildi (2026-11-05).
-
-Entegrasyon kapsam denetimi (2026-11-05, yerel calisma agaci):
-
-- `cargo test` ile 8 entegrasyon ikilisi: **35/35 gecti** (catalog 6, claude 5, codex 4, cursor/gemini/opencode 5, inventory 3, plugins 4, resolver 5, skills 3).
-- `cargo test --lib integrations::`: **108 gecti**, 43 filtrelendi.
-- `npm run check`: **134/134 gecti**.
-- Derlenmis `src-tauri/assets/third-party-catalog.json`: **62 kayit**; `catalog_e2e` ag olmadan okur.
-- CI: [run 42007822877](https://github.com/respected0/respected-hub/actions/runs/42007822877) uc iste de basarili (commit `b49a966`): windows 12m08s, ubuntu 5m50s, macos 6m30s. Windows `native-e2e` artefakti **30 PASS, 0 FAIL**; rapor son satiri `ALL PASSED`.
-- CI: [run 42010197479](https://github.com/respected0/respected-hub/actions/runs/42010197479) uc iste de basarili (commit `e11b83d`): windows 11m24s, ubuntu 6m06s, macos 5m36s. Windows ilk denemede `Orchestrator settings applied and read back` adiminda zaman asimina ugradi; yalnizca basarisiz is yeniden kosuldu ve `native-e2e` **30 PASS, 0 FAIL**, `ALL PASSED` verdi.
-- CI: [run 42014089759](https://github.com/respected0/respected-hub/actions/runs/42014089759) uc iste de basarili (commit `6547f8c`): windows 11m45s, macos 3m48s, ubuntu 4m49s. Indirilen `native-e2e` artefakti **30 PASS, 0 FAIL**, son satir `ALL PASSED`.
-- Yerel tam paket (2026-11-05, bu calisma agaci): `cargo test` **151 birim + 35 entegrasyon kontrati + 1 uretim guven testi** gecti (1 kurucu testi bilerek ignored); `npm run check` **134/134**.
-- CI: [run 42024512853](https://github.com/respected0/respected-hub/actions/runs/42024512853) uc iste de basarili (commit `b9f205d`): windows 10m12s, macos 3m55s, ubuntu 5m56s. Indirilen `native-e2e` artefakti **30 PASS, 0 FAIL**, son satir `ALL PASSED`. Bu commit yalnizca belge degisikligidir; kod degismedi.
-- CI: [run 42026915332](https://github.com/respected0/respected-hub/actions/runs/42026915332) (commit `14b1609`, belge-only): ilk denemede Windows native E2E `Orchestrator settings applied and read back` zaman asimina ugradi; ikinci denemede gecici dizin temizligi `EPERM` verdi; ucuncu denemede **Windows 8m9s, macOS 4m49s, Ubuntu 5m55s** ve `native-e2e` **30 PASS, 0 FAIL**, `ALL PASSED`. Ayni kod `b9f205d` kosusunda ilk denemede yesildi; hata test kosucusu kaynakli flake olarak kaydedildi.
+- `npm run check`: 134/134 gecti (2026-11-06'da `0.1.0-beta.2` uzerinde tekrar dogrulandi).
+- `cargo test` (2026-11-05, `14b1609` oncesi calisma agaci): 151 birim + 35 entegrasyon kontrati (8 ikili: catalog 6,
+  claude 5, codex 4, cursor/gemini/opencode 5, inventory 3, plugins 4, resolver 5, skills 3) + 1 uretim guven testi
+  gecti; 1 kurucu testi bilerek ignored. beta.2 uzerinde yeniden kosulmadi.
+- Derlenmis `src-tauri/assets/third-party-catalog.json`: 62 kayit; `catalog_e2e` ag olmadan okur.
+- Yerel `remote_catalog_e2e`: ag yokken onbellekten onarim basarili; bos onbellekte ilk indirme `CATALOG_UNAVAILABLE`
+  ile reddedildi.
+- CI: [run 42026915332](https://github.com/respected0/respected-hub/actions/runs/42026915332) (commit `14b1609`,
+  belge-only): Windows 8m9s, macOS 4m49s, Ubuntu 5m55s; `native-e2e` **30 PASS, 0 FAIL**, `ALL PASSED`; rapor son satiri
+  `real AI client configuration untouched by this run`. Ilk iki denemede test kosucusu kaynakli flake (Windows
+  `Orchestrator settings applied and read back` zaman asimi, gecici dizin temizliginde `EPERM`); ayni kod `b9f205d`
+  kosusunda ilk denemede yesildi. Bu kosudan sonraki commit'ler (beta.2 surumu, `accept_update.py`) icin CI sonucu
+  burada kayitli degil.
 
 Yayin hijyeni denetimi (2026-11-05, yayimlanmis `catalog` ve `v0.1.0-beta.1` asset'leri indirilerek):
 
@@ -86,6 +66,7 @@ Yayin hijyeni denetimi (2026-11-05, yayimlanmis `catalog` ve `v0.1.0-beta.1` ass
 - `--real-semantic`: anlamsal arama modelinin gercek indirmesi bu kosuda calistirilmadi.
 - Temiz VM'de ilk kurulum, Hub'in kendini guncellemesi ve Yüklü uygulamalar'dan kaldirma elle denenmedi
   (bkz. `docs/ARCHITECTURE.md` acik sinirlar).
-- Gercek eski surumden guncelleme/geri alma ve kendini guncelleme simdilik denenemez: yayimlanmis tek surum ve
-  gelistirme surumu de `0.1.0-beta.1`; daha yeni bir surum yok.
+- Gercek eski surumden guncelleme/geri alma ve Hub'in kendini guncellemesi: `0.1.0-beta.2` yayimlandi
+  (2026-11-05), CI `update` isi (`accept_update.py`) yazildi ama yayimlanmis kurucularla henuz kosulup
+  dogrulanmadi.
 - macOS/Linux'ta masaustu GUI ve paketleme: `docs/PLATFORMS.md` geregi dogrulanmadi; v0.1.0 resmi surum kapsamindadir, beta.1 sonrasi surumun kapisi degildir.

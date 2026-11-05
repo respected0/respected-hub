@@ -2,7 +2,7 @@
 
 Bu belge, Hub'ı kurduğunuzda, ürün kurup kaldırdığınızda ve güncellediğinizde **bilgisayarınızda hangi dosyanın nerede,
 hangi şartla ve neden oluştuğunu** anlatır. Kod okunarak ve gerçek kurucu ile derlenmiş Hub boş bir kullanıcı klasöründe
-çalıştırılarak doğrulandı (`0.1.0-beta.1`). Brain ve Orchestrator'ın kendi dosyaları için onların `FOOTPRINT.md`
+çalıştırılarak doğrulandı (`0.1.0-beta.1`; `0.1.0-beta.2` için yalnızca kod farkı okunarak güncellendi, boş kullanıcı klasöründe yeniden denenmedi). Brain ve Orchestrator'ın kendi dosyaları için onların `FOOTPRINT.md`
 belgelerine bakın:
 [Brain](https://github.com/respected0/respected-brain/blob/main/docs/FOOTPRINT.md) ·
 [Orchestrator](https://github.com/respected0/respected-orchestrator/blob/main/docs/FOOTPRINT.md).
@@ -50,6 +50,9 @@ Başka hiçbir yere dosya, kayıt defteri girdisi ya da zamanlanmış görev yaz
 | `installer-staging\<zaman>\` | Bir ürünü kurarken kurucunun **geçici** kopyası; iş bitince silinir |
 | `downloads\` | Hub'ın kendi güncellemesi (`RespectedHub-Setup-<sürüm>.exe`) |
 | etkinlik günlüğü | Etkinlik sayfasında gördüğünüz işlem kayıtları |
+| `integrations\third-party-catalog\` | Keşfet'teki tazeleme düğmesiyle indirilen imzalı üçüncü taraf katalog ve imzası; yalnızca siz düğmeye basınca yazılır |
+
+Hub ayrıca `%APPDATA%\com.respected.hub` altına envanter karşılaştırma kaydı (`integration-baseline.json`), seçtiğiniz proje yolları (`projects.json`) ve `profiles.json` yazar. Üçüncü taraf AI istemci dosyalarına yazma kapalıdır.
 
 **Güncelleme ve ürün indirmeleri** Windows'un kendi `curl.exe` programıyla yalnızca `https` üzerinden yapılır. Katalog adresi
 sabittir (`github.com/respected0/respected-hub`, `catalog.json` ve `.sig`); paket adresleri imzalı katalogdan gelir. İndirme
