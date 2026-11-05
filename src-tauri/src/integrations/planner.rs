@@ -44,6 +44,8 @@ pub struct PlanRequest {
     pub target_project: Option<String>,
     #[serde(default)]
     pub target_client: Option<ClientId>,
+    #[serde(default)]
+    pub target_clients: Vec<ClientId>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -62,6 +64,8 @@ pub struct PlanTarget {
     pub before: Value,
     pub after: Value,
     pub diff: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub client: Option<ClientId>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -172,6 +176,7 @@ pub fn plan_at(inventory: &Inventory, projects: &[Project], request: &PlanReques
             before,
             after: Value::Null,
             diff,
+            client: None,
         }],
         affected_projects,
         risks,
@@ -220,11 +225,29 @@ fn validate_scope(request: &PlanRequest, projects: &[Project]) -> Result<(), Pla
             }
         }
     }
-    match (request.operation == Operation::BindMcp, request.target_client) {
+    match (request.operation == Operation::BindMcp, requested_target_clients(request)?) {
         (true, None) => Err(fail("BAD_REQUEST", "Bind icin hedef istemci gerekli.")),
         (false, Some(_)) => Err(fail("BAD_REQUEST", "Bu islem hedef istemci tasiyamaz.")),
         _ => Ok(()),
     }
+}
+
+fn requested_target_clients(request: &PlanRequest) -> Result<Option<Vec<ClientId>>, PlanError> {
+    if request.target_client.is_some() && !request.target_clients.is_empty() {
+        return Err(fail("BAD_REQUEST", "Hedef istemci tek alan veya liste olarak verilmeli."));
+    }
+    let mut clients = request.target_clients.clone();
+    if let Some(client) = request.target_client {
+        clients.push(client);
+    }
+    if clients.is_empty() {
+        return Ok(None);
+    }
+    let mut seen = std::collections::HashSet::new();
+    if clients.iter().any(|client| !seen.insert(*client)) {
+        return Err(fail("BAD_REQUEST", "Ayni hedef istemci birden fazla kez verilemez."));
+    }
+    Ok(Some(clients))
 }
 
 fn validate_scope_pair(scope: Scope, project: Option<&str>, projects: &[Project], label: &str) -> Result<(), PlanError> {
@@ -265,7 +288,8 @@ fn plan_bind(
     asset: &Asset,
     now: u64,
 ) -> Result<OperationPlan, PlanError> {
-    let target_client = request.target_client.ok_or_else(|| fail("BAD_REQUEST", "Bind icin hedef istemci gerekli."))?;
+    let target_clients = requested_target_clients(request)?
+        .ok_or_else(|| fail("BAD_REQUEST", "Bind icin hedef istemci gerekli."))?;
     let target_scope = request.target_scope.ok_or_else(|| fail("BAD_REQUEST", "Bind icin hedef kapsam gerekli."))?;
     let target_project = match target_scope {
         Scope::Global => None,
@@ -273,9 +297,6 @@ fn plan_bind(
             .find(|project| Some(project.id.as_str()) == request.target_project.as_deref())
             .cloned(),
     };
-    if !inventory.capabilities.iter().any(|item| item.client == target_client && item.plan) {
-        return Err(fail("UNSUPPORTED_CAPABILITY", "Hedef istemci bind islemini desteklemiyor."));
-    }
     if !matches!(binding.source.format, SourceFormat::Json | SourceFormat::Jsonc | SourceFormat::Toml) {
         return Err(fail("UNSUPPORTED_CAPABILITY", "Bu kaynak bicimi ice alinamiyor."));
     }
@@ -283,113 +304,128 @@ fn plan_bind(
         return Err(fail("SYMLINK_TARGET", "Kaynak yapilandirma dosyasi symlink; guvenli ice alma icin reddedildi."));
     }
 
-    let in_target = |candidate: &Binding| candidate.client == target_client
-        && candidate.scope == target_scope
-        && (target_scope == Scope::Global
-            || candidate.project.as_ref().map(|project| project.id.as_str())
-                == target_project.as_ref().map(|project| project.id.as_str()));
-    let target_bindings: Vec<&Binding> = inventory.bindings.iter().filter(|candidate| in_target(candidate)).collect();
-    let mut path_ids: Vec<&str> = target_bindings.iter().map(|candidate| candidate.source.path_id.as_str()).collect();
-    path_ids.sort_unstable();
-    path_ids.dedup();
-    if path_ids.is_empty() {
-        return Err(fail("TARGET_NOT_FOUND", "Hedef istemcide ice alinacak yapilandirma dosyasi bulunamadi."));
-    }
-    if path_ids.len() > 1 {
-        return Err(fail("AMBIGUOUS_TARGET", "Hedef istemcide birden fazla yapilandirma dosyasi var; kaynak secimi gerekli."));
-    }
-    let destination = target_bindings.iter().find(|candidate| candidate.source.path_id == path_ids[0])
-        .copied().ok_or_else(|| fail("TARGET_NOT_FOUND", "Hedef yapilandirma dosyasi bulunamadi."))?;
-    if same_path(&binding.source.path, &destination.source.path) {
-        return Err(fail("BAD_REQUEST", "Kaynak ve hedef ayni yapilandirma dosyasi."));
-    }
-    if (binding.source.format == SourceFormat::Toml) != (destination.source.format == SourceFormat::Toml) {
-        return Err(fail("UNSUPPORTED_CAPABILITY", "JSON ve TOML istemcileri arasinda ice alma henuz desteklenmiyor."));
-    }
-    let same_name = |candidate: &&Binding| candidate.asset_key != asset.key && inventory.assets.iter()
-        .any(|other| other.key == candidate.asset_key && other.name == asset.name);
-    if target_bindings.iter().any(same_name) {
-        return Err(fail("TARGET_EXISTS", "Hedef kapsamda ayni adli farkli bir kayit zaten var."));
-    }
-
-    if target_bindings.iter().any(|candidate| candidate.asset_key == asset.key) {
-        return Ok(OperationPlan {
-            plan_digest: String::new(),
-            operation: request.operation,
-            asset_key: asset.key.clone(),
-            name: asset.name.clone(),
-            kind: asset.kind,
-            client: target_client,
-            scope: target_scope,
-            project: target_project,
-            owner: binding.source.owner.clone(),
-            managed: false,
-            targets: Vec::new(),
-            affected_projects: Vec::new(),
-            risks: vec!["Bu kayit hedef kapsamda zaten bagli; yazma yapilmayacak.".to_string()],
-            created_at: now,
-            expires_at: now.saturating_add(PLAN_TTL_SECONDS),
-            read_only: true,
-            target_client: Some(target_client),
-            source_path_id: Some(binding.source.path_id.clone()),
-            noop: true,
-        });
+    let mut destinations = Vec::new();
+    let mut destination_paths = std::collections::HashSet::new();
+    for target_client in target_clients.iter().copied() {
+        if !inventory.capabilities.iter().any(|item| item.client == target_client && item.plan) {
+            return Err(fail("UNSUPPORTED_CAPABILITY", "Hedef istemci bind islemini desteklemiyor."));
+        }
+        let in_target = |candidate: &Binding| candidate.client == target_client
+            && candidate.scope == target_scope
+            && (target_scope == Scope::Global
+                || candidate.project.as_ref().map(|project| project.id.as_str())
+                    == target_project.as_ref().map(|project| project.id.as_str()));
+        let target_bindings: Vec<&Binding> = inventory.bindings.iter().filter(|candidate| in_target(candidate)).collect();
+        let mut path_ids: Vec<&str> = target_bindings.iter().map(|candidate| candidate.source.path_id.as_str()).collect();
+        path_ids.sort_unstable();
+        path_ids.dedup();
+        if path_ids.is_empty() {
+            return Err(fail("TARGET_NOT_FOUND", "Hedef istemcide ice alinacak yapilandirma dosyasi bulunamadi."));
+        }
+        if path_ids.len() > 1 {
+            return Err(fail("AMBIGUOUS_TARGET", "Hedef istemcide birden fazla yapilandirma dosyasi var; kaynak secimi gerekli."));
+        }
+        let destination = target_bindings.iter().find(|candidate| candidate.source.path_id == path_ids[0])
+            .copied().ok_or_else(|| fail("TARGET_NOT_FOUND", "Hedef yapilandirma dosyasi bulunamadi."))?;
+        if same_path(&binding.source.path, &destination.source.path) {
+            return Err(fail("BAD_REQUEST", "Kaynak ve hedef ayni yapilandirma dosyasi."));
+        }
+        if (binding.source.format == SourceFormat::Toml) != (destination.source.format == SourceFormat::Toml) {
+            return Err(fail("UNSUPPORTED_CAPABILITY", "JSON ve TOML istemcileri arasinda ice alma henuz desteklenmiyor."));
+        }
+        let same_name = |candidate: &&Binding| candidate.asset_key != asset.key && inventory.assets.iter()
+            .any(|other| other.key == candidate.asset_key && other.name == asset.name);
+        if target_bindings.iter().any(same_name) {
+            return Err(fail("TARGET_EXISTS", "Hedef kapsamda ayni adli farkli bir kayit zaten var."));
+        }
+        if target_bindings.iter().any(|candidate| candidate.asset_key == asset.key) {
+            continue;
+        }
+        if is_symlink(&destination.source.path) {
+            return Err(fail("SYMLINK_TARGET", "Hedef yapilandirma dosyasi symlink; guvenli yazma icin reddedildi."));
+        }
+        if !destination_paths.insert(destination.source.path_id.clone()) {
+            return Err(fail("AMBIGUOUS_TARGET", "Birden fazla hedef istemci ayni yapilandirma dosyasini gosteriyor."));
+        }
+        destinations.push((target_client, destination));
     }
 
-    if is_symlink(&destination.source.path) {
-        return Err(fail("SYMLINK_TARGET", "Hedef yapilandirma dosyasi symlink; guvenli yazma icin reddedildi."));
-    }
-    let source_text = security::read_text(Path::new(&binding.source.path), Limits::default())
-        .map_err(|error| fail("SOURCE_CHANGED", &format!("Kaynak dosya okunamadi: {}", error.message)))?;
-    let source_hash = sha256(source_text.as_bytes());
-    if binding.source.fingerprint.as_deref().is_some_and(|fingerprint| fingerprint != source_hash) {
-        return Err(fail("SOURCE_CHANGED", "Kaynak dosya taramadan sonra degisti; plani yenileyin."));
-    }
-    let destination_text = security::read_text(Path::new(&destination.source.path), Limits::default())
-        .map_err(|error| fail("SOURCE_CHANGED", &format!("Hedef dosya okunamadi: {}", error.message)))?;
-    let destination_hash = sha256(destination_text.as_bytes());
-    if destination.source.fingerprint.as_deref().is_some_and(|fingerprint| fingerprint != destination_hash) {
-        return Err(fail("SOURCE_CHANGED", "Hedef dosya taramadan sonra degisti; plani yenileyin."));
-    }
-    let (entry_text, entry_value) = crate::integrations::apply::read_entry(
-        &source_text, binding.source.format, container_for(binding.client), &asset.name,
-    ).map_err(|error| fail(error.code, &error.message))?;
-    let after = crate::integrations::apply::insert_member(
-        &destination_text, destination.source.format, container_for(target_client), &asset.name, &entry_text,
-    ).map_err(|error| fail(error.code, &error.message))?;
-    let affected_projects = match target_scope {
-        Scope::Global => projects.to_vec(),
-        Scope::Project => target_project.iter().cloned().collect(),
+    let noop = destinations.is_empty();
+    let entry = if noop {
+        None
+    } else {
+        let source_text = security::read_text(Path::new(&binding.source.path), Limits::default())
+            .map_err(|error| fail("SOURCE_CHANGED", &format!("Kaynak dosya okunamadi: {}", error.message)))?;
+        let source_hash = sha256(source_text.as_bytes());
+        if binding.source.fingerprint.as_deref().is_some_and(|fingerprint| fingerprint != source_hash) {
+            return Err(fail("SOURCE_CHANGED", "Kaynak dosya taramadan sonra degisti; plani yenileyin."));
+        }
+        Some(crate::integrations::apply::read_entry(
+            &source_text, binding.source.format, container_for(binding.client), &asset.name,
+        ).map_err(|error| fail(error.code, &error.message))?)
     };
-    let mut result = OperationPlan {
-        plan_digest: String::new(),
-        operation: request.operation,
-        asset_key: asset.key.clone(),
-        name: asset.name.clone(),
-        kind: asset.kind,
-        client: target_client,
-        scope: target_scope,
-        project: target_project.clone(),
-        owner: binding.source.owner.clone(),
-        managed: false,
-        targets: vec![PlanTarget {
+
+    let mut targets = Vec::new();
+    for (target_client, destination) in destinations {
+        let destination_text = security::read_text(Path::new(&destination.source.path), Limits::default())
+            .map_err(|error| fail("SOURCE_CHANGED", &format!("Hedef dosya okunamadi: {}", error.message)))?;
+        let destination_hash = sha256(destination_text.as_bytes());
+        if destination.source.fingerprint.as_deref().is_some_and(|fingerprint| fingerprint != destination_hash) {
+            return Err(fail("SOURCE_CHANGED", "Hedef dosya taramadan sonra degisti; plani yenileyin."));
+        }
+        let (entry_text, entry_value) = entry.as_ref().ok_or_else(|| fail("INVALID_PLAN", "Ice alma girdisi hazirlanamadi."))?;
+        let after = crate::integrations::apply::insert_member(
+            &destination_text, destination.source.format, container_for(target_client), &asset.name, entry_text,
+        ).map_err(|error| fail(error.code, &error.message))?;
+        targets.push(PlanTarget {
             path: destination.source.path.clone(),
             path_id: destination.source.path_id.clone(),
             format: destination.source.format,
             before_sha256: destination_hash,
             after_sha256: sha256(after.as_bytes()),
             before: Value::Null,
-            after: security::redact_json(&entry_value),
+            after: security::redact_json(entry_value),
             diff: vec![format!("+ {}.{} ({})", container_for(target_client), asset.name, scope_label(target_scope, target_project.as_ref()))],
-        }],
+            client: Some(target_client),
+        });
+    }
+    let affected_projects = if noop {
+        Vec::new()
+    } else {
+        match target_scope {
+            Scope::Global => projects.to_vec(),
+            Scope::Project => target_project.iter().cloned().collect(),
+        }
+    };
+    let mut risks = Vec::new();
+    if noop {
+        risks.push("Bu kayit hedef kapsamda zaten bagli; yazma yapilmayacak.".to_string());
+    } else {
+        risks.push("Kaynak dosya degismez; mevcut gizli degerler hedefe kopyalanir ve onizlemede gizlenir.".to_string());
+    }
+    if target_clients.len() > 1 {
+        risks.push("Toplu islem ya hep ya hic uygulanir; bir hedef basarisizsa yazilan dosyalar geri alinir.".to_string());
+    }
+    let mut result = OperationPlan {
+        plan_digest: String::new(),
+        operation: request.operation,
+        asset_key: asset.key.clone(),
+        name: asset.name.clone(),
+        kind: asset.kind,
+        client: target_clients[0],
+        scope: target_scope,
+        project: target_project.clone(),
+        owner: binding.source.owner.clone(),
+        managed: false,
+        targets,
         affected_projects,
-        risks: vec!["Kaynak dosya degismez; mevcut gizli degerler hedefe kopyalanir ve onizlemede gizlenir.".to_string()],
+        risks,
         created_at: now,
         expires_at: now.saturating_add(PLAN_TTL_SECONDS),
         read_only: true,
-        target_client: Some(target_client),
+        target_client: (target_clients.len() == 1).then_some(target_clients[0]),
         source_path_id: Some(binding.source.path_id.clone()),
-        noop: false,
+        noop,
     };
     result.plan_digest = digest_for(&result);
     Ok(result)
@@ -469,6 +505,7 @@ fn plan_transfer(
             before: security::redact_json(&entry_value),
             after: Value::Null,
             diff: vec![format!("- {container}.{}", asset.name)],
+            client: None,
         });
     }
     targets.push(PlanTarget {
@@ -480,6 +517,7 @@ fn plan_transfer(
         before: Value::Null,
         after: security::redact_json(&entry_value),
         diff: vec![format!("+ {container}.{} ({})", asset.name, scope_label(target_scope, target_project.as_ref()))],
+        client: None,
     });
 
     let global_changed = target_scope == Scope::Global
@@ -683,6 +721,7 @@ mod tests {
             target_scope: None,
             target_project: None,
             target_client: None,
+            target_clients: Vec::new(),
         }
     }
 
@@ -706,6 +745,7 @@ mod tests {
             target_scope: None,
             target_project: None,
             target_client: None,
+            target_clients: Vec::new(),
         }
     }
 
@@ -979,6 +1019,7 @@ mod tests {
             target_scope: Some(target_scope),
             target_project,
             target_client: None,
+            target_clients: Vec::new(),
         }
     }
 
@@ -1147,6 +1188,7 @@ mod tests {
             target_scope: Some(Scope::Project),
             target_project: target_project.map(str::to_string),
             target_client: Some(target_client),
+            target_clients: Vec::new(),
         }
     }
 
@@ -1201,28 +1243,55 @@ mod tests {
     fn bind_to_two_clients_keeps_each_target_separate() {
         let temp = Temp::new("bind-two-clients");
         let env = temp.env();
-        let project_root = temp.0.join("work/demo");
-        fs::create_dir_all(project_root.join(".codex")).unwrap();
         fs::write(temp.config(), r#"{"mcpServers":{"postgres":{"command":"npx","args":["server"]}}}"#).unwrap();
-        fs::write(project_root.join(".mcp.json"), r#"{"mcpServers":{"local":{"command":"x"}}}"#).unwrap();
-        let project_key = project_root.to_string_lossy().replace('\\', "/");
-        fs::create_dir_all(env.home.join(".codex")).unwrap();
-        fs::write(env.home.join(".codex/config.toml"), format!(
-            "[projects.\"{project_key}\"]\ntrust_level = \"trusted\"\n\n[mcp_servers.postgres]\ncommand = \"npx\"\nargs = [\"server\"]\n\n[mcp_servers.local]\ncommand = \"x\"\n"
-        )).unwrap();
-        fs::write(project_root.join(".codex/config.toml"), "[mcp_servers.project]\ncommand = \"project\"\n").unwrap();
-        let project = Project { id: "project:demo".into(), root: project_root.to_string_lossy().into_owned() };
-        let inventory = inventory::scan(&env, std::slice::from_ref(&project));
-        let claude = bind_request(&inventory, "postgres", ClientId::Claude, ClientId::Claude, Some(&project.id));
-        let codex = bind_request(&inventory, "postgres", ClientId::Codex, ClientId::Codex, Some(&project.id));
-        let claude_plan = plan(&inventory, std::slice::from_ref(&project), &claude).unwrap();
-        let codex_plan = plan(&inventory, std::slice::from_ref(&project), &codex).unwrap();
-        assert_eq!(claude_plan.client, ClientId::Claude);
-        assert_eq!(codex_plan.client, ClientId::Codex);
-        assert!(claude_plan.targets[0].path.ends_with(".mcp.json"));
-        assert!(codex_plan.targets[0].path.ends_with("config.toml"));
+        fs::create_dir_all(env.home.join(".cursor")).unwrap();
+        fs::write(env.home.join(".cursor/mcp.json"), r#"{"mcpServers":{"keep":{"command":"x"}}}"#).unwrap();
+        fs::create_dir_all(env.home.join(".gemini")).unwrap();
+        fs::write(env.home.join(".gemini/settings.json"), r#"{"mcpServers":{"keep":{"command":"x"}}}"#).unwrap();
+        let inventory = inventory::scan(&env, &[]);
+        let asset = inventory.assets.iter().find(|asset| asset.name == "postgres").unwrap();
+        let request = PlanRequest {
+            operation: Operation::BindMcp,
+            asset_key: asset.key.clone(),
+            client: ClientId::Claude,
+            scope: Scope::Global,
+            project: None,
+            target_scope: Some(Scope::Global),
+            target_project: None,
+            target_client: None,
+            target_clients: vec![ClientId::Cursor, ClientId::Gemini],
+        };
+        let plan = plan(&inventory, &[], &request).unwrap();
+        assert_eq!(plan.targets.len(), 2);
+        assert_eq!(plan.target_client, None);
+        let cursor = plan.targets.iter().find(|target| target.client == Some(ClientId::Cursor)).unwrap();
+        let gemini = plan.targets.iter().find(|target| target.client == Some(ClientId::Gemini)).unwrap();
+        assert!(cursor.path.ends_with("mcp.json"));
+        assert!(gemini.path.ends_with("settings.json"));
+        assert!(plan.risks.iter().any(|risk| risk.contains("ya hep ya hic")));
     }
 
+    #[test]
+    fn bind_rejects_duplicate_or_conflicting_target_clients() {
+        let (_temp, env) = fixture("bind-target-validation");
+        let inventory = inventory::scan(&env, &[]);
+        let asset = inventory.assets.iter().find(|asset| asset.name == "postgres").unwrap();
+        let mut request = PlanRequest {
+            operation: Operation::BindMcp,
+            asset_key: asset.key.clone(),
+            client: ClientId::Claude,
+            scope: Scope::Global,
+            project: None,
+            target_scope: Some(Scope::Global),
+            target_project: None,
+            target_client: None,
+            target_clients: vec![ClientId::Cursor, ClientId::Cursor],
+        };
+        assert_eq!(plan(&inventory, &[], &request).unwrap_err().code, "BAD_REQUEST");
+        request.target_clients = vec![ClientId::Cursor];
+        request.target_client = Some(ClientId::Gemini);
+        assert_eq!(plan(&inventory, &[], &request).unwrap_err().code, "BAD_REQUEST");
+    }
     #[test]
     fn bind_rejects_respected_owned_source() {
         let (temp, env) = fixture("bind-owned");

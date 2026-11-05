@@ -121,9 +121,7 @@ where
         return Err(apply_error("INVALID_PLAN", "Plan hi\u{00e7}bir hedef dosya i\u{00e7}ermiyor."));
     }
     let source = fresh_binding(plan, inventory, projects)?;
-    let target_client = plan.target_client.unwrap_or(plan.client);
     let source_container = container_for(source.client);
-    let target_container = container_for(target_client);
     let entry_text = if matches!(plan.operation, Operation::MoveMcp | Operation::CopyMcp | Operation::BindMcp) {
         let text = security::read_text(Path::new(&source.source.path), Limits::default())
             .map_err(|error| apply_error("SOURCE_CHANGED", &error.message))?;
@@ -139,6 +137,8 @@ where
 
     let mut prepared = Vec::new();
     for target in &plan.targets {
+        let target_client = target.client.unwrap_or(plan.target_client.unwrap_or(plan.client));
+        let target_container = container_for(target_client);
         let binding = binding_by_path_id(inventory, target_client, &target.path_id)?;
         if binding.managed || matches!(binding.source.owner, Owner::Product { .. } | Owner::Catalog) {
             return Err(apply_error("OWNER_PROTECTED", "Hedef kay\u{0131}t Respected \u{00fc}r\u{00fc}n\u{00fc}ne veya katalo\u{011f}a ait."));
@@ -1497,6 +1497,7 @@ mod tests {
             target_scope: None,
             target_project: None,
             target_client: None,
+            target_clients: Vec::new(),
         };
         plan(inventory, &[], &request).unwrap()
     }
@@ -1511,6 +1512,7 @@ mod tests {
             target_scope: None,
             target_project: None,
             target_client: None,
+            target_clients: Vec::new(),
         };
         plan(inventory, &[], &request).unwrap()
     }
@@ -1823,6 +1825,7 @@ mod tests {
             target_scope: Some(Scope::Project),
             target_project: Some(project.id.clone()),
             target_client: (operation == Operation::BindMcp).then_some(client),
+            target_clients: Vec::new(),
         };
         let projects = vec![project];
         let plan = plan(&inventory, &projects, &request).unwrap();
@@ -1934,6 +1937,7 @@ mod tests {
             target_scope: None,
             target_project: None,
             target_client: None,
+            target_clients: Vec::new(),
         };
         let plan = plan(&inventory, &[], &request).unwrap();
         let claude_before = fs::read(&claude).unwrap();
@@ -2005,6 +2009,121 @@ mod tests {
         assert_eq!(outcome(&report, "tx-before-readback").status, RecordStatus::RolledBack);
         assert_eq!(fs::read_to_string(&path).unwrap(), text);
         assert_eq!(sha256(&fs::read(&path).unwrap()), plan.targets[0].before_sha256);
+    }
+
+    fn bind_multi_fixture(label: &str) -> (Temp, PathBuf, Vec<(ClientId, PathBuf)>, Inventory, OperationPlan) {
+        let temp = Temp::new(label);
+        let source_path = temp.0.join("opencode.json");
+        let source_text = r#"{"mcp":{"postgres":{"command":"npx","args":["server-postgres"]}}}"#;
+        fs::write(&source_path, source_text).unwrap();
+        let asset = Asset::new(AssetKind::Mcp, "postgres", "command: npx server-postgres");
+        let mut inventory = Inventory::default();
+        let mut source = Source::from_path(&source_path, Owner::User, SourceFormat::Json);
+        source.fingerprint = Some(sha256(source_text.as_bytes()));
+        inventory.add_binding(asset.clone(), Binding {
+            asset_key: asset.key.clone(),
+            client: ClientId::OpenCode,
+            scope: Scope::Global,
+            project: None,
+            source,
+            status: ObservedStatus::Configured,
+            enabled: None,
+            managed: false,
+            parent_asset_key: None,
+        });
+        inventory.capabilities.push(Capability {
+            client: ClientId::OpenCode, read: true, plan: true, apply: true, undo: true,
+            enable: true, disable: true, toggle_reason: None,
+        });
+        let mut targets = Vec::new();
+        let destination_asset = Asset::new(AssetKind::Mcp, "keep", "command: keep");
+        for (client, file) in [
+            (ClientId::Claude, "claude.json"),
+            (ClientId::Cursor, "cursor.json"),
+            (ClientId::Gemini, "gemini.json"),
+        ] {
+            let path = temp.0.join(file);
+            fs::write(&path, r#"{"mcpServers":{"keep":{"command":"keep"}}}"#).unwrap();
+            let mut source = Source::from_path(&path, Owner::User, SourceFormat::Json);
+            source.fingerprint = Some(sha256(&fs::read(&path).unwrap()));
+            inventory.add_binding(destination_asset.clone(), Binding {
+                asset_key: destination_asset.key.clone(),
+                client,
+                scope: Scope::Global,
+                project: None,
+                source,
+                status: ObservedStatus::Configured,
+                enabled: None,
+                managed: false,
+                parent_asset_key: None,
+            });
+            inventory.capabilities.push(Capability {
+                client, read: true, plan: true, apply: true, undo: true,
+                enable: true, disable: true, toggle_reason: None,
+            });
+            targets.push((client, path));
+        }
+        let request = PlanRequest {
+            operation: Operation::BindMcp,
+            asset_key: asset.key.clone(),
+            client: ClientId::OpenCode,
+            scope: Scope::Global,
+            project: None,
+            target_scope: Some(Scope::Global),
+            target_project: None,
+            target_client: None,
+            target_clients: vec![ClientId::Claude, ClientId::Cursor, ClientId::Gemini],
+        };
+        let plan = plan(&inventory, &[], &request).unwrap();
+        (temp, source_path, targets, inventory, plan)
+    }
+
+    #[test]
+    fn bind_multiple_clients_is_one_transaction_and_undo_restores_all() {
+        let (temp, source, targets, inventory, plan) = bind_multi_fixture("multi-bind");
+        let source_before = fs::read(&source).unwrap();
+        let before: Vec<Vec<u8>> = targets.iter().map(|(_, path)| fs::read(path).unwrap()).collect();
+        assert_eq!(plan.targets.len(), 3);
+        for (client, path) in &targets {
+            assert!(plan.targets.iter().any(|target| target.client == Some(*client) && target.path == path.to_string_lossy()));
+        }
+        let journal = Journal::at(temp.0.join("journal"));
+        let applied = apply_at_journaled(&plan, &inventory, &[], "tx-multi-bind", plan.created_at, &journal).unwrap();
+        assert_eq!(applied.files.len(), 3);
+        assert_eq!(fs::read(&source).unwrap(), source_before, "source must never change");
+        assert_eq!(journal.read("tx-multi-bind").unwrap().status, RecordStatus::Committed);
+        let undo = journal.undo("tx-multi-bind").unwrap();
+        assert_eq!(undo.restored.len(), 3);
+        for ((_, path), original) in targets.iter().zip(&before) {
+            assert_eq!(&fs::read(path).unwrap(), original, "undo must restore {}", path.display());
+        }
+        assert_eq!(journal.read("tx-multi-bind").unwrap().status, RecordStatus::RolledBack);
+    }
+
+    #[test]
+    fn bind_multiple_clients_fails_all_when_second_write_fails() {
+        let (temp, source, targets, inventory, plan) = bind_multi_fixture("multi-bind-fail");
+        let source_before = fs::read(&source).unwrap();
+        let before: Vec<Vec<u8>> = targets.iter().map(|(_, path)| fs::read(path).unwrap()).collect();
+        let journal = Journal::at(temp.0.join("journal"));
+        let mut calls = 0;
+        let mut writer = |target: &Path, bytes: &[u8]| -> io::Result<()> {
+            calls += 1;
+            if calls == 2 {
+                return Err(io::Error::new(io::ErrorKind::PermissionDenied, "denied (simulated)"));
+            }
+            let mut file = OpenOptions::new().write(true).create_new(true).open(target)?;
+            file.write_all(bytes)?;
+            file.sync_all()
+        };
+        let error = apply_with(&plan, &inventory, &[], "tx-multi-bind-fail", plan.created_at, &mut writer, Some(&journal)).unwrap_err();
+        assert_eq!(error.code, "WRITE_FAILED");
+        assert_eq!(calls, 2, "third target must never be written");
+        assert_eq!(fs::read(&source).unwrap(), source_before, "source must never change");
+        for ((_, path), original) in targets.iter().zip(&before) {
+            assert_eq!(&fs::read(path).unwrap(), original, "failed batch must not change {}", path.display());
+        }
+        assert_eq!(journal.read("tx-multi-bind-fail").unwrap().status, RecordStatus::Failed);
     }
 
     #[test]

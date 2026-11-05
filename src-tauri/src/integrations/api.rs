@@ -92,6 +92,7 @@ mod tests {
         assert!(serde_json::from_str::<Request>(r#"{"action":"catalog_refresh"}"#).is_ok());
         assert!(serde_json::from_str::<Request>(r#"{"action":"plan","plan":{"operation":"remove_mcp","asset_key":"mcp:demo","client":"claude","scope":"global"}}"#).is_ok());
         assert!(serde_json::from_str::<Request>(r#"{"action":"plan","plan":{"operation":"bind_mcp","asset_key":"mcp:demo","client":"claude","scope":"global","target_client":"codex","target_scope":"global"}}"#).is_ok());
+        assert!(serde_json::from_str::<Request>(r#"{"action":"plan","plan":{"operation":"bind_mcp","asset_key":"mcp:demo","client":"claude","scope":"global","target_clients":["cursor","gemini"],"target_scope":"global"}}"#).is_ok());
         for body in [
             r#"{"action":"apply"}"#,
             r#"{"action":"undo"}"#,
@@ -222,6 +223,7 @@ mod tests {
                 target_scope: None,
                 target_project: None,
                 target_client: None,
+                target_clients: Vec::new(),
             }),
         }, &env, &root.join("managed"));
         assert_eq!(reply["ok"], true, "{reply}");

@@ -74,7 +74,7 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
 - [x] `SEC-003` Kaynak/komut/izin risk önizlemesi; güvenliği garanti eden etiket kullanma.
 - [x] `OPS-006` Kullanıcı onaylı var olan entegrasyonu içe alma/bağlama.
 - [x] `OPS-007` Kaynağın sahibini koruyan kaldırma/ayırma ve güncelleme.
-- [ ] `OPS-008` Birden çok AI aracına toplu uygulama ve kısmi hata kurtarma.
+- [x] `OPS-008` Birden çok AI aracına toplu uygulama ve kısmi hata kurtarma.
 
 ### M5 — Farklılaştırıcı özellikler ve platform desteği
 - [ ] `ADV-001` Proje profilleri ve idempotent toplu ayar şablonları.
