@@ -10,7 +10,7 @@
   - **Yeni sürüm artefaktı bekleyen:** beta.1 → yeni sürüm güncelleme CI işi, gerçek Hub kendini güncelleme denemesi, güncelleme yolu ve geri alma doğrulaması. Beta.2 yayınlanmadan kapatılamaz.
   - **Kardeş depo işi:** Brain'de Gemini CLI/Cursor token kullanımı, Orchestrator'da Gemini/Cursor token kullanımı, Hub'sız kurulan ürünlerin sürüm bildirimi. Bu depoda yapılamaz.
   - **v0.1.0 resmi sürüm kapsamı:** Authenticode imzası ve macOS/Linux masaüstü GUI doğrulaması. Beta.1 sonrası sürümün kapısı değildir; aşağıdaki ayrı bölümde izlenir.
-- **Son yeşil kanıt:** CI [run 42014089759](https://github.com/respected0/respected-hub/actions/runs/42014089759) (commit `6547f8c`): Windows, macOS ve Linux işleri başarılı; Windows native E2E **30 PASS, 0 FAIL**. Ayrıntı: `docs/QUALITY.md`.
+- **Son yeşil kanıt:** CI [run 42024512853](https://github.com/respected0/respected-hub/actions/runs/42024512853) (commit `b9f205d`): Windows, macOS ve Linux işleri başarılı; Windows native E2E **30 PASS, 0 FAIL**. Ayrıntı: `docs/QUALITY.md`.
 
 ## Beta.1'den sonraki sürüm
 
