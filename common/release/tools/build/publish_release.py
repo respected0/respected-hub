@@ -188,6 +188,12 @@ def merged_catalog(base: dict, entries: dict, channel: str, min_hub: str | None,
     if withdrawn:
         index["blocked"] = withdrawn
     for name, row in entries.items():
+        target = index["hub"] if name == "hub" else index["products"].setdefault(name, {})
+        if row["version"] in withdrawn.get(name, []):
+            sys.exit(f"{name} {row['version']} was withdrawn; publish a new version instead")
+        for old in target.values():
+            if old.get("version") == row["version"] and (old.get("sha256"), old.get("size")) != (row["sha256"], row["size"]):
+                sys.exit(f"{name} {row['version']} is already published with different contents; publish a new version instead")
         release = {"version": row["version"], "url": url_of(row), "sha256": row["sha256"], "size": row["size"]}
         if min_hub and name != "hub":
             release["min_hub"] = min_hub
@@ -196,7 +202,6 @@ def merged_catalog(base: dict, entries: dict, channel: str, min_hub: str | None,
         note = notes.get(name) if isinstance(notes, dict) else notes
         if note:  # short "what changed" text the Hub shows before the person updates; covered by the catalog signature
             release["notes"] = note
-        target = index["hub"] if name == "hub" else index["products"].setdefault(name, {})
         target[channel] = release
     return index
 

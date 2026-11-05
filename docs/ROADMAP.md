@@ -10,8 +10,7 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
 - [ ] Doğrulama eksikleri: gerçek eski sürümden (beta.1) güncelleme CI işi, Hub'ın kendini güncellemesi, Brain'de Gemini CLI
   ve Cursor, Orchestrator'da Gemini ve Cursor token kullanımı, güncellemede sağlık dalıyla geri alma, temiz makinede ilk kurulum.
 - [ ] Hata düzeltmeleri: beta.1 sonrası bulunanlar.
-- [ ] Var olanı iyileştirme: örneğin çalışan Orchestrator görevi varken güncelleme uyarısı, Hub'sız kullanıcıya sürüm
-  bildirimi, aynı sürüm numarasıyla düzeltilmiş yayın.
+- [ ] Var olanı iyileştirme: örneğin Hub'sız kullanıcıya sürüm bildirimi.
 
 ## Dış eklenti ve MCP keşfi
 
@@ -33,5 +32,4 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
   sürüm başına gerçek veri fixture'ları). Kalan: yayınlanmış eski kurucuları gerçek Windows'ta yenisinin üzerine kuran CI işi
   (beta.2 yayınlanınca beta.1 ile başlar). Zincir gerçekten uzarsa `min_from` ile basamak sürüm istenir.
 - [ ] Hub'sız kullanıcı yeni sürümden haberdar olmuyor: ürünlerde sürüm denetimi yok.
-- [ ] Aynı sürüm numarasıyla düzeltilmiş yayın: Hub önbellekteki eski kurucuyla onarabilir ve "Güncelleme var" göstermez;
-  kurmuş olanlar düzeltmeyi kurucuyu elle çalıştırarak alır.
+- [x] Aynı sürüm numarasıyla düzeltilmiş yayın: `catalog` aynı ürün/sürüm için farklı içeriği reddeder; düzeltme yeni numarayla çıkar.

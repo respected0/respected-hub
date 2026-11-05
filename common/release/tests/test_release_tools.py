@@ -52,7 +52,10 @@ try:
     archive = work / pr.package_name("orchestrator", "0.1.0-beta.1")
     pr.zip_bundle(bundle, archive)
     assert sorted(zipfile.ZipFile(archive).namelist()) == ["bundle.json", "payload/src/a.py"]
-    base = {"schema": 1, "sequence": 99999999999999, "hub": {"stable": {"version": "0.1.0"}}, "products": {"brain": {"beta": {"version": "0.1.0-beta.1"}}}}
+    published_brain = pr.entry(archive, "0.1.0-beta.1", "respected-brain", "v0.1.0-beta.1")
+    published_brain["url"] = pr.url_of(published_brain)
+    base = {"schema": 1, "sequence": 99999999999999, "hub": {"stable": {"version": "0.1.0"}},
+            "products": {"brain": {"beta": {key: published_brain[key] for key in ("version", "url", "sha256", "size")}}}}
     entries = {"orchestrator": pr.entry(archive, "0.1.0-beta.1", "respected-orchestrator", "v0.1.0-beta.1")}
     index = pr.merged_catalog(base, entries, "beta", "0.1.0-beta.1")
     assert index["sequence"] == base["sequence"] + 1, "sequence always grows"
@@ -63,6 +66,17 @@ try:
     assert "notes" not in release and pr.merged_catalog(base, entries, "beta", None, "Düzeltmeler")["products"]["orchestrator"]["beta"]["notes"] == "Düzeltmeler"
     by_product = pr.merged_catalog(base, {**entries, "brain": pr.entry(archive, "0.1.0-beta.1", "respected-brain", "v0.1.0-beta.1")}, "beta", None, {"brain": "B", "orchestrator": "O"})
     assert (by_product["products"]["brain"]["beta"]["notes"], by_product["products"]["orchestrator"]["beta"]["notes"]) == ("B", "O")
+    different = work / "different.zip"; different.write_bytes(archive.read_bytes() + b"changed")
+    try:
+        pr.merged_catalog(base, {"brain": pr.entry(different, "0.1.0-beta.1", "respected-brain", "v0.1.0-beta.1")}, "beta", None)
+        raise SystemExit("same version with different contents accepted")
+    except SystemExit as error:
+        assert "already published with different contents" in str(error), error
+    try:
+        pr.merged_catalog({**base, "blocked": {"brain": ["0.1.0-beta.1"]}}, {"brain": pr.entry(archive, "0.1.0-beta.1", "respected-brain", "v0.1.0-beta.1")}, "beta", None)
+        raise SystemExit("withdrawn version accepted")
+    except SystemExit as error:
+        assert "was withdrawn" in str(error), error
     assert all(0 < len(pr.catalog_note(name)) <= 600 for name in pr.UPDATE_NOTES), "every product has its own catalog note"
     names = {"hub": "", "brain": "Brain", "orchestrator": "Orchestrator"}  # the Hub is named by every installer, products never name each other
     for name in names:  # a product's release page and notes never talk about another product

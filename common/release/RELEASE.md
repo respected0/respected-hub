@@ -59,6 +59,7 @@ Remove-Item Env:\RESPECTED_VAULT_PASSPHRASE
   `--notes "metin"` her ürün için ürünün `UPDATE_NOTES.md` maddelerinin (katalog yalnızca `- ` ile başlayan satırları alır, en çok 600 karakter; en önemli maddeler başta olmalı) yerine geçer; katalogdaki not güncelleme önerilirken gösterilir ve imzaya dahildir.
 - **Yayınlanmış bir sürüm numarası bir daha kullanılmaz.** Düzeltme gerekiyorsa yeni numara çıkar (`0.1.0-beta.3`):
   Hub aynı numarayı "daha yeni" saymaz, kurmuş olanlar düzeltmeyi almaz. Yalnızca hiç yayınlanmamış numara yerinde yeniden derlenir.
+  `catalog` aynı ürün/sürüm için farklı SHA-256 veya boyutu reddeder; aynı içerikle yeniden denemeyi kabul eder.
 - Yükleme sırası: önce ürünler, en son katalog (katalog hiçbir zaman olmayan bir dosyayı göstermez).
 - Anahtarsız derleme GELİŞTİRMEdir ve asla yayınlanmaz.
 
