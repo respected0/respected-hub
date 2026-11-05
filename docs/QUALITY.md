@@ -63,6 +63,7 @@ Entegrasyon kapsam denetimi (2026-11-05, yerel calisma agaci):
 - `cargo test --lib integrations::`: **108 gecti**, 43 filtrelendi.
 - `npm run check`: **134/134 gecti**.
 - Derlenmis `src-tauri/assets/third-party-catalog.json`: **62 kayit**; `catalog_e2e` ag olmadan okur.
+- CI: [run 42007822877](https://github.com/respected0/respected-hub/actions/runs/42007822877) uc iste de basarili (commit `b49a966`): windows 12m08s, ubuntu 5m50s, macos 6m30s. Windows `native-e2e` artefakti **30 PASS, 0 FAIL**; rapor son satiri `ALL PASSED`.
 
 Yayin hijyeni denetimi (2026-11-05, yayimlanmis `catalog` ve `v0.1.0-beta.1` asset'leri indirilerek):
 
