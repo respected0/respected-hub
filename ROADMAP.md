@@ -77,7 +77,7 @@ Beta.1'den sonraki ilk sürüm **yeni özellik eklemez**: yalnızca doğrulama e
 - [x] `OPS-008` Birden çok AI aracına toplu uygulama ve kısmi hata kurtarma.
 
 ### M5 — Farklılaştırıcı özellikler ve platform desteği
-- [ ] `ADV-001` Proje profilleri ve idempotent toplu ayar şablonları.
+- [x] `ADV-001` Proje profilleri ve idempotent toplu ayar şablonları.
 - [ ] `ADV-002` Drift, gölgelenme, bozuk symlink ve kopya çakışması analizi.
 - [ ] `PORT-001` Gerçek CI/VM üzerinde doğrulanmış macOS ve Linux yetenek matrisi.
 

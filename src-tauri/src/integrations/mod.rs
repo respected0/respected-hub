@@ -16,3 +16,4 @@ pub mod planner;
 pub mod apply;
 pub mod undo;
 pub mod projects;
+pub mod profiles;
