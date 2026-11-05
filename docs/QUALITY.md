@@ -45,6 +45,9 @@ gorurse baslamaz, sahte bir kullanici klasoru kullanir ve gercek AI istemci ayar
 - CI: [run 41976817349](https://github.com/respected0/respected-hub/actions/runs/41976817349) uc iste de basarili
   (commit `8276c56`): windows 8m36s, ubuntu 5m3s, macos 4m58s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
 
+- CI: [run 41981505058](https://github.com/respected0/respected-hub/actions/runs/41981505058) uc iste de basarili
+  (commit `4d72a6c`): ubuntu 4m53s, macos 5m13s, windows 11m9s. Windows `native-e2e` artefakti 30 PASS, 0 FAIL.
+
 ## Dogrulanmadi
 
 - `--real-semantic`: anlamsal arama modelinin gercek indirmesi bu kosuda calistirilmadi.
